@@ -1,0 +1,6 @@
+# direnv — run `cp .envrc.example .envrc && direnv allow`
+export SUPABASE_ACCESS_TOKEN="YOUR_SUPABASE_ACCESS_TOKEN"
+export SUPABASE_DB_PASSWORD="YOUR_DB_PASSWORD"
+
+# Load environment vars
+dotenv .env.development

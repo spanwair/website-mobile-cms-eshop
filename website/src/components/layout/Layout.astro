@@ -1,0 +1,43 @@
+---
+interface Props {
+  title?: string;
+}
+const { title = "Template" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <link rel="stylesheet" href="/styles/global.css" />
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="container nav-inner">
+        <a href="/" class="nav-brand">Template</a>
+        <div class="nav-links">
+          <a href="/dashboard">Dashboard</a>
+          <a href="/items">Items</a>
+          <a href="/profile">Profile</a>
+          <a href="/admin">Admin</a>
+        </div>
+        <a href="/login" class="btn btn-primary nav-cta">Sign in</a>
+      </div>
+    </nav>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style>
+  .nav { background: #0F0F1A; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; z-index: 100; }
+  .nav-inner { display: flex; align-items: center; gap: 32px; height: 64px; }
+  .nav-brand { font-size: 20px; font-weight: 900; color: #FF5E1A; letter-spacing: -0.5px; }
+  .nav-links { display: flex; gap: 24px; flex: 1; }
+  .nav-links a { font-size: 14px; font-weight: 600; color: #B3B3CC; }
+  .nav-links a:hover { color: #fff; text-decoration: none; }
+  .nav-cta { padding: 8px 20px; font-size: 14px; }
+</style>

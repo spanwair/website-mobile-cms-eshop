@@ -1,0 +1,13 @@
+{
+  "name": "website-mobile-template",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.1.3",
+  "scripts": {
+    "mobile": "cd mobile && pnpm start",
+    "website": "cd website && pnpm dev",
+    "install:all": "pnpm -r install",
+    "db:push": "./scripts/db-push.sh",
+    "functions:deploy": "./scripts/functions-deploy.sh"
+  }
+}

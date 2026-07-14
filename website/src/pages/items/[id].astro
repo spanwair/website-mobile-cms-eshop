@@ -1,0 +1,39 @@
+---
+import Layout from "../../components/layout/Layout.astro";
+import { supabase } from "../../lib/supabase";
+import { fetchItem } from "../../../shared/services/itemService";
+import { formatDate } from "../../../shared/utils/format";
+
+const { id } = Astro.params;
+if (!id) return Astro.redirect("/items");
+
+const item = await fetchItem(supabase, id);
+if (!item) return Astro.redirect("/items");
+---
+
+<Layout title={item.title}>
+  <div class="page container">
+    <a href="/items" class="back-link">← Back to items</a>
+
+    <div class="item-header">
+      <span class={`badge badge-${item.status}`}>{item.status}</span>
+      <h1 class="item-title">{item.title}</h1>
+      <p class="item-meta">Created {formatDate(item.created_at)}</p>
+    </div>
+
+    {item.description && (
+      <div class="card item-body">
+        <p class="item-desc">{item.description}</p>
+      </div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .back-link { font-size: 14px; color: #B3B3CC; display: inline-block; margin-bottom: 24px; }
+  .back-link:hover { color: #fff; text-decoration: none; }
+  .item-header { margin-bottom: 24px; }
+  .item-title { font-size: 40px; font-weight: 900; color: #fff; margin: 12px 0 8px; letter-spacing: -1px; }
+  .item-meta { font-size: 13px; color: #808099; }
+  .item-desc { font-size: 16px; color: #B3B3CC; line-height: 1.7; }
+</style>

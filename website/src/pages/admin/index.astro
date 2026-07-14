@@ -1,0 +1,115 @@
+---
+import Layout from "../../components/layout/Layout.astro";
+import { supabase } from "../../lib/supabase";
+import { fetchItems, updateItem, deleteItem } from "../../../shared/services/itemService";
+import { fetchAllUsers } from "../../../shared/services/profileService";
+import { formatDate } from "../../../shared/utils/format";
+
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const profile = await supabase.from("profiles").select("role").eq("id", session.user.id).single();
+if (profile.data?.role !== "admin") return Astro.redirect("/dashboard");
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = form.get("action") as string;
+  const itemId = form.get("item_id") as string;
+  if (action === "delete") await deleteItem(supabase, itemId);
+  if (action === "activate") await updateItem(supabase, itemId, { status: "active" });
+  if (action === "deactivate") await updateItem(supabase, itemId, { status: "inactive" });
+  return Astro.redirect("/admin");
+}
+
+const { data: items, total } = await fetchItems(supabase);
+const users = await fetchAllUsers(supabase);
+const { data: activeItems, total: activeTotal } = await fetchItems(supabase, 1, 1, "active");
+---
+
+<Layout title="Admin">
+  <div class="page container">
+    <h1 class="page-title">Admin Dashboard</h1>
+
+    <div class="stats-row">
+      {[
+        { label: "Total Users", value: users.length },
+        { label: "Total Items", value: total },
+        { label: "Active Items", value: activeTotal },
+      ].map(({ label, value }) => (
+        <div class="card stat-card">
+          <span class="stat-num">{value}</span>
+          <span class="stat-label">{label}</span>
+        </div>
+      ))}
+    </div>
+
+    <section class="section">
+      <h2 class="section-title">Items</h2>
+      <table class="data-table">
+        <thead>
+          <tr><th>Title</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr>
+              <td class="td-title">{item.title}</td>
+              <td><span class={`badge badge-${item.status}`}>{item.status}</span></td>
+              <td class="td-date">{formatDate(item.created_at)}</td>
+              <td class="td-actions">
+                <form method="POST" style="display:inline">
+                  <input type="hidden" name="item_id" value={item.id} />
+                  <input type="hidden" name="action" value={item.status === "active" ? "deactivate" : "activate"} />
+                  <button class="btn-link">{item.status === "active" ? "Deactivate" : "Activate"}</button>
+                </form>
+                <form method="POST" style="display:inline" onsubmit="return confirm('Delete this item?')">
+                  <input type="hidden" name="item_id" value={item.id} />
+                  <input type="hidden" name="action" value="delete" />
+                  <button class="btn-link danger">Delete</button>
+                </form>
+              </td>
+            </tr>
+          ))}
+          {items.length === 0 && <tr><td colspan="4" class="td-empty">No items</td></tr>}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Users</h2>
+      <table class="data-table">
+        <thead>
+          <tr><th>Name</th><th>Role</th><th>Joined</th></tr>
+        </thead>
+        <tbody>
+          {users.map((u) => (
+            <tr>
+              <td class="td-title">{u.display_name ?? "(unnamed)"}</td>
+              <td><span class="badge">{u.role}</span></td>
+              <td class="td-date">{formatDate(u.created_at)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .page-title { font-size: 36px; font-weight: 900; color: #fff; margin-bottom: 32px; }
+  .stats-row { display: flex; gap: 16px; margin-bottom: 40px; flex-wrap: wrap; }
+  .stat-card { min-width: 140px; display: flex; flex-direction: column; gap: 4px; }
+  .stat-num { font-size: 36px; font-weight: 900; color: #FF5E1A; }
+  .stat-label { font-size: 13px; color: #808099; font-weight: 600; }
+  .section { margin-bottom: 48px; }
+  .section-title { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 16px; }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th { text-align: left; font-size: 12px; font-weight: 700; color: #808099; text-transform: uppercase; letter-spacing: 0.6px; padding: 0 12px 12px 0; }
+  .data-table td { padding: 12px 12px 12px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+  .td-title { font-weight: 600; color: #fff; }
+  .td-date { font-size: 13px; color: #808099; }
+  .td-empty { text-align: center; color: #808099; padding: 32px 0; }
+  .td-actions { display: flex; gap: 12px; }
+  .btn-link { background: none; border: none; font-size: 13px; font-weight: 600; color: #FF5E1A; cursor: pointer; padding: 0; }
+  .btn-link.danger { color: #FF3B55; }
+  .btn-link:hover { opacity: 0.8; }
+</style>

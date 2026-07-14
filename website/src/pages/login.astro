@@ -1,0 +1,116 @@
+---
+import Layout from "../components/layout/Layout.astro";
+---
+
+<Layout title="Sign in">
+  <div class="page">
+    <div class="container">
+      <div class="login-card card">
+        <h1 class="title">Sign in</h1>
+        <p class="subtitle">Enter your email for a one-time magic link</p>
+
+        <div id="form-state">
+          <form id="magic-form" class="form">
+            <div class="field">
+              <label for="email">Email address</label>
+              <input id="email" type="email" placeholder="you@example.com" required autocomplete="email" />
+            </div>
+            <div class="legal">
+              <label class="check-row">
+                <input id="terms" type="checkbox" required />
+                I agree to the <a href="/terms">Terms of Service</a>
+              </label>
+              <label class="check-row">
+                <input id="privacy" type="checkbox" required />
+                I agree to the <a href="/privacy">Privacy Policy</a>
+              </label>
+            </div>
+            <p id="form-error" class="error-msg hidden"></p>
+            <button type="submit" class="btn btn-primary submit-btn" id="submit-btn">Send magic link</button>
+          </form>
+
+          <div class="divider"><span>or</span></div>
+
+          <button id="google-btn" class="btn btn-secondary google-btn">
+            <span>G</span> Continue with Google
+          </button>
+        </div>
+
+        <div id="sent-state" class="sent hidden">
+          <p class="sent-icon">📬</p>
+          <h2>Check your inbox!</h2>
+          <p class="sent-desc">We sent a magic link to <strong id="sent-email"></strong></p>
+          <button id="back-btn" class="btn btn-ghost">Use a different email</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { supabase } from "../lib/supabase";
+  import { signInWithMagicLink, signInWithGoogle } from "../../shared/services/authService";
+
+  const form = document.getElementById("magic-form") as HTMLFormElement;
+  const submitBtn = document.getElementById("submit-btn") as HTMLButtonElement;
+  const errorEl = document.getElementById("form-error") as HTMLParagraphElement;
+  const formState = document.getElementById("form-state")!;
+  const sentState = document.getElementById("sent-state")!;
+  const sentEmail = document.getElementById("sent-email")!;
+  const backBtn = document.getElementById("back-btn")!;
+  const googleBtn = document.getElementById("google-btn") as HTMLButtonElement;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = (document.getElementById("email") as HTMLInputElement).value.trim();
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending…";
+    errorEl.classList.add("hidden");
+
+    const { error } = await signInWithMagicLink(supabase, email, "web");
+    if (error) {
+      errorEl.textContent = error.message;
+      errorEl.classList.remove("hidden");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Send magic link";
+    } else {
+      sentEmail.textContent = email;
+      formState.classList.add("hidden");
+      sentState.classList.remove("hidden");
+    }
+  });
+
+  backBtn.addEventListener("click", () => {
+    sentState.classList.add("hidden");
+    formState.classList.remove("hidden");
+  });
+
+  googleBtn.addEventListener("click", async () => {
+    googleBtn.disabled = true;
+    const { error } = await signInWithGoogle(supabase);
+    if (error) { errorEl.textContent = error.message; errorEl.classList.remove("hidden"); googleBtn.disabled = false; }
+  });
+</script>
+
+<style>
+  .page { display: flex; align-items: center; min-height: calc(100vh - 64px); }
+  .login-card { max-width: 420px; margin: 0 auto; padding: 40px; }
+  .title { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .subtitle { font-size: 14px; color: #B3B3CC; margin-bottom: 32px; }
+  .form { display: flex; flex-direction: column; gap: 16px; }
+  .field label { display: block; font-size: 12px; font-weight: 700; color: #808099; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+  .field input { display: block; }
+  .legal { display: flex; flex-direction: column; gap: 10px; }
+  .check-row { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #B3B3CC; cursor: pointer; }
+  .check-row input { margin-top: 2px; width: auto; }
+  .submit-btn { width: 100%; }
+  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #808099; font-size: 12px; text-transform: uppercase; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+  .google-btn { width: 100%; }
+  .error-msg { color: #FF3B55; font-size: 13px; margin-top: -8px; }
+  .hidden { display: none; }
+  .sent { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .sent-icon { font-size: 48px; }
+  .sent h2 { font-size: 22px; font-weight: 800; color: #fff; }
+  .sent-desc { font-size: 14px; color: #B3B3CC; line-height: 1.6; }
+</style>

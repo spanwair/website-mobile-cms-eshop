@@ -1,0 +1,64 @@
+---
+import Layout from "../components/layout/Layout.astro";
+import { supabase } from "../lib/supabase";
+import { fetchItems } from "../../shared/services/itemService";
+
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const { data: items, total } = await fetchItems(supabase, 1, 5);
+const { data: activeItems, total: activeTotal } = await fetchItems(supabase, 1, 1, "active");
+---
+
+<Layout title="Dashboard">
+  <div class="page container">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="welcome">Welcome back, <strong>{session.user.email}</strong></p>
+
+    <div class="stats-row">
+      {[
+        { label: "Total Items", value: total },
+        { label: "Active Items", value: activeTotal },
+      ].map(({ label, value }) => (
+        <div class="card stat-card">
+          <span class="stat-num">{value}</span>
+          <span class="stat-label">{label}</span>
+        </div>
+      ))}
+    </div>
+
+    <section class="recent">
+      <div class="section-header">
+        <h2>Recent Items</h2>
+        <a href="/items" class="btn btn-secondary btn-sm">View all →</a>
+      </div>
+      <div class="grid grid-3">
+        {items.map((item) => (
+          <a href={`/items/${item.id}`} class="card item-card">
+            <span class={`badge badge-${item.status}`}>{item.status}</span>
+            <h3 class="item-title">{item.title}</h3>
+            {item.description && <p class="item-desc">{item.description.slice(0, 80)}…</p>}
+          </a>
+        ))}
+        {items.length === 0 && <p class="empty-msg">No items yet. <a href="/items">Create one →</a></p>}
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .page-title { font-size: 36px; font-weight: 900; color: #fff; margin-bottom: 8px; }
+  .welcome { color: #B3B3CC; margin-bottom: 32px; }
+  .stats-row { display: flex; gap: 16px; margin-bottom: 40px; }
+  .stat-card { min-width: 140px; display: flex; flex-direction: column; gap: 4px; }
+  .stat-num { font-size: 36px; font-weight: 900; color: #FF5E1A; }
+  .stat-label { font-size: 13px; color: #808099; font-weight: 600; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .section-header h2 { font-size: 20px; font-weight: 700; color: #fff; }
+  .btn-sm { padding: 6px 16px; font-size: 13px; }
+  .item-card { display: flex; flex-direction: column; gap: 10px; text-decoration: none; transition: border-color 0.15s; }
+  .item-card:hover { border-color: #FF5E1A; text-decoration: none; }
+  .item-title { font-size: 16px; font-weight: 700; color: #fff; }
+  .item-desc { font-size: 13px; color: #B3B3CC; line-height: 1.5; }
+  .empty-msg { color: #808099; }
+</style>
