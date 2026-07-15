@@ -15,10 +15,10 @@ if [[ "$ENV" == "production" ]]; then
     exit 1
   fi
   echo "Pushing DB migrations to PRODUCTION..."
-  supabase db push --linked
+  npx supabase db push --linked
 else
   echo "Pushing DB migrations to DEVELOPMENT..."
-  supabase db push --linked
+  npx supabase db push --linked
 fi
 
 echo "Done: $ENV"

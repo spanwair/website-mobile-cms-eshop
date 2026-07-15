@@ -5,8 +5,13 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@shared/*": ["../shared/*"]
+      "@shared/*": ["../shared/*"],
+      "@supabase/supabase-js": ["./node_modules/@supabase/supabase-js"],
+      "@supabase/supabase-js/*": ["./node_modules/@supabase/supabase-js/*"],
+      "i18next": ["./node_modules/i18next"],
+      "react-i18next": ["./node_modules/react-i18next"],
+      "react-i18next/*": ["./node_modules/react-i18next/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", "../shared/**/*.ts"]
+  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts", "../shared/**/*.ts"]
 }

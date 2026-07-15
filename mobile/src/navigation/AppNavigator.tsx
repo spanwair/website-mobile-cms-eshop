@@ -1,16 +1,18 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Home, List, User, Shield } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
+import { Home, List, User, Shield, Settings } from "lucide-react-native";
+import React, { useEffect } from "react";
 import { supabase } from "../../supabase/client";
-import { colors } from "../../../shared/constants/theme";
+import { useAuthStore } from "../lib/store/auth";
+import { getItem } from "../lib/storage";
 import { LoginScreen } from "../screens/Auth/LoginScreen";
 import { HomeScreen } from "../screens/Home/HomeScreen";
 import { ItemsStack } from "../screens/Items/ItemsStack";
 import { ProfileScreen } from "../screens/Profile/ProfileScreen";
 import { AdminStack } from "../screens/Admin/AdminStack";
+import { OnboardingScreen } from "../screens/Onboarding/OnboardingScreen";
+import { SettingsScreen } from "../screens/Settings/SettingsScreen";
 import type { RootStackParamList, MainTabParamList } from "./types";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
 
@@ -22,9 +24,9 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: colors.tabBg, borderTopColor: colors.border },
-        tabBarActiveTintColor: colors.tabActive,
-        tabBarInactiveTintColor: colors.tabInactive,
+        tabBarStyle: { backgroundColor: "#0F0F1A", borderTopColor: "#252538" },
+        tabBarActiveTintColor: "#FF5E1A",
+        tabBarInactiveTintColor: "#808099",
       }}
     >
       <Tab.Screen
@@ -43,6 +45,11 @@ function MainTabs() {
         options={{ tabBarIcon: ({ color }) => <User size={22} color={color} />, tabBarLabel: "Profile" }}
       />
       <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ tabBarIcon: ({ color }) => <Settings size={22} color={color} />, tabBarLabel: "Settings" }}
+      />
+      <Tab.Screen
         name="Admin"
         component={AdminStack}
         options={{ tabBarIcon: ({ color }) => <Shield size={22} color={color} />, tabBarLabel: "Admin" }}
@@ -52,29 +59,35 @@ function MainTabs() {
 }
 
 export function AppNavigator() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const status = useAuthStore.use.status();
+  const setSession = useAuthStore.use.setSession();
+  const onboardingDone = getItem<boolean>("onboarding_done") === true;
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
     });
 
     return () => listener.subscription.unsubscribe();
-  }, []);
+  }, [setSession]);
 
-  if (loading) return <LoadingScreen />;
+  if (status === "loading") return <LoadingScreen />;
 
   return (
     <NavigationContainer>
       <Root.Navigator screenOptions={{ headerShown: false }}>
-        {session ? (
+        {status === "authenticated" ? (
           <Root.Screen name="Main" component={MainTabs} />
+        ) : !onboardingDone ? (
+          <Root.Screen name="Onboarding">
+            {({ navigation }) => (
+              <OnboardingScreen onDone={() => navigation.replace("Auth")} />
+            )}
+          </Root.Screen>
         ) : (
           <Root.Screen name="Auth" component={LoginScreen} />
         )}

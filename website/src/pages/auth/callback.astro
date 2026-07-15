@@ -1,0 +1,47 @@
+---
+import { createSupabase } from "../../lib/supabase";
+
+const supabase = createSupabase(Astro);
+const code = Astro.url.searchParams.get("code");
+const token_hash = Astro.url.searchParams.get("token_hash");
+const type = Astro.url.searchParams.get("type") as Parameters<typeof supabase.auth.verifyOtp>[0]["type"] | null;
+
+let userId: string | null = null;
+let userMeta: Record<string, string | null> = {};
+let userEmail: string | null = null;
+
+if (code) {
+  const { data } = await supabase.auth.exchangeCodeForSession(code);
+  if (data.session) {
+    userId = data.session.user.id;
+    userMeta = (data.session.user.user_metadata ?? {}) as Record<string, string | null>;
+    userEmail = data.session.user.email ?? null;
+  }
+} else if (token_hash && type) {
+  const { data } = await supabase.auth.verifyOtp({ token_hash, type });
+  if (data.session) {
+    userId = data.session.user.id;
+    userMeta = (data.session.user.user_metadata ?? {}) as Record<string, string | null>;
+    userEmail = data.session.user.email ?? null;
+  }
+}
+
+if (userId) {
+  const googleName = userMeta["full_name"] ?? userMeta["name"] ?? null;
+  const googleAvatar = userMeta["avatar_url"] ?? userMeta["picture"] ?? null;
+
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("display_name, avatar_url")
+    .eq("id", userId)
+    .single();
+
+  await supabase.from("profiles").upsert({
+    id: userId,
+    display_name: existing?.display_name ?? googleName ?? userEmail?.split("@")[0] ?? null,
+    avatar_url: existing?.avatar_url ?? googleAvatar ?? null,
+  }, { onConflict: "id" });
+}
+
+return Astro.redirect("/dashboard");
+---

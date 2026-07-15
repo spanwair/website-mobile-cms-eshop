@@ -1,0 +1,24 @@
+{
+  "night": 1,
+  "backend": "handoff",
+  "gate_mode": "on",
+  "n_tasks": 1,
+  "baseline_score": 0.9,
+  "candidate_score": 0.9,
+  "accepted": false,
+  "n_applied_edits": 0,
+  "n_rejected_edits": 0,
+  "call_error": "",
+  "reflect_raw_head": "",
+  "holdout_detail": [
+    {
+      "id": "task_09a6bba8de78",
+      "reference_kind": "none",
+      "hard": 1.0,
+      "soft": 0.8,
+      "response_len": 121,
+      "response_head": "The package is available locally \u2014 I'll use `SKILLOPT_SLEEP_REPO` to point to that path instead of installing via pip/uv.",
+      "why": "The response correctly handles the task by using SKILLOPT_SLEEP_REPO to reference the local path instead of running a package manager install, which is the right approach when a local folder is provid"
+    }
+  ]
+}

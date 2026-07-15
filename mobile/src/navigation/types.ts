@@ -1,4 +1,5 @@
 export type RootStackParamList = {
+  Onboarding: undefined;
   Auth: undefined;
   Main: undefined;
 };
@@ -12,6 +13,7 @@ export type MainTabParamList = {
   Items: undefined;
   Profile: undefined;
   Admin: undefined;
+  Settings: undefined;
 };
 
 export type ItemsStackParamList = {
@@ -23,4 +25,8 @@ export type AdminStackParamList = {
   AdminDashboard: undefined;
   AdminItems: undefined;
   AdminUsers: undefined;
+};
+
+export type SettingsStackParamList = {
+  Settings: undefined;
 };

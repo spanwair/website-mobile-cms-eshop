@@ -1,6 +1,5 @@
 import React from "react";
-import { TouchableOpacity, Text, ActivityIndicator, StyleSheet } from "react-native";
-import { colors, radius } from "../../../../shared/constants/theme";
+import { TouchableOpacity, Text, ActivityIndicator } from "react-native";
 
 interface Props {
   label: string;
@@ -8,38 +7,39 @@ interface Props {
   variant?: "primary" | "secondary" | "ghost";
   loading?: boolean;
   disabled?: boolean;
+  className?: string;
 }
 
-export function Button({ label, onPress, variant = "primary", loading, disabled }: Props) {
+const VARIANT = {
+  primary: { btn: "bg-primary", text: "text-white" },
+  secondary: { btn: "border border-primary bg-transparent", text: "text-primary" },
+  ghost: { btn: "bg-transparent", text: "text-gray-500 dark:text-gray-400" },
+} as const;
+
+export function Button({
+  label,
+  onPress,
+  variant = "primary",
+  loading,
+  disabled,
+  className = "",
+}: Props) {
+  const v = VARIANT[variant];
   return (
     <TouchableOpacity
-      style={[styles.base, styles[variant], (disabled || loading) && styles.disabled]}
+      className={`h-14 rounded-full items-center justify-center px-8 ${v.btn} ${disabled || loading ? "opacity-50" : ""} ${className}`}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
     >
-      {loading
-        ? <ActivityIndicator color={variant === "primary" ? "#fff" : colors.primary} size="small" />
-        : <Text style={[styles.label, styles[`${variant}Label`]]}>{label}</Text>
-      }
+      {loading ? (
+        <ActivityIndicator
+          color={variant === "primary" ? "#fff" : "#FF5E1A"}
+          size="small"
+        />
+      ) : (
+        <Text className={`text-base font-bold ${v.text}`}>{label}</Text>
+      )}
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    height: 52,
-    borderRadius: radius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 32,
-  },
-  primary: { backgroundColor: colors.primary },
-  secondary: { borderWidth: 1.5, borderColor: colors.primary, backgroundColor: "transparent" },
-  ghost: { backgroundColor: "transparent" },
-  disabled: { opacity: 0.5 },
-  label: { fontSize: 16, fontWeight: "700" },
-  primaryLabel: { color: "#fff" },
-  secondaryLabel: { color: colors.primary },
-  ghostLabel: { color: colors.textSecondary },
-});

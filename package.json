@@ -8,6 +8,10 @@
     "website": "cd website && pnpm dev",
     "install:all": "pnpm -r install",
     "db:push": "./scripts/db-push.sh",
-    "functions:deploy": "./scripts/functions-deploy.sh"
+    "functions:deploy": "./scripts/functions-deploy.sh",
+    "build:android:dev": "./scripts/build-dev-android.sh",
+    "build:android:prod": "./scripts/build-production.sh",
+    "build:android:prod:aab": "./scripts/build-production.sh --aab",
+    "verify": "./scripts/verify-tooling.sh"
   }
 }

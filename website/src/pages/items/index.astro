@@ -1,9 +1,10 @@
 ---
 import Layout from "../../components/layout/Layout.astro";
-import { supabase } from "../../lib/supabase";
-import { fetchItems } from "../../../shared/services/itemService";
-import { formatDate } from "../../../shared/utils/format";
+import { createSupabase } from "../../lib/supabase";
+import { fetchItems } from "@shared/services/itemService";
+import { formatDate } from "@shared/utils/format";
 
+const supabase = createSupabase(Astro);
 const page = Number(Astro.url.searchParams.get("page") ?? 1);
 const { data: items, total } = await fetchItems(supabase, page, 12);
 const totalPages = Math.ceil(total / 12);

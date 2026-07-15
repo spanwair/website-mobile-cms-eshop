@@ -1,29 +1,30 @@
 ---
 import Layout from "../../components/layout/Layout.astro";
-import { supabase } from "../../lib/supabase";
-import { fetchItems, updateItem, deleteItem } from "../../../shared/services/itemService";
-import { fetchAllUsers } from "../../../shared/services/profileService";
-import { formatDate } from "../../../shared/utils/format";
+import { createSupabase } from "../../lib/supabase";
+import { fetchItems, updateItem, deleteItem } from "@shared/services/itemService";
+import { fetchAllUsers } from "@shared/services/profileService";
+import { formatDate } from "@shared/utils/format";
 
+const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const profile = await supabase.from("profiles").select("role").eq("id", session.user.id).single();
-if (profile.data?.role !== "admin") return Astro.redirect("/dashboard");
+const { data: profileRow } = await supabase.from("profiles").select("role").eq("id", session.user.id).single();
+if (profileRow?.role !== "admin") return Astro.redirect("/dashboard");
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const action = form.get("action") as string;
   const itemId = form.get("item_id") as string;
-  if (action === "delete") await deleteItem(supabase, itemId);
-  if (action === "activate") await updateItem(supabase, itemId, { status: "active" });
+  if (action === "delete")     await deleteItem(supabase, itemId);
+  if (action === "activate")   await updateItem(supabase, itemId, { status: "active" });
   if (action === "deactivate") await updateItem(supabase, itemId, { status: "inactive" });
   return Astro.redirect("/admin");
 }
 
 const { data: items, total } = await fetchItems(supabase);
 const users = await fetchAllUsers(supabase);
-const { data: activeItems, total: activeTotal } = await fetchItems(supabase, 1, 1, "active");
+const { total: activeTotal } = await fetchItems(supabase, 1, 1, "active");
 ---
 
 <Layout title="Admin">
@@ -46,9 +47,7 @@ const { data: activeItems, total: activeTotal } = await fetchItems(supabase, 1, 
     <section class="section">
       <h2 class="section-title">Items</h2>
       <table class="data-table">
-        <thead>
-          <tr><th>Title</th><th>Status</th><th>Created</th><th>Actions</th></tr>
-        </thead>
+        <thead><tr><th>Title</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
         <tbody>
           {items.map((item) => (
             <tr>
@@ -77,9 +76,7 @@ const { data: activeItems, total: activeTotal } = await fetchItems(supabase, 1, 
     <section class="section">
       <h2 class="section-title">Users</h2>
       <table class="data-table">
-        <thead>
-          <tr><th>Name</th><th>Role</th><th>Joined</th></tr>
-        </thead>
+        <thead><tr><th>Name</th><th>Role</th><th>Joined</th></tr></thead>
         <tbody>
           {users.map((u) => (
             <tr>
@@ -111,5 +108,4 @@ const { data: activeItems, total: activeTotal } = await fetchItems(supabase, 1, 
   .td-actions { display: flex; gap: 12px; }
   .btn-link { background: none; border: none; font-size: 13px; font-weight: 600; color: #FF5E1A; cursor: pointer; padding: 0; }
   .btn-link.danger { color: #FF3B55; }
-  .btn-link:hover { opacity: 0.8; }
 </style>

@@ -1,0 +1,32 @@
+{
+  "format": "skillopt_sleep.tasks.v1",
+  "project": "/home/jan/PROJECTS/react-native/website-mobile-template",
+  "transcript_source": "claude",
+  "n_sessions": 1,
+  "target_skill_path": "",
+  "reviewed": false,
+  "tasks": [
+    {
+      "id": "task_09a6bba8de78",
+      "project": "/home/jan/PROJECTS/react-native/website-mobile-template",
+      "intent": "allow install. It is in the folder: /home/jan/PROJECTS/react-native/smalljobs-mobile/agents/SkillOpt",
+      "context_excerpt": "",
+      "system": "",
+      "attempted_solution": "The package is available locally — I'll use `SKILLOPT_SLEEP_REPO` to point to it instead of installing.",
+      "outcome": "unknown",
+      "reference_kind": "none",
+      "reference": "",
+      "judge": {},
+      "tags": [
+        "tools:Skill+Bash",
+        "branch:master"
+      ],
+      "source_sessions": [
+        "1f8de425-e54f-4545-97c1-2ba88f3b43e4"
+      ],
+      "split": "train",
+      "origin": "real",
+      "derived_from": ""
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+:root {
+  --color-primary: #FF5E1A;
+  --color-primary-dark: #E54D0A;
+  --color-success: #00E6A0;
+  --color-warning: #FFB800;
+  --color-danger: #FF3B55;
+  --color-bg: #0F0F1A;
+  --color-bg-card: #1A1A2E;
+  --color-bg-elevated: #252540;
+  --color-bg-input: #1E1E35;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #B3B3CC;
+  --color-text-muted: #808099;
+  --color-border: rgba(255,255,255,0.10);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-family: system-ui, -apple-system, sans-serif; }
+body { background: var(--color-bg); color: var(--color-text-primary); min-height: 100vh; }
+
+a { color: var(--color-primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button, .btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 28px; border-radius: var(--radius-full); font-size: 15px;
+  font-weight: 700; cursor: pointer; border: none; transition: opacity 0.15s;
+}
+button:hover, .btn:hover { opacity: 0.85; }
+button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary { background: var(--color-primary); color: #fff; }
+.btn-secondary { background: transparent; color: var(--color-primary); border: 1.5px solid var(--color-primary); }
+.btn-ghost { background: transparent; color: var(--color-text-secondary); }
+.btn-danger { background: var(--color-danger); color: #fff; }
+
+.card {
+  background: var(--color-bg-card); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: 20px;
+}
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.page { padding: 40px 0 80px; }
+
+input, textarea, select {
+  background: var(--color-bg-input); border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md); padding: 12px 16px; font-size: 15px;
+  color: var(--color-text-primary); width: 100%;
+}
+input:focus, textarea:focus { outline: 2px solid var(--color-primary); border-color: var(--color-primary); }
+
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: var(--radius-full);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+}
+.badge-active { background: rgba(0,230,160,0.15); color: var(--color-success); }
+.badge-draft  { background: rgba(255,184,0,0.15); color: var(--color-warning); }
+.badge-inactive { background: rgba(128,128,153,0.15); color: var(--color-text-muted); }
+
+.grid { display: grid; gap: 16px; }
+.grid-3 { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }

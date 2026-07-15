@@ -1,22 +1,19 @@
 import React from "react";
-import { View, StyleSheet, type ViewStyle } from "react-native";
-import { colors, radius } from "../../../../shared/constants/theme";
+import { View, type ViewStyle } from "react-native";
 
 interface Props {
   children: React.ReactNode;
   style?: ViewStyle;
+  className?: string;
 }
 
-export function Card({ children, style }: Props) {
-  return <View style={[styles.card, style]}>{children}</View>;
+export function Card({ children, style, className = "" }: Props) {
+  return (
+    <View
+      className={`bg-[#1A1A2E] dark:bg-[#1A1A2E] rounded-2xl p-4 border border-[#252538] ${className}`}
+      style={style}
+    >
+      {children}
+    </View>
+  );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.lg,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-});

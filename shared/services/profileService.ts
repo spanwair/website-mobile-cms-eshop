@@ -51,5 +51,5 @@ export async function fetchAllUsers(client: Client): Promise<User[]> {
     .order("created_at", { ascending: false });
 
   if (error || !data) return [];
-  return data.map((row) => toUser(row, ""));
+  return data.map((row: ProfileRow) => toUser(row, ""));
 }

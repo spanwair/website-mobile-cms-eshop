@@ -10,11 +10,14 @@
     "lint": "eslint src --ext .ts,.astro"
   },
   "dependencies": {
+    "@astrojs/node": "^8.3.4",
+    "@supabase/ssr": "^0.12.1",
     "@supabase/supabase-js": "^2.45.0",
     "astro": "^5.0.0",
     "i18next": "^26.0.4"
   },
   "devDependencies": {
+    "@types/node": "^26.1.1",
     "@typescript-eslint/eslint-plugin": "^8.58.2",
     "@typescript-eslint/parser": "^8.58.2",
     "typescript": "~5.9.2"

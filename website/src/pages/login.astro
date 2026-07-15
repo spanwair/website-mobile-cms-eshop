@@ -1,46 +1,79 @@
 ---
 import Layout from "../components/layout/Layout.astro";
+import { createSupabase } from "../lib/supabase";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (session) return Astro.redirect("/dashboard");
 ---
 
 <Layout title="Sign in">
   <div class="page">
     <div class="container">
-      <div class="login-card card">
-        <h1 class="title">Sign in</h1>
-        <p class="subtitle">Enter your email for a one-time magic link</p>
+      <div class="auth-card card">
+        <a href="/" class="auth-brand">Template</a>
 
-        <div id="form-state">
-          <form id="magic-form" class="form">
-            <div class="field">
-              <label for="email">Email address</label>
-              <input id="email" type="email" placeholder="you@example.com" required autocomplete="email" />
-            </div>
-            <div class="legal">
-              <label class="check-row">
-                <input id="terms" type="checkbox" required />
-                I agree to the <a href="/terms">Terms of Service</a>
-              </label>
-              <label class="check-row">
-                <input id="privacy" type="checkbox" required />
-                I agree to the <a href="/privacy">Privacy Policy</a>
-              </label>
-            </div>
-            <p id="form-error" class="error-msg hidden"></p>
-            <button type="submit" class="btn btn-primary submit-btn" id="submit-btn">Send magic link</button>
-          </form>
+        <div id="mode-signin">
+          <h1 class="auth-title">Welcome back</h1>
+          <p class="auth-sub">Sign in to your account</p>
+
+          <button id="google-btn-si" class="btn btn-secondary full-width google-btn" type="button">
+            <span class="google-icon">G</span> Continue with Google
+          </button>
 
           <div class="divider"><span>or</span></div>
 
-          <button id="google-btn" class="btn btn-secondary google-btn">
-            <span>G</span> Continue with Google
-          </button>
+          <p id="error-si" class="error-msg hidden"></p>
+
+          <form id="signin-form" class="form">
+            <div class="field">
+              <label for="si-email">Email</label>
+              <input id="si-email" type="email" placeholder="you@example.com" required autocomplete="email" />
+            </div>
+            <div class="field">
+              <label for="si-password">Password</label>
+              <input id="si-password" type="password" placeholder="••••••••" required autocomplete="current-password" />
+            </div>
+            <button type="submit" class="btn btn-primary full-width" id="signin-btn">Sign in</button>
+          </form>
+
+          <p class="switch-hint">No account? <button type="button" class="link-btn" id="to-signup">Create one</button></p>
         </div>
 
-        <div id="sent-state" class="sent hidden">
-          <p class="sent-icon">📬</p>
-          <h2>Check your inbox!</h2>
-          <p class="sent-desc">We sent a magic link to <strong id="sent-email"></strong></p>
-          <button id="back-btn" class="btn btn-ghost">Use a different email</button>
+        <div id="mode-signup" class="hidden">
+          <h1 class="auth-title">Create account</h1>
+          <p class="auth-sub">Join us today</p>
+
+          <button id="google-btn-su" class="btn btn-secondary full-width google-btn" type="button">
+            <span class="google-icon">G</span> Continue with Google
+          </button>
+
+          <div class="divider"><span>or</span></div>
+
+          <p id="error-su" class="error-msg hidden"></p>
+          <p id="success-su" class="success-msg hidden"></p>
+
+          <form id="signup-form" class="form">
+            <div class="field">
+              <label for="su-name">Full name</label>
+              <input id="su-name" type="text" placeholder="Your full name" required autocomplete="name" minlength="2" maxlength="100" />
+            </div>
+            <div class="field">
+              <label for="su-email">Email</label>
+              <input id="su-email" type="email" placeholder="you@example.com" required autocomplete="email" />
+            </div>
+            <div class="field">
+              <label for="su-password">Password <span class="field-hint">min. 8 characters</span></label>
+              <input id="su-password" type="password" placeholder="Min. 8 characters" required autocomplete="new-password" minlength="8" />
+            </div>
+            <div class="field">
+              <label for="su-confirm">Confirm password</label>
+              <input id="su-confirm" type="password" placeholder="Repeat password" required autocomplete="new-password" />
+            </div>
+            <button type="submit" class="btn btn-primary full-width" id="signup-btn">Create account</button>
+          </form>
+
+          <p class="switch-hint">Have an account? <button type="button" class="link-btn" id="to-signin">Sign in</button></p>
         </div>
       </div>
     </div>
@@ -48,69 +81,125 @@ import Layout from "../components/layout/Layout.astro";
 </Layout>
 
 <script>
-  import { supabase } from "../lib/supabase";
-  import { signInWithMagicLink, signInWithGoogle } from "../../shared/services/authService";
+  import { createBrowserClient } from "@supabase/ssr";
 
-  const form = document.getElementById("magic-form") as HTMLFormElement;
-  const submitBtn = document.getElementById("submit-btn") as HTMLButtonElement;
-  const errorEl = document.getElementById("form-error") as HTMLParagraphElement;
-  const formState = document.getElementById("form-state")!;
-  const sentState = document.getElementById("sent-state")!;
-  const sentEmail = document.getElementById("sent-email")!;
-  const backBtn = document.getElementById("back-btn")!;
-  const googleBtn = document.getElementById("google-btn") as HTMLButtonElement;
+  const url = import.meta.env.PUBLIC_SUPABASE_URL ?? "";
+  const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? "";
+  const supabase = createBrowserClient(url, key);
 
-  form.addEventListener("submit", async (e) => {
+  const modeSignin = document.getElementById("mode-signin")!;
+  const modeSignup = document.getElementById("mode-signup")!;
+
+  document.getElementById("to-signup")!.addEventListener("click", () => {
+    modeSignin.classList.add("hidden");
+    modeSignup.classList.remove("hidden");
+  });
+  document.getElementById("to-signin")!.addEventListener("click", () => {
+    modeSignup.classList.add("hidden");
+    modeSignin.classList.remove("hidden");
+  });
+
+  function showError(id: string, msg: string) {
+    const el = document.getElementById(id)!;
+    el.textContent = msg;
+    el.classList.remove("hidden");
+  }
+  function clearEl(id: string) {
+    document.getElementById(id)!.classList.add("hidden");
+  }
+
+  async function googleSignIn() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) showError("error-si", error.message);
+  }
+  document.getElementById("google-btn-si")!.addEventListener("click", googleSignIn);
+  document.getElementById("google-btn-su")!.addEventListener("click", googleSignIn);
+
+  document.getElementById("signin-form")!.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const email = (document.getElementById("email") as HTMLInputElement).value.trim();
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Sending…";
-    errorEl.classList.add("hidden");
+    clearEl("error-si");
+    const btn = document.getElementById("signin-btn") as HTMLButtonElement;
+    const email = (document.getElementById("si-email") as HTMLInputElement).value.trim();
+    const password = (document.getElementById("si-password") as HTMLInputElement).value;
+    btn.disabled = true;
+    btn.textContent = "Signing in…";
 
-    const { error } = await signInWithMagicLink(supabase, email, "web");
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      errorEl.textContent = error.message;
-      errorEl.classList.remove("hidden");
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Send magic link";
+      showError("error-si", error.message);
+      btn.disabled = false;
+      btn.textContent = "Sign in";
     } else {
-      sentEmail.textContent = email;
-      formState.classList.add("hidden");
-      sentState.classList.remove("hidden");
+      window.location.href = "/dashboard";
     }
   });
 
-  backBtn.addEventListener("click", () => {
-    sentState.classList.add("hidden");
-    formState.classList.remove("hidden");
-  });
+  document.getElementById("signup-form")!.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearEl("error-su");
+    clearEl("success-su");
 
-  googleBtn.addEventListener("click", async () => {
-    googleBtn.disabled = true;
-    const { error } = await signInWithGoogle(supabase);
-    if (error) { errorEl.textContent = error.message; errorEl.classList.remove("hidden"); googleBtn.disabled = false; }
+    const btn = document.getElementById("signup-btn") as HTMLButtonElement;
+    const name = (document.getElementById("su-name") as HTMLInputElement).value.trim();
+    const email = (document.getElementById("su-email") as HTMLInputElement).value.trim();
+    const password = (document.getElementById("su-password") as HTMLInputElement).value;
+    const confirm = (document.getElementById("su-confirm") as HTMLInputElement).value;
+
+    if (name.length < 2) { showError("error-su", "Full name must be at least 2 characters."); return; }
+    if (password.length < 8) { showError("error-su", "Password must be at least 8 characters."); return; }
+    if (password !== confirm) { showError("error-su", "Passwords do not match."); return; }
+
+    btn.disabled = true;
+    btn.textContent = "Creating account…";
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: name, display_name: name } },
+    });
+
+    if (error) {
+      const msg = error.message.toLowerCase().includes("already registered")
+        ? "An account with this email already exists. Sign in instead."
+        : error.message;
+      showError("error-su", msg);
+      btn.disabled = false;
+      btn.textContent = "Create account";
+      return;
+    }
+
+    if (data.session) {
+      window.location.href = "/dashboard";
+    } else {
+      const el = document.getElementById("success-su")!;
+      el.textContent = "Check your email for a confirmation link.";
+      el.classList.remove("hidden");
+      btn.disabled = false;
+      btn.textContent = "Create account";
+    }
   });
 </script>
 
 <style>
   .page { display: flex; align-items: center; min-height: calc(100vh - 64px); }
-  .login-card { max-width: 420px; margin: 0 auto; padding: 40px; }
-  .title { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 8px; }
-  .subtitle { font-size: 14px; color: #B3B3CC; margin-bottom: 32px; }
+  .auth-card { max-width: 420px; margin: 0 auto; padding: 40px; }
+  .auth-brand { font-size: 22px; font-weight: 900; color: #4F46E5; display: block; text-align: center; margin-bottom: 28px; text-decoration: none; }
+  .auth-title { font-size: 24px; font-weight: 800; color: #212529; margin-bottom: 4px; text-align: center; }
+  .auth-sub { font-size: 14px; color: #6C757D; text-align: center; margin-bottom: 24px; }
+  .google-btn { margin-bottom: 0; }
+  .google-icon { font-size: 16px; font-weight: 900; }
   .form { display: flex; flex-direction: column; gap: 16px; }
-  .field label { display: block; font-size: 12px; font-weight: 700; color: #808099; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+  .field label { display: block; font-size: 12px; font-weight: 700; color: #6C757D; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+  .field-hint { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 11px; }
   .field input { display: block; }
-  .legal { display: flex; flex-direction: column; gap: 10px; }
-  .check-row { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #B3B3CC; cursor: pointer; }
-  .check-row input { margin-top: 2px; width: auto; }
-  .submit-btn { width: 100%; }
-  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #808099; font-size: 12px; text-transform: uppercase; }
-  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
-  .google-btn { width: 100%; }
-  .error-msg { color: #FF3B55; font-size: 13px; margin-top: -8px; }
-  .hidden { display: none; }
-  .sent { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-  .sent-icon { font-size: 48px; }
-  .sent h2 { font-size: 22px; font-weight: 800; color: #fff; }
-  .sent-desc { font-size: 14px; color: #B3B3CC; line-height: 1.6; }
+  .full-width { width: 100%; }
+  .switch-hint { font-size: 13px; color: #6C757D; text-align: center; margin-top: 20px; }
+  .link-btn { background: none; border: none; color: #4F46E5; font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; font-family: inherit; }
+  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #ADB5BD; font-size: 12px; text-transform: uppercase; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #E9ECEF; }
+  .error-msg { color: #EF4444; font-size: 13px; margin-bottom: 8px; }
+  .success-msg { color: #10B981; font-size: 13px; margin-bottom: 8px; }
 </style>

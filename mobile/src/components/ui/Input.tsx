@@ -1,30 +1,30 @@
 import React from "react";
-import { TextInput, View, Text, StyleSheet, type TextInputProps } from "react-native";
-import { colors, radius } from "../../../../shared/constants/theme";
+import { TextInput, View, Text, type TextInputProps } from "react-native";
 
 interface Props extends TextInputProps {
   label?: string;
   error?: string | null;
+  className?: string;
 }
 
-export function Input({ label, error, style, ...props }: Props) {
+export function Input({ label, error, className = "", ...props }: Props) {
   return (
-    <View style={styles.wrapper}>
-      {label ? <Text style={styles.label}>{label}</Text> : null}
+    <View className="mb-3">
+      {label ? (
+        <Text className="text-xs font-bold text-[#808099] uppercase tracking-wider mb-1.5">
+          {label}
+        </Text>
+      ) : null}
       <TextInput
-        style={[styles.input, error ? styles.inputError : null, style]}
-        placeholderTextColor={colors.textMuted}
+        className={`bg-[#1E1E35] dark:bg-[#1E1E35] border-[1.5px] ${
+          error ? "border-[#FF3B55]" : "border-[#252538]"
+        } rounded-2xl p-3.5 text-base text-white ${className}`}
+        placeholderTextColor="#808099"
         {...props}
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? (
+        <Text className="text-xs text-[#FF3B55] mt-1">{error}</Text>
+      ) : null}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrapper: { marginBottom: 12 },
-  label: { fontSize: 12, fontWeight: "700", color: colors.textMuted, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 6 },
-  input: { backgroundColor: colors.bgInput, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md, padding: 14, fontSize: 16, color: colors.textPrimary },
-  inputError: { borderColor: colors.danger },
-  error: { fontSize: 12, color: colors.danger, marginTop: 4 },
-});

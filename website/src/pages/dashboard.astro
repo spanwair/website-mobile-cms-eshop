@@ -1,13 +1,14 @@
 ---
 import Layout from "../components/layout/Layout.astro";
-import { supabase } from "../lib/supabase";
-import { fetchItems } from "../../shared/services/itemService";
+import { createSupabase } from "../lib/supabase";
+import { fetchItems } from "@shared/services/itemService";
 
+const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
 const { data: items, total } = await fetchItems(supabase, 1, 5);
-const { data: activeItems, total: activeTotal } = await fetchItems(supabase, 1, 1, "active");
+const { total: activeTotal } = await fetchItems(supabase, 1, 1, "active");
 ---
 
 <Layout title="Dashboard">
@@ -40,7 +41,7 @@ const { data: activeItems, total: activeTotal } = await fetchItems(supabase, 1, 
             {item.description && <p class="item-desc">{item.description.slice(0, 80)}…</p>}
           </a>
         ))}
-        {items.length === 0 && <p class="empty-msg">No items yet. <a href="/items">Create one →</a></p>}
+        {items.length === 0 && <p class="empty-msg">No items yet.</p>}
       </div>
     </section>
   </div>

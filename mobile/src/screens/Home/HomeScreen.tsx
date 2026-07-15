@@ -1,58 +1,46 @@
-import React, { useEffect, useState } from "react";
-import { Text, View, StyleSheet } from "react-native";
-import { supabase } from "../../../supabase/client";
-import { fetchProfile } from "../../../../shared/services/profileService";
-import { colors } from "../../../../shared/constants/theme";
+import React from "react";
+import { View, Text } from "react-native";
+import { useAuthStore } from "../../lib/store/auth";
+import { useProfile } from "../../lib/query/hooks/useProfile";
+import { useItems } from "../../lib/query/hooks/useItems";
 import { ScreenContainer } from "../../components/layout/ScreenContainer";
 import { Card } from "../../components/ui/Card";
-import type { User } from "../../../../shared/types";
 
 export function HomeScreen() {
-  const [user, setUser] = useState<User | null>(null);
+  const user = useAuthStore.use.user();
+  const { data: profile } = useProfile(user?.id);
+  const { data: items } = useItems();
 
-  useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      const profile = await fetchProfile(supabase, data.user.id, data.user.email ?? "");
-      setUser(profile);
-    });
-  }, []);
+  const displayName = profile?.display_name ?? user?.email?.split("@")[0] ?? "";
+
+  const stats = [
+    { label: "Items", value: String(items?.length ?? 0) },
+    { label: "Active", value: String(items?.filter((i) => i.status === "active").length ?? 0) },
+    { label: "Draft", value: String(items?.filter((i) => i.status === "draft").length ?? 0) },
+  ];
 
   return (
     <ScreenContainer title="Home">
-      <Card style={styles.welcomeCard}>
-        <Text style={styles.welcomeEmoji}>👋</Text>
-        <Text style={styles.welcomeTitle}>
-          Welcome{user?.display_name ? `, ${user.display_name}` : ""}!
+      <Card className="items-center mb-6 py-8">
+        <Text className="text-5xl mb-3">👋</Text>
+        <Text className="text-[22px] font-extrabold text-white mb-2">
+          {displayName ? `Welcome, ${displayName}!` : "Welcome!"}
         </Text>
-        <Text style={styles.welcomeBody}>
+        <Text className="text-sm text-text-secondary-dark text-center leading-5">
           This is your template app. Replace this screen with your home content.
         </Text>
       </Card>
 
-      <View style={styles.statsRow}>
-        {[
-          { label: "Items", value: "0" },
-          { label: "Users", value: "0" },
-          { label: "Active", value: "0" },
-        ].map(({ label, value }) => (
-          <Card key={label} style={styles.statCard}>
-            <Text style={styles.statValue}>{value}</Text>
-            <Text style={styles.statLabel}>{label}</Text>
+      <View className="flex-row gap-3">
+        {stats.map(({ label, value }) => (
+          <Card key={label} className="flex-1 items-center py-5">
+            <Text className="text-[28px] font-black text-primary">{value}</Text>
+            <Text className="text-xs text-text-muted-dark font-semibold mt-1 uppercase tracking-wide">
+              {label}
+            </Text>
           </Card>
         ))}
       </View>
     </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  welcomeCard: { alignItems: "center", marginBottom: 24, paddingVertical: 32 },
-  welcomeEmoji: { fontSize: 48, marginBottom: 12 },
-  welcomeTitle: { fontSize: 22, fontWeight: "800", color: colors.textPrimary, marginBottom: 8 },
-  welcomeBody: { fontSize: 14, color: colors.textSecondary, textAlign: "center", lineHeight: 20 },
-  statsRow: { flexDirection: "row", gap: 12 },
-  statCard: { flex: 1, alignItems: "center", paddingVertical: 20 },
-  statValue: { fontSize: 28, fontWeight: "900", color: colors.primary },
-  statLabel: { fontSize: 12, color: colors.textMuted, fontWeight: "600", marginTop: 4 },
-});
