@@ -1,0 +1,128 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchInventory, updateStock } from "@shared/services/inventoryService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions, partyId } = ctx;
+const t = useT(Astro);
+
+let error = "";
+
+if (Astro.request.method === "POST" && partyId) {
+  const form = await Astro.request.formData();
+  const inventoryItemId = form.get("inventory_item_id") as string;
+  const quantity = parseInt(form.get("quantity") as string, 10);
+  const type = form.get("type") as "adjustment" | "purchase" | "return" | "damage";
+  const note = (form.get("note") as string) || undefined;
+  const result = await updateStock(supabase, {
+    inventory_item_id: inventoryItemId,
+    party_id: partyId,
+    quantity,
+    type,
+    note: note ?? null,
+    created_by: session.user.id,
+  });
+  if (result.error) { error = result.error.message; }
+  else { return Astro.redirect("/admin/inventory"); }
+}
+
+const url = new URL(Astro.request.url);
+const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+const lowStockOnly = url.searchParams.get("low") === "1";
+const pageSize = 30;
+
+let items: Awaited<ReturnType<typeof fetchInventory>>["data"] = [];
+let total = 0;
+
+if (partyId) {
+  const result = await fetchInventory(supabase, partyId, { page, pageSize, lowStockOnly });
+  items = result.data;
+  total = result.total;
+}
+
+const totalPages = Math.ceil(total / pageSize);
+const lowCount = items.filter((i) => i.qty_on_hand <= i.low_stock_threshold).length;
+const isLowMap = new Map(items.map((i) => [i.id, i.qty_on_hand <= i.low_stock_threshold]));
+---
+
+<CmsLayout title={t.admin.inventory.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+  {error && <div class="alert-error">{error}</div>}
+
+  <div class="toolbar">
+    <div class="filter-links">
+      <a href="?low=0" class={`filter-btn ${!lowStockOnly ? "active" : ""}`}>{t.admin.inventory.filterAll} ({total})</a>
+      <a href="?low=1" class={`filter-btn ${lowStockOnly ? "active" : ""}`}>{t.admin.inventory.filterLow} ({lowCount})</a>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead>
+        <tr><th>{t.admin.inventory.colProduct}</th><th>SKU</th><th>{t.admin.inventory.colOnHand}</th><th>{t.admin.inventory.colReserved}</th><th>{t.admin.inventory.colAvailable}</th><th>{t.admin.inventory.colThreshold}</th><th>{t.admin.inventory.adjust}</th></tr>
+      </thead>
+      <tbody>
+        {items.map((item) => (
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted);font-family:monospace">{item.product_id.slice(0, 8)}…</td>
+            <td style="font-size:12px;color:var(--text-muted)">{item.variant_id ? item.variant_id.slice(0, 8) + "…" : "—"}</td>
+            <td style={`font-weight:700;${isLowMap.get(item.id) ? "color:var(--error)" : ""}`}>{item.qty_on_hand}</td>
+            <td>{item.qty_reserved}</td>
+            <td>{item.qty_available}</td>
+            <td>
+              {item.low_stock_threshold}
+              {isLowMap.get(item.id) && <span class="badge badge-error" style="margin-left:6px">{t.admin.inventory.filterLow}</span>}
+            </td>
+            <td>
+              <form method="POST" class="adjust-form">
+                <input type="hidden" name="inventory_item_id" value={item.id} />
+                <input class="form-input qty-input" name="quantity" type="number" required placeholder="±" />
+                <select class="form-input type-select" name="type">
+                  <option value="adjustment">{t.admin.inventory.typeAdjustment}</option>
+                  <option value="purchase">{t.admin.inventory.typePurchase}</option>
+                  <option value="return">{t.admin.inventory.typeReturn}</option>
+                  <option value="damage">{t.admin.inventory.typeDamage}</option>
+                </select>
+                <input class="form-input note-input" name="note" placeholder={t.admin.orders.noteOptional} />
+                <button type="submit" class="btn btn-secondary" style="padding:8px 12px;font-size:13px;white-space:nowrap">{t.common.apply}</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+        {items.length === 0 && (
+          <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.inventory.noInventory}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+
+  {totalPages > 1 && (
+    <div class="pagination">
+      {page > 1 && <a href={`?page=${page - 1}&low=${lowStockOnly ? 1 : 0}`} class="btn btn-ghost">{t.common.previous}</a>}
+      <span class="page-info">{t.common.page} {page} {t.common.of} {totalPages}</span>
+      {page < totalPages && <a href={`?page=${page + 1}&low=${lowStockOnly ? 1 : 0}`} class="btn btn-ghost">{t.common.next}</a>}
+    </div>
+  )}
+</CmsLayout>
+
+<style>
+  .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
+  .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .filter-links { display:flex; gap:4px; }
+  .filter-btn { padding:8px 16px; font-size:13px; font-weight:600; border-radius:8px; color:var(--text-muted); text-decoration:none; transition:background 0.15s, color 0.15s; }
+  .filter-btn:hover { background:var(--bg-subtle); color:var(--text-primary); text-decoration:none; }
+  .filter-btn.active { background:var(--accent-primary); color:#fff; }
+  .adjust-form { display:flex; gap:6px; align-items:center; }
+  .qty-input { width:70px; padding:6px 10px; font-size:13px; }
+  .type-select { width:120px; padding:6px 10px; font-size:13px; }
+  .note-input { width:120px; padding:6px 10px; font-size:13px; }
+  .pagination { display:flex; align-items:center; gap:12px; margin-top:16px; }
+  .page-info { font-size:13px; color:var(--text-muted); }
+</style>

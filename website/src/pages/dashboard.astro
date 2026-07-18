@@ -2,24 +2,39 @@
 import Layout from "../components/layout/Layout.astro";
 import { createSupabase } from "../lib/supabase";
 import { fetchItems } from "@shared/services/itemService";
+import { useT } from "../lib/i18n";
+import { ROLE } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const { data: items, total } = await fetchItems(supabase, 1, 5);
+const t = useT(Astro);
+
+const { data: profile } = await supabase.from("profiles").select("role, display_name, full_name").eq("id", session.user.id).single();
+const name = profile?.full_name ?? profile?.display_name ?? session.user.email;
+const isAdmin = (profile?.role ?? 0) >= ROLE.ESHOP_ADMIN;
+
+const { data: items, total } = await fetchItems(supabase, 1, 6);
 const { total: activeTotal } = await fetchItems(supabase, 1, 1, "active");
 ---
 
-<Layout title="Dashboard">
+<Layout title={t.dashboard.title}>
   <div class="page container">
-    <h1 class="page-title">Dashboard</h1>
-    <p class="welcome">Welcome back, <strong>{session.user.email}</strong></p>
+    <div class="dash-header">
+      <div>
+        <h1 class="page-title">{t.dashboard.title}</h1>
+        <p class="welcome">{t.dashboard.welcome}, <strong>{name}</strong></p>
+      </div>
+      {isAdmin && (
+        <a href="/admin" class="btn btn-primary">{t.nav.admin} →</a>
+      )}
+    </div>
 
     <div class="stats-row">
       {[
-        { label: "Total Items", value: total },
-        { label: "Active Items", value: activeTotal },
+        { label: t.dashboard.totalItems, value: total },
+        { label: t.items.status.active, value: activeTotal },
       ].map(({ label, value }) => (
         <div class="card stat-card">
           <span class="stat-num">{value}</span>
@@ -28,10 +43,10 @@ const { total: activeTotal } = await fetchItems(supabase, 1, 1, "active");
       ))}
     </div>
 
-    <section class="recent">
+    <section class="section">
       <div class="section-header">
-        <h2>Recent Items</h2>
-        <a href="/items" class="btn btn-secondary btn-sm">View all →</a>
+        <h2 class="section-title">{t.dashboard.recentItems}</h2>
+        <a href="/items" class="btn btn-secondary btn-sm">{t.common.view} →</a>
       </div>
       <div class="grid grid-3">
         {items.map((item) => (
@@ -41,25 +56,26 @@ const { total: activeTotal } = await fetchItems(supabase, 1, 1, "active");
             {item.description && <p class="item-desc">{item.description.slice(0, 80)}…</p>}
           </a>
         ))}
-        {items.length === 0 && <p class="empty-msg">No items yet.</p>}
+        {items.length === 0 && <p class="empty-msg">{t.dashboard.noItems}</p>}
       </div>
     </section>
   </div>
 </Layout>
 
 <style>
-  .page-title { font-size: 36px; font-weight: 900; color: #fff; margin-bottom: 8px; }
-  .welcome { color: #B3B3CC; margin-bottom: 32px; }
-  .stats-row { display: flex; gap: 16px; margin-bottom: 40px; }
+  .dash-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 32px; }
+  .page-title { font-size: 28px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .welcome { color: var(--text-muted); font-size: 14px; }
   .stat-card { min-width: 140px; display: flex; flex-direction: column; gap: 4px; }
-  .stat-num { font-size: 36px; font-weight: 900; color: #FF5E1A; }
-  .stat-label { font-size: 13px; color: #808099; font-weight: 600; }
+  .stat-num { font-size: 36px; font-weight: 900; color: var(--accent-primary); }
+  .stat-label { font-size: 13px; color: var(--text-muted); font-weight: 600; }
   .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-  .section-header h2 { font-size: 20px; font-weight: 700; color: #fff; }
   .btn-sm { padding: 6px 16px; font-size: 13px; }
-  .item-card { display: flex; flex-direction: column; gap: 10px; text-decoration: none; transition: border-color 0.15s; }
-  .item-card:hover { border-color: #FF5E1A; text-decoration: none; }
-  .item-title { font-size: 16px; font-weight: 700; color: #fff; }
-  .item-desc { font-size: 13px; color: #B3B3CC; line-height: 1.5; }
-  .empty-msg { color: #808099; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .item-card { display: flex; flex-direction: column; gap: 10px; text-decoration: none; transition: border-color 0.15s, box-shadow 0.15s; }
+  .item-card:hover { border-color: var(--accent-primary); box-shadow: var(--shadow-md); text-decoration: none; }
+  .item-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  .item-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .empty-msg { color: var(--text-muted); }
+  @media(max-width: 768px) { .grid-3 { grid-template-columns: 1fr; } .dash-header { flex-direction: column; gap: 16px; } }
 </style>

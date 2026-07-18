@@ -1,0 +1,109 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { createProduct } from "@shared/services/productService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions, partyId } = ctx;
+const t = useT(Astro);
+
+let error = "";
+
+if (Astro.request.method === "POST" && partyId) {
+  const form = await Astro.request.formData();
+  const result = await createProduct(supabase, {
+    party_id: partyId,
+    title: form.get("title") as string,
+    slug: form.get("slug") as string,
+    sku: (form.get("sku") as string) || null,
+    barcode: (form.get("barcode") as string) || null,
+    price: parseFloat(form.get("price") as string) || 0,
+    discount_price: form.get("discount_price") ? parseFloat(form.get("discount_price") as string) : null,
+    status: (form.get("status") as "draft" | "active" | "inactive") ?? "draft",
+    description: (form.get("description") as string) || null,
+    is_featured: form.get("is_featured") === "on",
+  });
+  if (result.error) {
+    error = result.error.message;
+  } else {
+    return Astro.redirect("/admin/products");
+  }
+}
+---
+
+<CmsLayout title={t.admin.products.newTitle} userPermissions={permissions} currentPath="/admin/products">
+  <div class="card" style="max-width:720px">
+    <a href="/admin/products" class="back-link">{t.admin.products.back}</a>
+    {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
+    <form method="POST" class="product-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{t.admin.products.fieldTitle}</label>
+          <input class="form-input" name="title" required placeholder={t.admin.products.fieldTitlePlaceholder} />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{t.admin.products.fieldSlug}</label>
+          <input class="form-input" name="slug" required placeholder={t.admin.products.fieldSlugPlaceholder} />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{t.admin.products.fieldSku}</label>
+          <input class="form-input" name="sku" placeholder="SKU-001" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{t.admin.products.fieldBarcode}</label>
+          <input class="form-input" name="barcode" placeholder="1234567890123" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{t.admin.products.fieldPrice}</label>
+          <input class="form-input" name="price" type="number" step="0.01" min="0" required placeholder="0.00" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{t.admin.products.fieldDiscountPrice}</label>
+          <input class="form-input" name="discount_price" type="number" step="0.01" min="0" placeholder="0.00" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{t.admin.products.fieldStatus}</label>
+        <select class="form-input" name="status">
+          <option value="draft">{t.common.draft}</option>
+          <option value="active">{t.common.active}</option>
+          <option value="inactive">{t.common.inactive}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{t.admin.products.fieldDescription}</label>
+        <textarea class="form-input" name="description" rows="5" placeholder={t.admin.products.fieldDescPlaceholder}></textarea>
+      </div>
+      <div class="form-check">
+        <input type="checkbox" name="is_featured" id="is_featured" />
+        <label for="is_featured">{t.admin.products.fieldFeatured}</label>
+      </div>
+      <div class="form-actions">
+        <a href="/admin/products" class="btn btn-ghost">{t.common.cancel}</a>
+        <button type="submit" class="btn btn-primary">{t.admin.products.createBtn}</button>
+      </div>
+    </form>
+  </div>
+</CmsLayout>
+
+<style>
+  .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
+  .back-link:hover { color:var(--text-primary); }
+  .product-form { display:flex; flex-direction:column; gap:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .form-check input { width:auto; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:8px; }
+  @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>

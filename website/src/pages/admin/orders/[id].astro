@@ -1,0 +1,162 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchOrder, updateOrderStatus, updateOrder } from "@shared/services/orderService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+import type { Order } from "@shared/types/index";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions } = ctx;
+const t = useT(Astro);
+
+const { id } = Astro.params;
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = form.get("action") as string;
+
+  if (action === "status") {
+    const toStatus = form.get("to_status") as Order["status"];
+    const note = (form.get("note") as string) || undefined;
+    const result = await updateOrderStatus(supabase, id!, toStatus, session.user.id, note);
+    if (result.error) error = result.error.message;
+  } else if (action === "tracking") {
+    const result = await updateOrder(supabase, id!, { tracking_number: form.get("tracking_number") as string });
+    if (result.error) error = result.error.message;
+  }
+  if (!error) return Astro.redirect(`/admin/orders/${id}`);
+}
+
+const order = await fetchOrder(supabase, id!);
+if (!order) return Astro.redirect("/admin/orders");
+
+const WORKFLOW: Record<string, Order["status"][]> = {
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["processing", "cancelled"],
+  processing: ["shipped", "cancelled"],
+  shipped: ["delivered"],
+  delivered: [],
+  cancelled: [],
+  refunded: [],
+};
+const nextStatuses = WORKFLOW[order.status] ?? [];
+
+function statusClass(s: string) {
+  const map: Record<string, string> = {
+    pending: "badge-pending", confirmed: "badge-active", processing: "badge-draft",
+    shipped: "badge-active", delivered: "badge-active", cancelled: "badge-error",
+  };
+  return map[s] ?? "badge-inactive";
+}
+---
+
+<CmsLayout title={`${t.admin.orders.colNumber} ${order.order_number}`} userPermissions={permissions} currentPath="/admin/orders">
+  <a href="/admin/orders" class="back-link">{t.admin.orders.back}</a>
+  {error && <div class="alert-error">{error}</div>}
+
+  <div class="order-grid">
+    <div class="left-col">
+      <div class="card">
+        <h2 class="section-title">{t.admin.orders.sectionItems}</h2>
+        <table class="data-table">
+          <thead><tr><th>{t.admin.orders.colProduct}</th><th>{t.admin.orders.colSku}</th><th>{t.admin.orders.colQty}</th><th>{t.admin.orders.colUnit}</th><th>{t.admin.orders.colTotal}</th></tr></thead>
+          <tbody>
+            {order.items.map((item) => (
+              <tr>
+                <td style="font-weight:600">{item.title}</td>
+                <td style="color:var(--text-muted)">{item.sku ?? "—"}</td>
+                <td>{item.quantity}</td>
+                <td>{item.unit_price.toFixed(2)} Kč</td>
+                <td>{item.total_price.toFixed(2)} Kč</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div class="totals">
+          <div class="total-row"><span>{t.admin.orders.subtotal}</span><span>{order.subtotal.toFixed(2)} Kč</span></div>
+          <div class="total-row"><span>{t.admin.orders.discount}</span><span>-{order.discount_amount.toFixed(2)} Kč</span></div>
+          <div class="total-row"><span>{t.admin.orders.tax}</span><span>{order.tax_amount.toFixed(2)} Kč</span></div>
+          <div class="total-row"><span>{t.admin.orders.shipping}</span><span>{order.shipping_amount.toFixed(2)} Kč</span></div>
+          <div class="total-row total-grand"><span>{t.admin.orders.grandTotal}</span><span>{order.total_amount.toFixed(2)} {order.currency}</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2 class="section-title">{t.admin.orders.sectionTracking}</h2>
+        <form method="POST" class="tracking-form">
+          <input type="hidden" name="action" value="tracking" />
+          <input class="form-input" name="tracking_number" value={order.tracking_number ?? ""} placeholder={t.admin.orders.trackingPlaceholder} style="flex:1" />
+          <button type="submit" class="btn btn-secondary">{t.admin.orders.updateTracking}</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="card">
+        <h2 class="section-title">{t.admin.orders.sectionStatus}</h2>
+        <span class={`badge ${statusClass(order.status)}`} style="font-size:13px;margin-bottom:12px;display:inline-block">{order.status}</span>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">{t.admin.orders.payment}: <strong>{order.payment_status}</strong></p>
+        {nextStatuses.length > 0 && (
+          <form method="POST" class="status-form">
+            <input type="hidden" name="action" value="status" />
+            <div class="form-group">
+              <label class="form-label">{t.admin.orders.moveTo}</label>
+              <select class="form-input" name="to_status">
+                {nextStatuses.map((s) => <option value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div class="form-group" style="margin-top:8px">
+              <label class="form-label">{t.admin.orders.noteOptional}</label>
+              <input class="form-input" name="note" placeholder={t.admin.orders.notePlaceholder} />
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:12px;width:100%">{t.admin.orders.updateStatus}</button>
+          </form>
+        )}
+      </div>
+
+      {order.customer && (
+        <div class="card" style="margin-top:16px">
+          <h2 class="section-title">{t.admin.orders.sectionCustomer}</h2>
+          <p style="font-weight:600">{order.customer.first_name} {order.customer.last_name}</p>
+          <p style="font-size:13px;color:var(--text-muted)">{order.customer.email}</p>
+          {order.customer.phone && <p style="font-size:13px;color:var(--text-muted)">{order.customer.phone}</p>}
+          <a href={`/admin/customers/${order.customer.id}`} class="btn btn-ghost" style="margin-top:12px;width:100%;font-size:13px">{t.admin.orders.viewCustomer}</a>
+        </div>
+      )}
+
+      {order.shipping_address && (
+        <div class="card" style="margin-top:16px">
+          <h2 class="section-title">{t.admin.orders.sectionShipping}</h2>
+          <p style="font-size:14px">
+            {order.shipping_address.line1}<br />
+            {order.shipping_address.line2 && <>{order.shipping_address.line2}<br /></>}
+            {order.shipping_address.city}, {order.shipping_address.postal_code}<br />
+            {order.shipping_address.country_code}
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+</CmsLayout>
+
+<style>
+  .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
+  .back-link:hover { color:var(--text-primary); }
+  .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
+  .order-grid { display:grid; grid-template-columns:2fr 1fr; gap:24px; }
+  .section-title { font-size:15px; font-weight:700; margin-bottom:12px; }
+  .totals { margin-top:16px; border-top:1px solid var(--border-default); padding-top:12px; display:flex; flex-direction:column; gap:6px; }
+  .total-row { display:flex; justify-content:space-between; font-size:14px; }
+  .total-grand { font-weight:800; font-size:16px; padding-top:8px; border-top:1px solid var(--border-default); margin-top:4px; }
+  .tracking-form { display:flex; gap:8px; align-items:center; }
+  .status-form { display:flex; flex-direction:column; gap:0; }
+  @media(max-width:768px) { .order-grid { grid-template-columns:1fr; } }
+</style>

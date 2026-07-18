@@ -3,18 +3,20 @@ import Layout from "../../components/layout/Layout.astro";
 import { createSupabase } from "../../lib/supabase";
 import { fetchItems } from "@shared/services/itemService";
 import { formatDate } from "@shared/utils/format";
+import { useT } from "../../lib/i18n";
 
 const supabase = createSupabase(Astro);
+const t = useT(Astro);
 const page = Number(Astro.url.searchParams.get("page") ?? 1);
 const { data: items, total } = await fetchItems(supabase, page, 12);
 const totalPages = Math.ceil(total / 12);
 ---
 
-<Layout title="Items">
+<Layout title={t.items.title}>
   <div class="page container">
     <div class="page-header">
-      <h1 class="page-title">Items</h1>
-      <span class="count">{total} total</span>
+      <h1 class="page-title">{t.items.title}</h1>
+      <span class="count">{t.items.total} {total}</span>
     </div>
 
     <div class="grid grid-3">
@@ -26,14 +28,14 @@ const totalPages = Math.ceil(total / 12);
           <span class="item-date">{formatDate(item.created_at)}</span>
         </a>
       ))}
-      {items.length === 0 && <p class="empty-msg">No items found.</p>}
+      {items.length === 0 && <p class="empty-msg">{t.items.noItems}</p>}
     </div>
 
     {totalPages > 1 && (
       <nav class="pagination">
-        {page > 1 && <a href={`/items?page=${page - 1}`} class="btn btn-secondary">← Previous</a>}
-        <span class="page-info">Page {page} of {totalPages}</span>
-        {page < totalPages && <a href={`/items?page=${page + 1}`} class="btn btn-secondary">Next →</a>}
+        {page > 1 && <a href={`/items?page=${page - 1}`} class="btn btn-secondary">← {t.common.previous}</a>}
+        <span class="page-info">{t.common.page} {page} {t.common.of} {totalPages}</span>
+        {page < totalPages && <a href={`/items?page=${page + 1}`} class="btn btn-secondary">{t.common.next} →</a>}
       </nav>
     )}
   </div>
@@ -41,14 +43,14 @@ const totalPages = Math.ceil(total / 12);
 
 <style>
   .page-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 32px; }
-  .page-title { font-size: 36px; font-weight: 900; color: #fff; }
-  .count { font-size: 14px; color: #808099; }
+  .page-title { font-size: 36px; font-weight: 900; color: var(--text-primary); }
+  .count { font-size: 14px; color: var(--text-muted); }
   .item-card { display: flex; flex-direction: column; gap: 10px; text-decoration: none; }
-  .item-card:hover { border-color: #FF5E1A; text-decoration: none; }
-  .item-title { font-size: 17px; font-weight: 700; color: #fff; }
-  .item-desc { font-size: 13px; color: #B3B3CC; line-height: 1.5; }
-  .item-date { font-size: 11px; color: #808099; margin-top: auto; }
-  .empty-msg { color: #808099; }
+  .item-card:hover { border-color: var(--accent-primary); text-decoration: none; }
+  .item-title { font-size: 17px; font-weight: 700; color: var(--text-primary); }
+  .item-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .item-date { font-size: 11px; color: var(--text-muted); margin-top: auto; }
+  .empty-msg { color: var(--text-muted); }
   .pagination { display: flex; align-items: center; gap: 16px; justify-content: center; margin-top: 48px; }
-  .page-info { color: #B3B3CC; font-size: 14px; }
+  .page-info { color: var(--text-muted); font-size: 14px; }
 </style>

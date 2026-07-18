@@ -1,0 +1,152 @@
+---
+import Layout from "../components/layout/Layout.astro";
+import { createSupabase } from "../lib/supabase";
+import { useT, getLang } from "../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const t = useT(Astro);
+const lang = getLang(Astro);
+
+const { data: profile } = await supabase
+  .from("profiles")
+  .select("display_name, lang")
+  .eq("id", session.user.id)
+  .single();
+
+const identityProviders = session.user.identities?.map((i) => i.provider) ?? [];
+const hasEmailAuth = identityProviders.includes("email");
+
+let error = "";
+let success = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = form.get("action") as string;
+
+  if (action === "profile") {
+    const displayName = (form.get("display_name") as string).trim();
+    const { error: e } = await supabase
+      .from("profiles")
+      .update({ display_name: displayName })
+      .eq("id", session.user.id);
+    if (e) error = e.message;
+    else success = t.settings.saved;
+  }
+
+  if (action === "language") {
+    const newLang = form.get("lang") as "cs" | "en";
+    if (newLang === "cs" || newLang === "en") {
+      await supabase.from("profiles").update({ lang: newLang }).eq("id", session.user.id);
+      Astro.cookies.set("lang", newLang, { path: "/", maxAge: 60 * 60 * 24 * 365 });
+      return Astro.redirect("/settings");
+    }
+  }
+
+  if (action === "password" && hasEmailAuth) {
+    const newPassword = form.get("new_password") as string;
+    const confirmPassword = form.get("confirm_password") as string;
+    if (newPassword !== confirmPassword) {
+      error = t.settings.errorMismatch;
+    } else {
+      const { error: e } = await supabase.auth.updateUser({ password: newPassword });
+      if (e) error = e.message;
+      else success = t.settings.saved;
+    }
+  }
+}
+
+const displayName = profile?.display_name ?? session.user.email?.split("@")[0] ?? "";
+const currentLang = profile?.lang ?? lang;
+---
+
+<Layout title={t.settings.title}>
+  <div class="container settings-page">
+    <h1 class="page-title">{t.settings.title}</h1>
+
+    {success && <div class="alert-success">{success}</div>}
+    {error && <div class="alert-error">{error}</div>}
+
+    <div class="settings-grid">
+      <section class="card">
+        <h2 class="section-title">{t.settings.sectionProfile}</h2>
+        <form method="POST" class="settings-form">
+          <input type="hidden" name="action" value="profile" />
+          <div class="form-group">
+            <label class="form-label">{t.settings.displayName}</label>
+            <input
+              class="form-input"
+              name="display_name"
+              value={displayName}
+              placeholder={t.settings.displayNamePlaceholder}
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{t.auth.emailLabel}</label>
+            <input class="form-input" value={session.user.email ?? ""} disabled />
+          </div>
+          <button type="submit" class="btn btn-primary">{t.settings.saveProfile}</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2 class="section-title">{t.settings.sectionPassword}</h2>
+        {hasEmailAuth ? (
+          <form method="POST" class="settings-form">
+            <input type="hidden" name="action" value="password" />
+            <p class="section-note">{t.settings.passwordNote}</p>
+            <div class="form-group">
+              <label class="form-label">{t.settings.newPassword}</label>
+              <input class="form-input" name="new_password" type="password" required minlength="8" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">{t.settings.confirmPassword}</label>
+              <input class="form-input" name="confirm_password" type="password" required minlength="8" />
+            </div>
+            <button type="submit" class="btn btn-primary">{t.settings.changePassword}</button>
+          </form>
+        ) : (
+          <p class="section-note">{t.settings.noPasswordUser}</p>
+        )}
+      </section>
+
+      <section class="card">
+        <h2 class="section-title">{t.settings.sectionLanguage}</h2>
+        <p class="section-note">{t.settings.languageNote}</p>
+        <form method="POST" class="lang-form">
+          <input type="hidden" name="action" value="language" />
+          <label class={`lang-option ${currentLang === "cs" ? "lang-option--active" : ""}`}>
+            <input type="radio" name="lang" value="cs" checked={currentLang === "cs"} />
+            <span class="lang-flag">🇨🇿</span>
+            <span>{t.settings.labelCs}</span>
+          </label>
+          <label class={`lang-option ${currentLang === "en" ? "lang-option--active" : ""}`}>
+            <input type="radio" name="lang" value="en" checked={currentLang === "en"} />
+            <span class="lang-flag">🇬🇧</span>
+            <span>{t.settings.labelEn}</span>
+          </label>
+          <button type="submit" class="btn btn-primary" style="margin-top:16px">{t.settings.saveLanguage}</button>
+        </form>
+      </section>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .settings-page { padding: 40px 0; max-width: 720px; margin: 0 auto; }
+  .page-title { font-size: 28px; font-weight: 800; margin-bottom: 24px; }
+  .settings-grid { display: flex; flex-direction: column; gap: 24px; }
+  .section-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+  .section-note { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
+  .settings-form { display: flex; flex-direction: column; gap: 14px; }
+  .alert-success { background: rgba(34,197,94,0.08); border: 1px solid #22C55E; border-radius: 8px; padding: 12px 16px; color: #15803D; margin-bottom: 20px; font-size: 14px; }
+  .alert-error { background: rgba(239,68,68,0.08); border: 1px solid var(--error, #EF4444); border-radius: 8px; padding: 12px 16px; color: var(--error, #EF4444); margin-bottom: 20px; font-size: 14px; }
+  .lang-form { display: flex; flex-direction: column; gap: 8px; }
+  .lang-option { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border: 2px solid var(--border-default, #E9ECEF); border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; transition: border-color 0.15s; }
+  .lang-option input[type="radio"] { width: auto; }
+  .lang-option--active { border-color: var(--accent-primary, #4F46E5); background: rgba(79,70,229,0.04); }
+  .lang-flag { font-size: 20px; }
+</style>

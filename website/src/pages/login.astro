@@ -1,79 +1,92 @@
 ---
 import Layout from "../components/layout/Layout.astro";
 import { createSupabase } from "../lib/supabase";
+import { useT } from "../lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (session) return Astro.redirect("/dashboard");
+const t = useT(Astro);
 ---
 
-<Layout title="Sign in">
+<Layout title={t.auth.signIn}>
   <div class="page">
     <div class="container">
-      <div class="auth-card card">
+      <div
+        class="auth-card card"
+        data-signing-in={t.auth.signingIn}
+        data-sign-in={t.auth.signIn}
+        data-creating={t.auth.creatingAccount}
+        data-create={t.auth.createAccount}
+        data-err-name={t.auth.errorNameTooShort}
+        data-err-pw-short={t.auth.errorPasswordTooShort}
+        data-err-pw-mismatch={t.auth.errorPasswordMismatch}
+        data-err-already={t.auth.errorAlreadyRegistered}
+        data-success-signup={t.auth.successSignUp}
+      >
         <a href="/" class="auth-brand">Template</a>
 
         <div id="mode-signin">
-          <h1 class="auth-title">Welcome back</h1>
-          <p class="auth-sub">Sign in to your account</p>
+          <h1 class="auth-title">{t.auth.welcomeBack}</h1>
+          <p class="auth-sub">{t.auth.signInSubtitle}</p>
 
           <button id="google-btn-si" class="btn btn-secondary full-width google-btn" type="button">
-            <span class="google-icon">G</span> Continue with Google
+            <span class="google-icon">G</span> {t.auth.continueWithGoogle}
           </button>
 
-          <div class="divider"><span>or</span></div>
+          <div class="divider"><span>{t.common.or}</span></div>
 
           <p id="error-si" class="error-msg hidden"></p>
 
           <form id="signin-form" class="form">
             <div class="field">
-              <label for="si-email">Email</label>
-              <input id="si-email" type="email" placeholder="you@example.com" required autocomplete="email" />
+              <label for="si-email">{t.auth.emailLabel}</label>
+              <input id="si-email" type="email" placeholder={t.auth.emailPlaceholder} required autocomplete="email" />
             </div>
             <div class="field">
-              <label for="si-password">Password</label>
-              <input id="si-password" type="password" placeholder="••••••••" required autocomplete="current-password" />
+              <label for="si-password">{t.auth.password}</label>
+              <input id="si-password" type="password" placeholder={t.auth.passwordPlaceholder} required autocomplete="current-password" />
             </div>
-            <button type="submit" class="btn btn-primary full-width" id="signin-btn">Sign in</button>
+            <button type="submit" class="btn btn-primary full-width" id="signin-btn">{t.auth.signIn}</button>
           </form>
 
-          <p class="switch-hint">No account? <button type="button" class="link-btn" id="to-signup">Create one</button></p>
+          <p class="switch-hint">{t.auth.noAccount} <button type="button" class="link-btn" id="to-signup">{t.auth.createAccount}</button></p>
         </div>
 
         <div id="mode-signup" class="hidden">
-          <h1 class="auth-title">Create account</h1>
-          <p class="auth-sub">Join us today</p>
+          <h1 class="auth-title">{t.auth.createAccount}</h1>
+          <p class="auth-sub">{t.auth.createAccountSubtitle}</p>
 
           <button id="google-btn-su" class="btn btn-secondary full-width google-btn" type="button">
-            <span class="google-icon">G</span> Continue with Google
+            <span class="google-icon">G</span> {t.auth.continueWithGoogle}
           </button>
 
-          <div class="divider"><span>or</span></div>
+          <div class="divider"><span>{t.common.or}</span></div>
 
           <p id="error-su" class="error-msg hidden"></p>
           <p id="success-su" class="success-msg hidden"></p>
 
           <form id="signup-form" class="form">
             <div class="field">
-              <label for="su-name">Full name</label>
-              <input id="su-name" type="text" placeholder="Your full name" required autocomplete="name" minlength="2" maxlength="100" />
+              <label for="su-name">{t.auth.fullName}</label>
+              <input id="su-name" type="text" placeholder={t.auth.fullNamePlaceholder} required autocomplete="name" minlength="2" maxlength="100" />
             </div>
             <div class="field">
-              <label for="su-email">Email</label>
-              <input id="su-email" type="email" placeholder="you@example.com" required autocomplete="email" />
+              <label for="su-email">{t.auth.emailLabel}</label>
+              <input id="su-email" type="email" placeholder={t.auth.emailPlaceholder} required autocomplete="email" />
             </div>
             <div class="field">
-              <label for="su-password">Password <span class="field-hint">min. 8 characters</span></label>
-              <input id="su-password" type="password" placeholder="Min. 8 characters" required autocomplete="new-password" minlength="8" />
+              <label for="su-password">{t.auth.password} <span class="field-hint">{t.auth.passwordHint}</span></label>
+              <input id="su-password" type="password" placeholder={t.auth.passwordPlaceholder} required autocomplete="new-password" minlength="8" />
             </div>
             <div class="field">
-              <label for="su-confirm">Confirm password</label>
-              <input id="su-confirm" type="password" placeholder="Repeat password" required autocomplete="new-password" />
+              <label for="su-confirm">{t.auth.confirmPassword}</label>
+              <input id="su-confirm" type="password" placeholder={t.auth.confirmPasswordPlaceholder} required autocomplete="new-password" />
             </div>
-            <button type="submit" class="btn btn-primary full-width" id="signup-btn">Create account</button>
+            <button type="submit" class="btn btn-primary full-width" id="signup-btn">{t.auth.createAccount}</button>
           </form>
 
-          <p class="switch-hint">Have an account? <button type="button" class="link-btn" id="to-signin">Sign in</button></p>
+          <p class="switch-hint">{t.auth.haveAccount} <button type="button" class="link-btn" id="to-signin">{t.auth.signIn}</button></p>
         </div>
       </div>
     </div>
@@ -86,6 +99,9 @@ if (session) return Astro.redirect("/dashboard");
   const url = import.meta.env.PUBLIC_SUPABASE_URL ?? "";
   const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? "";
   const supabase = createBrowserClient(url, key);
+
+  const card = document.querySelector(".auth-card") as HTMLElement;
+  const d = card.dataset;
 
   const modeSignin = document.getElementById("mode-signin")!;
   const modeSignup = document.getElementById("mode-signup")!;
@@ -124,36 +140,27 @@ if (session) return Astro.redirect("/dashboard");
     const btn = document.getElementById("signin-btn") as HTMLButtonElement;
     const email = (document.getElementById("si-email") as HTMLInputElement).value.trim();
     const password = (document.getElementById("si-password") as HTMLInputElement).value;
-    btn.disabled = true;
-    btn.textContent = "Signing in…";
-
+    btn.disabled = true; btn.textContent = d.signingIn!;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      showError("error-si", error.message);
-      btn.disabled = false;
-      btn.textContent = "Sign in";
-    } else {
-      window.location.href = "/dashboard";
-    }
+    if (error) { showError("error-si", error.message); btn.disabled = false; btn.textContent = d.signIn!; }
+    else { window.location.href = "/dashboard"; }
   });
 
   document.getElementById("signup-form")!.addEventListener("submit", async (e) => {
     e.preventDefault();
-    clearEl("error-su");
-    clearEl("success-su");
-
+    clearEl("error-su"); clearEl("success-su");
     const btn = document.getElementById("signup-btn") as HTMLButtonElement;
     const name = (document.getElementById("su-name") as HTMLInputElement).value.trim();
     const email = (document.getElementById("su-email") as HTMLInputElement).value.trim();
     const password = (document.getElementById("su-password") as HTMLInputElement).value;
     const confirm = (document.getElementById("su-confirm") as HTMLInputElement).value;
 
-    if (name.length < 2) { showError("error-su", "Full name must be at least 2 characters."); return; }
-    if (password.length < 8) { showError("error-su", "Password must be at least 8 characters."); return; }
-    if (password !== confirm) { showError("error-su", "Passwords do not match."); return; }
+    if (name.length < 2) { showError("error-su", d.errName!); return; }
+    if (password.length < 8) { showError("error-su", d.errPwShort!); return; }
+    if (password !== confirm) { showError("error-su", d.errPwMismatch!); return; }
 
     btn.disabled = true;
-    btn.textContent = "Creating account…";
+    btn.textContent = d.creating!;
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -162,12 +169,10 @@ if (session) return Astro.redirect("/dashboard");
     });
 
     if (error) {
-      const msg = error.message.toLowerCase().includes("already registered")
-        ? "An account with this email already exists. Sign in instead."
-        : error.message;
+      const msg = error.message.toLowerCase().includes("already registered") ? d.errAlready! : error.message;
       showError("error-su", msg);
       btn.disabled = false;
-      btn.textContent = "Create account";
+      btn.textContent = d.create!;
       return;
     }
 
@@ -175,10 +180,10 @@ if (session) return Astro.redirect("/dashboard");
       window.location.href = "/dashboard";
     } else {
       const el = document.getElementById("success-su")!;
-      el.textContent = "Check your email for a confirmation link.";
+      el.textContent = d.successSignup!;
       el.classList.remove("hidden");
       btn.disabled = false;
-      btn.textContent = "Create account";
+      btn.textContent = d.create!;
     }
   });
 </script>
@@ -189,7 +194,6 @@ if (session) return Astro.redirect("/dashboard");
   .auth-brand { font-size: 22px; font-weight: 900; color: #4F46E5; display: block; text-align: center; margin-bottom: 28px; text-decoration: none; }
   .auth-title { font-size: 24px; font-weight: 800; color: #212529; margin-bottom: 4px; text-align: center; }
   .auth-sub { font-size: 14px; color: #6C757D; text-align: center; margin-bottom: 24px; }
-  .google-btn { margin-bottom: 0; }
   .google-icon { font-size: 16px; font-weight: 900; }
   .form { display: flex; flex-direction: column; gap: 16px; }
   .field label { display: block; font-size: 12px; font-weight: 700; color: #6C757D; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
@@ -198,7 +202,7 @@ if (session) return Astro.redirect("/dashboard");
   .full-width { width: 100%; }
   .switch-hint { font-size: 13px; color: #6C757D; text-align: center; margin-top: 20px; }
   .link-btn { background: none; border: none; color: #4F46E5; font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; font-family: inherit; }
-  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #ADB5BD; font-size: 12px; text-transform: uppercase; }
+  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #ADB5BD; font-size: 12px; }
   .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #E9ECEF; }
   .error-msg { color: #EF4444; font-size: 13px; margin-bottom: 8px; }
   .success-msg { color: #10B981; font-size: 13px; margin-bottom: 8px; }

@@ -2,11 +2,11 @@ import React, { useCallback, useState } from "react";
 import { FlatList, Text, TouchableOpacity, Alert, StyleSheet, RefreshControl } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../../../supabase/client";
-import { fetchItems, updateItem, deleteItem } from "../../../../shared/services/itemService";
-import { formatRelative } from "../../../../shared/utils/format";
-import { colors } from "../../../../shared/constants/theme";
+import { fetchItems, updateItem, deleteItem } from "@shared/services/itemService";
+import { formatRelative } from "@shared/utils/format";
+import { colors } from "@shared/constants/theme";
 import { Card } from "../../components/ui/Card";
-import type { Item } from "../../../../shared/types";
+import type { Item } from "@shared/types";
 
 export function AdminItemsScreen() {
   const [items, setItems] = useState<Item[]>([]);

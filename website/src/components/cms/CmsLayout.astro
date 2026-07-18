@@ -1,0 +1,44 @@
+---
+import Layout from "../layout/Layout.astro";
+import Sidebar from "./Sidebar.astro";
+
+interface Props {
+  title: string;
+  userPermissions: number;
+  currentPath: string;
+}
+const { title, userPermissions, currentPath } = Astro.props;
+---
+
+<Layout title={title}>
+  <div class="cms-shell">
+    <Sidebar currentPath={currentPath} userPermissions={userPermissions} />
+    <div class="cms-main">
+      <header class="cms-header">
+        <h1 class="cms-title">{title}</h1>
+      </header>
+      <div class="cms-content">
+        <slot />
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .cms-shell {
+    display: flex; min-height: calc(100vh - 64px);
+  }
+  .cms-main {
+    flex: 1; overflow-y: auto; background: #F8F9FA;
+  }
+  .cms-header {
+    padding: 32px 32px 0; border-bottom: 1px solid #E9ECEF;
+    background: #FFFFFF; padding-bottom: 20px; margin-bottom: 0;
+  }
+  .cms-title {
+    font-size: 24px; font-weight: 700; color: #212529;
+  }
+  .cms-content {
+    padding: 32px;
+  }
+</style>

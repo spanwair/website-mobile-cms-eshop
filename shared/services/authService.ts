@@ -40,6 +40,8 @@ export async function signInWithGoogle(
   return { url: data?.url ?? null, error: error ? new Error(error.message) : null };
 }
 
+export { signInWithGoogle as signInWithGoogleMobile };
+
 export async function signOut(client: Client): Promise<void> {
   await client.auth.signOut();
 }
@@ -47,4 +49,15 @@ export async function signOut(client: Client): Promise<void> {
 export async function getSession(client: Client) {
   const { data } = await client.auth.getSession();
   return data.session;
+}
+
+export async function updateLastLogin(
+  client: Client,
+  userId: string
+): Promise<{ error: Error | null }> {
+  const { error } = await client
+    .from("profiles")
+    .update({ last_login_at: new Date().toISOString() })
+    .eq("id", userId);
+  return { error: error ? new Error(error.message) : null };
 }

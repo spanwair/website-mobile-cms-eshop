@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
-import type { User } from "../types";
+import type { User, UserWithRoles } from "../types";
+import { getUserPermissions, fetchRoles } from "./permissionsService";
 
 type Client = SupabaseClient<Database>;
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
@@ -8,7 +9,7 @@ type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 function toUser(row: ProfileRow, email: string): User {
   return {
     id: row.id,
-    email,
+    email: row.email ?? email,
     display_name: row.display_name,
     avatar_url: row.avatar_url,
     role: row.role,
@@ -34,7 +35,7 @@ export async function fetchProfile(
 export async function updateProfile(
   client: Client,
   userId: string,
-  updates: { display_name?: string; avatar_url?: string }
+  updates: { display_name?: string; avatar_url?: string; full_name?: string; phone?: string }
 ): Promise<{ error: Error | null }> {
   const { error } = await client
     .from("profiles")
@@ -52,4 +53,46 @@ export async function fetchAllUsers(client: Client): Promise<User[]> {
 
   if (error || !data) return [];
   return data.map((row: ProfileRow) => toUser(row, ""));
+}
+
+export async function fetchProfileWithRoles(
+  client: Client,
+  userId: string,
+  email: string,
+  partyId: string
+): Promise<UserWithRoles | null> {
+  const profile = await fetchProfile(client, userId, email);
+  if (!profile) return null;
+
+  const [permissions, roles] = await Promise.all([
+    getUserPermissions(client, userId, partyId),
+    fetchRoles(client, partyId),
+  ]);
+
+  const { data: memberRows } = await client
+    .from("user_party_roles")
+    .select("role_id")
+    .eq("user_id", userId)
+    .eq("party_id", partyId);
+
+  const userRoleIds = new Set((memberRows ?? []).map((r) => r.role_id));
+  const userRoles = roles.filter((r) => userRoleIds.has(r.id));
+
+  return {
+    ...profile,
+    party_id: partyId,
+    permissions,
+    roles: userRoles,
+  };
+}
+
+export async function updateLastLogin(
+  client: Client,
+  userId: string
+): Promise<{ error: Error | null }> {
+  const { error } = await client
+    .from("profiles")
+    .update({ last_login_at: new Date().toISOString() })
+    .eq("id", userId);
+  return { error: error ? new Error(error.message) : null };
 }

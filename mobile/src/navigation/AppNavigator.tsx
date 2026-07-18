@@ -15,6 +15,7 @@ import { OnboardingScreen } from "../screens/Onboarding/OnboardingScreen";
 import { SettingsScreen } from "../screens/Settings/SettingsScreen";
 import type { RootStackParamList, MainTabParamList } from "./types";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
+import { colors } from "@shared/constants/theme";
 
 const Root = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -24,9 +25,13 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: "#0F0F1A", borderTopColor: "#252538" },
-        tabBarActiveTintColor: "#FF5E1A",
-        tabBarInactiveTintColor: "#808099",
+        tabBarStyle: {
+          backgroundColor: colors.white,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+        },
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textMuted,
       }}
     >
       <Tab.Screen
@@ -74,6 +79,7 @@ export function AppNavigator() {
 
     return () => listener.subscription.unsubscribe();
   }, [setSession]);
+  console.log('status :>> ', status);
 
   if (status === "loading") return <LoadingScreen />;
 

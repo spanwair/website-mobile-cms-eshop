@@ -1,111 +1,134 @@
 ---
-import Layout from "../../components/layout/Layout.astro";
+import CmsLayout from "../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../lib/supabase";
-import { fetchItems, updateItem, deleteItem } from "@shared/services/itemService";
 import { fetchAllUsers } from "@shared/services/profileService";
-import { formatDate } from "@shared/utils/format";
+import { fetchProducts } from "@shared/services/productService";
+import { fetchOrders } from "@shared/services/orderService";
+import { requireAdminCtx } from "../../lib/admin";
+import { useT } from "../../lib/i18n";
+import { ROLE } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const { data: profileRow } = await supabase.from("profiles").select("role").eq("id", session.user.id).single();
-if (profileRow?.role !== "admin") return Astro.redirect("/dashboard");
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions, partyId } = ctx;
+const t = useT(Astro);
 
-if (Astro.request.method === "POST") {
-  const form = await Astro.request.formData();
-  const action = form.get("action") as string;
-  const itemId = form.get("item_id") as string;
-  if (action === "delete")     await deleteItem(supabase, itemId);
-  if (action === "activate")   await updateItem(supabase, itemId, { status: "active" });
-  if (action === "deactivate") await updateItem(supabase, itemId, { status: "inactive" });
-  return Astro.redirect("/admin");
+const users = await fetchAllUsers(supabase);
+const activeUsers = users.filter((u) => u.role > ROLE.USER).length;
+
+let totalProducts = 0;
+let activeProducts = 0;
+let totalOrders = 0;
+let recentOrders: Awaited<ReturnType<typeof fetchOrders>>["data"] = [];
+let revenue = 0;
+let partyReady = false;
+
+const { error: tablesProbeError } = await supabase.from("parties").select("id").limit(0);
+const tablesReady = !tablesProbeError;
+
+if (tablesReady && partyId) {
+  try {
+    const [allProds, activProds, ordersResult] = await Promise.all([
+      fetchProducts(supabase, partyId, { pageSize: 1 }),
+      fetchProducts(supabase, partyId, { status: "active", pageSize: 1 }),
+      fetchOrders(supabase, partyId, { pageSize: 5 }),
+    ]);
+    totalProducts = allProds.total;
+    activeProducts = activProds.total;
+    totalOrders = ordersResult.total;
+    recentOrders = ordersResult.data;
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const monthOrders = await fetchOrders(supabase, partyId, { from: monthStart, pageSize: 100 });
+    revenue = monthOrders.data.reduce((sum, o) => sum + o.total_amount, 0);
+    partyReady = true;
+  } catch { }
 }
 
-const { data: items, total } = await fetchItems(supabase);
-const users = await fetchAllUsers(supabase);
-const { total: activeTotal } = await fetchItems(supabase, 1, 1, "active");
+const kpis = [
+  { label: t.admin.kpiTotalUsers, value: users.length },
+  { label: t.admin.kpiActiveUsers, value: activeUsers },
+  { label: t.admin.kpiTotalProducts, value: totalProducts },
+  { label: t.admin.kpiActiveProducts, value: activeProducts },
+  { label: t.admin.kpiTotalOrders, value: totalOrders },
+  { label: t.admin.kpiRevenue, value: `${revenue.toFixed(2)} Kč` },
+];
+
+function statusClass(s: string) {
+  const map: Record<string, string> = {
+    pending: "badge-pending", confirmed: "badge-active", processing: "badge-draft",
+    shipped: "badge-active", delivered: "badge-active", cancelled: "badge-error",
+  };
+  return map[s] ?? "badge-inactive";
+}
 ---
 
-<Layout title="Admin">
-  <div class="page container">
-    <h1 class="page-title">Admin Dashboard</h1>
+<CmsLayout title={t.admin.dashboard} userPermissions={permissions} currentPath={Astro.url.pathname}>
+  {!tablesReady && (
+    <div class="info-banner">⚠️ {t.admin.infoBanner}</div>
+  )}
+  {tablesReady && !partyId && (
+    <div class="info-banner">
+      ⚠️ {t.admin.infoBannerNoParty} <a href="/admin/parties" class="banner-link">{t.admin.infoBannerPartiesLink}</a>.
+    </div>
+  )}
 
-    <div class="stats-row">
-      {[
-        { label: "Total Users", value: users.length },
-        { label: "Total Items", value: total },
-        { label: "Active Items", value: activeTotal },
-      ].map(({ label, value }) => (
-        <div class="card stat-card">
-          <span class="stat-num">{value}</span>
-          <span class="stat-label">{label}</span>
-        </div>
-      ))}
+  <div class="stats-row">
+    {kpis.map(({ label, value }) => (
+      <div class="card stat-card">
+        <span class="stat-num">{value}</span>
+        <span class="stat-label">{label}</span>
+      </div>
+    ))}
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="card">
+      <h2 class="section-title">{t.admin.recentOrders}</h2>
+      {recentOrders.length === 0 ? (
+        <p class="empty">{t.admin.noOrders}</p>
+      ) : (
+        <table class="data-table">
+          <thead>
+            <tr><th>{t.admin.orders.colNumber}</th><th>{t.admin.orders.colStatus}</th><th>{t.admin.orders.colTotal}</th><th>{t.admin.orders.colDate}</th></tr>
+          </thead>
+          <tbody>
+            {recentOrders.map((o) => (
+              <tr>
+                <td><a href={`/admin/orders/${o.id}`}>{o.order_number}</a></td>
+                <td><span class={`badge ${statusClass(o.status)}`}>{o.status}</span></td>
+                <td>{o.total_amount.toFixed(2)} Kč</td>
+                <td>{new Date(o.created_at).toLocaleDateString("cs-CZ")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
 
-    <section class="section">
-      <h2 class="section-title">Items</h2>
-      <table class="data-table">
-        <thead><tr><th>Title</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
-        <tbody>
-          {items.map((item) => (
-            <tr>
-              <td class="td-title">{item.title}</td>
-              <td><span class={`badge badge-${item.status}`}>{item.status}</span></td>
-              <td class="td-date">{formatDate(item.created_at)}</td>
-              <td class="td-actions">
-                <form method="POST" style="display:inline">
-                  <input type="hidden" name="item_id" value={item.id} />
-                  <input type="hidden" name="action" value={item.status === "active" ? "deactivate" : "activate"} />
-                  <button class="btn-link">{item.status === "active" ? "Deactivate" : "Activate"}</button>
-                </form>
-                <form method="POST" style="display:inline" onsubmit="return confirm('Delete this item?')">
-                  <input type="hidden" name="item_id" value={item.id} />
-                  <input type="hidden" name="action" value="delete" />
-                  <button class="btn-link danger">Delete</button>
-                </form>
-              </td>
-            </tr>
-          ))}
-          {items.length === 0 && <tr><td colspan="4" class="td-empty">No items</td></tr>}
-        </tbody>
-      </table>
-    </section>
-
-    <section class="section">
-      <h2 class="section-title">Users</h2>
-      <table class="data-table">
-        <thead><tr><th>Name</th><th>Role</th><th>Joined</th></tr></thead>
-        <tbody>
-          {users.map((u) => (
-            <tr>
-              <td class="td-title">{u.display_name ?? "(unnamed)"}</td>
-              <td><span class="badge">{u.role}</span></td>
-              <td class="td-date">{formatDate(u.created_at)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
+    <div class="card">
+      <h2 class="section-title">{t.admin.revenueChart}</h2>
+      <div class="chart-placeholder">{t.admin.chartSoon}</div>
+    </div>
   </div>
-</Layout>
+
+  <div class="card" style="margin-top:24px">
+    <h2 class="section-title">{t.admin.recentActivity}</h2>
+    <p class="empty">{t.admin.noAudit}</p>
+  </div>
+</CmsLayout>
 
 <style>
-  .page-title { font-size: 36px; font-weight: 900; color: #fff; margin-bottom: 32px; }
-  .stats-row { display: flex; gap: 16px; margin-bottom: 40px; flex-wrap: wrap; }
-  .stat-card { min-width: 140px; display: flex; flex-direction: column; gap: 4px; }
-  .stat-num { font-size: 36px; font-weight: 900; color: #FF5E1A; }
-  .stat-label { font-size: 13px; color: #808099; font-weight: 600; }
-  .section { margin-bottom: 48px; }
-  .section-title { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 16px; }
-  .data-table { width: 100%; border-collapse: collapse; }
-  .data-table th { text-align: left; font-size: 12px; font-weight: 700; color: #808099; text-transform: uppercase; letter-spacing: 0.6px; padding: 0 12px 12px 0; }
-  .data-table td { padding: 12px 12px 12px 0; border-top: 1px solid rgba(255,255,255,0.06); }
-  .td-title { font-weight: 600; color: #fff; }
-  .td-date { font-size: 13px; color: #808099; }
-  .td-empty { text-align: center; color: #808099; padding: 32px 0; }
-  .td-actions { display: flex; gap: 12px; }
-  .btn-link { background: none; border: none; font-size: 13px; font-weight: 600; color: #FF5E1A; cursor: pointer; padding: 0; }
-  .btn-link.danger { color: #FF3B55; }
+  .info-banner { background:#EEF2FF; border:1px solid #C7D2FE; border-radius:8px; padding:12px 16px; color:#3730A3; margin-bottom:24px; font-size:14px; }
+  .info-banner code { background:#C7D2FE; padding:2px 6px; border-radius:4px; font-size:12px; }
+  .banner-link { color:#3730A3; font-weight:600; text-decoration:underline; }
+  .dashboard-grid { display:grid; grid-template-columns:2fr 1fr; gap:24px; }
+  .chart-placeholder { height:160px; background:var(--bg-subtle); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:14px; }
+  .empty { color:var(--text-muted); font-size:14px; padding:16px 0; }
+  .section-title { font-size:16px; font-weight:700; margin-bottom:16px; }
+  @media(max-width:768px) { .dashboard-grid { grid-template-columns:1fr; } }
 </style>

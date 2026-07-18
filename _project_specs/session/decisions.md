@@ -45,6 +45,12 @@
 **Decision:** All list endpoints return `PaginatedResult<T>` from shared/types/index.ts: `{ data: T[], total: number, page: number, pageSize: number }`
 **Default page size:** 25
 
+## 2026-07-15 — Inventory transfer movement pattern
+
+**Decision:** The `transfer` movement type in `stock_movements` has no trigger branch — it must be modeled as two paired movements in the application layer.
+**Why:** A transfer moves stock from warehouse A to warehouse B; it requires two `inventory_items` rows to update atomically. The DB trigger only touches one row. Single-row trigger logic can't express this.
+**Rule:** `inventoryService` must implement transfers as two sequential movements: one `damage`-type deduction on the source warehouse, one `purchase`-type addition on the destination warehouse, wrapped in a Supabase transaction (or RPC call). Never call `transfer` type directly from the application layer — it is reserved for future DB-level transfer support.
+
 ## 2026-07-15 — Audit log write pattern
 
 **Decision:** Audit logs are written inside DB triggers where possible (DDL changes) and via `auditService.log()` in application layer for user-driven actions.

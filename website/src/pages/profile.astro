@@ -2,11 +2,14 @@
 import Layout from "../components/layout/Layout.astro";
 import { createSupabase } from "../lib/supabase";
 import { fetchProfile, updateProfile } from "@shared/services/profileService";
+import { useT } from "../lib/i18n";
+import { ROLE, ROLE_LABEL } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
+const t = useT(Astro);
 let profile = await fetchProfile(supabase, session.user.id, session.user.email ?? "");
 let saved = false;
 let saveError: string | null = null;
@@ -18,11 +21,18 @@ if (Astro.request.method === "POST") {
   if (error) saveError = error.message;
   else { saved = true; profile = await fetchProfile(supabase, session.user.id, session.user.email ?? ""); }
 }
+
+function roleLabel(role: number | null) {
+  if (role === ROLE.OWNER)       return t.profile.role.owner;
+  if (role === ROLE.ADMIN)       return t.profile.role.admin;
+  if (role === ROLE.ESHOP_ADMIN) return t.profile.role.eshop_admin;
+  return t.profile.role.user;
+}
 ---
 
-<Layout title="Profile">
+<Layout title={t.profile.title}>
   <div class="page container">
-    <h1 class="page-title">Profile</h1>
+    <h1 class="page-title">{t.profile.title}</h1>
 
     <div class="card profile-card">
       <div class="avatar">
@@ -32,45 +42,45 @@ if (Astro.request.method === "POST") {
         }
       </div>
       <div class="profile-info">
-        <span class="profile-name">{profile?.display_name ?? "Unknown"}</span>
+        <span class="profile-name">{profile?.display_name ?? t.common.unnamed}</span>
         <span class="profile-email">{session.user.email}</span>
-        <span class="profile-role">{profile?.role === "admin" ? "Admin" : "User"}</span>
+        <span class="profile-role">{roleLabel(profile?.role ?? null)}</span>
       </div>
     </div>
 
     <div class="card edit-card">
-      <h2 class="section-title">Edit profile</h2>
-      {saved && <p class="success-msg">Profile saved!</p>}
+      <h2 class="section-title">{t.profile.editProfile}</h2>
+      {saved && <p class="success-msg">{t.settings.saved}</p>}
       {saveError && <p class="error-msg">{saveError}</p>}
       <form method="POST" class="edit-form">
         <div class="field">
-          <label for="display_name">Display name</label>
-          <input id="display_name" name="display_name" type="text" value={profile?.display_name ?? ""} placeholder="Your name" />
+          <label for="display_name">{t.profile.displayName}</label>
+          <input id="display_name" name="display_name" type="text" value={profile?.display_name ?? ""} placeholder={t.settings.displayNamePlaceholder} />
         </div>
-        <button type="submit" class="btn btn-primary">Save changes</button>
+        <button type="submit" class="btn btn-primary">{t.common.saveChanges}</button>
       </form>
     </div>
 
     <form method="POST" action="/auth/signout">
-      <button type="submit" class="btn btn-ghost">Sign out →</button>
+      <button type="submit" class="btn btn-ghost">{t.profile.signOut} →</button>
     </form>
   </div>
 </Layout>
 
 <style>
-  .page-title { font-size: 36px; font-weight: 900; color: #fff; margin-bottom: 32px; }
+  .page-title { font-size: 36px; font-weight: 900; color: var(--text-primary); margin-bottom: 32px; }
   .profile-card { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
-  .avatar { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: #FF5E1A; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .avatar { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: var(--accent-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .avatar-img { width: 100%; height: 100%; object-fit: cover; }
   .avatar-initial { font-size: 28px; font-weight: 900; color: #fff; }
   .profile-info { display: flex; flex-direction: column; gap: 4px; }
-  .profile-name { font-size: 20px; font-weight: 800; color: #fff; }
-  .profile-email { font-size: 13px; color: #B3B3CC; }
-  .profile-role { font-size: 11px; font-weight: 700; color: #FF5E1A; text-transform: uppercase; letter-spacing: 0.6px; }
+  .profile-name { font-size: 20px; font-weight: 800; color: var(--text-primary); }
+  .profile-email { font-size: 13px; color: var(--text-muted); }
+  .profile-role { font-size: 11px; font-weight: 700; color: var(--accent-primary); text-transform: uppercase; letter-spacing: 0.6px; }
   .edit-card { margin-bottom: 24px; }
-  .section-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 20px; }
+  .section-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 20px; }
   .edit-form { display: flex; flex-direction: column; gap: 16px; }
-  .field label { display: block; font-size: 12px; font-weight: 700; color: #808099; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
-  .success-msg { color: #00E6A0; font-size: 14px; margin-bottom: 12px; }
-  .error-msg { color: #FF3B55; font-size: 14px; margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+  .success-msg { color: var(--success); font-size: 14px; margin-bottom: 12px; }
+  .error-msg { color: var(--error); font-size: 14px; margin-bottom: 12px; }
 </style>

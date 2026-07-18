@@ -1,0 +1,120 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchPriceLists, fetchDiscountRules, fetchCoupons } from "@shared/services/pricingService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions, partyId } = ctx;
+const t = useT(Astro);
+
+const url = new URL(Astro.request.url);
+const tab = url.searchParams.get("tab") ?? "pricelists";
+
+let priceLists: Awaited<ReturnType<typeof fetchPriceLists>> = [];
+let discountRules: Awaited<ReturnType<typeof fetchDiscountRules>> = [];
+let coupons: Awaited<ReturnType<typeof fetchCoupons>> = [];
+
+if (partyId) {
+  [priceLists, discountRules, coupons] = await Promise.all([
+    fetchPriceLists(supabase, partyId),
+    fetchDiscountRules(supabase, partyId),
+    fetchCoupons(supabase, partyId),
+  ]);
+}
+---
+
+<CmsLayout title={t.admin.pricing.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+  <div class="tabs">
+    <a href="?tab=pricelists" class={`tab ${tab === "pricelists" ? "tab--active" : ""}`}>{t.admin.sidebar.pricing} ({priceLists.length})</a>
+    <a href="?tab=discounts" class={`tab ${tab === "discounts" ? "tab--active" : ""}`}>{t.admin.pricing.colType} ({discountRules.length})</a>
+    <a href="?tab=coupons" class={`tab ${tab === "coupons" ? "tab--active" : ""}`}>{t.admin.pricing.colCode} ({coupons.length})</a>
+  </div>
+
+  {tab === "pricelists" && (
+    <div style="margin-top:20px">
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table">
+          <thead><tr><th>{t.admin.pricing.colName}</th><th>{t.admin.pricing.colCurrency}</th><th>{t.admin.pricing.colDefault}</th><th>{t.admin.pricing.colStatus}</th><th>{t.admin.pricing.colValidFrom}</th><th>{t.admin.pricing.colValidTo}</th></tr></thead>
+          <tbody>
+            {priceLists.map((pl) => (
+              <tr>
+                <td style="font-weight:600">{pl.name}</td>
+                <td>{pl.currency}</td>
+                <td>{pl.is_default ? <span class="badge badge-active">{t.admin.pricing.defaultBadge}</span> : "—"}</td>
+                <td><span class={`badge ${pl.is_active ? "badge-active" : "badge-inactive"}`}>{pl.is_active ? t.common.active : t.common.inactive}</span></td>
+                <td style="font-size:13px;color:var(--text-muted)">{pl.valid_from ? new Date(pl.valid_from).toLocaleDateString() : "—"}</td>
+                <td style="font-size:13px;color:var(--text-muted)">{pl.valid_to ? new Date(pl.valid_to).toLocaleDateString() : "—"}</td>
+              </tr>
+            ))}
+            {priceLists.length === 0 && <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.pricing.noPricelists}</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )}
+
+  {tab === "discounts" && (
+    <div style="margin-top:20px">
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table">
+          <thead><tr><th>{t.admin.pricing.colName}</th><th>{t.admin.pricing.colType}</th><th>{t.admin.pricing.colValue}</th><th>{t.admin.pricing.colStatus}</th><th>{t.admin.pricing.colStarts}</th><th>{t.admin.pricing.colEnds}</th></tr></thead>
+          <tbody>
+            {discountRules.map((r) => (
+              <tr>
+                <td style="font-weight:600">{r.name}</td>
+                <td><span class="badge badge-pending">{r.type}</span></td>
+                <td>{r.type === "percentage" ? `${r.value}%` : `${r.value} Kč`}</td>
+                <td><span class={`badge ${r.is_active ? "badge-active" : "badge-inactive"}`}>{r.is_active ? t.common.active : t.common.inactive}</span></td>
+                <td style="font-size:13px;color:var(--text-muted)">{r.starts_at ? new Date(r.starts_at).toLocaleDateString() : "—"}</td>
+                <td style="font-size:13px;color:var(--text-muted)">{r.ends_at ? new Date(r.ends_at).toLocaleDateString() : "—"}</td>
+              </tr>
+            ))}
+            {discountRules.length === 0 && <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.pricing.noDiscounts}</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )}
+
+  {tab === "coupons" && (
+    <div style="margin-top:20px">
+      <div class="tab-toolbar">
+        <span class="total-label">{coupons.length} {t.admin.pricing.colCode.toLowerCase()}</span>
+        <a href="/admin/pricing/coupons/new" class="btn btn-primary">{t.admin.pricing.newCoupon}</a>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;margin-top:12px">
+        <table class="data-table">
+          <thead><tr><th>{t.admin.pricing.colCode}</th><th>{t.admin.pricing.colStatus}</th><th>{t.admin.pricing.colMaxUses}</th><th>{t.admin.pricing.colUsed}</th><th>{t.admin.pricing.colCreated}</th></tr></thead>
+          <tbody>
+            {coupons.map((c) => (
+              <tr>
+                <td style="font-weight:700;font-family:monospace">{c.code}</td>
+                <td><span class={`badge ${c.is_active ? "badge-active" : "badge-inactive"}`}>{c.is_active ? t.common.active : t.common.inactive}</span></td>
+                <td>{c.max_uses ?? t.admin.pricing.unlimited}</td>
+                <td>{c.uses_count}</td>
+                <td style="font-size:13px;color:var(--text-muted)">{new Date(c.created_at).toLocaleDateString()}</td>
+              </tr>
+            ))}
+            {coupons.length === 0 && <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.pricing.noCoupons}</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )}
+</CmsLayout>
+
+<style>
+  .tabs { display:flex; gap:4px; border-bottom:2px solid var(--border-default); }
+  .tab { padding:10px 16px; font-size:13px; font-weight:600; color:var(--text-muted); border-bottom:2px solid transparent; margin-bottom:-2px; text-decoration:none; transition:color 0.15s, border-color 0.15s; }
+  .tab:hover { color:var(--text-primary); text-decoration:none; }
+  .tab--active { color:var(--accent-primary); border-bottom-color:var(--accent-primary); }
+  .tab-toolbar { display:flex; justify-content:space-between; align-items:center; }
+  .total-label { font-size:14px; color:var(--text-muted); }
+</style>

@@ -1,0 +1,114 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchOrders } from "@shared/services/orderService";
+import { fetchProducts } from "@shared/services/productService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions, partyId } = ctx;
+const t = useT(Astro);
+
+const now = new Date();
+const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+const yearStart = new Date(now.getFullYear(), 0, 1).toISOString();
+
+let totalOrders = 0;
+let monthOrders = 0;
+let monthRevenue = 0;
+let yearRevenue = 0;
+let totalProducts = 0;
+let activeProducts = 0;
+
+if (partyId) {
+  const [allOrders, mOrders, yOrders, tProds, aProds] = await Promise.all([
+    fetchOrders(supabase, partyId, { pageSize: 1 }),
+    fetchOrders(supabase, partyId, { from: monthStart, pageSize: 100 }),
+    fetchOrders(supabase, partyId, { from: yearStart, pageSize: 500 }),
+    fetchProducts(supabase, partyId, { pageSize: 1 }),
+    fetchProducts(supabase, partyId, { status: "active", pageSize: 1 }),
+  ]);
+  totalOrders = allOrders.total;
+  monthOrders = mOrders.total;
+  monthRevenue = mOrders.data.reduce((s, o) => s + o.total_amount, 0);
+  yearRevenue = yOrders.data.reduce((s, o) => s + o.total_amount, 0);
+  totalProducts = tProds.total;
+  activeProducts = aProds.total;
+}
+
+const reports = [
+  {
+    title: t.admin.reports.revenueTitle,
+    description: t.admin.reports.revenueDesc,
+    stats: [
+      { label: t.admin.reports.thisMonth, value: `${monthRevenue.toFixed(2)} Kč` },
+      { label: t.admin.reports.thisYear, value: `${yearRevenue.toFixed(2)} Kč` },
+    ],
+  },
+  {
+    title: t.admin.reports.ordersTitle,
+    description: t.admin.reports.ordersDesc,
+    stats: [
+      { label: t.admin.reports.thisMonth, value: monthOrders },
+      { label: t.admin.reports.totalOrders, value: totalOrders },
+    ],
+  },
+  {
+    title: t.admin.reports.productsTitle,
+    description: t.admin.reports.productsDesc,
+    stats: [
+      { label: t.admin.reports.totalProducts, value: totalProducts },
+      { label: t.admin.reports.activeProducts, value: activeProducts },
+    ],
+  },
+  {
+    title: t.admin.reports.customersTitle,
+    description: t.admin.reports.customersDesc,
+    stats: [],
+  },
+];
+---
+
+<CmsLayout title={t.admin.reports.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+  <div class="reports-grid">
+    {reports.map((r) => (
+      <div class="card report-card">
+        <h2 class="report-title">{r.title}</h2>
+        <p class="report-desc">{r.description}</p>
+        {r.stats.length > 0 && (
+          <div class="report-stats">
+            {r.stats.map((s) => (
+              <div class="report-stat">
+                <span class="report-stat-num">{s.value}</span>
+                <span class="report-stat-label">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <div class="chart-placeholder">{t.admin.reports.chartSoon}</div>
+        <div class="report-actions">
+          <button class="btn btn-secondary" disabled>{t.admin.reports.exportCsv}</button>
+        </div>
+      </div>
+    ))}
+  </div>
+</CmsLayout>
+
+<style>
+  .reports-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:24px; }
+  .report-card { display:flex; flex-direction:column; gap:12px; }
+  .report-title { font-size:16px; font-weight:700; }
+  .report-desc { font-size:13px; color:var(--text-muted); line-height:1.5; }
+  .report-stats { display:flex; gap:16px; }
+  .report-stat { display:flex; flex-direction:column; gap:2px; }
+  .report-stat-num { font-size:22px; font-weight:800; color:var(--text-primary); }
+  .report-stat-label { font-size:12px; color:var(--text-muted); font-weight:500; }
+  .chart-placeholder { height:120px; background:var(--bg-subtle); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:13px; }
+  .report-actions { display:flex; justify-content:flex-end; }
+</style>

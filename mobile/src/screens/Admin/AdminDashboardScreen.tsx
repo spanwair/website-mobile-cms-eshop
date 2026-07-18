@@ -1,62 +1,119 @@
 import React, { useEffect, useState } from "react";
-import { Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { supabase } from "../../../supabase/client";
-import { fetchItems } from "../../../../shared/services/itemService";
-import { fetchAllUsers } from "../../../../shared/services/profileService";
-import { colors } from "../../../../shared/constants/theme";
+import { fetchItems } from "@shared/services/itemService";
+import { fetchAllUsers } from "@shared/services/profileService";
+import { colors, shadow } from "@shared/constants/theme";
 import { ScreenContainer } from "../../components/layout/ScreenContainer";
-import { Card } from "../../components/ui/Card";
 import type { AdminStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<AdminStackParamList, "AdminDashboard">;
 
+type Stat = { label: string; value: number };
+
 export function AdminDashboardScreen() {
   const nav = useNavigation<Nav>();
-  const [stats, setStats] = useState({ totalItems: 0, activeItems: 0, totalUsers: 0 });
+  const [stats, setStats] = useState<Stat[]>([
+    { label: "Total Users", value: 0 },
+    { label: "Total Items", value: 0 },
+    { label: "Active Items", value: 0 },
+    { label: "Inactive Items", value: 0 },
+  ]);
 
   useEffect(() => {
     Promise.all([
       fetchItems(supabase, 1, 1),
       fetchItems(supabase, 1, 1, "active"),
+      fetchItems(supabase, 1, 1, "inactive"),
       fetchAllUsers(supabase),
-    ]).then(([all, active, users]) => {
-      setStats({ totalItems: all.total, activeItems: active.total, totalUsers: users.length });
+    ]).then(([all, active, inactive, users]) => {
+      setStats([
+        { label: "Total Users", value: users.length },
+        { label: "Total Items", value: all.total },
+        { label: "Active Items", value: active.total },
+        { label: "Inactive Items", value: inactive.total },
+      ]);
     });
   }, []);
 
   return (
-    <ScreenContainer title="Admin Dashboard">
-      <Card style={styles.statsCard}>
-        {[
-          { label: "Total Users", value: stats.totalUsers },
-          { label: "Total Items", value: stats.totalItems },
-          { label: "Active Items", value: stats.activeItems },
-        ].map(({ label, value }) => (
-          <Text key={label} style={styles.stat}>
-            <Text style={styles.statNum}>{value} </Text>
+    <ScreenContainer title="Admin Dashboard" scroll={false}>
+      <View style={styles.grid}>
+        {stats.map(({ label, value }) => (
+          <View key={label} style={[styles.statCard, shadow.sm]}>
+            <Text style={styles.statNum}>{value}</Text>
             <Text style={styles.statLabel}>{label}</Text>
-          </Text>
+          </View>
         ))}
-      </Card>
+      </View>
 
-      <TouchableOpacity style={styles.menuItem} onPress={() => nav.navigate("AdminItems")} activeOpacity={0.8}>
-        <Card>
-          <Text style={styles.menuTitle}>Manage Items</Text>
-          <Text style={styles.menuDesc}>View, edit, and delete all items</Text>
-        </Card>
+      <Text style={styles.sectionTitle}>Actions</Text>
+      <TouchableOpacity
+        style={[styles.actionCard, shadow.sm]}
+        onPress={() => nav.navigate("AdminItems")}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.actionTitle}>Manage Items</Text>
+        <Text style={styles.actionDesc}>View, edit, and delete all items</Text>
       </TouchableOpacity>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  statsCard: { marginBottom: 24, gap: 12 },
-  stat: { fontSize: 16 },
-  statNum: { fontWeight: "900", color: colors.primary, fontSize: 22 },
-  statLabel: { color: colors.textSecondary },
-  menuItem: { marginBottom: 12 },
-  menuTitle: { fontSize: 17, fontWeight: "700", color: colors.textPrimary, marginBottom: 4 },
-  menuDesc: { fontSize: 13, color: colors.textSecondary },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 28,
+  },
+  statCard: {
+    width: '47%',
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'flex-start',
+  },
+  statNum: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: colors.accent,
+    letterSpacing: -1,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 13,
+    color: colors.textMuted,
+    fontWeight: '500',
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 12,
+  },
+  actionCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 10,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  actionDesc: {
+    fontSize: 13,
+    color: colors.textMuted,
+  },
 });

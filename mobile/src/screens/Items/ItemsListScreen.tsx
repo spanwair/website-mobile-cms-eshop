@@ -4,9 +4,9 @@ import { FlashList } from "@shopify/flash-list";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useItems } from "../../lib/query/hooks/useItems";
-import { formatRelative } from "../../../../shared/utils/format";
+import { formatRelative } from "@shared/utils/format";
 import { Card } from "../../components/ui/Card";
-import type { Item } from "../../../../shared/types";
+import type { Item } from "@shared/types";
 import type { ItemsStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<ItemsStackParamList, "ItemsList">;

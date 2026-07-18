@@ -1,0 +1,95 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { createRole } from "@shared/services/permissionsService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions, partyId } = ctx;
+const t = useT(Astro);
+
+let error = "";
+
+if (Astro.request.method === "POST" && partyId) {
+  const form = await Astro.request.formData();
+  const name = form.get("name") as string;
+  const description = (form.get("description") as string) || undefined;
+
+  let permBits = 0;
+  for (const [, val] of form.entries()) {
+    const n = parseInt(val as string, 10);
+    if (!isNaN(n) && n > 0) permBits |= n;
+  }
+
+  const result = await createRole(supabase, partyId, name, permBits, description);
+  if (result.error) {
+    error = result.error.message;
+  } else {
+    return Astro.redirect("/admin/roles");
+  }
+}
+
+const PERMS = [
+  { key: "VIEW_DASHBOARD", label: t.admin.roles.permDashboard, bit: 1 },
+  { key: "MANAGE_USERS", label: t.admin.roles.permUsers, bit: 2 },
+  { key: "MANAGE_ROLES", label: t.admin.roles.permRoles, bit: 4 },
+  { key: "MANAGE_PRODUCTS", label: t.admin.roles.permProducts, bit: 8 },
+  { key: "MANAGE_CATEGORIES", label: t.admin.roles.permCategories, bit: 16 },
+  { key: "MANAGE_ORDERS", label: t.admin.roles.permOrders, bit: 32 },
+  { key: "MANAGE_INVENTORY", label: t.admin.roles.permInventory, bit: 64 },
+  { key: "MANAGE_PRICING", label: t.admin.roles.permPricing, bit: 128 },
+  { key: "MANAGE_CUSTOMERS", label: t.admin.roles.permCustomers, bit: 256 },
+  { key: "MANAGE_REPORTS", label: t.admin.roles.permReports, bit: 512 },
+  { key: "MANAGE_AUDIT", label: t.admin.roles.permAudit, bit: 4096 },
+];
+---
+
+<CmsLayout title={t.admin.roles.newTitle} userPermissions={permissions} currentPath="/admin/roles">
+  <div class="card" style="max-width:560px">
+    <a href="/admin/roles" class="back-link">{t.admin.roles.back}</a>
+    {!partyId && <div class="alert">{t.admin.roles.noParty}</div>}
+    {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
+    <form method="POST" class="role-form">
+      <div class="form-group">
+        <label class="form-label">{t.admin.roles.fieldName}</label>
+        <input class="form-input" name="name" required placeholder={t.admin.roles.fieldNamePlaceholder} />
+      </div>
+      <div class="form-group">
+        <label class="form-label">{t.admin.roles.fieldDescription}</label>
+        <input class="form-input" name="description" placeholder={t.admin.roles.fieldDescPlaceholder} />
+      </div>
+      <div class="form-group">
+        <label class="form-label">{t.admin.roles.fieldPermissions}</label>
+        <div class="perm-grid">
+          {PERMS.map((p) => (
+            <label class="perm-check">
+              <input type="checkbox" name={`perm_${p.key}`} value={p.bit} />
+              <span>{p.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+      <div class="form-actions">
+        <a href="/admin/roles" class="btn btn-ghost">{t.common.cancel}</a>
+        <button type="submit" class="btn btn-primary" disabled={!partyId}>{t.admin.roles.createBtn}</button>
+      </div>
+    </form>
+  </div>
+</CmsLayout>
+
+<style>
+  .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
+  .back-link:hover { color:var(--text-primary); }
+  .alert { background:#FFF3CD; border:1px solid #FFEAA7; border-radius:8px; padding:12px 16px; color:#856404; margin-bottom:16px; font-size:13px; }
+  .role-form { display:flex; flex-direction:column; gap:16px; }
+  .perm-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px; background:var(--bg-subtle); border-radius:8px; }
+  .perm-check { display:flex; align-items:center; gap:8px; font-size:14px; cursor:pointer; }
+  .perm-check input { width:auto; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:8px; }
+</style>

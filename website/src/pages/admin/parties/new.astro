@@ -1,0 +1,80 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { createParty } from "@shared/services/partyService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions } = ctx;
+const t = useT(Astro);
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const result = await createParty(supabase, {
+    name: form.get("name") as string,
+    slug: form.get("slug") as string,
+    company_name: (form.get("company_name") as string) || undefined,
+    vat_number: (form.get("vat_number") as string) || undefined,
+    billing_email: (form.get("billing_email") as string) || undefined,
+  });
+  if (result.error) {
+    error = result.error.message;
+  } else {
+    return Astro.redirect("/admin/parties");
+  }
+}
+---
+
+<CmsLayout title={t.admin.parties.newTitle} userPermissions={permissions} currentPath="/admin/parties">
+  <div class="card" style="max-width:640px">
+    <a href="/admin/parties" class="back-link">{t.admin.parties.back}</a>
+    {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
+    <form method="POST" class="party-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{t.admin.parties.fieldName} *</label>
+          <input class="form-input" name="name" required placeholder="My Organisation" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{t.admin.parties.fieldSlug} *</label>
+          <input class="form-input" name="slug" required placeholder="my-organisation" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{t.admin.parties.fieldCompany}</label>
+          <input class="form-input" name="company_name" placeholder="Company s.r.o." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{t.admin.parties.fieldVat}</label>
+          <input class="form-input" name="vat_number" placeholder="CZ12345678" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{t.admin.parties.fieldBillingEmail}</label>
+        <input class="form-input" name="billing_email" type="email" placeholder="billing@company.com" />
+      </div>
+      <div class="form-actions">
+        <a href="/admin/parties" class="btn btn-ghost">{t.common.cancel}</a>
+        <button type="submit" class="btn btn-primary">{t.admin.parties.createBtn}</button>
+      </div>
+    </form>
+  </div>
+</CmsLayout>
+
+<style>
+  .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
+  .back-link:hover { color:var(--text-primary); }
+  .party-form { display:flex; flex-direction:column; gap:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:8px; }
+  @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>

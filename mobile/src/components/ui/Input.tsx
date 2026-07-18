@@ -1,5 +1,6 @@
-import React from "react";
-import { TextInput, View, Text, type TextInputProps } from "react-native";
+import React, { useState } from "react";
+import { TextInput, View, Text, StyleSheet, type TextInputProps } from "react-native";
+import { colors } from "@shared/constants/theme";
 
 interface Props extends TextInputProps {
   label?: string;
@@ -7,24 +8,44 @@ interface Props extends TextInputProps {
   className?: string;
 }
 
-export function Input({ label, error, className = "", ...props }: Props) {
+export function Input({ label, error, className, ...props }: Props) {
+  const [focused, setFocused] = useState(false);
   return (
-    <View className="mb-3">
-      {label ? (
-        <Text className="text-xs font-bold text-[#808099] uppercase tracking-wider mb-1.5">
-          {label}
-        </Text>
-      ) : null}
+    <View style={styles.wrap}>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       <TextInput
-        className={`bg-[#1E1E35] dark:bg-[#1E1E35] border-[1.5px] ${
-          error ? "border-[#FF3B55]" : "border-[#252538]"
-        } rounded-2xl p-3.5 text-base text-white ${className}`}
-        placeholderTextColor="#808099"
+        style={[styles.input, focused && styles.focused, error ? styles.inputError : null]}
+        placeholderTextColor={colors.textPlaceholder}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         {...props}
       />
-      {error ? (
-        <Text className="text-xs text-[#FF3B55] mt-1">{error}</Text>
-      ) : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  wrap: { marginBottom: 12 },
+  label: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: colors.white,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: colors.text,
+  },
+  focused: { borderColor: colors.accent },
+  inputError: { borderColor: colors.error },
+  error: { fontSize: 12, color: colors.error, marginTop: 4 },
+});

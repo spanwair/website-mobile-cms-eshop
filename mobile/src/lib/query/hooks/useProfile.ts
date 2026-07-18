@@ -3,7 +3,7 @@ import { supabase } from "../../../../supabase/client";
 import {
   fetchProfile,
   updateProfile,
-} from "../../../../../shared/services/profileService";
+} from "@shared/services/profileService";
 
 export const PROFILE_KEY = ["profile"] as const;
 

@@ -1,5 +1,6 @@
 import React from "react";
-import { View, type ViewStyle } from "react-native";
+import { View, StyleSheet, type ViewStyle } from "react-native";
+import { colors, shadow } from "@shared/constants/theme";
 
 interface Props {
   children: React.ReactNode;
@@ -7,13 +8,20 @@ interface Props {
   className?: string;
 }
 
-export function Card({ children, style, className = "" }: Props) {
+export function Card({ children, style, className }: Props) {
   return (
-    <View
-      className={`bg-[#1A1A2E] dark:bg-[#1A1A2E] rounded-2xl p-4 border border-[#252538] ${className}`}
-      style={style}
-    >
+    <View style={[styles.card, shadow.sm, style]}>
       {children}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+});

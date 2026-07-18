@@ -1,0 +1,147 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchParty, fetchPartyMembers, inviteUserToParty, removeUserFromParty } from "@shared/services/partyService";
+import { fetchRoles } from "@shared/services/permissionsService";
+import { fetchAllUsers } from "@shared/services/profileService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions } = ctx;
+const t = useT(Astro);
+
+const { id } = Astro.params;
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = form.get("action") as string;
+
+  if (action === "invite") {
+    const userId = form.get("user_id") as string;
+    const roleId = form.get("role_id") as string;
+    const result = await inviteUserToParty(supabase, userId, id!, roleId, session.user.id);
+    if (result.error) { error = result.error.message; }
+    else { return Astro.redirect(`/admin/parties/${id}`); }
+  } else if (action === "remove") {
+    const userId = form.get("user_id") as string;
+    await removeUserFromParty(supabase, userId, id!);
+    return Astro.redirect(`/admin/parties/${id}`);
+  }
+}
+
+const party = await fetchParty(supabase, id!);
+if (!party) return Astro.redirect("/admin/parties");
+
+const [members, roles, allUsers] = await Promise.all([
+  fetchPartyMembers(supabase, id!),
+  fetchRoles(supabase, id!),
+  fetchAllUsers(supabase),
+]);
+
+const memberUserIds = new Set(members.map((m) => m.user_id));
+const availableUsers = allUsers.filter((u) => !memberUserIds.has(u.id));
+
+function roleName(roleId: string) {
+  return roles.find((r) => r.id === roleId)?.name ?? roleId.slice(0, 8);
+}
+---
+
+<CmsLayout title={party.name} userPermissions={permissions} currentPath="/admin/parties">
+  <a href="/admin/parties" class="back-link">{t.admin.parties.back}</a>
+  {error && <div class="alert-error">{error}</div>}
+
+  <div class="party-grid">
+    <div>
+      <div class="card">
+        <h2 class="section-title">{t.admin.parties.sectionInfo}</h2>
+        <div class="info-rows">
+          <div class="info-row"><span class="info-label">{t.admin.parties.fieldName}</span><span>{party.name}</span></div>
+          <div class="info-row"><span class="info-label">{t.admin.parties.fieldSlug}</span><code>{party.slug}</code></div>
+          <div class="info-row"><span class="info-label">{t.admin.parties.fieldCompany}</span><span>{party.company_name ?? "—"}</span></div>
+          <div class="info-row"><span class="info-label">{t.admin.parties.fieldVat}</span><span>{party.vat_number ?? "—"}</span></div>
+          <div class="info-row"><span class="info-label">{t.admin.parties.fieldBillingEmail}</span><span>{party.billing_email ?? "—"}</span></div>
+          <div class="info-row"><span class="info-label">{t.admin.parties.fieldStatus}</span><span class={`badge ${party.is_active ? "badge-active" : "badge-inactive"}`}>{party.is_active ? t.admin.parties.statusActive : t.admin.parties.statusInactive}</span></div>
+          <div class="info-row"><span class="info-label">{t.admin.parties.fieldCreated}</span><span>{new Date(party.created_at).toLocaleDateString()}</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2 class="section-title">{t.admin.parties.sectionInvite}</h2>
+        {availableUsers.length === 0 ? (
+          <p style="font-size:14px;color:var(--text-muted)">{t.admin.parties.allMembersAdded}</p>
+        ) : (
+          <form method="POST" class="invite-form">
+            <input type="hidden" name="action" value="invite" />
+            <div class="form-group">
+              <label class="form-label">{t.admin.parties.fieldUser}</label>
+              <select class="form-input" name="user_id" required>
+                <option value="">{t.admin.parties.selectUser}</option>
+                {availableUsers.map((u) => (
+                  <option value={u.id}>{u.display_name ?? u.email} ({u.email})</option>
+                ))}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">{t.admin.parties.fieldRole}</label>
+              <select class="form-input" name="role_id" required>
+                <option value="">{t.admin.parties.selectRole}</option>
+                {roles.map((r) => <option value={r.id}>{r.name}</option>)}
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.admin.parties.sendInvite}</button>
+          </form>
+        )}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">{t.admin.parties.sectionMembers} ({members.length})</h2>
+      <table class="data-table">
+        <thead><tr><th>{t.admin.parties.colMemberName}</th><th>{t.admin.parties.colMemberEmail}</th><th>{t.admin.parties.colMemberRole}</th><th>{t.admin.parties.colJoined}</th><th></th></tr></thead>
+        <tbody>
+          {members.map((m) => (
+            <tr>
+              <td style="font-weight:600">{m.profile?.display_name ?? t.common.unnamed}</td>
+              <td style="font-size:13px;color:var(--text-muted)">{m.profile?.email ?? "—"}</td>
+              <td><span class="badge badge-pending">{roleName(m.role_id)}</span></td>
+              <td style="font-size:12px;color:var(--text-muted)">{new Date(m.joined_at).toLocaleDateString()}</td>
+              <td>
+                {m.user_id !== session.user.id && (
+                  <form method="POST" onsubmit={`return confirm('${t.admin.parties.removeConfirm}')`} style="display:inline">
+                    <input type="hidden" name="action" value="remove" />
+                    <input type="hidden" name="user_id" value={m.user_id} />
+                    <button type="submit" class="btn btn-danger" style="padding:4px 10px;font-size:12px">{t.admin.parties.removeBtn}</button>
+                  </form>
+                )}
+              </td>
+            </tr>
+          ))}
+          {members.length === 0 && <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">{t.admin.parties.noMembers}</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</CmsLayout>
+
+<style>
+  .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
+  .back-link:hover { color:var(--text-primary); }
+  .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
+  .party-grid { display:grid; grid-template-columns:1fr 2fr; gap:24px; }
+  .section-title { font-size:15px; font-weight:700; margin-bottom:16px; }
+  .info-rows { display:flex; flex-direction:column; gap:10px; }
+  .info-row { display:flex; justify-content:space-between; align-items:center; font-size:14px; border-bottom:1px solid var(--border-default); padding-bottom:8px; }
+  .info-row:last-child { border-bottom:none; }
+  .info-label { font-weight:600; color:var(--text-muted); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; }
+  .invite-form { display:flex; flex-direction:column; gap:12px; }
+  code { font-family:monospace; font-size:13px; background:var(--bg-subtle); padding:2px 6px; border-radius:4px; }
+  @media(max-width:768px) { .party-grid { grid-template-columns:1fr; } }
+</style>

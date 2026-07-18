@@ -1,0 +1,81 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchCustomers } from "@shared/services/customerService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions, partyId } = ctx;
+const t = useT(Astro);
+
+const url = new URL(Astro.request.url);
+const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+const search = url.searchParams.get("search") ?? "";
+const pageSize = 20;
+
+let customers: Awaited<ReturnType<typeof fetchCustomers>>["data"] = [];
+let total = 0;
+
+if (partyId) {
+  const result = await fetchCustomers(supabase, partyId, { page, pageSize, search: search || undefined });
+  customers = result.data;
+  total = result.total;
+}
+
+const totalPages = Math.ceil(total / pageSize);
+---
+
+<CmsLayout title={t.admin.customers.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+  <div class="toolbar">
+    <form method="GET" class="search-form">
+      <input class="form-input" name="search" placeholder={t.admin.customers.searchPlaceholder} value={search} style="width:280px" />
+      <button type="submit" class="btn btn-secondary">{t.admin.customers.searchBtn}</button>
+    </form>
+    <span class="total-label">{total} {t.admin.customers.title.toLowerCase()}</span>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead>
+        <tr><th>{t.admin.customers.colName}</th><th>{t.admin.customers.colEmail}</th><th>{t.admin.customers.colPhone}</th><th>{t.admin.customers.colStatus}</th><th>{t.admin.customers.colJoined}</th><th>{t.admin.customers.colActions}</th></tr>
+      </thead>
+      <tbody>
+        {customers.map((c) => (
+          <tr>
+            <td style="font-weight:600">{c.first_name} {c.last_name}</td>
+            <td style="color:var(--text-muted)">{c.email}</td>
+            <td style="color:var(--text-muted)">{c.phone ?? "—"}</td>
+            <td><span class={`badge ${c.is_active ? "badge-active" : "badge-inactive"}`}>{c.is_active ? t.admin.customers.statusActive : t.admin.customers.statusInactive}</span></td>
+            <td style="color:var(--text-muted);font-size:13px">{new Date(c.created_at).toLocaleDateString()}</td>
+            <td><a href={`/admin/customers/${c.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.customers.view}</a></td>
+          </tr>
+        ))}
+        {customers.length === 0 && (
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.customers.noCustomers}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+
+  {totalPages > 1 && (
+    <div class="pagination">
+      {page > 1 && <a href={`?page=${page - 1}&search=${search}`} class="btn btn-ghost">{t.common.previous}</a>}
+      <span class="page-info">{t.common.page} {page} {t.common.of} {totalPages} ({t.common.total} {total})</span>
+      {page < totalPages && <a href={`?page=${page + 1}&search=${search}`} class="btn btn-ghost">{t.common.next}</a>}
+    </div>
+  )}
+</CmsLayout>
+
+<style>
+  .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; flex-wrap:wrap; }
+  .search-form { display:flex; gap:8px; align-items:center; }
+  .total-label { font-size:14px; color:var(--text-muted); }
+  .pagination { display:flex; align-items:center; gap:12px; margin-top:16px; }
+  .page-info { font-size:13px; color:var(--text-muted); }
+</style>

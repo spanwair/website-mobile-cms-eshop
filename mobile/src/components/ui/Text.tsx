@@ -1,24 +1,25 @@
 import React from "react";
-import { Text as RNText, type TextProps } from "react-native";
+import { Text as RNText, StyleSheet, type TextProps } from "react-native";
+import { colors } from "@shared/constants/theme";
 
 interface Props extends TextProps {
   variant?: "display" | "heading" | "title" | "body" | "caption" | "micro";
   className?: string;
 }
 
-const VARIANTS = {
-  display: "text-[32px] font-extrabold -tracking-[0.8px] text-white dark:text-white",
-  heading: "text-2xl font-bold -tracking-[0.4px] text-white dark:text-white",
-  title: "text-xl font-bold -tracking-[0.2px] text-white dark:text-white",
-  body: "text-[15px] font-normal leading-[22px] text-[#B3B3CC] dark:text-[#B3B3CC]",
-  caption: "text-[13px] font-medium text-[#808099] dark:text-[#808099]",
-  micro: "text-[11px] font-bold tracking-[0.8px] uppercase text-[#808099] dark:text-[#808099]",
-};
-
-export function Text({ variant = "body", className = "", children, ...props }: Props) {
+export function Text({ variant = "body", style, children, ...props }: Props) {
   return (
-    <RNText className={`${VARIANTS[variant]} ${className}`} {...props}>
+    <RNText style={[VARIANTS[variant], style]} {...props}>
       {children}
     </RNText>
   );
 }
+
+const VARIANTS = StyleSheet.create({
+  display: { fontSize: 32, fontWeight: '800', letterSpacing: -0.8, color: colors.text },
+  heading: { fontSize: 24, fontWeight: '700', letterSpacing: -0.4, color: colors.text },
+  title:   { fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: colors.text },
+  body:    { fontSize: 15, fontWeight: '400', lineHeight: 22, color: colors.textMuted },
+  caption: { fontSize: 13, fontWeight: '500', color: colors.textMuted },
+  micro:   { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted },
+});

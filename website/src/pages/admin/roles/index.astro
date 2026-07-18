@@ -1,0 +1,107 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchRoles, deleteRole } from "@shared/services/permissionsService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions, partyId } = ctx;
+const t = useT(Astro);
+
+if (Astro.request.method === "POST" && partyId) {
+  const form = await Astro.request.formData();
+  const roleId = form.get("role_id") as string;
+  if (roleId) await deleteRole(supabase, roleId);
+  return Astro.redirect("/admin/roles");
+}
+
+const roles = partyId ? await fetchRoles(supabase, partyId) : [];
+
+const PERM_LABELS: Record<string, string> = {
+  VIEW_DASHBOARD: t.admin.roles.permDashboard,
+  MANAGE_USERS: t.admin.roles.permUsers,
+  MANAGE_ROLES: t.admin.roles.permRoles,
+  MANAGE_PRODUCTS: t.admin.roles.permProducts,
+  MANAGE_CATEGORIES: t.admin.roles.permCategories,
+  MANAGE_ORDERS: t.admin.roles.permOrders,
+  MANAGE_INVENTORY: t.admin.roles.permInventory,
+  MANAGE_PRICING: t.admin.roles.permPricing,
+  MANAGE_CUSTOMERS: t.admin.roles.permCustomers,
+  MANAGE_REPORTS: t.admin.roles.permReports,
+  MANAGE_AUDIT: t.admin.roles.permAudit,
+};
+
+const PERM_BITS: Record<string, number> = {
+  VIEW_DASHBOARD: 1, MANAGE_USERS: 2, MANAGE_ROLES: 4, MANAGE_PRODUCTS: 8,
+  MANAGE_CATEGORIES: 16, MANAGE_ORDERS: 32, MANAGE_INVENTORY: 64,
+  MANAGE_PRICING: 128, MANAGE_CUSTOMERS: 256, MANAGE_REPORTS: 512, MANAGE_AUDIT: 4096,
+};
+
+function activePerms(bits: number) {
+  return Object.entries(PERM_BITS).filter(([, v]) => (bits & v) !== 0).map(([k]) => PERM_LABELS[k]);
+}
+---
+
+<CmsLayout title={t.admin.roles.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+  {!partyId && <div class="alert">{t.admin.noParty}</div>}
+
+  <div class="toolbar">
+    <span class="total-label">{roles.length} {t.admin.roles.title.toLowerCase()}</span>
+    <a href="/admin/roles/new" class="btn btn-primary">{t.admin.roles.new}</a>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead>
+        <tr><th>{t.admin.roles.colName}</th><th>{t.admin.roles.colDescription}</th><th>{t.admin.roles.colPermissions}</th><th>{t.admin.roles.colType}</th><th>{t.admin.roles.colActions}</th></tr>
+      </thead>
+      <tbody>
+        {roles.map((r) => (
+          <tr>
+            <td style="font-weight:600">{r.name}</td>
+            <td style="color:var(--text-muted);font-size:13px">{r.description ?? "—"}</td>
+            <td>
+              <div class="perm-chips">
+                {activePerms(r.permissions).map((label) => (
+                  <span class="perm-chip">{label}</span>
+                ))}
+                {activePerms(r.permissions).length === 0 && <span style="font-size:13px;color:var(--text-muted)">{t.admin.roles.noPermissions}</span>}
+              </div>
+            </td>
+            <td>
+              {r.is_system
+                ? <span class="badge badge-pending">{t.admin.roles.typeSystem}</span>
+                : <span class="badge badge-inactive">{t.admin.roles.typeCustom}</span>
+              }
+            </td>
+            <td>
+              {!r.is_system && (
+                <form method="POST" onsubmit={`return confirm('${t.admin.roles.deleteConfirm}')`} style="display:inline">
+                  <input type="hidden" name="role_id" value={r.id} />
+                  <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{t.common.delete}</button>
+                </form>
+              )}
+            </td>
+          </tr>
+        ))}
+        {roles.length === 0 && (
+          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.roles.noRoles}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</CmsLayout>
+
+<style>
+  .alert { background:#FFF3CD; border:1px solid #FFEAA7; border-radius:8px; padding:12px 16px; color:#856404; margin-bottom:24px; font-size:14px; }
+  .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .total-label { font-size:14px; color:var(--text-muted); }
+  .perm-chips { display:flex; flex-wrap:wrap; gap:4px; }
+  .perm-chip { display:inline-block; padding:2px 8px; background:rgba(79,70,229,0.08); color:var(--accent-primary); border-radius:999px; font-size:11px; font-weight:600; }
+</style>

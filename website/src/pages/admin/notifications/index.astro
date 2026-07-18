@@ -1,0 +1,63 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchUserNotifications } from "@shared/services/notificationService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions } = ctx;
+const t = useT(Astro);
+
+const notifications = await fetchUserNotifications(supabase, session.user.id);
+---
+
+<CmsLayout title={t.admin.notifications.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>{t.admin.audit.colTimestamp}</th>
+          <th>Type</th>
+          <th>Title</th>
+          <th>Message</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {notifications.map((n) => (
+          <tr class={n.read_at ? "" : "unread"}>
+            <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">
+              {new Date(n.created_at).toLocaleString()}
+            </td>
+            <td style="font-family:monospace;font-size:13px">{n.type}</td>
+            <td>{n.title ?? "—"}</td>
+            <td style="color:var(--text-muted);font-size:13px">{n.body ?? "—"}</td>
+            <td>
+              {n.read_at
+                ? <span class="badge badge-inactive">Read</span>
+                : <span class="badge badge-active">Unread</span>
+              }
+            </td>
+          </tr>
+        ))}
+        {notifications.length === 0 && (
+          <tr>
+            <td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">
+              {t.admin.notifications.noNotifications}
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</CmsLayout>
+
+<style>
+  .unread td { font-weight: 600; }
+</style>

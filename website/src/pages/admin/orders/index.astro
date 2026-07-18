@@ -1,0 +1,104 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchOrders } from "@shared/services/orderService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+import type { Order } from "@shared/types/index";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions, partyId } = ctx;
+const t = useT(Astro);
+
+const url = new URL(Astro.request.url);
+const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+const status = (url.searchParams.get("status") ?? "") as Order["status"] | "";
+const pageSize = 20;
+
+let orders: Order[] = [];
+let total = 0;
+
+if (partyId) {
+  const result = await fetchOrders(supabase, partyId, { page, pageSize, status: status || undefined });
+  orders = result.data;
+  total = result.total;
+}
+
+const totalPages = Math.ceil(total / pageSize);
+
+const STATUS_TABS: Array<{ value: string; label: string }> = [
+  { value: "", label: t.admin.orders.tabAll },
+  { value: "pending", label: t.admin.orders.tabPending },
+  { value: "confirmed", label: t.admin.orders.tabConfirmed },
+  { value: "processing", label: t.admin.orders.tabProcessing },
+  { value: "shipped", label: t.admin.orders.tabShipped },
+  { value: "delivered", label: t.admin.orders.tabDelivered },
+  { value: "cancelled", label: t.admin.orders.tabCancelled },
+];
+
+function statusClass(s: string) {
+  const map: Record<string, string> = {
+    pending: "badge-pending", confirmed: "badge-active", processing: "badge-draft",
+    shipped: "badge-active", delivered: "badge-active", cancelled: "badge-error", refunded: "badge-inactive",
+  };
+  return map[s] ?? "badge-inactive";
+}
+---
+
+<CmsLayout title={t.admin.orders.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+  <div class="tabs">
+    {STATUS_TABS.map((tab) => (
+      <a
+        href={`/admin/orders?status=${tab.value}`}
+        class={`tab ${status === tab.value ? "tab--active" : ""}`}
+      >
+        {tab.label}
+      </a>
+    ))}
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden;margin-top:16px">
+    <table class="data-table">
+      <thead>
+        <tr><th>{t.admin.orders.colNumber}</th><th>{t.admin.orders.colStatus}</th><th>{t.admin.orders.colPayment}</th><th>{t.admin.orders.colTotal}</th><th>{t.admin.orders.colDate}</th><th>{t.admin.orders.colActions}</th></tr>
+      </thead>
+      <tbody>
+        {orders.map((o) => (
+          <tr>
+            <td style="font-weight:600">{o.order_number}</td>
+            <td><span class={`badge ${statusClass(o.status)}`}>{o.status}</span></td>
+            <td><span class={`badge ${o.payment_status === "paid" ? "badge-active" : "badge-draft"}`}>{o.payment_status}</span></td>
+            <td>{o.total_amount.toFixed(2)} Kč</td>
+            <td style="color:var(--text-muted);font-size:13px">{new Date(o.created_at).toLocaleDateString()}</td>
+            <td><a href={`/admin/orders/${o.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.orders.detail}</a></td>
+          </tr>
+        ))}
+        {orders.length === 0 && (
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.orders.noOrders}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+
+  {totalPages > 1 && (
+    <div class="pagination">
+      {page > 1 && <a href={`?page=${page - 1}&status=${status}`} class="btn btn-ghost">{t.common.previous}</a>}
+      <span class="page-info">{t.common.page} {page} {t.common.of} {totalPages} ({t.common.total} {total})</span>
+      {page < totalPages && <a href={`?page=${page + 1}&status=${status}`} class="btn btn-ghost">{t.common.next}</a>}
+    </div>
+  )}
+</CmsLayout>
+
+<style>
+  .tabs { display:flex; gap:4px; border-bottom:2px solid var(--border-default); padding-bottom:0; }
+  .tab { padding:10px 16px; font-size:13px; font-weight:600; color:var(--text-muted); border-bottom:2px solid transparent; margin-bottom:-2px; text-decoration:none; transition:color 0.15s, border-color 0.15s; }
+  .tab:hover { color:var(--text-primary); text-decoration:none; }
+  .tab--active { color:var(--accent-primary); border-bottom-color:var(--accent-primary); }
+  .pagination { display:flex; align-items:center; gap:12px; margin-top:16px; }
+  .page-info { font-size:13px; color:var(--text-muted); }
+</style>

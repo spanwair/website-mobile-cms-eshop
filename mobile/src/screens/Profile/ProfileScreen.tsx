@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Alert, Image, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, Alert, Image, TextInput, StyleSheet } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useAuthStore } from "../../lib/store/auth";
 import { useProfile, useUpdateProfile } from "../../lib/query/hooks/useProfile";
@@ -7,6 +7,8 @@ import { toast } from "../../lib/toast";
 import { ScreenContainer } from "../../components/layout/ScreenContainer";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { colors } from "@shared/constants/theme";
+import { ROLE, ROLE_LABEL } from "@shared/constants/permissions";
 
 export function ProfileScreen() {
   const user = useAuthStore.use.user();
@@ -48,64 +50,91 @@ export function ProfileScreen() {
 
   return (
     <ScreenContainer title="Profile">
-      <View className="flex-row items-center gap-4 mb-6">
+      <View style={styles.avatarRow}>
         <TouchableOpacity onPress={handlePickAvatar} activeOpacity={0.8}>
           {profile?.avatar_url ? (
-            <Image
-              source={{ uri: profile.avatar_url }}
-              style={{ width: 80, height: 80, borderRadius: 40 }}
-            />
+            <Image source={{ uri: profile.avatar_url }} style={styles.avatarImg} />
           ) : (
-            <View className="w-20 h-20 rounded-full bg-primary items-center justify-center">
-              <Text className="text-[32px] font-black text-white">{initial}</Text>
+            <View style={styles.avatarCircle}>
+              <Text style={styles.avatarInitial}>{initial}</Text>
             </View>
           )}
         </TouchableOpacity>
-        <View className="flex-1 gap-1">
-          <Text className="text-xl font-extrabold text-white">
-            {profile?.display_name ?? "Unknown"}
-          </Text>
-          <Text className="text-[13px] text-text-secondary-dark">{user?.email}</Text>
-          <Text className="text-xs font-bold text-primary uppercase tracking-wide">
-            {profile?.role === "admin" ? "Admin" : "User"}
-          </Text>
+        <View style={styles.avatarMeta}>
+          <Text style={styles.fullName}>{profile?.display_name ?? "Unknown"}</Text>
+          <Text style={styles.email}>{user?.email}</Text>
+          <Text style={styles.role}>{ROLE_LABEL[profile?.role as keyof typeof ROLE_LABEL] ?? "user"}</Text>
         </View>
       </View>
 
-      <Card className="mb-5">
+      <Card style={styles.card}>
         {editing ? (
           <>
-            <Text className="text-xs font-bold text-text-muted-dark uppercase tracking-wider mb-1.5">
-              Display name
-            </Text>
+            <Text style={styles.fieldLabel}>Display name</Text>
             <TextInput
-              className="bg-bg-input-dark border-[1.5px] border-border-dark rounded-2xl p-3 text-base text-white mb-3"
+              style={styles.fieldInput}
               value={displayName}
               onChangeText={setDisplayName}
-              placeholderTextColor="#808099"
+              placeholderTextColor={colors.textPlaceholder}
               autoFocus
             />
-            <View className="flex-row gap-3">
+            <View style={styles.editRow}>
               <Button label="Save" onPress={handleSave} loading={updateProfile.isPending} className="flex-1" />
               <Button label="Cancel" onPress={() => setEditing(false)} variant="ghost" className="flex-1" />
             </View>
           </>
         ) : (
           <>
-            <Text className="text-xs font-bold text-text-muted-dark uppercase tracking-wider mb-1.5">
-              Display name
-            </Text>
-            <Text className="text-base text-white mb-3">{profile?.display_name ?? "Not set"}</Text>
-            <TouchableOpacity onPress={() => { setDisplayName(profile?.display_name ?? ""); setEditing(true); }} activeOpacity={0.8}>
-              <Text className="text-sm text-primary font-semibold">Edit profile →</Text>
+            <Text style={styles.fieldLabel}>Display name</Text>
+            <Text style={styles.fieldValue}>{profile?.display_name ?? "Not set"}</Text>
+            <TouchableOpacity
+              onPress={() => { setDisplayName(profile?.display_name ?? ""); setEditing(true); }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.editLink}>Edit profile →</Text>
             </TouchableOpacity>
           </>
         )}
       </Card>
 
-      <View className="mt-auto pt-6">
+      <View style={styles.signOutWrap}>
         <Button label="Sign out" onPress={handleSignOut} variant="secondary" />
       </View>
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  avatarRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 24 },
+  avatarImg: { width: 80, height: 80, borderRadius: 40 },
+  avatarCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitial: { fontSize: 32, fontWeight: '900', color: colors.white },
+  avatarMeta: { flex: 1, gap: 2 },
+  fullName: { fontSize: 20, fontWeight: '800', color: colors.text },
+  email: { fontSize: 13, color: colors.textMuted },
+  role: { fontSize: 12, fontWeight: '700', color: colors.accent, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 },
+  card: { marginBottom: 20 },
+  fieldLabel: { fontSize: 12, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 },
+  fieldInput: {
+    backgroundColor: colors.subtle,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: colors.text,
+    marginBottom: 12,
+  },
+  fieldValue: { fontSize: 15, color: colors.text, marginBottom: 12 },
+  editLink: { fontSize: 14, color: colors.accent, fontWeight: '600' },
+  editRow: { flexDirection: 'row', gap: 12 },
+  signOutWrap: { marginTop: 'auto', paddingTop: 24 },
+});

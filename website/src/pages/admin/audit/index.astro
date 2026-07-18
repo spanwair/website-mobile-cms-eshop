@@ -1,0 +1,114 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchAuditLogs } from "@shared/services/auditService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions, partyId } = ctx;
+const t = useT(Astro);
+
+const url = new URL(Astro.request.url);
+const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+const tableFilter = url.searchParams.get("table") ?? "";
+const pageSize = 50;
+
+let logs: Awaited<ReturnType<typeof fetchAuditLogs>>["data"] = [];
+let total = 0;
+const tableNames: string[] = [];
+
+if (partyId) {
+  const result = await fetchAuditLogs(supabase, {
+    party_id: partyId,
+    page,
+    pageSize,
+    table_name: tableFilter || undefined,
+  });
+  logs = result.data;
+  total = result.total;
+
+  const { data: allLogs } = await supabase
+    .from("audit_logs")
+    .select("table_name")
+    .eq("party_id", partyId)
+    .not("table_name", "is", null);
+
+  const uniqueTables = new Set((allLogs ?? []).map((r: { table_name: string | null }) => r.table_name).filter(Boolean) as string[]);
+  tableNames.push(...uniqueTables);
+}
+
+const totalPages = Math.ceil(total / pageSize);
+
+function actionClass(action: string) {
+  if (action.startsWith("INSERT") || action === "create") return "badge-active";
+  if (action.startsWith("UPDATE") || action === "update") return "badge-pending";
+  if (action.startsWith("DELETE") || action === "delete") return "badge-error";
+  return "badge-inactive";
+}
+---
+
+<CmsLayout title={t.admin.audit.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+  <div class="toolbar">
+    <form method="GET" class="filter-form">
+      <select class="form-input" name="table" style="width:200px">
+        <option value="">{t.admin.audit.allTables}</option>
+        {tableNames.map((tn) => (
+          <option value={tn} selected={tableFilter === tn}>{tn}</option>
+        ))}
+      </select>
+      <button type="submit" class="btn btn-secondary">{t.admin.audit.filterBtn}</button>
+      {tableFilter && <a href="/admin/audit" class="btn btn-ghost">{t.admin.audit.clearBtn}</a>}
+    </form>
+    <span class="total-label">{total} {t.admin.audit.title.toLowerCase()}</span>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead>
+        <tr><th>{t.admin.audit.colTimestamp}</th><th>{t.admin.audit.colAction}</th><th>{t.admin.audit.colTable}</th><th>{t.admin.audit.colRecordId}</th><th>{t.admin.audit.colUserId}</th></tr>
+      </thead>
+      <tbody>
+        {logs.map((log) => (
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">
+              {new Date(log.created_at).toLocaleString()}
+            </td>
+            <td><span class={`badge ${actionClass(log.action)}`}>{log.action}</span></td>
+            <td style="font-family:monospace;font-size:13px">{log.table_name ?? "—"}</td>
+            <td style="font-family:monospace;font-size:12px;color:var(--text-muted)">
+              {log.record_id ? log.record_id.slice(0, 12) + "…" : "—"}
+            </td>
+            <td style="font-family:monospace;font-size:12px;color:var(--text-muted)">
+              {log.user_id ? log.user_id.slice(0, 12) + "…" : "—"}
+            </td>
+          </tr>
+        ))}
+        {logs.length === 0 && (
+          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.audit.noLogs}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+
+  {totalPages > 1 && (
+    <div class="pagination">
+      {page > 1 && <a href={`?page=${page - 1}&table=${tableFilter}`} class="btn btn-ghost">{t.common.previous}</a>}
+      <span class="page-info">{t.common.page} {page} {t.common.of} {totalPages} ({t.common.total} {total})</span>
+      {page < totalPages && <a href={`?page=${page + 1}&table=${tableFilter}`} class="btn btn-ghost">{t.common.next}</a>}
+    </div>
+  )}
+</CmsLayout>
+
+<style>
+  .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+  .filter-form { display:flex; gap:8px; align-items:center; }
+  .total-label { font-size:14px; color:var(--text-muted); }
+  .pagination { display:flex; align-items:center; gap:12px; margin-top:16px; }
+  .page-info { font-size:13px; color:var(--text-muted); }
+</style>

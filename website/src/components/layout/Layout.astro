@@ -1,6 +1,8 @@
 ---
 import "../../styles/global.css";
 import { createSupabase } from "../../lib/supabase";
+import { useT } from "../../lib/i18n";
+import { ROLE } from "@shared/constants/permissions";
 
 interface Props {
   title?: string;
@@ -9,21 +11,24 @@ const { title = "Template" } = Astro.props;
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
+const t = useT(Astro);
 
 let displayName: string | null = null;
+let isAdmin = false;
 if (session) {
   const { data } = await supabase
     .from("profiles")
-    .select("display_name")
+    .select("display_name, role")
     .eq("id", session.user.id)
     .single();
   displayName = data?.display_name ?? session.user.email?.split("@")[0] ?? null;
+  isAdmin = (data?.role ?? 0) >= ROLE.ESHOP_ADMIN;
 }
 const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="cs">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -37,9 +42,9 @@ const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
         <a href="/" class="nav-brand">Template</a>
         {session && (
           <div class="nav-links">
-            <a href="/dashboard">Dashboard</a>
-            <a href="/items">Items</a>
-            <a href="/admin">Admin</a>
+            <a href="/dashboard">{t.nav.dashboard}</a>
+            <a href="/items">{t.nav.items}</a>
+            {isAdmin && <a href="/admin">{t.nav.admin}</a>}
           </div>
         )}
         <div class="nav-right">
@@ -51,14 +56,16 @@ const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
                 <span class="nav-chevron">▾</span>
               </button>
               <div class="dropdown" id="profile-dropdown">
-                <a href="/profile" class="dropdown-item">Profile</a>
+                <a href="/profile" class="dropdown-item">{t.nav.profile}</a>
+                <a href="/settings" class="dropdown-item">{t.nav.settings}</a>
+                <div class="dropdown-divider"></div>
                 <form action="/auth/signout" method="POST">
-                  <button type="submit" class="dropdown-item dropdown-danger">Sign out</button>
+                  <button type="submit" class="dropdown-item dropdown-danger">{t.nav.signOut}</button>
                 </form>
               </div>
             </div>
           ) : (
-            <a href="/login" class="btn btn-primary nav-cta">Sign in</a>
+            <a href="/login" class="btn btn-primary nav-cta">{t.nav.signIn}</a>
           )}
         </div>
       </div>
@@ -113,6 +120,7 @@ const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   }
   .dropdown.open { display: flex; flex-direction: column; }
+  .dropdown-divider { height: 1px; background: #E9ECEF; margin: 4px 0; }
   .dropdown-item {
     display: block; padding: 10px 14px; font-size: 14px; font-weight: 500;
     color: #212529; border-radius: 8px; text-align: left; background: none;

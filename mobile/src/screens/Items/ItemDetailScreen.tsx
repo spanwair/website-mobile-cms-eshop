@@ -2,12 +2,12 @@ import React, { useEffect, useState } from "react";
 import { Text, ActivityIndicator, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { supabase } from "../../../supabase/client";
-import { fetchItem } from "../../../../shared/services/itemService";
-import { formatDate } from "../../../../shared/utils/format";
-import { colors } from "../../../../shared/constants/theme";
+import { fetchItem } from "@shared/services/itemService";
+import { formatDate } from "@shared/utils/format";
+import { colors } from "@shared/constants/theme";
 import { ScreenContainer } from "../../components/layout/ScreenContainer";
 import { Card } from "../../components/ui/Card";
-import type { Item } from "../../../../shared/types";
+import type { Item } from "@shared/types";
 import type { ItemsStackParamList } from "../../navigation/types";
 
 type Props = NativeStackScreenProps<ItemsStackParamList, "ItemDetail">;

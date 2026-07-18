@@ -1,0 +1,92 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { createCategory, fetchCategories } from "@shared/services/categoryService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions, partyId } = ctx;
+const t = useT(Astro);
+
+const categories = partyId ? await fetchCategories(supabase, partyId) : [];
+
+let error = "";
+
+if (Astro.request.method === "POST" && partyId) {
+  const form = await Astro.request.formData();
+  const result = await createCategory(supabase, {
+    party_id: partyId,
+    name: form.get("name") as string,
+    slug: form.get("slug") as string,
+    parent_id: (form.get("parent_id") as string) || null,
+    icon: (form.get("icon") as string) || null,
+    sort_order: parseInt(form.get("sort_order") as string, 10) || 0,
+    is_visible: form.get("is_visible") === "on",
+  });
+  if (result.error) {
+    error = result.error.message;
+  } else {
+    return Astro.redirect("/admin/categories");
+  }
+}
+---
+
+<CmsLayout title={t.admin.categories.newTitle} userPermissions={permissions} currentPath="/admin/categories">
+  <div class="card" style="max-width:560px">
+    <a href="/admin/categories" class="back-link">{t.admin.categories.back}</a>
+    {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
+    <form method="POST" class="cat-form">
+      <div class="form-group">
+        <label class="form-label">{t.admin.categories.fieldName}</label>
+        <input class="form-input" name="name" required placeholder={t.admin.categories.fieldNamePlaceholder} />
+      </div>
+      <div class="form-group">
+        <label class="form-label">{t.admin.categories.fieldSlug}</label>
+        <input class="form-input" name="slug" required placeholder={t.admin.categories.fieldSlugPlaceholder} />
+      </div>
+      <div class="form-group">
+        <label class="form-label">{t.admin.categories.fieldParent}</label>
+        <select class="form-input" name="parent_id">
+          <option value="">{t.admin.categories.noParentOption}</option>
+          {categories.map((c) => (
+            <option value={c.id}>{c.name}</option>
+          ))}
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{t.admin.categories.fieldIcon}</label>
+          <input class="form-input" name="icon" placeholder={t.admin.categories.fieldIconPlaceholder} maxlength="10" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{t.admin.categories.fieldSortOrder}</label>
+          <input class="form-input" name="sort_order" type="number" value="0" min="0" />
+        </div>
+      </div>
+      <div class="form-check">
+        <input type="checkbox" name="is_visible" id="is_visible" checked />
+        <label for="is_visible">{t.admin.categories.fieldVisible}</label>
+      </div>
+      <div class="form-actions">
+        <a href="/admin/categories" class="btn btn-ghost">{t.common.cancel}</a>
+        <button type="submit" class="btn btn-primary">{t.admin.categories.createBtn}</button>
+      </div>
+    </form>
+  </div>
+</CmsLayout>
+
+<style>
+  .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
+  .back-link:hover { color:var(--text-primary); }
+  .cat-form { display:flex; flex-direction:column; gap:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .form-check input { width:auto; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:8px; }
+</style>

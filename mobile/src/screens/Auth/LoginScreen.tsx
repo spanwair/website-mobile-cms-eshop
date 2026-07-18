@@ -12,17 +12,13 @@ import {
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { supabase } from "../../../supabase/client";
-
 WebBrowser.maybeCompleteAuthSession();
-import {
-  signInWithPassword,
-  signUpWithPassword,
-  signInWithGoogle,
-} from "../../../../shared/services/authService";
-import { isValidEmail, isStrongPassword } from "../../../../shared/utils/validation";
-import { colors, radius } from "../../../../shared/constants/theme";
+import { signInWithPassword, signUpWithPassword, signInWithGoogle } from "@shared/services/authService";
+import { isValidEmail, isStrongPassword } from "@shared/utils/validation";
+import { colors, radius } from "@shared/constants/theme";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
+import { ConfirmationScreen } from "./ConfirmationScreen";
 
 type Mode = "signin" | "signup";
 
@@ -42,10 +38,7 @@ export function LoginScreen() {
   const inFlight = useRef(false);
 
   function checkLegal(): boolean {
-    if (!termsChecked || !privacyChecked) {
-      setLegalError(true);
-      return false;
-    }
+    if (!termsChecked || !privacyChecked) { setLegalError(true); return false; }
     return true;
   }
 
@@ -63,49 +56,35 @@ export function LoginScreen() {
     if (!checkLegal()) return;
     if (!isValidEmail(email)) { setError("Enter a valid email address."); return; }
     if (!password) { setError("Enter your password."); return; }
-
     inFlight.current = true;
     setLoading(true);
     setError(null);
     try {
       const { error: err } = await signInWithPassword(supabase, email.trim(), password);
       if (err) setError(err.message);
-    } finally {
-      setLoading(false);
-      inFlight.current = false;
-    }
+    } finally { setLoading(false); inFlight.current = false; }
   }
 
   async function handleSignUp() {
     if (inFlight.current) return;
     if (!checkLegal()) return;
-    if (displayName.trim().length < 2) { setError("Display name must be at least 2 characters."); return; }
+    if (displayName.trim().length < 2) { setError("Full name must be at least 2 characters."); return; }
     if (!isValidEmail(email)) { setError("Enter a valid email address."); return; }
     if (!isStrongPassword(password)) { setError("Password must be at least 8 characters."); return; }
     if (password !== confirmPassword) { setError("Passwords do not match."); return; }
-
     inFlight.current = true;
     setLoading(true);
     setError(null);
     try {
-      const { error: err, needsConfirmation } = await signUpWithPassword(
-        supabase,
-        email.trim(),
-        password,
-        displayName.trim()
-      );
+      const { error: err, needsConfirmation } = await signUpWithPassword(supabase, email.trim(), password, displayName.trim());
       if (err) {
-        const msg = err.message.toLowerCase().includes("already registered")
+        setError(err.message.toLowerCase().includes("already registered")
           ? "An account with this email already exists. Sign in instead."
-          : err.message;
-        setError(msg);
+          : err.message);
       } else if (needsConfirmation) {
         setAwaitingConfirmation(true);
       }
-    } finally {
-      setLoading(false);
-      inFlight.current = false;
-    }
+    } finally { setLoading(false); inFlight.current = false; }
   }
 
   async function handleGoogle() {
@@ -117,28 +96,11 @@ export function LoginScreen() {
       const { url, error: err } = await signInWithGoogle(supabase, redirectUrl);
       if (err) { setError(err.message); return; }
       if (url) await WebBrowser.openAuthSessionAsync(url, redirectUrl);
-    } finally {
-      setGoogleLoading(false);
-    }
+    } finally { setGoogleLoading(false); }
   }
 
   if (awaitingConfirmation) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.sentIcon}>📬</Text>
-        <Text style={styles.sentTitle}>Check your inbox!</Text>
-        <Text style={styles.sentBody}>
-          Check your email for a confirmation link.{"\n"}If you already have an account, sign in instead.
-        </Text>
-        <TouchableOpacity
-          style={styles.ghostBtn}
-          onPress={() => { setAwaitingConfirmation(false); switchMode("signin"); }}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.ghostBtnText}>Back to sign in</Text>
-        </TouchableOpacity>
-      </View>
-    );
+    return <ConfirmationScreen onBack={() => { setAwaitingConfirmation(false); switchMode("signin"); }} />;
   }
 
   return (
@@ -173,7 +135,7 @@ export function LoginScreen() {
           activeOpacity={0.8}
         >
           {googleLoading
-            ? <ActivityIndicator color={colors.textPrimary} size="small" />
+            ? <ActivityIndicator color={colors.text} size="small" />
             : <><Text style={styles.socialIcon}>G</Text><Text style={styles.socialLabel}>Continue with Google</Text></>
           }
         </TouchableOpacity>
@@ -187,60 +149,23 @@ export function LoginScreen() {
         </View>
 
         {mode === "signup" && (
-          <Input
-            label="Display name"
-            placeholder="Your name"
-            value={displayName}
-            onChangeText={v => { setDisplayName(v); setError(null); }}
-            autoCapitalize="words"
-            returnKeyType="next"
-          />
+          <Input label="Full name" placeholder="Your full name" value={displayName}
+            onChangeText={v => { setDisplayName(v); setError(null); }} autoCapitalize="words" returnKeyType="next" />
         )}
-
-        <Input
-          label="Email"
-          placeholder="you@example.com"
-          value={email}
-          onChangeText={v => { setEmail(v); setError(null); }}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          returnKeyType="next"
-        />
-
-        <Input
-          label="Password"
-          placeholder={mode === "signup" ? "Min. 8 characters" : "••••••••"}
-          value={password}
-          onChangeText={v => { setPassword(v); setError(null); }}
-          secureTextEntry
-          returnKeyType={mode === "signup" ? "next" : "done"}
-          onSubmitEditing={mode === "signin" ? handleSignIn : undefined}
-        />
-
+        <Input label="Email" placeholder="you@example.com" value={email}
+          onChangeText={v => { setEmail(v); setError(null); }} keyboardType="email-address" autoCapitalize="none" returnKeyType="next" />
+        <Input label="Password" placeholder={mode === "signup" ? "Min. 8 characters" : "••••••••"} value={password}
+          onChangeText={v => { setPassword(v); setError(null); }} secureTextEntry
+          returnKeyType={mode === "signup" ? "next" : "done"} onSubmitEditing={mode === "signin" ? handleSignIn : undefined} />
         {mode === "signup" && (
-          <Input
-            label="Confirm password"
-            placeholder="Repeat password"
-            value={confirmPassword}
-            onChangeText={v => { setConfirmPassword(v); setError(null); }}
-            secureTextEntry
-            returnKeyType="done"
-            onSubmitEditing={handleSignUp}
-          />
+          <Input label="Confirm password" placeholder="Repeat password" value={confirmPassword}
+            onChangeText={v => { setConfirmPassword(v); setError(null); }} secureTextEntry returnKeyType="done" onSubmitEditing={handleSignUp} />
         )}
 
-        <Button
-          label={mode === "signin" ? "Sign in" : "Create account"}
-          onPress={mode === "signin" ? handleSignIn : handleSignUp}
-          loading={loading}
-          disabled={googleLoading}
-        />
+        <Button label={mode === "signin" ? "Sign in" : "Create account"}
+          onPress={mode === "signin" ? handleSignIn : handleSignUp} loading={loading} disabled={googleLoading} />
 
-        <TouchableOpacity
-          style={styles.switchRow}
-          onPress={() => switchMode(mode === "signin" ? "signup" : "signin")}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity style={styles.switchRow} onPress={() => switchMode(mode === "signin" ? "signup" : "signin")} activeOpacity={0.7}>
           <Text style={styles.switchText}>
             {mode === "signin" ? "No account? " : "Already have an account? "}
             <Text style={styles.switchLink}>{mode === "signin" ? "Create one" : "Sign in"}</Text>
@@ -252,35 +177,24 @@ export function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  container: { flexGrow: 1, backgroundColor: colors.bg, paddingHorizontal: 24, paddingTop: 72, paddingBottom: 40 },
-  center: { justifyContent: "center", alignItems: "center" },
+  flex: { flex: 1, backgroundColor: colors.background },
+  container: { flexGrow: 1, backgroundColor: colors.background, paddingHorizontal: 24, paddingTop: 72, paddingBottom: 40 },
   brand: { alignItems: "center", marginBottom: 36 },
-  brandName: { fontSize: 36, fontWeight: "900", color: colors.primary, letterSpacing: -1 },
+  brandName: { fontSize: 36, fontWeight: "900", color: colors.accent, letterSpacing: -1 },
   tagline: { fontSize: 14, color: colors.textMuted, marginTop: 4, fontStyle: "italic" },
-  modeTitle: { fontSize: 20, fontWeight: "800", color: colors.textPrimary, marginBottom: 20, textAlign: "center" },
+  modeTitle: { fontSize: 20, fontWeight: "800", color: colors.text, marginBottom: 20, textAlign: "center" },
   legalWrap: { marginBottom: 20, gap: 12 },
   legalRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: colors.border, alignItems: "center", justifyContent: "center", marginTop: 1 },
-  checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
-  checkmark: { color: "#fff", fontSize: 13, fontWeight: "800" },
-  legalText: { flex: 1, fontSize: 13, color: colors.textSecondary, lineHeight: 20 },
-  legalError: { fontSize: 12, color: colors.danger, fontWeight: "500" },
-  socialBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, borderRadius: radius.full, paddingVertical: 16, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.bgCard, marginBottom: 16 },
-  socialIcon: { fontSize: 17, fontWeight: "800", color: colors.textPrimary },
-  socialLabel: { fontSize: 15, fontWeight: "700", color: colors.textPrimary },
+  checkboxChecked: { backgroundColor: colors.accent, borderColor: colors.accent },
+  checkmark: { color: colors.white, fontSize: 13, fontWeight: "800" },
+  legalText: { flex: 1, fontSize: 13, color: colors.textMuted, lineHeight: 20 },
+  legalError: { fontSize: 12, color: colors.error, fontWeight: "500" }, socialBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, borderRadius: radius.full, paddingVertical: 16, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.white, marginBottom: 16 },
+  socialIcon: { fontSize: 17, fontWeight: "800", color: colors.text },
+  socialLabel: { fontSize: 15, fontWeight: "700", color: colors.text },
   opaque: { opacity: 0.5 },
-  error: { color: colors.danger, fontSize: 13, textAlign: "center", marginBottom: 8 },
+  error: { color: colors.error, fontSize: 13, textAlign: "center", marginBottom: 8 },
   divider: { flexDirection: "row", alignItems: "center", marginBottom: 16, gap: 8 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
-  dividerText: { fontSize: 12, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.5 },
-  switchRow: { marginTop: 20, alignItems: "center" },
-  switchText: { fontSize: 13, color: colors.textMuted },
-  switchLink: { color: colors.primary, fontWeight: "700" },
-  sentIcon: { fontSize: 56, marginBottom: 20 },
-  sentTitle: { fontSize: 28, fontWeight: "800", color: colors.textPrimary, marginBottom: 12 },
-  sentBody: { fontSize: 16, color: colors.textSecondary, textAlign: "center", lineHeight: 26, marginBottom: 24 },
-  highlight: { color: colors.primary, fontWeight: "700" },
-  ghostBtn: { paddingVertical: 14, paddingHorizontal: 32, borderRadius: radius.full, borderWidth: 1, borderColor: colors.border },
-  ghostBtnText: { color: colors.textSecondary, fontSize: 14, fontWeight: "600" },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border }, dividerText: { fontSize: 12, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.5 },
+  switchRow: { marginTop: 20, alignItems: "center" }, switchText: { fontSize: 13, color: colors.textMuted }, switchLink: { color: colors.accent, fontWeight: "700" },
 });

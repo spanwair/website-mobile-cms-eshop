@@ -1,15 +1,18 @@
 ---
 import Layout from "../components/layout/Layout.astro";
+import { useT } from "../lib/i18n";
+
+const t = useT(Astro);
 ---
 
-<Layout title="Template — Home">
+<Layout title={t.home.pageTitle}>
   <div class="hero">
     <div class="container">
-      <h1 class="hero-title">Your App Name</h1>
-      <p class="hero-sub">A powerful CMS template with mobile app and website — ready to customize.</p>
+      <h1 class="hero-title">{t.home.heroTitle}</h1>
+      <p class="hero-sub">{t.home.heroSub}</p>
       <div class="hero-btns">
-        <a href="/login" class="btn btn-primary">Get started →</a>
-        <a href="/items" class="btn btn-secondary">Browse items</a>
+        <a href="/login" class="btn btn-primary">{t.home.getStarted}</a>
+        <a href="/items" class="btn btn-secondary">{t.home.browseItems}</a>
       </div>
     </div>
   </div>
@@ -17,9 +20,9 @@ import Layout from "../components/layout/Layout.astro";
   <section class="features container">
     <div class="grid grid-3">
       {[
-        { icon: "📱", title: "Mobile App", desc: "React Native app with Android APK build, login, profiles, and admin panel." },
-        { icon: "🌐", title: "Website", desc: "Astro SSR website sharing the same Supabase backend and design tokens." },
-        { icon: "🗄️", title: "CMS Backend", desc: "Supabase with RLS policies, Edge Functions, and typed migrations." },
+        { icon: "📱", title: t.home.feature1Title, desc: t.home.feature1Desc },
+        { icon: "🌐", title: t.home.feature2Title, desc: t.home.feature2Desc },
+        { icon: "🗄️", title: t.home.feature3Title, desc: t.home.feature3Desc },
       ].map(({ icon, title, desc }) => (
         <div class="card feature-card">
           <span class="feature-icon">{icon}</span>
@@ -32,13 +35,13 @@ import Layout from "../components/layout/Layout.astro";
 </Layout>
 
 <style>
-  .hero { background: linear-gradient(180deg, #1A1A2E 0%, #0F0F1A 100%); padding: 100px 0 80px; text-align: center; }
-  .hero-title { font-size: 56px; font-weight: 900; color: #fff; letter-spacing: -1.5px; margin-bottom: 16px; }
-  .hero-sub { font-size: 18px; color: #B3B3CC; max-width: 520px; margin: 0 auto 40px; line-height: 1.6; }
+  .hero { background: linear-gradient(180deg, var(--bg-subtle) 0%, var(--bg-page) 100%); padding: 100px 0 80px; text-align: center; }
+  .hero-title { font-size: 56px; font-weight: 900; color: var(--text-primary); letter-spacing: -1.5px; margin-bottom: 16px; }
+  .hero-sub { font-size: 18px; color: var(--text-muted); max-width: 520px; margin: 0 auto 40px; line-height: 1.6; }
   .hero-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
   .features { padding: 80px 0; }
   .feature-card { display: flex; flex-direction: column; gap: 12px; }
   .feature-icon { font-size: 36px; }
-  .feature-title { font-size: 18px; font-weight: 700; color: #fff; }
-  .feature-desc { font-size: 14px; color: #B3B3CC; line-height: 1.6; }
+  .feature-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+  .feature-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
 </style>

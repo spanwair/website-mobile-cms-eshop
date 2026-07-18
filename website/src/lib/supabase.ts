@@ -14,7 +14,11 @@ export function createSupabase(context: { request: Request; cookies: AstroCookie
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          context.cookies.set(name, value, options);
+          try {
+            context.cookies.set(name, value, options);
+          } catch {
+            // Auth state notifications fire after response is sent (e.g. OAuth redirect); safe to ignore
+          }
         });
       },
     },
