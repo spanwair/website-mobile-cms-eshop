@@ -1,7 +1,7 @@
 ---
 import CmsLayout from "../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../lib/supabase";
-import { fetchAllUsers } from "@shared/services/profileService";
+import { fetchUsersForAdmin } from "@shared/services/profileService";
 import { fetchProducts } from "@shared/services/productService";
 import { fetchOrders } from "@shared/services/orderService";
 import { requireAdminCtx } from "../../lib/admin";
@@ -15,9 +15,11 @@ if (!session) return Astro.redirect("/login");
 const ctx = await requireAdminCtx(supabase, session.user.id);
 if (!ctx) return Astro.redirect("/dashboard");
 const { permissions, partyId } = ctx;
+if (ctx.role < ROLE.OWNER && !partyId) return Astro.redirect("/admin/setup");
 const t = useT(Astro);
 
-const users = await fetchAllUsers(supabase);
+const { role: myRole } = ctx;
+const users = await fetchUsersForAdmin(supabase, myRole, partyId);
 const activeUsers = users.filter((u) => u.role > ROLE.USER).length;
 
 let totalProducts = 0;

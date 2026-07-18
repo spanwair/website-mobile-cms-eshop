@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Text, ActivityIndicator, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
 import { supabase } from "../../../supabase/client";
 import { fetchItem } from "@shared/services/itemService";
 import { formatDate } from "@shared/utils/format";
@@ -13,6 +14,7 @@ import type { ItemsStackParamList } from "../../navigation/types";
 type Props = NativeStackScreenProps<ItemsStackParamList, "ItemDetail">;
 
 export function ItemDetailScreen({ route }: Props) {
+  const { t } = useTranslation();
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -24,15 +26,19 @@ export function ItemDetailScreen({ route }: Props) {
   }, [route.params.id]);
 
   if (loading) return <ActivityIndicator style={styles.spinner} size="large" color={colors.primary} />;
-  if (!item) return <Text style={styles.notFound}>Item not found</Text>;
+  if (!item) return <Text style={styles.notFound}>{t("items.notFound")}</Text>;
 
   return (
     <ScreenContainer>
       <Text style={styles.title}>{item.title}</Text>
       {item.description ? <Text style={styles.desc}>{item.description}</Text> : null}
       <Card style={styles.meta}>
-        <Text style={styles.metaRow}><Text style={styles.metaKey}>Status: </Text>{item.status}</Text>
-        <Text style={styles.metaRow}><Text style={styles.metaKey}>Created: </Text>{formatDate(item.created_at)}</Text>
+        <Text style={styles.metaRow}>
+          <Text style={styles.metaKey}>{t("items.statusLabel")}: </Text>{item.status}
+        </Text>
+        <Text style={styles.metaRow}>
+          <Text style={styles.metaKey}>{t("items.createdLabel")}: </Text>{formatDate(item.created_at)}
+        </Text>
       </Card>
     </ScreenContainer>
   );

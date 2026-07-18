@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Switch, Alert } from "react-native";
+import { useTranslation } from "react-i18next";
 import { ScreenContainer } from "../../components/layout/ScreenContainer";
 import { useAuthStore } from "../../lib/store/auth";
 import { useAppTheme } from "../../lib/theme";
@@ -8,10 +9,12 @@ function SettingsRow({
   label,
   right,
   onPress,
+  destructive,
 }: {
   label: string;
   right?: React.ReactNode;
   onPress?: () => void;
+  destructive?: boolean;
 }) {
   return (
     <TouchableOpacity
@@ -19,8 +22,8 @@ function SettingsRow({
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
     >
-      <Text className="text-base text-white">{label}</Text>
-      {right ?? <Text className="text-[#808099] text-lg">›</Text>}
+      <Text className={`text-base ${destructive ? "text-red-500" : "text-white"}`}>{label}</Text>
+      {right ?? <Text className={`text-lg ${destructive ? "text-red-500" : "text-[#808099]"}`}>›</Text>}
     </TouchableOpacity>
   );
 }
@@ -34,21 +37,37 @@ function SectionTitle({ title }: { title: string }) {
 }
 
 export function SettingsScreen() {
+  const { t } = useTranslation();
   const signOut = useAuthStore.use.signOut();
+  const deleteAccount = useAuthStore.use.deleteAccount();
   const { savedTheme, setTheme } = useAppTheme();
 
   function handleSignOut() {
-    Alert.alert("Sign out", "Are you sure?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign out", style: "destructive", onPress: signOut },
+    Alert.alert(t("nav.signOut"), t("common.areYouSure"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("nav.signOut"), style: "destructive", onPress: signOut },
+    ]);
+  }
+
+  function handleDeleteAccount() {
+    Alert.alert(t("profile.deleteAccount"), t("profile.deleteConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("profile.deleteAccount"),
+        style: "destructive",
+        onPress: async () => {
+          const { error } = await deleteAccount();
+          if (error) Alert.alert(t("common.error"), error);
+        },
+      },
     ]);
   }
 
   return (
-    <ScreenContainer title="Settings" scroll>
-      <SectionTitle title="Appearance" />
+    <ScreenContainer title={t("settings.title")} scroll>
+      <SectionTitle title={t("settings.sectionAppearance")} />
       <SettingsRow
-        label="Dark mode"
+        label={t("settings.darkMode")}
         right={
           <Switch
             value={savedTheme !== "light"}
@@ -59,8 +78,13 @@ export function SettingsScreen() {
         }
       />
 
-      <SectionTitle title="Account" />
-      <SettingsRow label="Sign out" onPress={handleSignOut} />
+      <SectionTitle title={t("settings.sectionAccount")} />
+      <SettingsRow label={t("nav.signOut")} onPress={handleSignOut} />
+      <SettingsRow
+        label={t("profile.deleteAccount")}
+        onPress={handleDeleteAccount}
+        destructive
+      />
     </ScreenContainer>
   );
 }

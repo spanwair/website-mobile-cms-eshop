@@ -20,10 +20,9 @@ export async function requireAdminCtx(client: Client, userId: string): Promise<A
     .eq("id", userId)
     .single();
 
-  if ((profile?.role ?? 0) < ROLE.ESHOP_ADMIN) return null;
-
+  const systemRole = (profile?.role ?? 0) as number;
   let partyId: string | null = null;
-  let permissions = FULL_PERMISSIONS;
+  let permissions = 0;
 
   try {
     const { data: membership } = await client
@@ -34,10 +33,27 @@ export async function requireAdminCtx(client: Client, userId: string): Promise<A
       .maybeSingle();
     partyId = membership?.party_id ?? null;
 
-    if (profile!.role < ROLE.ADMIN && partyId) {
+    // Admins/Owners without explicit party membership fall back to the first active party.
+    if (!partyId && systemRole >= ROLE.ADMIN) {
+      const { data: firstParty } = await client
+        .from("parties")
+        .select("id")
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+      partyId = firstParty?.id ?? null;
+    }
+
+    if (systemRole >= ROLE.ADMIN) {
+      permissions = FULL_PERMISSIONS;
+    } else if (partyId) {
       permissions = await getUserPermissions(client, userId, partyId);
     }
   } catch { /* party tables not yet migrated */ }
 
-  return { role: profile!.role, permissions, partyId };
+  // Allow entry: high system role OR explicit party membership (invited users).
+  // A regular user with no party membership has no reason to be in admin.
+  if (systemRole < ROLE.ESHOP_ADMIN && !partyId) return null;
+
+  return { role: systemRole, permissions, partyId };
 }

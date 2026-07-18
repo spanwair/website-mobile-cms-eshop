@@ -9,6 +9,7 @@ type AuthState = {
   status: "loading" | "authenticated" | "unauthenticated";
   setSession: (session: Session | null) => void;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<{ error: string | null }>;
 };
 
 const _useAuthStore = create<AuthState>((set) => ({
@@ -24,6 +25,15 @@ const _useAuthStore = create<AuthState>((set) => ({
   signOut: async () => {
     await supabase.auth.signOut();
     set({ session: null, user: null, status: "unauthenticated" });
+  },
+  deleteAccount: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const { error } = await supabase.functions.invoke("delete-account", {
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    });
+    if (error) return { error: error.message };
+    set({ session: null, user: null, status: "unauthenticated" });
+    return { error: null };
   },
 }));
 

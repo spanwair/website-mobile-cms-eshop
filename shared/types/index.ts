@@ -145,6 +145,7 @@ export interface ProductImage {
   alt: string | null;
   sort_order: number;
   is_primary: boolean;
+  media_type: "image" | "video";
   created_at: string;
 }
 

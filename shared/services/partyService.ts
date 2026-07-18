@@ -50,7 +50,8 @@ export async function updateParty(
   partyId: string,
   updates: Partial<Pick<Party, "name" | "slug" | "company_name" | "vat_number" | "billing_email" | "logo_url" | "settings" | "is_active">>
 ): Promise<{ error: Error | null }> {
-  const { error } = await client.from("parties").update(updates).eq("id", partyId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await client.from("parties").update(updates as any).eq("id", partyId);
   return { error: error ? new Error(error.message) : null };
 }
 

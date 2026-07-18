@@ -22,7 +22,17 @@ if (session) {
     .eq("id", session.user.id)
     .single();
   displayName = data?.display_name ?? session.user.email?.split("@")[0] ?? null;
-  isAdmin = (data?.role ?? 0) >= ROLE.ESHOP_ADMIN;
+  const systemRole = (data?.role ?? 0) as number;
+  if (systemRole >= ROLE.ESHOP_ADMIN) {
+    isAdmin = true;
+  } else {
+    // Also allow users who are members of any party (invited users with party roles)
+    const { count } = await supabase
+      .from("user_party_roles")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", session.user.id);
+    isAdmin = (count ?? 0) > 0;
+  }
 }
 const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
 ---
@@ -42,6 +52,7 @@ const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
         <a href="/" class="nav-brand">Template</a>
         {session && (
           <div class="nav-links">
+            <a href="/shop">Shop</a>
             <a href="/dashboard">{t.nav.dashboard}</a>
             <a href="/items">{t.nav.items}</a>
             {isAdmin && <a href="/admin">{t.nav.admin}</a>}

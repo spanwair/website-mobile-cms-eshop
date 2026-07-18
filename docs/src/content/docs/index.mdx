@@ -1,0 +1,43 @@
+---
+title: Welcome to CMS Docs
+description: Everything you need to know about running this e-commerce CMS.
+template: splash
+hero:
+  tagline: A complete e-commerce platform — website, mobile app, and admin CMS in one place.
+  actions:
+    - text: Get Started
+      link: /getting-started/overview/
+      icon: right-arrow
+      variant: primary
+    - text: Admin Guide
+      link: /admin/dashboard/
+      icon: open-book
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What is this?
+
+This is a full-stack e-commerce template that ships three things together:
+
+| What | Where | Purpose |
+|------|-------|---------|
+| **Admin Website** | `/website` | Browser-based CMS for managing everything |
+| **Mobile App** | `/mobile` | React Native app for customers |
+| **Shared Logic** | `/shared` | Services, types, and i18n used by both |
+| **Database** | `/supabase` | PostgreSQL via Supabase — schema + migrations |
+
+<CardGrid stagger>
+  <Card title="Admin Guide" icon="setting">
+    Learn how to manage products, orders, and customers in the [Admin Guide](/admin/dashboard/).
+  </Card>
+  <Card title="User Roles" icon="approve-check">
+    Understand who can do what in the [Roles & Permissions Guide](/users/roles/).
+  </Card>
+  <Card title="E2E Tests" icon="rocket">
+    See how 132 automated tests keep everything working in the [Testing Guide](/testing/e2e/).
+  </Card>
+  <Card title="Current Progress" icon="list-format">
+    Check what's done and what's coming in the [Roadmap](/roadmap/progress/).
+  </Card>
+</CardGrid>

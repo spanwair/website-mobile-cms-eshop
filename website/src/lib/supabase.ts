@@ -1,4 +1,5 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import type { AstroCookies } from "astro";
 import type { Database } from "@shared/supabase/types";
 
@@ -23,6 +24,11 @@ export function createSupabase(context: { request: Request; cookies: AstroCookie
       },
     },
   });
+}
+
+export function createAdminClient() {
+  const serviceKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  return createClient<Database>(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
 export async function signInWithGoogle(context: { request: Request; cookies: AstroCookies }) {

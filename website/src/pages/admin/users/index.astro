@@ -1,7 +1,7 @@
 ---
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
-import { fetchAllUsers } from "@shared/services/profileService";
+import { fetchUsersForAdmin } from "@shared/services/profileService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
 import { ROLE, ROLE_LABEL, assignableRoles } from "@shared/constants/permissions";
@@ -23,9 +23,9 @@ if (Astro.request.method === "POST") {
   const newRole = Number(form.get("role"));
 
   if (!Number.isInteger(newRole) || newRole <= 0) {
-    error = "Invalid role value.";
+    error = t.admin.users.errorInvalidRole;
   } else if (newRole >= myRole) {
-    error = "Cannot assign a role equal to or above your own.";
+    error = t.admin.users.errorRoleTooHigh;
   } else {
     const { error: updateErr } = await supabase
       .from("profiles")
@@ -36,7 +36,7 @@ if (Astro.request.method === "POST") {
   }
 }
 
-const users = await fetchAllUsers(supabase);
+const users = await fetchUsersForAdmin(supabase, myRole, ctx.partyId);
 const canAssign = assignableRoles(myRole);
 
 function roleClass(r: number) {

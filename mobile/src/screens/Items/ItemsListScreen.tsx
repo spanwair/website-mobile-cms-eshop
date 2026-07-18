@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useNavigation } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useItems } from "../../lib/query/hooks/useItems";
 import { formatRelative } from "@shared/utils/format";
@@ -18,6 +19,7 @@ const STATUS_COLOR: Record<Item["status"], string> = {
 };
 
 export function ItemsListScreen() {
+  const { t } = useTranslation();
   const nav = useNavigation<Nav>();
   const { data: items = [], isLoading, refetch, isRefetching } = useItems();
 
@@ -40,7 +42,9 @@ export function ItemsListScreen() {
         <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#FF5E1A" />
       }
       ListEmptyComponent={
-        <Text className="text-center text-text-muted-dark mt-12 text-[15px]">No items yet</Text>
+        <Text className="text-center text-text-muted-dark mt-12 text-[15px]">
+          {t("items.noItems")}
+        </Text>
       }
       renderItem={({ item }) => (
         <TouchableOpacity

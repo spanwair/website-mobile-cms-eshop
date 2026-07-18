@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import { setItem, getItem } from "../../lib/storage";
 
 const ONBOARDING_KEY = "onboarding_done";
@@ -8,32 +9,22 @@ const ONBOARDING_KEY = "onboarding_done";
 export const markOnboardingDone = () => setItem(ONBOARDING_KEY, true);
 export const hasSeenOnboarding = () => getItem<boolean>(ONBOARDING_KEY) === true;
 
-const SLIDES = [
-  {
-    emoji: "🚀",
-    title: "Welcome",
-    body: "Your new app is ready. This is where your onboarding story begins.",
-  },
-  {
-    emoji: "⚡",
-    title: "Fast & Powerful",
-    body: "Built with Expo, Supabase, and React Query for a blazing-fast experience.",
-  },
-  {
-    emoji: "🔒",
-    title: "Secure by Default",
-    body: "Email/password + Google OAuth via Supabase. Your data stays safe.",
-  },
-];
-
 interface Props {
   onDone: () => void;
 }
 
 export function OnboardingScreen({ onDone }: Props) {
+  const { t } = useTranslation();
   const [index, setIndex] = React.useState(0);
-  const slide = SLIDES[index];
-  const isLast = index === SLIDES.length - 1;
+
+  const slides = [
+    { emoji: "🚀", title: t("onboarding.slide1Title"), body: t("onboarding.slide1Body") },
+    { emoji: "⚡", title: t("onboarding.slide2Title"), body: t("onboarding.slide2Body") },
+    { emoji: "🔒", title: t("onboarding.slide3Title"), body: t("onboarding.slide3Body") },
+  ];
+
+  const slide = slides[index];
+  const isLast = index === slides.length - 1;
 
   function handleNext() {
     if (isLast) {
@@ -63,7 +54,7 @@ export function OnboardingScreen({ onDone }: Props) {
 
       <View className="px-8 pb-8">
         <View className="flex-row justify-center gap-2 mb-8">
-          {SLIDES.map((_, i) => (
+          {slides.map((_, i) => (
             <View
               key={i}
               className={`h-1.5 rounded-full ${
@@ -79,7 +70,7 @@ export function OnboardingScreen({ onDone }: Props) {
           activeOpacity={0.8}
         >
           <Text className="text-white text-base font-bold">
-            {isLast ? "Get Started" : "Next"}
+            {isLast ? t("onboarding.getStarted") : t("onboarding.next")}
           </Text>
         </TouchableOpacity>
 
@@ -89,7 +80,7 @@ export function OnboardingScreen({ onDone }: Props) {
             onPress={handleSkip}
             activeOpacity={0.7}
           >
-            <Text className="text-[#808099] text-sm">Skip</Text>
+            <Text className="text-[#808099] text-sm">{t("onboarding.skip")}</Text>
           </TouchableOpacity>
         ) : null}
       </View>

@@ -105,3 +105,20 @@ export async function deleteProduct(
   const { error } = await client.from("products").delete().eq("id", productId);
   return { error: error ? new Error(error.message) : null };
 }
+
+export async function setProductCategories(
+  client: Client,
+  productId: string,
+  categoryIds: string[]
+): Promise<{ error: Error | null }> {
+  const { error: delErr } = await client
+    .from("product_categories")
+    .delete()
+    .eq("product_id", productId);
+  if (delErr) return { error: new Error(delErr.message) };
+  if (categoryIds.length === 0) return { error: null };
+  const { error: insErr } = await client
+    .from("product_categories")
+    .insert(categoryIds.map((category_id) => ({ product_id: productId, category_id })));
+  return { error: insErr ? new Error(insErr.message) : null };
+}

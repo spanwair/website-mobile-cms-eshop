@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { FlatList, Text, TouchableOpacity, Alert, StyleSheet, RefreshControl } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 import { supabase } from "../../../supabase/client";
 import { fetchItems, updateItem, deleteItem } from "@shared/services/itemService";
 import { formatRelative } from "@shared/utils/format";
@@ -9,6 +10,7 @@ import { Card } from "../../components/ui/Card";
 import type { Item } from "@shared/types";
 
 export function AdminItemsScreen() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -22,16 +24,21 @@ export function AdminItemsScreen() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   function confirmDelete(item: Item) {
-    Alert.alert("Delete item", `Delete "${item.title}"? This cannot be undone.`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete", style: "destructive",
-        onPress: async () => {
-          await deleteItem(supabase, item.id);
-          setItems((prev) => prev.filter((i) => i.id !== item.id));
+    Alert.alert(
+      t("admin.deleteItemTitle"),
+      t("admin.deleteItemMessage", { title: item.title }),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.delete"),
+          style: "destructive",
+          onPress: async () => {
+            await deleteItem(supabase, item.id);
+            setItems((prev) => prev.filter((i) => i.id !== item.id));
+          },
         },
-      },
-    ]);
+      ],
+    );
   }
 
   async function toggleStatus(item: Item) {
@@ -47,18 +54,18 @@ export function AdminItemsScreen() {
       data={items}
       keyExtractor={(item) => item.id}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}
-      ListEmptyComponent={<Text style={styles.empty}>No items</Text>}
+      ListEmptyComponent={<Text style={styles.empty}>{t("items.noItems")}</Text>}
       renderItem={({ item }) => (
         <Card style={styles.card}>
           <Text style={styles.cardTitle}>{item.title}</Text>
           <Text style={styles.cardMeta}>{item.status.toUpperCase()} · {formatRelative(item.created_at)}</Text>
           <TouchableOpacity onPress={() => toggleStatus(item)} activeOpacity={0.8}>
             <Text style={styles.action}>
-              {item.status === "active" ? "Deactivate" : "Activate"}
+              {item.status === "active" ? t("admin.deactivate") : t("admin.activate")}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => confirmDelete(item)} activeOpacity={0.8}>
-            <Text style={styles.danger}>Delete</Text>
+            <Text style={styles.danger}>{t("common.delete")}</Text>
           </TouchableOpacity>
         </Card>
       )}

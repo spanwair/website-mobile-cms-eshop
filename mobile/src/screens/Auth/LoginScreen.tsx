@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
+import { useTranslation } from "react-i18next";
 import { supabase } from "../../../supabase/client";
 WebBrowser.maybeCompleteAuthSession();
 import { signInWithPassword, signUpWithPassword, signInWithGoogle } from "@shared/services/authService";
@@ -23,6 +24,7 @@ import { ConfirmationScreen } from "./ConfirmationScreen";
 type Mode = "signin" | "signup";
 
 export function LoginScreen() {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>("signin");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -54,8 +56,8 @@ export function LoginScreen() {
   async function handleSignIn() {
     if (inFlight.current) return;
     if (!checkLegal()) return;
-    if (!isValidEmail(email)) { setError("Enter a valid email address."); return; }
-    if (!password) { setError("Enter your password."); return; }
+    if (!isValidEmail(email)) { setError(t("auth.enterValidEmail")); return; }
+    if (!password) { setError(t("auth.enterPassword")); return; }
     inFlight.current = true;
     setLoading(true);
     setError(null);
@@ -68,10 +70,10 @@ export function LoginScreen() {
   async function handleSignUp() {
     if (inFlight.current) return;
     if (!checkLegal()) return;
-    if (displayName.trim().length < 2) { setError("Full name must be at least 2 characters."); return; }
-    if (!isValidEmail(email)) { setError("Enter a valid email address."); return; }
-    if (!isStrongPassword(password)) { setError("Password must be at least 8 characters."); return; }
-    if (password !== confirmPassword) { setError("Passwords do not match."); return; }
+    if (displayName.trim().length < 2) { setError(t("auth.errorNameTooShort")); return; }
+    if (!isValidEmail(email)) { setError(t("auth.enterValidEmail")); return; }
+    if (!isStrongPassword(password)) { setError(t("auth.errorPasswordTooShort")); return; }
+    if (password !== confirmPassword) { setError(t("auth.errorPasswordMismatch")); return; }
     inFlight.current = true;
     setLoading(true);
     setError(null);
@@ -79,7 +81,7 @@ export function LoginScreen() {
       const { error: err, needsConfirmation } = await signUpWithPassword(supabase, email.trim(), password, displayName.trim());
       if (err) {
         setError(err.message.toLowerCase().includes("already registered")
-          ? "An account with this email already exists. Sign in instead."
+          ? t("auth.errorAlreadyRegistered")
           : err.message);
       } else if (needsConfirmation) {
         setAwaitingConfirmation(true);
@@ -107,16 +109,26 @@ export function LoginScreen() {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>
-          <Text style={styles.brandName}>Template</Text>
-          <Text style={styles.tagline}>Your app tagline goes here</Text>
+          <Text style={styles.brandName}>{t("auth.brandName")}</Text>
+          <Text style={styles.tagline}>{t("auth.tagline")}</Text>
         </View>
 
-        <Text style={styles.modeTitle}>{mode === "signin" ? "Sign in" : "Create account"}</Text>
+        <Text style={styles.modeTitle}>
+          {mode === "signin" ? t("auth.signIn") : t("auth.createAccount")}
+        </Text>
 
         <View style={styles.legalWrap}>
           {([
-            { checked: termsChecked, onToggle: () => { setTermsChecked(v => !v); setLegalError(false); }, label: "I agree to the Terms of Service" },
-            { checked: privacyChecked, onToggle: () => { setPrivacyChecked(v => !v); setLegalError(false); }, label: "I agree to the Privacy Policy" },
+            {
+              checked: termsChecked,
+              onToggle: () => { setTermsChecked(v => !v); setLegalError(false); },
+              label: t("auth.agreeToTerms"),
+            },
+            {
+              checked: privacyChecked,
+              onToggle: () => { setPrivacyChecked(v => !v); setLegalError(false); },
+              label: t("auth.agreeToPrivacy"),
+            },
           ] as const).map(({ checked, onToggle, label }) => (
             <TouchableOpacity key={label} style={styles.legalRow} onPress={onToggle} activeOpacity={0.7}>
               <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
@@ -125,7 +137,7 @@ export function LoginScreen() {
               <Text style={styles.legalText}>{label}</Text>
             </TouchableOpacity>
           ))}
-          {legalError && <Text style={styles.legalError}>Please agree to continue</Text>}
+          {legalError && <Text style={styles.legalError}>{t("auth.mustAgreeFirst")}</Text>}
         </View>
 
         <TouchableOpacity
@@ -136,7 +148,7 @@ export function LoginScreen() {
         >
           {googleLoading
             ? <ActivityIndicator color={colors.text} size="small" />
-            : <><Text style={styles.socialIcon}>G</Text><Text style={styles.socialLabel}>Continue with Google</Text></>
+            : <><Text style={styles.socialIcon}>G</Text><Text style={styles.socialLabel}>{t("auth.continueWithGoogle")}</Text></>
           }
         </TouchableOpacity>
 
@@ -144,31 +156,67 @@ export function LoginScreen() {
 
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or</Text>
+          <Text style={styles.dividerText}>{t("common.or")}</Text>
           <View style={styles.dividerLine} />
         </View>
 
         {mode === "signup" && (
-          <Input label="Full name" placeholder="Your full name" value={displayName}
-            onChangeText={v => { setDisplayName(v); setError(null); }} autoCapitalize="words" returnKeyType="next" />
+          <Input
+            label={t("auth.fullName")}
+            placeholder={t("auth.fullNamePlaceholder")}
+            value={displayName}
+            onChangeText={v => { setDisplayName(v); setError(null); }}
+            autoCapitalize="words"
+            returnKeyType="next"
+          />
         )}
-        <Input label="Email" placeholder="you@example.com" value={email}
-          onChangeText={v => { setEmail(v); setError(null); }} keyboardType="email-address" autoCapitalize="none" returnKeyType="next" />
-        <Input label="Password" placeholder={mode === "signup" ? "Min. 8 characters" : "••••••••"} value={password}
-          onChangeText={v => { setPassword(v); setError(null); }} secureTextEntry
-          returnKeyType={mode === "signup" ? "next" : "done"} onSubmitEditing={mode === "signin" ? handleSignIn : undefined} />
+        <Input
+          label={t("auth.emailLabel")}
+          placeholder={t("auth.emailPlaceholder")}
+          value={email}
+          onChangeText={v => { setEmail(v); setError(null); }}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          returnKeyType="next"
+        />
+        <Input
+          label={t("auth.password")}
+          placeholder={mode === "signup" ? t("auth.passwordHint") : "••••••••"}
+          value={password}
+          onChangeText={v => { setPassword(v); setError(null); }}
+          secureTextEntry
+          returnKeyType={mode === "signup" ? "next" : "done"}
+          onSubmitEditing={mode === "signin" ? handleSignIn : undefined}
+        />
         {mode === "signup" && (
-          <Input label="Confirm password" placeholder="Repeat password" value={confirmPassword}
-            onChangeText={v => { setConfirmPassword(v); setError(null); }} secureTextEntry returnKeyType="done" onSubmitEditing={handleSignUp} />
+          <Input
+            label={t("auth.confirmPassword")}
+            placeholder={t("auth.confirmPasswordPlaceholder")}
+            value={confirmPassword}
+            onChangeText={v => { setConfirmPassword(v); setError(null); }}
+            secureTextEntry
+            returnKeyType="done"
+            onSubmitEditing={handleSignUp}
+          />
         )}
 
-        <Button label={mode === "signin" ? "Sign in" : "Create account"}
-          onPress={mode === "signin" ? handleSignIn : handleSignUp} loading={loading} disabled={googleLoading} />
+        <Button
+          label={mode === "signin" ? t("auth.signIn") : t("auth.createAccount")}
+          onPress={mode === "signin" ? handleSignIn : handleSignUp}
+          loading={loading}
+          disabled={googleLoading}
+        />
 
-        <TouchableOpacity style={styles.switchRow} onPress={() => switchMode(mode === "signin" ? "signup" : "signin")} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.switchRow}
+          onPress={() => switchMode(mode === "signin" ? "signup" : "signin")}
+          activeOpacity={0.7}
+        >
           <Text style={styles.switchText}>
-            {mode === "signin" ? "No account? " : "Already have an account? "}
-            <Text style={styles.switchLink}>{mode === "signin" ? "Create one" : "Sign in"}</Text>
+            {mode === "signin" ? t("auth.noAccount") : t("auth.haveAccount")}
+            <Text style={styles.switchLink}>
+              {mode === "signin" ? t("auth.noAccountLink") : t("auth.haveAccountLink")}
+            </Text>
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -189,12 +237,16 @@ const styles = StyleSheet.create({
   checkboxChecked: { backgroundColor: colors.accent, borderColor: colors.accent },
   checkmark: { color: colors.white, fontSize: 13, fontWeight: "800" },
   legalText: { flex: 1, fontSize: 13, color: colors.textMuted, lineHeight: 20 },
-  legalError: { fontSize: 12, color: colors.error, fontWeight: "500" }, socialBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, borderRadius: radius.full, paddingVertical: 16, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.white, marginBottom: 16 },
+  legalError: { fontSize: 12, color: colors.error, fontWeight: "500" },
+  socialBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, borderRadius: radius.full, paddingVertical: 16, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.white, marginBottom: 16 },
   socialIcon: { fontSize: 17, fontWeight: "800", color: colors.text },
   socialLabel: { fontSize: 15, fontWeight: "700", color: colors.text },
   opaque: { opacity: 0.5 },
   error: { color: colors.error, fontSize: 13, textAlign: "center", marginBottom: 8 },
   divider: { flexDirection: "row", alignItems: "center", marginBottom: 16, gap: 8 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border }, dividerText: { fontSize: 12, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.5 },
-  switchRow: { marginTop: 20, alignItems: "center" }, switchText: { fontSize: 13, color: colors.textMuted }, switchLink: { color: colors.accent, fontWeight: "700" },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { fontSize: 12, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.5 },
+  switchRow: { marginTop: 20, alignItems: "center" },
+  switchText: { fontSize: 13, color: colors.textMuted },
+  switchLink: { color: colors.accent, fontWeight: "700" },
 });

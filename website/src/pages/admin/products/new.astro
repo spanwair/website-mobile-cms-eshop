@@ -1,7 +1,8 @@
 ---
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
-import { createProduct } from "@shared/services/productService";
+import { createProduct, setProductCategories } from "@shared/services/productService";
+import { fetchCategories } from "@shared/services/categoryService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
 
@@ -33,9 +34,12 @@ if (Astro.request.method === "POST" && partyId) {
   if (result.error) {
     error = result.error.message;
   } else {
-    return Astro.redirect("/admin/products");
+    await setProductCategories(supabase, result.data!.id, form.getAll("category_ids[]") as string[]);
+    return Astro.redirect(`/admin/products/${result.data!.id}`);
   }
 }
+
+const categories = partyId ? await fetchCategories(supabase, partyId) : [];
 ---
 
 <CmsLayout title={t.admin.products.newTitle} userPermissions={permissions} currentPath="/admin/products">
@@ -83,11 +87,26 @@ if (Astro.request.method === "POST" && partyId) {
       </div>
       <div class="form-group">
         <label class="form-label">{t.admin.products.fieldDescription}</label>
-        <textarea class="form-input" name="description" rows="5" placeholder={t.admin.products.fieldDescPlaceholder}></textarea>
+        <textarea class="form-input" name="description" rows="4" placeholder={t.admin.products.fieldDescPlaceholder}></textarea>
       </div>
       <div class="form-check">
         <input type="checkbox" name="is_featured" id="is_featured" />
         <label for="is_featured">{t.admin.products.fieldFeatured}</label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{t.admin.products.fieldCategories}</label>
+        {categories.length > 0 ? (
+          <div class="checkbox-grid">
+            {categories.map((cat) => (
+              <label class="cat-check">
+                <input type="checkbox" name="category_ids[]" value={cat.id} />
+                {cat.name}
+              </label>
+            ))}
+          </div>
+        ) : (
+          <p class="no-cats">{t.admin.products.noCategories} — <a href="/admin/categories/new">{t.admin.products.noCategoriesLink}</a>.</p>
+        )}
       </div>
       <div class="form-actions">
         <a href="/admin/products" class="btn btn-ghost">{t.common.cancel}</a>
@@ -105,5 +124,9 @@ if (Astro.request.method === "POST" && partyId) {
   .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
   .form-check input { width:auto; }
   .form-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:8px; }
+  .checkbox-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:8px; }
+  .cat-check { display:flex; align-items:center; gap:6px; font-size:14px; cursor:pointer; }
+  .cat-check input { width:auto; }
+  .no-cats { font-size:13px; color:var(--text-muted); margin:4px 0 0; }
   @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
 </style>

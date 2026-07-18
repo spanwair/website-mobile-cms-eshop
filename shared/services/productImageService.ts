@@ -4,19 +4,41 @@ import type { ProductImage, ProductVariant } from "../types";
 
 type Client = SupabaseClient<Database>;
 
+export async function fetchProductImages(client: Client, productId: string): Promise<ProductImage[]> {
+  const { data } = await client
+    .from("product_images")
+    .select("*")
+    .eq("product_id", productId)
+    .order("sort_order");
+  return (data ?? []) as ProductImage[];
+}
+
 export async function addProductImage(
   client: Client,
-  input: Database["public"]["Tables"]["product_images"]["Insert"]
+  input: Database["public"]["Tables"]["product_images"]["Insert"] & { media_type?: "image" | "video" }
 ): Promise<{ data: ProductImage | null; error: Error | null }> {
+  if (input.is_primary) {
+    await client.from("product_images").update({ is_primary: false }).eq("product_id", input.product_id);
+  }
   const { data, error } = await client
     .from("product_images")
-    .insert(input)
+    .insert(input as Database["public"]["Tables"]["product_images"]["Insert"])
     .select()
     .single();
   return {
     data: error ? null : (data as ProductImage),
     error: error ? new Error(error.message) : null,
   };
+}
+
+export async function setPrimaryImage(
+  client: Client,
+  productId: string,
+  imageId: string
+): Promise<{ error: Error | null }> {
+  await client.from("product_images").update({ is_primary: false }).eq("product_id", productId);
+  const { error } = await client.from("product_images").update({ is_primary: true }).eq("id", imageId);
+  return { error: error ? new Error(error.message) : null };
 }
 
 export async function updateProductImage(

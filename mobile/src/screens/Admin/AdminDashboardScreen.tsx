@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { supabase } from "../../../supabase/client";
 import { fetchItems } from "@shared/services/itemService";
@@ -11,16 +12,10 @@ import type { AdminStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<AdminStackParamList, "AdminDashboard">;
 
-type Stat = { label: string; value: number };
-
 export function AdminDashboardScreen() {
   const nav = useNavigation<Nav>();
-  const [stats, setStats] = useState<Stat[]>([
-    { label: "Total Users", value: 0 },
-    { label: "Total Items", value: 0 },
-    { label: "Active Items", value: 0 },
-    { label: "Inactive Items", value: 0 },
-  ]);
+  const { t } = useTranslation();
+  const [counts, setCounts] = useState({ users: 0, total: 0, active: 0, inactive: 0 });
 
   useEffect(() => {
     Promise.all([
@@ -29,17 +24,19 @@ export function AdminDashboardScreen() {
       fetchItems(supabase, 1, 1, "inactive"),
       fetchAllUsers(supabase),
     ]).then(([all, active, inactive, users]) => {
-      setStats([
-        { label: "Total Users", value: users.length },
-        { label: "Total Items", value: all.total },
-        { label: "Active Items", value: active.total },
-        { label: "Inactive Items", value: inactive.total },
-      ]);
+      setCounts({ users: users.length, total: all.total, active: active.total, inactive: inactive.total });
     });
   }, []);
 
+  const stats = [
+    { label: t("admin.kpiTotalUsers"), value: counts.users },
+    { label: t("admin.totalItems"), value: counts.total },
+    { label: t("admin.activeItems"), value: counts.active },
+    { label: t("admin.inactiveItems"), value: counts.inactive },
+  ];
+
   return (
-    <ScreenContainer title="Admin Dashboard" scroll={false}>
+    <ScreenContainer title={t("admin.dashboardTitle")} scroll={false}>
       <View style={styles.grid}>
         {stats.map(({ label, value }) => (
           <View key={label} style={[styles.statCard, shadow.sm]}>
@@ -49,14 +46,14 @@ export function AdminDashboardScreen() {
         ))}
       </View>
 
-      <Text style={styles.sectionTitle}>Actions</Text>
+      <Text style={styles.sectionTitle}>{t("admin.actionsSection")}</Text>
       <TouchableOpacity
         style={[styles.actionCard, shadow.sm]}
         onPress={() => nav.navigate("AdminItems")}
         activeOpacity={0.8}
       >
-        <Text style={styles.actionTitle}>Manage Items</Text>
-        <Text style={styles.actionDesc}>View, edit, and delete all items</Text>
+        <Text style={styles.actionTitle}>{t("admin.manageItems")}</Text>
+        <Text style={styles.actionDesc}>{t("admin.manageItemsDesc")}</Text>
       </TouchableOpacity>
     </ScreenContainer>
   );
@@ -64,23 +61,23 @@ export function AdminDashboardScreen() {
 
 const styles = StyleSheet.create({
   grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
     marginBottom: 28,
   },
   statCard: {
-    width: '47%',
+    width: "47%",
     backgroundColor: colors.white,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   statNum: {
     fontSize: 32,
-    fontWeight: '900',
+    fontWeight: "900",
     color: colors.accent,
     letterSpacing: -1,
     marginBottom: 4,
@@ -88,13 +85,13 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 13,
     color: colors.textMuted,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.textMuted,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.6,
     marginBottom: 12,
   },
@@ -108,7 +105,7 @@ const styles = StyleSheet.create({
   },
   actionTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.text,
     marginBottom: 4,
   },

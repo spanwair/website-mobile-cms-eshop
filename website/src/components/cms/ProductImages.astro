@@ -1,0 +1,139 @@
+---
+import type { ProductImage } from "@shared/types";
+import { useT } from "../../lib/i18n";
+
+interface Props {
+  images: ProductImage[];
+  productId: string;
+}
+
+const { images, productId } = Astro.props;
+const t = useT(Astro);
+
+const imgItems = images.filter((m) => m.media_type !== "video");
+const vidItems = images.filter((m) => m.media_type === "video");
+---
+
+<div class="card media-card">
+  <h3 class="media-title">{t.admin.media.videosTitle}</h3>
+
+  {vidItems.length > 0 && (
+    <div class="media-grid">
+      {vidItems.map((vid) => (
+        <div class="media-item">
+          <video src={vid.url} class="media-thumb" controls preload="metadata" />
+          <div class="media-actions">
+            <form method="POST" onsubmit={`return confirm('${t.admin.media.deleteVideoConfirm}')`}>
+              <input type="hidden" name="action" value="delete_image" />
+              <input type="hidden" name="image_id" value={vid.id} />
+              <button type="submit" class="btn btn-danger" style="font-size:12px;padding:4px 8px">{t.common.delete}</button>
+            </form>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+
+  <form method="POST" enctype="multipart/form-data" class="upload-form">
+    <input type="hidden" name="action" value="upload_video" />
+    <div class="form-group">
+      <label class="form-label">{t.admin.media.videoFileLabel}</label>
+      <div class="file-picker">
+        <input type="file" name="video" accept="video/mp4,video/webm,video/ogg,video/quicktime" class="file-input" id="vid-input" multiple required />
+        <button type="button" class="btn btn-secondary file-btn" onclick="document.getElementById('vid-input').click()">{t.admin.media.chooseFile}</button>
+        <span class="file-name" id="vid-name" data-none={t.admin.media.noFileChosen} data-multiple={t.admin.media.filesSelected}>{t.admin.media.noFileChosen}</span>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary" style="margin-top:8px">{t.admin.media.uploadVideo}</button>
+  </form>
+</div>
+
+<div class="card media-card" style="margin-top:16px">
+  <h3 class="media-title">{t.admin.media.imagesTitle}</h3>
+
+  {imgItems.length > 0 && (
+    <div class="media-grid">
+      {imgItems.map((img) => (
+        <div class="media-item">
+          <img src={img.url} alt={img.alt ?? ""} class="media-thumb" />
+          {img.is_primary && <span class="badge badge-active primary-badge">{t.admin.media.primaryBadge}</span>}
+          <div class="media-actions">
+            {!img.is_primary && (
+              <form method="POST">
+                <input type="hidden" name="action" value="set_primary" />
+                <input type="hidden" name="image_id" value={img.id} />
+                <button type="submit" class="btn btn-secondary" style="font-size:12px;padding:4px 8px">{t.admin.media.setPrimary}</button>
+              </form>
+            )}
+            <form method="POST" onsubmit={`return confirm('${t.admin.media.deleteImageConfirm}')`}>
+              <input type="hidden" name="action" value="delete_image" />
+              <input type="hidden" name="image_id" value={img.id} />
+              <button type="submit" class="btn btn-danger" style="font-size:12px;padding:4px 8px">{t.common.delete}</button>
+            </form>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+
+  <form method="POST" enctype="multipart/form-data" class="upload-form">
+    <input type="hidden" name="action" value="upload_image" />
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">{t.admin.media.imageFileLabel}</label>
+        <div class="file-picker">
+          <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif" class="file-input" id="img-input" multiple required />
+          <button type="button" class="btn btn-secondary file-btn" onclick="document.getElementById('img-input').click()">{t.admin.media.chooseFile}</button>
+          <span class="file-name" id="img-name" data-none={t.admin.media.noFileChosen} data-multiple={t.admin.media.filesSelected}>{t.admin.media.noFileChosen}</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{t.admin.media.altTextLabel}</label>
+        <input type="text" name="image_alt" class="form-input" placeholder={t.admin.media.altTextPlaceholder} />
+      </div>
+    </div>
+    <div class="form-check" style="margin-bottom:12px">
+      <input type="checkbox" name="is_primary" id="img_primary" />
+      <label for="img_primary">{t.admin.media.setPrimaryLabel}</label>
+    </div>
+    <button type="submit" class="btn btn-primary">{t.admin.media.uploadImage}</button>
+  </form>
+</div>
+
+<style>
+  .media-card { max-width:720px; margin-top:16px; }
+  .media-title { margin:0 0 16px; font-size:16px; font-weight:600; }
+  .media-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:20px; }
+  .media-item { border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .media-thumb { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
+  video.media-thumb { aspect-ratio:16/9; background:#000; }
+  .primary-badge { display:block; margin:4px; font-size:11px; }
+  .media-actions { display:flex; gap:4px; padding:4px; flex-wrap:wrap; }
+  .upload-form { padding-top:16px; border-top:1px solid var(--border); }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:12px; }
+  .form-group { display:flex; flex-direction:column; gap:4px; }
+  .form-label { font-size:13px; font-weight:500; color:var(--text-secondary); }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .form-check input { width:auto; }
+  @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+  .file-picker { display:flex; align-items:center; gap:8px; }
+  .file-input { display:none; }
+  .file-btn { font-size:13px; padding:6px 12px; white-space:nowrap; flex-shrink:0; }
+  .file-name { font-size:13px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+</style>
+
+<script>
+  document.querySelectorAll('.file-input').forEach((input) => {
+    const nameEl = document.getElementById(input.id.replace('input', 'name'));
+    input.addEventListener('change', () => {
+      const files = input.files;
+      if (!files || files.length === 0) {
+        nameEl.textContent = nameEl.dataset.none ?? '';
+      } else if (files.length === 1) {
+        nameEl.textContent = files[0].name;
+      } else {
+        nameEl.textContent = files.length + ' ' + (nameEl.dataset.multiple ?? '');
+      }
+    });
+  });
+</script>

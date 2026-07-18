@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
 import type { User, UserWithRoles } from "../types";
 import { getUserPermissions, fetchRoles } from "./permissionsService";
+import { ROLE } from "../constants/permissions";
 
 type Client = SupabaseClient<Database>;
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
@@ -45,6 +46,16 @@ export async function updateProfile(
   return { error: error ? new Error(error.message) : null };
 }
 
+export async function findUserByEmail(client: Client, email: string): Promise<User | null> {
+  const { data } = await client
+    .from("profiles")
+    .select("*")
+    .eq("email", email.toLowerCase().trim())
+    .maybeSingle();
+  if (!data) return null;
+  return toUser(data, email);
+}
+
 export async function fetchAllUsers(client: Client): Promise<User[]> {
   const { data, error } = await client
     .from("profiles")
@@ -53,6 +64,37 @@ export async function fetchAllUsers(client: Client): Promise<User[]> {
 
   if (error || !data) return [];
   return data.map((row: ProfileRow) => toUser(row, ""));
+}
+
+export async function fetchUsersForAdmin(
+  client: Client,
+  viewerRole: number,
+  partyId: string | null
+): Promise<User[]> {
+  if (viewerRole >= ROLE.OWNER) {
+    const { data } = await client.from("profiles").select("*").order("created_at", { ascending: false });
+    return (data ?? []).map((row: ProfileRow) => toUser(row, ""));
+  }
+
+  if (!partyId) return [];
+
+  const { data: partyMembers } = await client
+    .from("user_party_roles")
+    .select("user_id")
+    .eq("party_id", partyId);
+  const memberIds = (partyMembers ?? []).map((m) => m.user_id);
+  if (memberIds.length === 0) return [];
+
+  let query = client.from("profiles").select("*").in("id", memberIds);
+
+  if (viewerRole >= ROLE.ADMIN) {
+    query = query.lt("role", ROLE.OWNER);
+  } else {
+    query = query.lte("role", ROLE.ESHOP_ADMIN);
+  }
+
+  const { data } = await query.order("created_at", { ascending: false });
+  return (data ?? []).map((row: ProfileRow) => toUser(row, ""));
 }
 
 export async function fetchProfileWithRoles(

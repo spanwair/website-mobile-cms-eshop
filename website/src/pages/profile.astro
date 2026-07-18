@@ -1,6 +1,6 @@
 ---
 import Layout from "../components/layout/Layout.astro";
-import { createSupabase } from "../lib/supabase";
+import { createSupabase, createAdminClient } from "../lib/supabase";
 import { fetchProfile, updateProfile } from "@shared/services/profileService";
 import { useT } from "../lib/i18n";
 import { ROLE, ROLE_LABEL } from "@shared/constants/permissions";
@@ -16,10 +16,23 @@ let saveError: string | null = null;
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
-  const displayName = form.get("display_name") as string;
-  const { error } = await updateProfile(supabase, session.user.id, { display_name: displayName });
-  if (error) saveError = error.message;
-  else { saved = true; profile = await fetchProfile(supabase, session.user.id, session.user.email ?? ""); }
+  const action = form.get("_action") as string | null;
+
+  if (action === "delete_account") {
+    const admin = createAdminClient();
+    const { error } = await admin.auth.admin.deleteUser(session.user.id);
+    if (error) {
+      saveError = error.message;
+    } else {
+      await supabase.auth.signOut();
+      return Astro.redirect("/login");
+    }
+  } else {
+    const displayName = form.get("display_name") as string;
+    const { error } = await updateProfile(supabase, session.user.id, { display_name: displayName });
+    if (error) saveError = error.message;
+    else { saved = true; profile = await fetchProfile(supabase, session.user.id, session.user.email ?? ""); }
+  }
 }
 
 function roleLabel(role: number | null) {
@@ -61,11 +74,32 @@ function roleLabel(role: number | null) {
       </form>
     </div>
 
-    <form method="POST" action="/auth/signout">
-      <button type="submit" class="btn btn-ghost">{t.profile.signOut} →</button>
-    </form>
+    <div class="bottom-actions">
+      <form method="POST" action="/auth/signout">
+        <button type="submit" class="btn btn-ghost">{t.profile.signOut} →</button>
+      </form>
+
+      <form method="POST" id="delete-form">
+        <input type="hidden" name="_action" value="delete_account" />
+        <button
+          type="button"
+          class="btn btn-danger"
+          data-confirm={t.profile.deleteConfirm}
+          id="delete-btn"
+        >{t.profile.deleteAccount}</button>
+      </form>
+    </div>
   </div>
 </Layout>
+
+<script>
+  document.getElementById("delete-btn")?.addEventListener("click", () => {
+    const msg = (document.getElementById("delete-btn") as HTMLElement).dataset.confirm ?? "Are you sure?";
+    if (confirm(msg)) {
+      (document.getElementById("delete-form") as HTMLFormElement).submit();
+    }
+  });
+</script>
 
 <style>
   .page-title { font-size: 36px; font-weight: 900; color: var(--text-primary); margin-bottom: 32px; }
@@ -83,4 +117,7 @@ function roleLabel(role: number | null) {
   .field label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
   .success-msg { color: var(--success); font-size: 14px; margin-bottom: 12px; }
   .error-msg { color: var(--error); font-size: 14px; margin-bottom: 12px; }
+  .bottom-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  .btn-danger { background: transparent; color: #ef4444; border: 1.5px solid #ef4444; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-danger:hover { background: #ef444415; }
 </style>

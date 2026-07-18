@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Home, List, User, Shield, Settings } from "lucide-react-native";
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "../../supabase/client";
 import { useAuthStore } from "../lib/store/auth";
 import { getItem } from "../lib/storage";
@@ -21,6 +22,8 @@ const Root = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
+  const { t } = useTranslation();
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -37,27 +40,27 @@ function MainTabs() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ tabBarIcon: ({ color }) => <Home size={22} color={color} />, tabBarLabel: "Home" }}
+        options={{ tabBarIcon: ({ color }) => <Home size={22} color={color} />, tabBarLabel: t("nav.home") }}
       />
       <Tab.Screen
         name="Items"
         component={ItemsStack}
-        options={{ tabBarIcon: ({ color }) => <List size={22} color={color} />, tabBarLabel: "Items" }}
+        options={{ tabBarIcon: ({ color }) => <List size={22} color={color} />, tabBarLabel: t("nav.items") }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarIcon: ({ color }) => <User size={22} color={color} />, tabBarLabel: "Profile" }}
+        options={{ tabBarIcon: ({ color }) => <User size={22} color={color} />, tabBarLabel: t("nav.profile") }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ tabBarIcon: ({ color }) => <Settings size={22} color={color} />, tabBarLabel: "Settings" }}
+        options={{ tabBarIcon: ({ color }) => <Settings size={22} color={color} />, tabBarLabel: t("nav.settings") }}
       />
       <Tab.Screen
         name="Admin"
         component={AdminStack}
-        options={{ tabBarIcon: ({ color }) => <Shield size={22} color={color} />, tabBarLabel: "Admin" }}
+        options={{ tabBarIcon: ({ color }) => <Shield size={22} color={color} />, tabBarLabel: t("nav.admin") }}
       />
     </Tab.Navigator>
   );
@@ -79,7 +82,6 @@ export function AppNavigator() {
 
     return () => listener.subscription.unsubscribe();
   }, [setSession]);
-  console.log('status :>> ', status);
 
   if (status === "loading") return <LoadingScreen />;
 

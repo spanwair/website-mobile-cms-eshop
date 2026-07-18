@@ -1,5 +1,6 @@
 ---
 import type { NotificationWithMeta } from "@shared/types/index";
+import { useT } from "../../lib/i18n";
 
 interface Props {
   userId: string;
@@ -7,6 +8,7 @@ interface Props {
 }
 
 const { userId, userNotifications } = Astro.props;
+const t = useT(Astro);
 const unread = userNotifications.filter((n) => !n.read_at);
 ---
 
@@ -18,18 +20,18 @@ const unread = userNotifications.filter((n) => !n.read_at);
 
   <div class="notif-panel" id="notif-panel" hidden>
     <div class="notif-header">
-      <span class="notif-title">Notifications</span>
+      <span class="notif-title">{t.admin.notifications.title}</span>
       {unread.length > 0 && (
         <form method="POST" action="/admin/notifications/mark-all-read" style="margin:0">
           <input type="hidden" name="user_id" value={userId} />
-          <button type="submit" class="mark-all-btn">Mark all read</button>
+          <button type="submit" class="mark-all-btn">{t.admin.notifications.markAllRead}</button>
         </form>
       )}
     </div>
 
     <div class="notif-list">
       {userNotifications.length === 0 && (
-        <div class="notif-empty">No notifications.</div>
+        <div class="notif-empty">{t.admin.notifications.noNotifications}</div>
       )}
       {userNotifications.map((n) => (
         <div class={`notif-item ${!n.read_at ? "notif-item--unread" : ""}`}>

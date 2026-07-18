@@ -2,6 +2,7 @@
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { fetchProducts } from "@shared/services/productService";
+import { fetchCategories } from "@shared/services/categoryService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
 
@@ -18,15 +19,19 @@ const url = new URL(Astro.request.url);
 const page = parseInt(url.searchParams.get("page") ?? "1", 10);
 const search = url.searchParams.get("search") ?? "";
 const status = (url.searchParams.get("status") ?? "") as "draft" | "active" | "inactive" | "";
+const categoryId = url.searchParams.get("category") ?? "";
 
 let products: Awaited<ReturnType<typeof fetchProducts>>["data"] = [];
 let total = 0;
 const pageSize = 20;
+const categories = partyId ? await fetchCategories(supabase, partyId) : [];
 
 if (partyId) {
   const result = await fetchProducts(supabase, partyId, {
-    page, pageSize, search: search || undefined,
+    page, pageSize,
+    search: search || undefined,
     status: status || undefined,
+    category_id: categoryId || undefined,
   });
   products = result.data;
   total = result.total;
@@ -37,6 +42,8 @@ const totalPages = Math.ceil(total / pageSize);
 function statusClass(s: string) {
   return s === "active" ? "badge-active" : s === "draft" ? "badge-draft" : "badge-inactive";
 }
+
+const filterQs = `&search=${encodeURIComponent(search)}&status=${status}&category=${categoryId}`;
 ---
 
 <CmsLayout title={t.admin.products.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
@@ -44,22 +51,39 @@ function statusClass(s: string) {
 
   <div class="toolbar">
     <form method="GET" class="search-form">
-      <input class="form-input" name="search" placeholder={t.admin.products.searchPlaceholder} value={search} style="width:260px" />
-      <select class="form-input" name="status" style="width:160px">
+      <input class="form-input" name="search" placeholder={t.admin.products.searchPlaceholder} value={search} style="width:220px" />
+      <select class="form-input" name="status" style="width:140px">
         <option value="">{t.admin.products.allStatuses}</option>
         <option value="active" selected={status === "active"}>{t.common.active}</option>
         <option value="draft" selected={status === "draft"}>{t.common.draft}</option>
         <option value="inactive" selected={status === "inactive"}>{t.common.inactive}</option>
       </select>
+      {categories.length > 0 && (
+        <select class="form-input" name="category" style="width:160px">
+          <option value="">{t.admin.products.allCategories}</option>
+          {categories.map((c) => (
+            <option value={c.id} selected={categoryId === c.id}>{c.name}</option>
+          ))}
+        </select>
+      )}
       <button type="submit" class="btn btn-secondary">{t.admin.products.filterBtn}</button>
     </form>
-    <a href="/admin/products/new" class="btn btn-primary">{t.admin.products.new}</a>
+    <div class="toolbar-right">
+      <span class="total-label">{total} {t.admin.products.title.toLowerCase()}</span>
+      <a href="/admin/products/new" class="btn btn-primary">{t.admin.products.new}</a>
+    </div>
   </div>
 
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>
-        <tr><th>{t.admin.products.colName}</th><th>{t.admin.products.colSku}</th><th>{t.admin.products.colStatus}</th><th>{t.admin.products.colPrice}</th><th>{t.admin.products.colActions}</th></tr>
+        <tr>
+          <th>{t.admin.products.colName}</th>
+          <th>{t.admin.products.colSku}</th>
+          <th>{t.admin.products.colStatus}</th>
+          <th>{t.admin.products.colPrice}</th>
+          <th>{t.admin.products.colActions}</th>
+        </tr>
       </thead>
       <tbody>
         {products.map((p) => (
@@ -82,16 +106,18 @@ function statusClass(s: string) {
 
   {totalPages > 1 && (
     <div class="pagination">
-      {page > 1 && <a href={`?page=${page - 1}&search=${search}&status=${status}`} class="btn btn-ghost">{t.common.previous}</a>}
+      {page > 1 && <a href={`?page=${page - 1}${filterQs}`} class="btn btn-ghost">{t.common.previous}</a>}
       <span class="page-info">{t.common.page} {page} {t.common.of} {totalPages} ({t.common.total} {total})</span>
-      {page < totalPages && <a href={`?page=${page + 1}&search=${search}&status=${status}`} class="btn btn-ghost">{t.common.next}</a>}
+      {page < totalPages && <a href={`?page=${page + 1}${filterQs}`} class="btn btn-ghost">{t.common.next}</a>}
     </div>
   )}
 </CmsLayout>
 
 <style>
   .alert { background:#FFF3CD; border:1px solid #FFEAA7; border-radius:8px; padding:12px 16px; color:#856404; margin-bottom:24px; font-size:14px; }
-  .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; }
+  .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; flex-wrap:wrap; }
+  .toolbar-right { display:flex; align-items:center; gap:12px; }
+  .total-label { font-size:13px; color:var(--text-muted); }
   .search-form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .pagination { display:flex; align-items:center; gap:12px; margin-top:16px; }
   .page-info { font-size:13px; color:var(--text-muted); }

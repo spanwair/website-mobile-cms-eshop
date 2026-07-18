@@ -1,0 +1,160 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { requireAdminCtx } from "../../../lib/admin";
+import { fetchReturns } from "@shared/services/returnService";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions, partyId } = ctx;
+const t = useT(Astro);
+
+const url = new URL(Astro.request.url);
+const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+const statusFilter = url.searchParams.get("status") ?? "";
+const pageSize = 20;
+
+let returns: Awaited<ReturnType<typeof fetchReturns>>["data"] = [];
+let total = 0;
+
+if (partyId) {
+  const result = await fetchReturns(supabase, partyId, {
+    status: statusFilter || undefined,
+    page,
+    pageSize,
+  });
+  returns = result.data;
+  total = result.total;
+}
+
+const totalPages = Math.ceil(total / pageSize);
+
+const STATUS_TABS = [
+  { value: "", label: t.admin.returns.statusAll },
+  { value: "pending", label: t.admin.returns.statusPending },
+  { value: "approved", label: t.admin.returns.statusApproved },
+  { value: "received", label: t.admin.returns.statusReceived },
+  { value: "processing", label: t.admin.returns.statusProcessing },
+  { value: "completed", label: t.admin.returns.statusCompleted },
+  { value: "rejected", label: t.admin.returns.statusRejected },
+  { value: "cancelled", label: t.admin.returns.statusCancelled },
+];
+
+function statusClass(s: string) {
+  const map: Record<string, string> = {
+    pending: "badge-pending",
+    approved: "badge-draft",
+    received: "badge-draft",
+    processing: "badge-draft",
+    completed: "badge-active",
+    rejected: "badge-error",
+    cancelled: "badge-inactive",
+  };
+  return map[s] ?? "badge-draft";
+}
+
+function reasonLabel(r: string) {
+  const map: Record<string, string> = {
+    wrong_item: t.admin.returns.reasonWrongItem, damaged: t.admin.returns.reasonDamaged, defective: t.admin.returns.reasonDefective,
+    not_as_described: t.admin.returns.reasonNotAsDescribed, changed_mind: t.admin.returns.reasonChangedMind,
+    quality_issue: t.admin.returns.reasonQualityIssue, size_issue: t.admin.returns.reasonSizeIssue, other: t.admin.returns.reasonOther,
+  };
+  return map[r] ?? r;
+}
+---
+
+<CmsLayout title={t.admin.returns.title} userPermissions={permissions} currentPath="/admin/returns">
+  <div class="toolbar">
+    <h1 class="page-title">{t.admin.returns.title}</h1>
+    <span class="toolbar-count">{total}</span>
+  </div>
+
+  <div class="tabs">
+    {STATUS_TABS.map(tab => (
+      <a
+        href={`/admin/returns${tab.value ? `?status=${tab.value}` : ""}`}
+        class={`tab${statusFilter === tab.value ? " tab-active" : ""}`}
+      >
+        {tab.label}
+      </a>
+    ))}
+  </div>
+
+  {returns.length === 0 ? (
+    <div class="card empty-state">
+      <p>{t.admin.returns.noReturns}</p>
+    </div>
+  ) : (
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>{t.admin.returns.colRma}</th>
+          <th>{t.admin.returns.colOrder}</th>
+          <th>{t.admin.returns.colCustomer}</th>
+          <th>{t.admin.returns.colReason}</th>
+          <th>{t.admin.returns.colStatus}</th>
+          <th>{t.admin.returns.colRefund}</th>
+          <th>{t.admin.returns.colCreated}</th>
+          <th>{t.admin.returns.colActions}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {returns.map((r: any) => (
+          <tr>
+            <td><code>{r.return_number}</code></td>
+            <td>
+              <a href={`/admin/orders/${r.order_id}`}>
+                {r.order?.order_number ?? r.order_id.slice(0, 8)}
+              </a>
+            </td>
+            <td>
+              <a href={`/admin/customers/${r.customer_id}`}>
+                {r.customer ? `${r.customer.first_name} ${r.customer.last_name}` : "—"}
+              </a>
+            </td>
+            <td>{reasonLabel(r.reason)}</td>
+            <td><span class={`badge ${statusClass(r.status)}`}>{r.status}</span></td>
+            <td>
+              {r.refund_amount != null
+                ? `${Number(r.refund_amount).toFixed(2)} Kč`
+                : "—"}
+            </td>
+            <td>{new Date(r.created_at).toLocaleDateString("cs-CZ")}</td>
+            <td>
+              <a href={`/admin/returns/${r.id}`} class="btn btn-ghost btn-sm">{t.common.detail}</a>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+
+  {totalPages > 1 && (
+    <div class="pagination">
+      {page > 1 && (
+        <a href={`/admin/returns?page=${page - 1}${statusFilter ? `&status=${statusFilter}` : ""}`} class="btn btn-ghost">← {t.common.previous}</a>
+      )}
+      <span class="page-info">{t.common.page} {page} / {totalPages}</span>
+      {page < totalPages && (
+        <a href={`/admin/returns?page=${page + 1}${statusFilter ? `&status=${statusFilter}` : ""}`} class="btn btn-ghost">{t.common.next} →</a>
+      )}
+    </div>
+  )}
+</CmsLayout>
+
+<style>
+  .toolbar { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  .toolbar-count { color:var(--text-muted); font-size:14px; }
+  .tabs { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+  .tab { padding:6px 16px; border-radius:20px; font-size:14px; color:var(--text-muted); border:1px solid var(--border); text-decoration:none; }
+  .tab-active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .empty-state { text-align:center; padding:40px; color:var(--text-muted); }
+  .btn-sm { padding:4px 12px; font-size:13px; }
+  .pagination { display:flex; align-items:center; gap:16px; justify-content:center; margin-top:24px; }
+  .page-info { color:var(--text-muted); font-size:14px; }
+</style>

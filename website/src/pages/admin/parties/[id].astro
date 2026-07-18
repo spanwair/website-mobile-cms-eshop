@@ -1,9 +1,9 @@
 ---
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import { createSupabase } from "../../../lib/supabase";
-import { fetchParty, fetchPartyMembers, inviteUserToParty, removeUserFromParty } from "@shared/services/partyService";
+import { createSupabase, createAdminClient } from "../../../lib/supabase";
+import { fetchParty, updateParty, fetchPartyMembers, inviteUserToParty, removeUserFromParty } from "@shared/services/partyService";
 import { fetchRoles } from "@shared/services/permissionsService";
-import { fetchAllUsers } from "@shared/services/profileService";
+import { findUserByEmail } from "@shared/services/profileService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
 
@@ -19,17 +19,45 @@ const t = useT(Astro);
 const { id } = Astro.params;
 
 let error = "";
+let success = "";
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const action = form.get("action") as string;
 
-  if (action === "invite") {
-    const userId = form.get("user_id") as string;
-    const roleId = form.get("role_id") as string;
-    const result = await inviteUserToParty(supabase, userId, id!, roleId, session.user.id);
+  if (action === "update_party") {
+    const result = await updateParty(supabase, id!, {
+      name: form.get("name") as string,
+      company_name: (form.get("company_name") as string) || undefined,
+      vat_number: (form.get("vat_number") as string) || undefined,
+      billing_email: (form.get("billing_email") as string) || undefined,
+      is_active: form.get("is_active") === "on",
+    });
     if (result.error) { error = result.error.message; }
-    else { return Astro.redirect(`/admin/parties/${id}`); }
+    else { success = t.admin.parties.updatedSuccess; }
+  } else if (action === "invite") {
+    const email = (form.get("email") as string).trim().toLowerCase();
+    const roleId = form.get("role_id") as string;
+
+    const existingUser = await findUserByEmail(supabase, email);
+    if (existingUser) {
+      const result = await inviteUserToParty(supabase, existingUser.id, id!, roleId, session.user.id);
+      if (result.error) { error = result.error.message; }
+      else { return Astro.redirect(`/admin/parties/${id}`); }
+    } else {
+      const adminClient = createAdminClient();
+      const origin = new URL(Astro.request.url).origin;
+      const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
+        redirectTo: `${origin}/auth/callback`,
+        data: {
+          pending_party_id: id,
+          pending_role_id: roleId,
+          invited_by: session.user.id,
+        },
+      });
+      if (inviteError) { error = inviteError.message; }
+      else { success = t.admin.parties.inviteSentPrefix + email + t.admin.parties.inviteSentSuffix; }
+    }
   } else if (action === "remove") {
     const userId = form.get("user_id") as string;
     await removeUserFromParty(supabase, userId, id!);
@@ -40,14 +68,10 @@ if (Astro.request.method === "POST") {
 const party = await fetchParty(supabase, id!);
 if (!party) return Astro.redirect("/admin/parties");
 
-const [members, roles, allUsers] = await Promise.all([
+const [members, roles] = await Promise.all([
   fetchPartyMembers(supabase, id!),
   fetchRoles(supabase, id!),
-  fetchAllUsers(supabase),
 ]);
-
-const memberUserIds = new Set(members.map((m) => m.user_id));
-const availableUsers = allUsers.filter((u) => !memberUserIds.has(u.id));
 
 function roleName(roleId: string) {
   return roles.find((r) => r.id === roleId)?.name ?? roleId.slice(0, 8);
@@ -57,48 +81,76 @@ function roleName(roleId: string) {
 <CmsLayout title={party.name} userPermissions={permissions} currentPath="/admin/parties">
   <a href="/admin/parties" class="back-link">{t.admin.parties.back}</a>
   {error && <div class="alert-error">{error}</div>}
+  {success && <div class="alert-success">{success}</div>}
 
   <div class="party-grid">
     <div>
       <div class="card">
         <h2 class="section-title">{t.admin.parties.sectionInfo}</h2>
-        <div class="info-rows">
-          <div class="info-row"><span class="info-label">{t.admin.parties.fieldName}</span><span>{party.name}</span></div>
-          <div class="info-row"><span class="info-label">{t.admin.parties.fieldSlug}</span><code>{party.slug}</code></div>
-          <div class="info-row"><span class="info-label">{t.admin.parties.fieldCompany}</span><span>{party.company_name ?? "—"}</span></div>
-          <div class="info-row"><span class="info-label">{t.admin.parties.fieldVat}</span><span>{party.vat_number ?? "—"}</span></div>
-          <div class="info-row"><span class="info-label">{t.admin.parties.fieldBillingEmail}</span><span>{party.billing_email ?? "—"}</span></div>
-          <div class="info-row"><span class="info-label">{t.admin.parties.fieldStatus}</span><span class={`badge ${party.is_active ? "badge-active" : "badge-inactive"}`}>{party.is_active ? t.admin.parties.statusActive : t.admin.parties.statusInactive}</span></div>
-          <div class="info-row"><span class="info-label">{t.admin.parties.fieldCreated}</span><span>{new Date(party.created_at).toLocaleDateString()}</span></div>
-        </div>
+        <form method="POST" class="edit-form">
+          <input type="hidden" name="action" value="update_party" />
+          <div class="form-group">
+            <label class="form-label">{t.admin.parties.fieldName}</label>
+            <input class="form-input" name="name" required value={party.name} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{t.admin.parties.fieldCompany}</label>
+            <input class="form-input" name="company_name" value={party.company_name ?? ""} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{t.admin.parties.fieldVat}</label>
+            <input class="form-input" name="vat_number" value={party.vat_number ?? ""} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{t.admin.parties.fieldBillingEmail}</label>
+            <input class="form-input" type="email" name="billing_email" value={party.billing_email ?? ""} />
+          </div>
+          <div class="form-row-inline">
+            <label class="form-label">{t.admin.parties.fieldSlug}</label>
+            <code>{party.slug}</code>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" name="is_active" id="is_active" checked={party.is_active} />
+            <label for="is_active">{t.admin.parties.statusActive}</label>
+          </div>
+          <div class="form-meta">
+            <span class="meta-label">{t.admin.parties.fieldCreated}</span>
+            <span>{new Date(party.created_at).toLocaleDateString()}</span>
+          </div>
+          <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.common.saveChanges}</button>
+        </form>
       </div>
 
       <div class="card" style="margin-top:16px">
         <h2 class="section-title">{t.admin.parties.sectionInvite}</h2>
-        {availableUsers.length === 0 ? (
-          <p style="font-size:14px;color:var(--text-muted)">{t.admin.parties.allMembersAdded}</p>
-        ) : (
-          <form method="POST" class="invite-form">
-            <input type="hidden" name="action" value="invite" />
-            <div class="form-group">
-              <label class="form-label">{t.admin.parties.fieldUser}</label>
-              <select class="form-input" name="user_id" required>
-                <option value="">{t.admin.parties.selectUser}</option>
-                {availableUsers.map((u) => (
-                  <option value={u.id}>{u.display_name ?? u.email} ({u.email})</option>
-                ))}
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">{t.admin.parties.fieldRole}</label>
-              <select class="form-input" name="role_id" required>
-                <option value="">{t.admin.parties.selectRole}</option>
-                {roles.map((r) => <option value={r.id}>{r.name}</option>)}
-              </select>
-            </div>
-            <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.admin.parties.sendInvite}</button>
-          </form>
-        )}
+        <p class="invite-note">
+          {t.admin.parties.inviteNote}<br /><br />
+          <strong>{t.admin.parties.inviteNoteExtra}</strong>{" "}
+          <a href="/admin/users">{t.admin.sidebar.users}</a>{" "}
+          {t.admin.parties.inviteNoteSuffix}
+        </p>
+        <form method="POST" class="invite-form">
+          <input type="hidden" name="action" value="invite" />
+          <div class="form-group">
+            <label class="form-label">{t.admin.parties.fieldEmail}</label>
+            <input class="form-input" type="email" name="email" required placeholder={t.auth.emailPlaceholder} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">
+              {t.admin.parties.fieldRole}
+              <span class="role-hint">{t.admin.parties.roleHint}</span>
+            </label>
+            <select class="form-input" name="role_id" required>
+              <option value="">{t.admin.parties.selectRole}</option>
+              {roles.map((r) => (
+                <option value={r.id}>
+                  {r.name}{r.description ? ` — ${r.description}` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.admin.parties.sendInvite}</button>
+        </form>
       </div>
     </div>
 
@@ -135,13 +187,21 @@ function roleName(roleId: string) {
   .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
   .back-link:hover { color:var(--text-primary); }
   .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
+  .alert-success { background:rgba(34,197,94,0.08); border:1px solid #22c55e; border-radius:8px; padding:12px 16px; color:#16a34a; margin-bottom:16px; font-size:14px; }
   .party-grid { display:grid; grid-template-columns:1fr 2fr; gap:24px; }
   .section-title { font-size:15px; font-weight:700; margin-bottom:16px; }
-  .info-rows { display:flex; flex-direction:column; gap:10px; }
-  .info-row { display:flex; justify-content:space-between; align-items:center; font-size:14px; border-bottom:1px solid var(--border-default); padding-bottom:8px; }
-  .info-row:last-child { border-bottom:none; }
-  .info-label { font-weight:600; color:var(--text-muted); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; }
+  .edit-form { display:flex; flex-direction:column; gap:12px; }
+  .form-group { display:flex; flex-direction:column; gap:4px; }
+  .form-label { font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .form-row-inline { display:flex; justify-content:space-between; align-items:center; font-size:14px; padding:4px 0; border-bottom:1px solid var(--border-default); }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .form-check input { width:auto; }
+  .form-meta { display:flex; justify-content:space-between; font-size:13px; color:var(--text-muted); }
+  .meta-label { font-weight:600; }
   .invite-form { display:flex; flex-direction:column; gap:12px; }
+  .invite-note { font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:12px; padding:10px 12px; background:var(--bg-subtle); border-radius:8px; border-left:3px solid var(--primary); }
+  .invite-note a { color:var(--primary); font-weight:600; }
+  .role-hint { font-weight:400; font-style:italic; color:var(--text-muted); }
   code { font-family:monospace; font-size:13px; background:var(--bg-subtle); padding:2px 6px; border-radius:4px; }
   @media(max-width:768px) { .party-grid { grid-template-columns:1fr; } }
 </style>

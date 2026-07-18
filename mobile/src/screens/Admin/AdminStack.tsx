@@ -1,5 +1,6 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
 import { colors } from "@shared/constants/theme";
 import { AdminDashboardScreen } from "./AdminDashboardScreen";
 import { AdminItemsScreen } from "./AdminItemsScreen";
@@ -8,6 +9,8 @@ import type { AdminStackParamList } from "../../navigation/types";
 const Stack = createNativeStackNavigator<AdminStackParamList>();
 
 export function AdminStack() {
+  const { t } = useTranslation();
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -16,8 +19,16 @@ export function AdminStack() {
         headerTitleStyle: { fontWeight: "700" },
       }}
     >
-      <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ title: "Admin" }} />
-      <Stack.Screen name="AdminItems" component={AdminItemsScreen} options={{ title: "Manage Items" }} />
+      <Stack.Screen
+        name="AdminDashboard"
+        component={AdminDashboardScreen}
+        options={{ title: t("nav.admin") }}
+      />
+      <Stack.Screen
+        name="AdminItems"
+        component={AdminItemsScreen}
+        options={{ title: t("admin.manageItemsTitle") }}
+      />
     </Stack.Navigator>
   );
 }

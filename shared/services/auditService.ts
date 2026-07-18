@@ -18,8 +18,8 @@ export async function log(
     p_table_name: tableName,
     p_record_id: recordId,
     p_party_id: partyId,
-    p_old_val: oldVal ?? null,
-    p_new_val: newVal ?? null,
+    p_old_val: (oldVal ?? null) as import("../supabase/types").Json,
+    p_new_val: (newVal ?? null) as import("../supabase/types").Json,
   });
   if (error) throw new Error(error.message);
 }

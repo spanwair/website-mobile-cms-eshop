@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
 import { colors, radius } from "@shared/constants/theme";
 
 interface Props {
@@ -7,15 +8,15 @@ interface Props {
 }
 
 export function ConfirmationScreen({ onBack }: Props) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
       <Text style={styles.icon}>📬</Text>
-      <Text style={styles.title}>Check your inbox!</Text>
-      <Text style={styles.body}>
-        Check your email for a confirmation link.{"\n"}If you already have an account, sign in instead.
-      </Text>
+      <Text style={styles.title}>{t("auth.checkInbox")}</Text>
+      <Text style={styles.body}>{t("auth.confirmationBody")}</Text>
       <TouchableOpacity style={styles.ghostBtn} onPress={onBack} activeOpacity={0.7}>
-        <Text style={styles.ghostBtnText}>Back to sign in</Text>
+        <Text style={styles.ghostBtnText}>{t("auth.backToSignIn")}</Text>
       </TouchableOpacity>
     </View>
   );

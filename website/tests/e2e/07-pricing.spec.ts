@@ -92,8 +92,13 @@ test.describe("07 — Pricing: Tabs, Discounts, Coupons CRUD", () => {
   });
 
   test("07-10 create new coupon PROMO20", async () => {
+    // Ensure we're on the new coupon form (07-09 may leave us mid-page)
+    if (!page.url().includes("/admin/pricing/coupons/new")) {
+      await page.goto(`${BASE}/admin/pricing/coupons/new`);
+      await page.waitForLoadState("networkidle");
+    }
     await page.fill("input[name='code']", "PROMO20");
-    await page.selectOption("select[name='discount_rule_id']", { label: /Seed 10% Off/i });
+    await page.selectOption("select[name='discount_rule_id']", { index: 1 });
     await page.fill("input[name='max_uses']", "100");
     const isActive = page.locator("input[name='is_active']");
     if (!(await isActive.isChecked())) {

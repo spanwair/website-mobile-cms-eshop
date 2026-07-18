@@ -23,10 +23,10 @@ const notifications = await fetchUserNotifications(supabase, session.user.id);
       <thead>
         <tr>
           <th>{t.admin.audit.colTimestamp}</th>
-          <th>Type</th>
-          <th>Title</th>
-          <th>Message</th>
-          <th>Status</th>
+          <th>{t.admin.notifications.colType}</th>
+          <th>{t.admin.notifications.colTitle}</th>
+          <th>{t.admin.notifications.colMessage}</th>
+          <th>{t.common.status}</th>
         </tr>
       </thead>
       <tbody>
@@ -40,8 +40,8 @@ const notifications = await fetchUserNotifications(supabase, session.user.id);
             <td style="color:var(--text-muted);font-size:13px">{n.body ?? "—"}</td>
             <td>
               {n.read_at
-                ? <span class="badge badge-inactive">Read</span>
-                : <span class="badge badge-active">Unread</span>
+                ? <span class="badge badge-inactive">{t.admin.notifications.statusRead}</span>
+                : <span class="badge badge-active">{t.admin.notifications.statusUnread}</span>
               }
             </td>
           </tr>

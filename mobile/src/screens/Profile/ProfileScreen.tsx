@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Alert, Image, TextInput, StyleSheet } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../lib/store/auth";
 import { useProfile, useUpdateProfile } from "../../lib/query/hooks/useProfile";
 import { toast } from "../../lib/toast";
@@ -8,9 +9,10 @@ import { ScreenContainer } from "../../components/layout/ScreenContainer";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { colors } from "@shared/constants/theme";
-import { ROLE, ROLE_LABEL } from "@shared/constants/permissions";
+import { ROLE_LABEL } from "@shared/constants/permissions";
 
 export function ProfileScreen() {
+  const { t } = useTranslation();
   const user = useAuthStore.use.user();
   const signOut = useAuthStore.use.signOut();
   const { data: profile } = useProfile(user?.id);
@@ -27,29 +29,29 @@ export function ProfileScreen() {
     });
     if (!error) {
       setEditing(false);
-      toast.success("Profile updated");
+      toast.success(t("profile.updated"));
     } else {
-      toast.error("Failed to update profile");
+      toast.error(t("profile.updateFailed"));
     }
   }
 
   function handleSignOut() {
-    Alert.alert("Sign out", "Are you sure?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign out", style: "destructive", onPress: signOut },
+    Alert.alert(t("nav.signOut"), t("common.areYouSure"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("nav.signOut"), style: "destructive", onPress: signOut },
     ]);
   }
 
   async function handlePickAvatar() {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: "images", quality: 0.7 });
     if (result.canceled || !result.assets[0]) return;
-    toast.info("Avatar upload coming soon");
+    toast.info(t("profile.avatarUploadSoon"));
   }
 
   const initial = (profile?.display_name ?? user?.email ?? "?")[0].toUpperCase();
 
   return (
-    <ScreenContainer title="Profile">
+    <ScreenContainer title={t("profile.title")}>
       <View style={styles.avatarRow}>
         <TouchableOpacity onPress={handlePickAvatar} activeOpacity={0.8}>
           {profile?.avatar_url ? (
@@ -61,16 +63,18 @@ export function ProfileScreen() {
           )}
         </TouchableOpacity>
         <View style={styles.avatarMeta}>
-          <Text style={styles.fullName}>{profile?.display_name ?? "Unknown"}</Text>
+          <Text style={styles.fullName}>{profile?.display_name ?? t("profile.unknown")}</Text>
           <Text style={styles.email}>{user?.email}</Text>
-          <Text style={styles.role}>{ROLE_LABEL[profile?.role as keyof typeof ROLE_LABEL] ?? "user"}</Text>
+          <Text style={styles.role}>
+            {ROLE_LABEL[profile?.role as keyof typeof ROLE_LABEL] ?? t("profile.role.user")}
+          </Text>
         </View>
       </View>
 
       <Card style={styles.card}>
         {editing ? (
           <>
-            <Text style={styles.fieldLabel}>Display name</Text>
+            <Text style={styles.fieldLabel}>{t("profile.displayName")}</Text>
             <TextInput
               style={styles.fieldInput}
               value={displayName}
@@ -79,49 +83,49 @@ export function ProfileScreen() {
               autoFocus
             />
             <View style={styles.editRow}>
-              <Button label="Save" onPress={handleSave} loading={updateProfile.isPending} className="flex-1" />
-              <Button label="Cancel" onPress={() => setEditing(false)} variant="ghost" className="flex-1" />
+              <Button label={t("common.save")} onPress={handleSave} loading={updateProfile.isPending} className="flex-1" />
+              <Button label={t("common.cancel")} onPress={() => setEditing(false)} variant="ghost" className="flex-1" />
             </View>
           </>
         ) : (
           <>
-            <Text style={styles.fieldLabel}>Display name</Text>
-            <Text style={styles.fieldValue}>{profile?.display_name ?? "Not set"}</Text>
+            <Text style={styles.fieldLabel}>{t("profile.displayName")}</Text>
+            <Text style={styles.fieldValue}>{profile?.display_name ?? t("profile.notSet")}</Text>
             <TouchableOpacity
               onPress={() => { setDisplayName(profile?.display_name ?? ""); setEditing(true); }}
               activeOpacity={0.8}
             >
-              <Text style={styles.editLink}>Edit profile →</Text>
+              <Text style={styles.editLink}>{t("profile.editProfileArrow")}</Text>
             </TouchableOpacity>
           </>
         )}
       </Card>
 
       <View style={styles.signOutWrap}>
-        <Button label="Sign out" onPress={handleSignOut} variant="secondary" />
+        <Button label={t("nav.signOut")} onPress={handleSignOut} variant="secondary" />
       </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  avatarRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 24 },
+  avatarRow: { flexDirection: "row", alignItems: "center", gap: 16, marginBottom: 24 },
   avatarImg: { width: 80, height: 80, borderRadius: 40 },
   avatarCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
     backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  avatarInitial: { fontSize: 32, fontWeight: '900', color: colors.white },
+  avatarInitial: { fontSize: 32, fontWeight: "900", color: colors.white },
   avatarMeta: { flex: 1, gap: 2 },
-  fullName: { fontSize: 20, fontWeight: '800', color: colors.text },
+  fullName: { fontSize: 20, fontWeight: "800", color: colors.text },
   email: { fontSize: 13, color: colors.textMuted },
-  role: { fontSize: 12, fontWeight: '700', color: colors.accent, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 },
+  role: { fontSize: 12, fontWeight: "700", color: colors.accent, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 },
   card: { marginBottom: 20 },
-  fieldLabel: { fontSize: 12, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 },
+  fieldLabel: { fontSize: 12, fontWeight: "700", color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 },
   fieldInput: {
     backgroundColor: colors.subtle,
     borderWidth: 1.5,
@@ -134,7 +138,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   fieldValue: { fontSize: 15, color: colors.text, marginBottom: 12 },
-  editLink: { fontSize: 14, color: colors.accent, fontWeight: '600' },
-  editRow: { flexDirection: 'row', gap: 12 },
-  signOutWrap: { marginTop: 'auto', paddingTop: 24 },
+  editLink: { fontSize: 14, color: colors.accent, fontWeight: "600" },
+  editRow: { flexDirection: "row", gap: 12 },
+  signOutWrap: { marginTop: "auto", paddingTop: 24 },
 });

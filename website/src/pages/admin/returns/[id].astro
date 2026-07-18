@@ -1,0 +1,154 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { requireAdminCtx } from "../../../lib/admin";
+import { fetchReturn, updateReturnStatus } from "@shared/services/returnService";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const ctx = await requireAdminCtx(supabase, session.user.id);
+if (!ctx) return Astro.redirect("/dashboard");
+const { permissions } = ctx;
+const t = useT(Astro);
+
+const { id } = Astro.params;
+
+// Handle status/resolution updates
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const updates: Record<string, unknown> = {};
+
+  const status = form.get("status") as string;
+  const resolution = form.get("resolution") as string;
+  const refund_amount = form.get("refund_amount");
+  const refund_method = form.get("refund_method") as string;
+  const notes = form.get("notes") as string;
+
+  if (status) updates.status = status;
+  if (resolution) updates.resolution = resolution;
+  if (refund_amount) updates.refund_amount = parseFloat(refund_amount as string);
+  if (refund_method) updates.refund_method = refund_method;
+  if (notes !== null) updates.notes = notes;
+
+  if (status === "received") updates.received_at = new Date().toISOString();
+  if (status === "completed") updates.completed_at = new Date().toISOString();
+
+  await updateReturnStatus(supabase, id!, updates as Parameters<typeof updateReturnStatus>[2]);
+  return Astro.redirect(`/admin/returns/${id}`);
+}
+
+const rma = await fetchReturn(supabase, id!);
+if (!rma) return Astro.redirect("/admin/returns");
+
+const STATUSES = ["pending","approved","rejected","received","processing","completed","cancelled"];
+const RESOLUTIONS = ["refund","exchange","store_credit"];
+const REFUND_METHODS = ["original_payment","store_credit","bank_transfer"];
+
+function statusClass(s: string) {
+  const map: Record<string, string> = {
+    pending:"badge-pending", approved:"badge-draft", received:"badge-draft",
+    processing:"badge-draft", completed:"badge-active", rejected:"badge-error", cancelled:"badge-inactive",
+  };
+  return map[s] ?? "badge-draft";
+}
+---
+
+<CmsLayout title={`Return ${rma.return_number}`} userPermissions={permissions} currentPath="/admin/returns">
+  <div class="toolbar">
+    <a href="/admin/returns" class="btn btn-ghost">{t.admin.returns.back}</a>
+    <h1 class="page-title">{rma.return_number}</h1>
+    <span class={`badge ${statusClass(rma.status)}`}>{rma.status}</span>
+  </div>
+
+  <div class="detail-grid">
+    <div class="card">
+      <h2 class="section-title">{t.admin.returns.sectionDetails}</h2>
+      <dl class="detail-list">
+        <dt>{t.admin.returns.fieldOrder}</dt>
+        <dd><a href={`/admin/orders/${rma.order_id}`}>{rma.order_id.slice(0, 8)}</a></dd>
+        <dt>{t.admin.returns.fieldReason}</dt>
+        <dd>{rma.reason.replace(/_/g, " ")}</dd>
+        <dt>{t.admin.returns.fieldCustomerNotes}</dt>
+        <dd>{rma.customer_notes ?? "—"}</dd>
+        <dt>{t.admin.returns.fieldCreated}</dt>
+        <dd>{new Date(rma.created_at).toLocaleString("cs-CZ")}</dd>
+        {rma.received_at && <><dt>{t.admin.returns.fieldReceived}</dt><dd>{new Date(rma.received_at).toLocaleString("cs-CZ")}</dd></>}
+        {rma.completed_at && <><dt>{t.admin.returns.fieldCompleted}</dt><dd>{new Date(rma.completed_at).toLocaleString("cs-CZ")}</dd></>}
+      </dl>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">{t.admin.returns.sectionResolution}</h2>
+      <form method="POST" class="resolution-form">
+        <div class="field">
+          <label>{t.admin.returns.fieldStatus}</label>
+          <select name="status" class="input">
+            {STATUSES.map(s => <option value={s} selected={s === rma.status}>{s}</option>)}
+          </select>
+        </div>
+        <div class="field">
+          <label>{t.admin.returns.fieldResolution}</label>
+          <select name="resolution" class="input">
+            <option value="">{t.admin.returns.notSet}</option>
+            {RESOLUTIONS.map(r => <option value={r} selected={r === rma.resolution}>{r.replace(/_/g, " ")}</option>)}
+          </select>
+        </div>
+        <div class="field">
+          <label>{t.admin.returns.fieldRefundAmount}</label>
+          <input type="number" name="refund_amount" step="0.01" value={rma.refund_amount ?? ""} class="input" />
+        </div>
+        <div class="field">
+          <label>{t.admin.returns.fieldRefundMethod}</label>
+          <select name="refund_method" class="input">
+            <option value="">{t.admin.returns.notSet}</option>
+            {REFUND_METHODS.map(m => <option value={m} selected={m === rma.refund_method}>{m.replace(/_/g, " ")}</option>)}
+          </select>
+        </div>
+        <div class="field">
+          <label>{t.admin.returns.fieldNotes}</label>
+          <textarea name="notes" class="input textarea">{rma.notes ?? ""}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">{t.common.saveChanges}</button>
+      </form>
+    </div>
+  </div>
+
+  {(rma as any).items?.length > 0 && (
+    <div class="card" style="margin-top:20px">
+      <h2 class="section-title">{t.admin.returns.sectionItems}</h2>
+      <table class="data-table">
+        <thead>
+          <tr><th>{t.admin.returns.colItem}</th><th>{t.admin.inventory.colSku}</th><th>{t.admin.returns.colQtyOrdered}</th><th>{t.admin.returns.colQtyReturned}</th><th>{t.admin.returns.colCondition}</th><th>{t.admin.returns.colRestock}</th></tr>
+        </thead>
+        <tbody>
+          {(rma as any).items.map((item: any) => (
+            <tr>
+              <td>{item.order_item?.title ?? "—"}</td>
+              <td>{item.order_item?.sku ?? "—"}</td>
+              <td>{item.order_item?.quantity}</td>
+              <td>{item.quantity}</td>
+              <td>{item.condition ?? "—"}</td>
+              <td>{item.restock ? "✓" : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</CmsLayout>
+
+<style>
+  .toolbar { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+  .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .section-title { font-size:16px; font-weight:700; margin-bottom:16px; }
+  .detail-list { display:grid; grid-template-columns:auto 1fr; gap:8px 16px; font-size:14px; }
+  .detail-list dt { color:var(--text-muted); font-weight:600; }
+  .resolution-form { display:flex; flex-direction:column; gap:14px; }
+  .field { display:flex; flex-direction:column; gap:4px; }
+  .field label { font-size:13px; font-weight:600; color:var(--text-muted); }
+  .textarea { min-height:80px; resize:vertical; }
+  @media(max-width:768px) { .detail-grid { grid-template-columns:1fr; } }
+</style>

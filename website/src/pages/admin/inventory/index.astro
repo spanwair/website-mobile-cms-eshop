@@ -66,7 +66,7 @@ const isLowMap = new Map(items.map((i) => [i.id, i.qty_on_hand <= i.low_stock_th
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>
-        <tr><th>{t.admin.inventory.colProduct}</th><th>SKU</th><th>{t.admin.inventory.colOnHand}</th><th>{t.admin.inventory.colReserved}</th><th>{t.admin.inventory.colAvailable}</th><th>{t.admin.inventory.colThreshold}</th><th>{t.admin.inventory.adjust}</th></tr>
+        <tr><th>{t.admin.inventory.colProduct}</th><th>{t.admin.inventory.colSku}</th><th>{t.admin.inventory.colOnHand}</th><th>{t.admin.inventory.colReserved}</th><th>{t.admin.inventory.colAvailable}</th><th>{t.admin.inventory.colThreshold}</th><th>{t.admin.inventory.adjust}</th></tr>
       </thead>
       <tbody>
         {items.map((item) => (

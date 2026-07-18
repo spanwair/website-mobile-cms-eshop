@@ -1,7 +1,10 @@
 ---
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import ProductImages from "../../../components/cms/ProductImages.astro";
 import { createSupabase } from "../../../lib/supabase";
-import { fetchProduct, updateProduct, deleteProduct } from "@shared/services/productService";
+import { fetchProduct, updateProduct, deleteProduct, setProductCategories } from "@shared/services/productService";
+import { addProductImage, deleteProductImage, setPrimaryImage } from "@shared/services/productImageService";
+import { fetchCategories } from "@shared/services/categoryService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
 
@@ -11,20 +14,67 @@ if (!session) return Astro.redirect("/login");
 
 const ctx = await requireAdminCtx(supabase, session.user.id);
 if (!ctx) return Astro.redirect("/dashboard");
-const { permissions } = ctx;
+const { permissions, partyId } = ctx;
 const t = useT(Astro);
-
 const { id } = Astro.params;
 
 let error = "";
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
-  const action = form.get("action") as string;
+  const action = (form.get("action") as string) ?? "";
 
   if (action === "delete") {
     await deleteProduct(supabase, id!);
     return Astro.redirect("/admin/products");
+  }
+
+  if (action === "upload_image") {
+    const files = form.getAll("image") as File[];
+    const alt = (form.get("image_alt") as string) || null;
+    const isPrimary = form.get("is_primary") === "on";
+    const ts = Date.now();
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file || file.size === 0) continue;
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${partyId}/${id}/${ts}-${i}.${ext}`;
+      const buf = await file.arrayBuffer();
+      const { error: upErr } = await supabase.storage.from("product-images").upload(path, buf, { contentType: file.type });
+      if (upErr) { error = `Image upload failed: ${upErr.message}`; break; }
+      const { data: { publicUrl } } = supabase.storage.from("product-images").getPublicUrl(path);
+      const imgResult = await addProductImage(supabase, { product_id: id!, url: publicUrl, alt, is_primary: i === 0 && isPrimary, sort_order: 0 });
+      if (imgResult.error) { error = imgResult.error.message; break; }
+    }
+    if (!error) return Astro.redirect(`/admin/products/${id}`);
+  }
+
+  if (action === "upload_video") {
+    const files = form.getAll("video") as File[];
+    const ts = Date.now();
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file || file.size === 0) continue;
+      const ext = file.name.split(".").pop() ?? "mp4";
+      const path = `${partyId}/${id}/${ts}-${i}.${ext}`;
+      const buf = await file.arrayBuffer();
+      const { error: upErr } = await supabase.storage.from("product-videos").upload(path, buf, { contentType: file.type });
+      if (upErr) { error = `Video upload failed: ${upErr.message}`; break; }
+      const { data: { publicUrl } } = supabase.storage.from("product-videos").getPublicUrl(path);
+      const vidResult = await addProductImage(supabase, { product_id: id!, url: publicUrl, alt: null, is_primary: false, sort_order: 0, media_type: "video" });
+      if (vidResult.error) { error = vidResult.error.message; break; }
+    }
+    if (!error) return Astro.redirect(`/admin/products/${id}`);
+  }
+
+  if (action === "delete_image") {
+    await deleteProductImage(supabase, form.get("image_id") as string);
+    return Astro.redirect(`/admin/products/${id}`);
+  }
+
+  if (action === "set_primary") {
+    await setPrimaryImage(supabase, id!, form.get("image_id") as string);
+    return Astro.redirect(`/admin/products/${id}`);
   }
 
   const result = await updateProduct(supabase, id!, {
@@ -41,12 +91,16 @@ if (Astro.request.method === "POST") {
   if (result.error) {
     error = result.error.message;
   } else {
+    await setProductCategories(supabase, id!, form.getAll("category_ids[]") as string[]);
     return Astro.redirect("/admin/products");
   }
 }
 
 const product = await fetchProduct(supabase, id!);
 if (!product) return Astro.redirect("/admin/products");
+
+const categories = partyId ? await fetchCategories(supabase, partyId) : [];
+const selectedCats = new Set(product.categories);
 ---
 
 <CmsLayout title={t.admin.products.editTitle} userPermissions={permissions} currentPath="/admin/products">
@@ -94,12 +148,25 @@ if (!product) return Astro.redirect("/admin/products");
       </div>
       <div class="form-group">
         <label class="form-label">{t.admin.products.fieldDescription}</label>
-        <textarea class="form-input" name="description" rows="5">{product.description ?? ""}</textarea>
+        <textarea class="form-input" name="description" rows="4">{product.description ?? ""}</textarea>
       </div>
       <div class="form-check">
         <input type="checkbox" name="is_featured" id="is_featured" checked={product.is_featured} />
         <label for="is_featured">{t.admin.products.fieldFeatured}</label>
       </div>
+      {categories.length > 0 && (
+        <div class="form-group">
+          <label class="form-label">{t.admin.products.fieldCategories}</label>
+          <div class="checkbox-grid">
+            {categories.map((cat) => (
+              <label class="cat-check">
+                <input type="checkbox" name="category_ids[]" value={cat.id} checked={selectedCats.has(cat.id)} />
+                {cat.name}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
       <div class="form-actions">
         <div style="display:flex;gap:12px">
           <a href="/admin/products" class="btn btn-ghost">{t.common.cancel}</a>
@@ -112,6 +179,8 @@ if (!product) return Astro.redirect("/admin/products");
       <button type="submit" class="btn btn-danger">{t.admin.products.deleteBtn}</button>
     </form>
   </div>
+
+  <ProductImages images={product.images} productId={id!} />
 </CmsLayout>
 
 <style>
@@ -121,6 +190,9 @@ if (!product) return Astro.redirect("/admin/products");
   .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
   .form-check input { width:auto; }
-  .form-actions { display:flex; justify-content:space-between; align-items:center; margin-top:8px; flex-wrap:wrap; gap:8px; }
+  .form-actions { display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
+  .checkbox-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:8px; }
+  .cat-check { display:flex; align-items:center; gap:6px; font-size:14px; cursor:pointer; }
+  .cat-check input { width:auto; }
   @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
 </style>
