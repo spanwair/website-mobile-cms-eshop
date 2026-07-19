@@ -1,13 +1,16 @@
 ---
 import Layout from "../layout/Layout.astro";
 import Sidebar from "./Sidebar.astro";
+import PartySwitcher from "./PartySwitcher.astro";
 
 interface Props {
   title: string;
   userPermissions: number;
   currentPath: string;
+  parties?: Array<{ id: string; name: string }>;
+  partyId?: string | null;
 }
-const { title, userPermissions, currentPath } = Astro.props;
+const { title, userPermissions, currentPath, parties = [], partyId = null } = Astro.props;
 ---
 
 <Layout title={title}>
@@ -16,6 +19,9 @@ const { title, userPermissions, currentPath } = Astro.props;
     <div class="cms-main">
       <header class="cms-header">
         <h1 class="cms-title">{title}</h1>
+        <div class="cms-header-right">
+          <PartySwitcher parties={parties} partyId={partyId} />
+        </div>
       </header>
       <div class="cms-content">
         <slot />
@@ -25,20 +31,14 @@ const { title, userPermissions, currentPath } = Astro.props;
 </Layout>
 
 <style>
-  .cms-shell {
-    display: flex; min-height: calc(100vh - 64px);
-  }
-  .cms-main {
-    flex: 1; overflow-y: auto; background: #F8F9FA;
-  }
+  .cms-shell { display: flex; min-height: calc(100vh - 64px); }
+  .cms-main { flex: 1; overflow-y: auto; background: #F8F9FA; }
   .cms-header {
-    padding: 32px 32px 0; border-bottom: 1px solid #E9ECEF;
-    background: #FFFFFF; padding-bottom: 20px; margin-bottom: 0;
+    padding: 20px 32px; border-bottom: 1px solid #E9ECEF;
+    background: #4F46E5; display: flex; align-items: center;
+    justify-content: space-between; gap: 16px;
   }
-  .cms-title {
-    font-size: 24px; font-weight: 700; color: #212529;
-  }
-  .cms-content {
-    padding: 32px;
-  }
+  .cms-title { font-size: 24px; font-weight: 700; color: #FFFFFF; margin: 0; }
+  .cms-header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .cms-content { padding: 32px; }
 </style>

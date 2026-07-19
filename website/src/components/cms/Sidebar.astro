@@ -1,5 +1,6 @@
 ---
 import { useT } from "../../lib/i18n";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 
 interface Props {
   currentPath: string;
@@ -9,22 +10,8 @@ const { currentPath, userPermissions } = Astro.props;
 const t = useT(Astro);
 const s = t.admin.sidebar;
 
-const PERM = {
-  VIEW_DASHBOARD: 1,
-  MANAGE_USERS: 2,
-  MANAGE_ROLES: 4,
-  MANAGE_PRODUCTS: 8,
-  MANAGE_CATEGORIES: 16,
-  MANAGE_ORDERS: 32,
-  MANAGE_INVENTORY: 64,
-  MANAGE_PRICING: 128,
-  MANAGE_CUSTOMERS: 256,
-  MANAGE_REPORTS: 512,
-  MANAGE_AUDIT: 4096,
-};
-
 function can(perm: number) {
-  return (userPermissions & perm) !== 0;
+  return hasPermission(userPermissions, perm);
 }
 
 function isActive(path: string) {
@@ -35,40 +22,40 @@ const groups = [
   {
     label: s.overview,
     items: [
-      { href: "/admin", label: s.overview, icon: "📊", perm: PERM.VIEW_DASHBOARD, exact: true },
+      { href: "/admin", label: s.overview, icon: "📊", perm: PERMISSIONS.VIEW_DASHBOARD, exact: true },
     ],
   },
   {
     label: s.eshop,
     items: [
-      { href: "/admin/products", label: s.products, icon: "🛍️", perm: PERM.MANAGE_PRODUCTS },
-      { href: "/admin/categories", label: s.categories, icon: "📦", perm: PERM.MANAGE_CATEGORIES },
-      { href: "/admin/orders", label: s.orders, icon: "📋", perm: PERM.MANAGE_ORDERS },
-      { href: "/admin/customers", label: s.customers, icon: "👥", perm: PERM.MANAGE_CUSTOMERS },
-      { href: "/admin/pricing", label: s.pricing, icon: "💰", perm: PERM.MANAGE_PRICING },
-      { href: "/admin/inventory", label: s.inventory, icon: "🏭", perm: PERM.MANAGE_INVENTORY },
-      { href: "/admin/reviews", label: s.reviews, icon: "⭐", perm: PERM.MANAGE_PRODUCTS },
-      { href: "/admin/returns", label: s.returns, icon: "↩️", perm: PERM.MANAGE_ORDERS },
+      { href: "/admin/products",   label: s.products,   icon: "🛍️", perm: PERMISSIONS.MANAGE_PRODUCTS },
+      { href: "/admin/categories", label: s.categories, icon: "📦", perm: PERMISSIONS.MANAGE_CATEGORIES },
+      { href: "/admin/orders",     label: s.orders,     icon: "📋", perm: PERMISSIONS.MANAGE_ORDERS },
+      { href: "/admin/customers",  label: s.customers,  icon: "👥", perm: PERMISSIONS.MANAGE_CUSTOMERS },
+      { href: "/admin/pricing",    label: s.pricing,    icon: "💰", perm: PERMISSIONS.MANAGE_PRICING },
+      { href: "/admin/inventory",  label: s.inventory,  icon: "🏭", perm: PERMISSIONS.MANAGE_INVENTORY },
+      { href: "/admin/reviews",    label: s.reviews,    icon: "⭐", perm: PERMISSIONS.MANAGE_PRODUCTS },
+      { href: "/admin/returns",    label: s.returns,    icon: "↩️", perm: PERMISSIONS.MANAGE_ORDERS },
     ],
   },
   {
     label: s.reports,
     items: [
-      { href: "/admin/reports", label: s.reportsSub, icon: "📈", perm: PERM.MANAGE_REPORTS },
+      { href: "/admin/reports", label: s.reportsSub, icon: "📈", perm: PERMISSIONS.MANAGE_REPORTS },
     ],
   },
   {
     label: s.people,
     items: [
-      { href: "/admin/users", label: s.users, icon: "👤", perm: PERM.MANAGE_USERS },
-      { href: "/admin/roles", label: s.roles, icon: "🔑", perm: PERM.MANAGE_ROLES },
-      { href: "/admin/parties", label: s.parties, icon: "🏢", perm: 0 },
+      { href: "/admin/users",   label: s.users,   icon: "👤", perm: PERMISSIONS.MANAGE_USERS },
+      { href: "/admin/roles",   label: s.roles,   icon: "🔑", perm: PERMISSIONS.MANAGE_ROLES },
+      { href: "/admin/parties", label: s.parties, icon: "🏢", perm: PERMISSIONS.MANAGE_USERS },
     ],
   },
   {
     label: s.system,
     items: [
-      { href: "/admin/audit", label: s.audit, icon: "📝", perm: PERM.MANAGE_AUDIT },
+      { href: "/admin/audit",         label: s.audit,         icon: "📝", perm: PERMISSIONS.MANAGE_AUDIT },
       { href: "/admin/notifications", label: s.notifications, icon: "🔔", perm: 0 },
     ],
   },

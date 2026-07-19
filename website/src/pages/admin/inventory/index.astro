@@ -4,19 +4,23 @@ import { createSupabase } from "../../../lib/supabase";
 import { fetchInventory, updateStock } from "@shared/services/inventoryService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
 let error = "";
 
-if (Astro.request.method === "POST" && partyId) {
+if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const inventoryItemId = form.get("inventory_item_id") as string;
   const quantity = parseInt(form.get("quantity") as string, 10);
@@ -39,21 +43,16 @@ const page = parseInt(url.searchParams.get("page") ?? "1", 10);
 const lowStockOnly = url.searchParams.get("low") === "1";
 const pageSize = 30;
 
-let items: Awaited<ReturnType<typeof fetchInventory>>["data"] = [];
-let total = 0;
-
-if (partyId) {
-  const result = await fetchInventory(supabase, partyId, { page, pageSize, lowStockOnly });
-  items = result.data;
-  total = result.total;
-}
+const inventoryResult = await fetchInventory(supabase, partyId, { page, pageSize, lowStockOnly });
+const items = inventoryResult.data;
+const total = inventoryResult.total;
 
 const totalPages = Math.ceil(total / pageSize);
 const lowCount = items.filter((i) => i.qty_on_hand <= i.low_stock_threshold).length;
 const isLowMap = new Map(items.map((i) => [i.id, i.qty_on_hand <= i.low_stock_threshold]));
 ---
 
-<CmsLayout title={t.admin.inventory.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+<CmsLayout title={t.admin.inventory.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   {error && <div class="alert-error">{error}</div>}
 
   <div class="toolbar">

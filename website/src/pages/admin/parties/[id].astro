@@ -6,17 +6,29 @@ import { fetchRoles } from "@shared/services/permissionsService";
 import { findUserByEmail } from "@shared/services/profileService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
 const { permissions } = ctx;
 const t = useT(Astro);
 
 const { id } = Astro.params;
+
+// Non-owner users can only access parties they belong to.
+if (!ctx.isOwner && !ctx.parties.some((p) => p.id === id)) {
+  return Astro.redirect("/admin/parties");
+}
+
+const canManageUsers    = hasPermission(permissions, PERMISSIONS.MANAGE_USERS);
+const canManageSettings = hasPermission(permissions, PERMISSIONS.MANAGE_AUDIT);
+
+if (!canManageUsers && !canManageSettings) return Astro.redirect("/admin");
 
 let error = "";
 let success = "";
@@ -26,42 +38,54 @@ if (Astro.request.method === "POST") {
   const action = form.get("action") as string;
 
   if (action === "update_party") {
-    const result = await updateParty(supabase, id!, {
-      name: form.get("name") as string,
-      company_name: (form.get("company_name") as string) || undefined,
-      vat_number: (form.get("vat_number") as string) || undefined,
-      billing_email: (form.get("billing_email") as string) || undefined,
-      is_active: form.get("is_active") === "on",
-    });
-    if (result.error) { error = result.error.message; }
-    else { success = t.admin.parties.updatedSuccess; }
-  } else if (action === "invite") {
-    const email = (form.get("email") as string).trim().toLowerCase();
-    const roleId = form.get("role_id") as string;
-
-    const existingUser = await findUserByEmail(supabase, email);
-    if (existingUser) {
-      const result = await inviteUserToParty(supabase, existingUser.id, id!, roleId, session.user.id);
-      if (result.error) { error = result.error.message; }
-      else { return Astro.redirect(`/admin/parties/${id}`); }
+    if (!canManageSettings) {
+      error = "Insufficient permissions";
     } else {
-      const adminClient = createAdminClient();
-      const origin = new URL(Astro.request.url).origin;
-      const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${origin}/auth/callback`,
-        data: {
-          pending_party_id: id,
-          pending_role_id: roleId,
-          invited_by: session.user.id,
-        },
+      const result = await updateParty(supabase, id!, {
+        name: form.get("name") as string,
+        company_name: (form.get("company_name") as string) || undefined,
+        vat_number: (form.get("vat_number") as string) || undefined,
+        billing_email: (form.get("billing_email") as string) || undefined,
+        is_active: form.get("is_active") === "on",
       });
-      if (inviteError) { error = inviteError.message; }
-      else { success = t.admin.parties.inviteSentPrefix + email + t.admin.parties.inviteSentSuffix; }
+      if (result.error) { error = result.error.message; }
+      else { success = t.admin.parties.updatedSuccess; }
+    }
+  } else if (action === "invite") {
+    if (!canManageUsers) {
+      error = "Insufficient permissions";
+    } else {
+      const email = (form.get("email") as string).trim().toLowerCase();
+      const roleId = form.get("role_id") as string;
+
+      const existingUser = await findUserByEmail(supabase, email);
+      if (existingUser) {
+        const result = await inviteUserToParty(supabase, existingUser.id, id!, roleId, session.user.id);
+        if (result.error) { error = result.error.message; }
+        else { return Astro.redirect(`/admin/parties/${id}`); }
+      } else {
+        const adminClient = createAdminClient();
+        const origin = new URL(Astro.request.url).origin;
+        const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
+          redirectTo: `${origin}/auth/callback`,
+          data: {
+            pending_party_id: id,
+            pending_role_id: roleId,
+            invited_by: session.user.id,
+          },
+        });
+        if (inviteError) { error = inviteError.message; }
+        else { success = t.admin.parties.inviteSentPrefix + email + t.admin.parties.inviteSentSuffix; }
+      }
     }
   } else if (action === "remove") {
-    const userId = form.get("user_id") as string;
-    await removeUserFromParty(supabase, userId, id!);
-    return Astro.redirect(`/admin/parties/${id}`);
+    if (!canManageUsers) {
+      error = "Insufficient permissions";
+    } else {
+      const userId = form.get("user_id") as string;
+      await removeUserFromParty(supabase, userId, id!);
+      return Astro.redirect(`/admin/parties/${id}`);
+    }
   }
 }
 
@@ -78,80 +102,84 @@ function roleName(roleId: string) {
 }
 ---
 
-<CmsLayout title={party.name} userPermissions={permissions} currentPath="/admin/parties">
+<CmsLayout title={party.name} userPermissions={permissions} currentPath="/admin/parties" parties={ctx.parties} partyId={ctx.partyId}>
   <a href="/admin/parties" class="back-link">{t.admin.parties.back}</a>
   {error && <div class="alert-error">{error}</div>}
   {success && <div class="alert-success">{success}</div>}
 
   <div class="party-grid">
     <div>
-      <div class="card">
-        <h2 class="section-title">{t.admin.parties.sectionInfo}</h2>
-        <form method="POST" class="edit-form">
-          <input type="hidden" name="action" value="update_party" />
-          <div class="form-group">
-            <label class="form-label">{t.admin.parties.fieldName}</label>
-            <input class="form-input" name="name" required value={party.name} />
-          </div>
-          <div class="form-group">
-            <label class="form-label">{t.admin.parties.fieldCompany}</label>
-            <input class="form-input" name="company_name" value={party.company_name ?? ""} />
-          </div>
-          <div class="form-group">
-            <label class="form-label">{t.admin.parties.fieldVat}</label>
-            <input class="form-input" name="vat_number" value={party.vat_number ?? ""} />
-          </div>
-          <div class="form-group">
-            <label class="form-label">{t.admin.parties.fieldBillingEmail}</label>
-            <input class="form-input" type="email" name="billing_email" value={party.billing_email ?? ""} />
-          </div>
-          <div class="form-row-inline">
-            <label class="form-label">{t.admin.parties.fieldSlug}</label>
-            <code>{party.slug}</code>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" name="is_active" id="is_active" checked={party.is_active} />
-            <label for="is_active">{t.admin.parties.statusActive}</label>
-          </div>
-          <div class="form-meta">
-            <span class="meta-label">{t.admin.parties.fieldCreated}</span>
-            <span>{new Date(party.created_at).toLocaleDateString()}</span>
-          </div>
-          <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.common.saveChanges}</button>
-        </form>
-      </div>
+      {canManageSettings && (
+        <div class="card">
+          <h2 class="section-title">{t.admin.parties.sectionInfo}</h2>
+          <form method="POST" class="edit-form">
+            <input type="hidden" name="action" value="update_party" />
+            <div class="form-group">
+              <label class="form-label">{t.admin.parties.fieldName}</label>
+              <input class="form-input" name="name" required value={party.name} />
+            </div>
+            <div class="form-group">
+              <label class="form-label">{t.admin.parties.fieldCompany}</label>
+              <input class="form-input" name="company_name" value={party.company_name ?? ""} />
+            </div>
+            <div class="form-group">
+              <label class="form-label">{t.admin.parties.fieldVat}</label>
+              <input class="form-input" name="vat_number" value={party.vat_number ?? ""} />
+            </div>
+            <div class="form-group">
+              <label class="form-label">{t.admin.parties.fieldBillingEmail}</label>
+              <input class="form-input" type="email" name="billing_email" value={party.billing_email ?? ""} />
+            </div>
+            <div class="form-row-inline">
+              <label class="form-label">{t.admin.parties.fieldSlug}</label>
+              <code>{party.slug}</code>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" name="is_active" id="is_active" checked={party.is_active} />
+              <label for="is_active">{t.admin.parties.statusActive}</label>
+            </div>
+            <div class="form-meta">
+              <span class="meta-label">{t.admin.parties.fieldCreated}</span>
+              <span>{new Date(party.created_at).toLocaleDateString()}</span>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.common.saveChanges}</button>
+          </form>
+        </div>
+      )}
 
-      <div class="card" style="margin-top:16px">
-        <h2 class="section-title">{t.admin.parties.sectionInvite}</h2>
-        <p class="invite-note">
-          {t.admin.parties.inviteNote}<br /><br />
-          <strong>{t.admin.parties.inviteNoteExtra}</strong>{" "}
-          <a href="/admin/users">{t.admin.sidebar.users}</a>{" "}
-          {t.admin.parties.inviteNoteSuffix}
-        </p>
-        <form method="POST" class="invite-form">
-          <input type="hidden" name="action" value="invite" />
-          <div class="form-group">
-            <label class="form-label">{t.admin.parties.fieldEmail}</label>
-            <input class="form-input" type="email" name="email" required placeholder={t.auth.emailPlaceholder} />
-          </div>
-          <div class="form-group">
-            <label class="form-label">
-              {t.admin.parties.fieldRole}
-              <span class="role-hint">{t.admin.parties.roleHint}</span>
-            </label>
-            <select class="form-input" name="role_id" required>
-              <option value="">{t.admin.parties.selectRole}</option>
-              {roles.map((r) => (
-                <option value={r.id}>
-                  {r.name}{r.description ? ` — ${r.description}` : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.admin.parties.sendInvite}</button>
-        </form>
-      </div>
+      {canManageUsers && (
+        <div class="card" style={canManageSettings ? "margin-top:16px" : ""}>
+          <h2 class="section-title">{t.admin.parties.sectionInvite}</h2>
+          <p class="invite-note">
+            {t.admin.parties.inviteNote}<br /><br />
+            <strong>{t.admin.parties.inviteNoteExtra}</strong>{" "}
+            <a href="/admin/users">{t.admin.sidebar.users}</a>{" "}
+            {t.admin.parties.inviteNoteSuffix}
+          </p>
+          <form method="POST" class="invite-form">
+            <input type="hidden" name="action" value="invite" />
+            <div class="form-group">
+              <label class="form-label">{t.admin.parties.fieldEmail}</label>
+              <input class="form-input" type="email" name="email" required placeholder={t.auth.emailPlaceholder} />
+            </div>
+            <div class="form-group">
+              <label class="form-label">
+                {t.admin.parties.fieldRole}
+                <span class="role-hint">{t.admin.parties.roleHint}</span>
+              </label>
+              <select class="form-input" name="role_id" required>
+                <option value="">{t.admin.parties.selectRole}</option>
+                {roles.map((r) => (
+                  <option value={r.id}>
+                    {r.name}{r.description ? ` — ${r.description}` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.admin.parties.sendInvite}</button>
+          </form>
+        </div>
+      )}
     </div>
 
     <div class="card">
@@ -166,7 +194,7 @@ function roleName(roleId: string) {
               <td><span class="badge badge-pending">{roleName(m.role_id)}</span></td>
               <td style="font-size:12px;color:var(--text-muted)">{new Date(m.joined_at).toLocaleDateString()}</td>
               <td>
-                {m.user_id !== session.user.id && (
+                {canManageUsers && m.user_id !== session.user.id && (
                   <form method="POST" onsubmit={`return confirm('${t.admin.parties.removeConfirm}')`} style="display:inline">
                     <input type="hidden" name="action" value="remove" />
                     <input type="hidden" name="user_id" value={m.user_id} />

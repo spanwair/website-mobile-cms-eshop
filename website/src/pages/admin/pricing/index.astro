@@ -3,34 +3,32 @@ import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { fetchPriceLists, fetchDiscountRules, fetchCoupons } from "@shared/services/pricingService";
 import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT } from "../../../lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_PRICING)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
 const url = new URL(Astro.request.url);
 const tab = url.searchParams.get("tab") ?? "pricelists";
 
-let priceLists: Awaited<ReturnType<typeof fetchPriceLists>> = [];
-let discountRules: Awaited<ReturnType<typeof fetchDiscountRules>> = [];
-let coupons: Awaited<ReturnType<typeof fetchCoupons>> = [];
-
-if (partyId) {
-  [priceLists, discountRules, coupons] = await Promise.all([
-    fetchPriceLists(supabase, partyId),
-    fetchDiscountRules(supabase, partyId),
-    fetchCoupons(supabase, partyId),
-  ]);
-}
+const [priceLists, discountRules, coupons] = await Promise.all([
+  fetchPriceLists(supabase, partyId),
+  fetchDiscountRules(supabase, partyId),
+  fetchCoupons(supabase, partyId),
+]);
 ---
 
-<CmsLayout title={t.admin.pricing.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+<CmsLayout title={t.admin.pricing.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   <div class="tabs">
     <a href="?tab=pricelists" class={`tab ${tab === "pricelists" ? "tab--active" : ""}`}>{t.admin.sidebar.pricing} ({priceLists.length})</a>
     <a href="?tab=discounts" class={`tab ${tab === "discounts" ? "tab--active" : ""}`}>{t.admin.pricing.colType} ({discountRules.length})</a>

@@ -5,14 +5,18 @@ import { fetchProducts } from "@shared/services/productService";
 import { fetchCategories } from "@shared/services/categoryService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_PRODUCTS)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
 const url = new URL(Astro.request.url);
@@ -21,21 +25,16 @@ const search = url.searchParams.get("search") ?? "";
 const status = (url.searchParams.get("status") ?? "") as "draft" | "active" | "inactive" | "";
 const categoryId = url.searchParams.get("category") ?? "";
 
-let products: Awaited<ReturnType<typeof fetchProducts>>["data"] = [];
-let total = 0;
 const pageSize = 20;
-const categories = partyId ? await fetchCategories(supabase, partyId) : [];
-
-if (partyId) {
-  const result = await fetchProducts(supabase, partyId, {
-    page, pageSize,
-    search: search || undefined,
-    status: status || undefined,
-    category_id: categoryId || undefined,
-  });
-  products = result.data;
-  total = result.total;
-}
+const categories = await fetchCategories(supabase, partyId);
+const result = await fetchProducts(supabase, partyId, {
+  page, pageSize,
+  search: search || undefined,
+  status: status || undefined,
+  category_id: categoryId || undefined,
+});
+const products = result.data;
+const total = result.total;
 
 const totalPages = Math.ceil(total / pageSize);
 
@@ -46,9 +45,7 @@ function statusClass(s: string) {
 const filterQs = `&search=${encodeURIComponent(search)}&status=${status}&category=${categoryId}`;
 ---
 
-<CmsLayout title={t.admin.products.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
-  {!partyId && <div class="alert">{t.admin.noParty}</div>}
-
+<CmsLayout title={t.admin.products.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   <div class="toolbar">
     <form method="GET" class="search-form">
       <input class="form-input" name="search" placeholder={t.admin.products.searchPlaceholder} value={search} style="width:220px" />

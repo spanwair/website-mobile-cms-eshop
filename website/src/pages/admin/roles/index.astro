@@ -4,53 +4,52 @@ import { createSupabase } from "../../../lib/supabase";
 import { fetchRoles, deleteRole } from "@shared/services/permissionsService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_ROLES)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
-if (Astro.request.method === "POST" && partyId) {
+if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const roleId = form.get("role_id") as string;
   if (roleId) await deleteRole(supabase, roleId);
   return Astro.redirect("/admin/roles");
 }
 
-const roles = partyId ? await fetchRoles(supabase, partyId) : [];
+const roles = await fetchRoles(supabase, partyId);
 
-const PERM_LABELS: Record<string, string> = {
-  VIEW_DASHBOARD: t.admin.roles.permDashboard,
-  MANAGE_USERS: t.admin.roles.permUsers,
-  MANAGE_ROLES: t.admin.roles.permRoles,
-  MANAGE_PRODUCTS: t.admin.roles.permProducts,
+// Labels for each permission key, sourced from i18n.
+const PERM_LABELS: Partial<Record<keyof typeof PERMISSIONS, string>> = {
+  VIEW_DASHBOARD:    t.admin.roles.permDashboard,
+  MANAGE_USERS:      t.admin.roles.permUsers,
+  MANAGE_ROLES:      t.admin.roles.permRoles,
+  MANAGE_PRODUCTS:   t.admin.roles.permProducts,
   MANAGE_CATEGORIES: t.admin.roles.permCategories,
-  MANAGE_ORDERS: t.admin.roles.permOrders,
-  MANAGE_INVENTORY: t.admin.roles.permInventory,
-  MANAGE_PRICING: t.admin.roles.permPricing,
-  MANAGE_CUSTOMERS: t.admin.roles.permCustomers,
-  MANAGE_REPORTS: t.admin.roles.permReports,
-  MANAGE_AUDIT: t.admin.roles.permAudit,
-};
-
-const PERM_BITS: Record<string, number> = {
-  VIEW_DASHBOARD: 1, MANAGE_USERS: 2, MANAGE_ROLES: 4, MANAGE_PRODUCTS: 8,
-  MANAGE_CATEGORIES: 16, MANAGE_ORDERS: 32, MANAGE_INVENTORY: 64,
-  MANAGE_PRICING: 128, MANAGE_CUSTOMERS: 256, MANAGE_REPORTS: 512, MANAGE_AUDIT: 4096,
+  MANAGE_ORDERS:     t.admin.roles.permOrders,
+  MANAGE_INVENTORY:  t.admin.roles.permInventory,
+  MANAGE_PRICING:    t.admin.roles.permPricing,
+  MANAGE_CUSTOMERS:  t.admin.roles.permCustomers,
+  MANAGE_REPORTS:    t.admin.roles.permReports,
+  MANAGE_AUDIT:      t.admin.roles.permAudit,
 };
 
 function activePerms(bits: number) {
-  return Object.entries(PERM_BITS).filter(([, v]) => (bits & v) !== 0).map(([k]) => PERM_LABELS[k]);
+  return (Object.entries(PERMISSIONS) as [keyof typeof PERMISSIONS, number][])
+    .filter(([, v]) => hasPermission(bits, v))
+    .map(([k]) => PERM_LABELS[k] ?? k);
 }
 ---
 
-<CmsLayout title={t.admin.roles.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
-  {!partyId && <div class="alert">{t.admin.noParty}</div>}
-
+<CmsLayout title={t.admin.roles.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   <div class="toolbar">
     <span class="total-label">{roles.length} {t.admin.roles.title.toLowerCase()}</span>
     <a href="/admin/roles/new" class="btn btn-primary">{t.admin.roles.new}</a>

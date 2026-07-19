@@ -24,12 +24,12 @@ test.describe("09 — Users & Roles: Role Management, Custom Roles", () => {
     await expect(page.getByText("admin@test.com")).toBeVisible();
   });
 
-  test("09-02 admin user shows OWNER badge (red)", async () => {
+  test("09-02 admin user shows ADMIN badge", async () => {
     const adminRow = page.locator("tr").filter({ hasText: "admin@test.com" });
     await expect(adminRow).toBeVisible();
-    const badge = adminRow.locator(".badge-error");
+    const badge = adminRow.locator(".badge-pending");
     await expect(badge).toBeVisible();
-    await screenshot(page, "09-02-owner-badge");
+    await screenshot(page, "09-02-admin-badge");
   });
 
   test("09-03 current user row shows 'You' indicator", async () => {

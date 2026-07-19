@@ -3,6 +3,7 @@ import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { fetchCategoryTree, deleteCategory } from "@shared/services/categoryService";
 import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT } from "../../../lib/i18n";
 import type { CategoryTree } from "@shared/types/index";
 
@@ -10,19 +11,22 @@ const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_CATEGORIES)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
-if (Astro.request.method === "POST" && partyId) {
+if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const categoryId = form.get("category_id") as string;
   if (categoryId) await deleteCategory(supabase, categoryId);
   return Astro.redirect("/admin/categories");
 }
 
-const tree = partyId ? await fetchCategoryTree(supabase, partyId) : [];
+const tree = await fetchCategoryTree(supabase, partyId);
 
 function renderRows(nodes: CategoryTree[], depth = 0): { node: CategoryTree; depth: number }[] {
   return nodes.flatMap((n) => [{ node: n, depth }, ...renderRows(n.children, depth + 1)]);
@@ -30,7 +34,7 @@ function renderRows(nodes: CategoryTree[], depth = 0): { node: CategoryTree; dep
 const rows = renderRows(tree);
 ---
 
-<CmsLayout title={t.admin.categories.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+<CmsLayout title={t.admin.categories.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   <div class="toolbar">
     <span class="total-label">{rows.length} {t.admin.categories.title.toLowerCase()}</span>
     <a href="/admin/categories/new" class="btn btn-primary">{t.admin.categories.new}</a>

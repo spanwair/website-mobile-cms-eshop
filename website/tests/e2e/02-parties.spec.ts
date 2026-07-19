@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { BASE, PARTY_ID, USER_ID, login, screenshot } from "./helpers";
+import { BASE, PARTY_ID, OWNER, loginAs, screenshot } from "./helpers";
 
 test.describe("02 — Parties: CRUD + Member Management", () => {
   test.describe.configure({ mode: "serial" });
@@ -9,7 +9,8 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
 
   test.beforeAll(async ({ browser }: { browser: Browser }) => {
     page = await browser.newPage();
-    await login(page);
+    // Only OWNER (role=8) can create parties — use owner throughout this suite.
+    await loginAs(page, OWNER.email, OWNER.password);
   });
 
   test.afterAll(async () => {
@@ -21,7 +22,7 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
     await page.waitForLoadState("networkidle");
     await screenshot(page, "02-01-parties-list");
     await expect(page.locator("table.data-table")).toBeVisible();
-    await expect(page.getByText("Test Organisation")).toBeVisible();
+    await expect(page.locator("table.data-table td").filter({ hasText: "Test Organisation" }).first()).toBeVisible();
   });
 
   test("02-02 navigate to new party form", async () => {
@@ -41,11 +42,11 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
     await page.locator("form.party-form button[type='submit']").click();
     await page.waitForURL(`${BASE}/admin/parties`, { timeout: 10000 });
     await screenshot(page, "02-03-after-create-party");
-    await expect(page.getByText("E2E Test Org")).toBeVisible();
+    await expect(page.locator("table.data-table td").filter({ hasText: "E2E Test Org" }).first()).toBeVisible();
   });
 
   test("02-04 new party appears in list with active badge", async () => {
-    await expect(page.getByText("E2E Test Org")).toBeVisible();
+    await expect(page.locator("table.data-table td").filter({ hasText: "E2E Test Org" }).first()).toBeVisible();
     const row = page.locator("tr").filter({ hasText: "E2E Test Org" });
     await expect(row.locator(".badge-active")).toBeVisible();
     await screenshot(page, "02-04-new-party-in-list");
@@ -69,7 +70,7 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
     await row.locator("a.btn-ghost").click();
     await page.waitForLoadState("networkidle");
     await screenshot(page, "02-06-party-detail");
-    await expect(page.locator(".info-rows").first()).toBeVisible();
+    await expect(page.locator("table.data-table")).toBeVisible();
     newPartyId = page.url().split("/").pop()!;
   });
 
@@ -107,7 +108,10 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
     await page.waitForLoadState("networkidle");
     const rows = page.locator("table.data-table tbody tr");
     const count = await rows.count();
-    if (count > 1) {
+    // Guard: only remove if there are more than the 2 seeded members (admin + eshop).
+    // Members are ordered by joined_at DESC, so admin (seeded first) sits last —
+    // removing the last row without this guard would delete admin and break later tests.
+    if (count > 2) {
       const lastRow = rows.nth(count - 1);
       const removeBtn = lastRow.locator("button.btn-danger");
       if (await removeBtn.count() > 0) {
@@ -124,8 +128,9 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
     await page.goto(`${BASE}/admin/parties/${PARTY_ID}`);
     await page.waitForLoadState("networkidle");
     await screenshot(page, "02-10-party-info-details");
-    await expect(page.getByRole("heading", { name: "Test Organisation" })).toBeVisible();
-    await expect(page.getByText("Test Company s.r.o.")).toBeVisible();
+    await expect(page.locator("h1.cms-title")).toHaveText("Test Organisation");
+    // company_name is rendered as input value, not text content
+    await expect(page.locator("input[name='company_name']")).toHaveValue("Test Company s.r.o.");
   });
 
   test("02-11 admin user is listed as member", async () => {

@@ -6,58 +6,76 @@ import { fetchProducts } from "@shared/services/productService";
 import { fetchOrders } from "@shared/services/orderService";
 import { requireAdminCtx } from "../../lib/admin";
 import { useT } from "../../lib/i18n";
-import { ROLE } from "@shared/constants/permissions";
+import { ROLE, PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
+// Eshop admin with no party has nothing to manage yet.
+if (!ctx.isGlobal && !ctx.partyId) return Astro.redirect("/admin/setup");
+
 const { permissions, partyId } = ctx;
-if (ctx.role < ROLE.OWNER && !partyId) return Astro.redirect("/admin/setup");
+if (!hasPermission(permissions, PERMISSIONS.VIEW_DASHBOARD)) return Astro.redirect("/admin/notifications");
 const t = useT(Astro);
 
+const canUsers    = hasPermission(permissions, PERMISSIONS.MANAGE_USERS);
+const canProducts = hasPermission(permissions, PERMISSIONS.MANAGE_PRODUCTS);
+const canOrders   = hasPermission(permissions, PERMISSIONS.MANAGE_ORDERS);
+const canReports  = hasPermission(permissions, PERMISSIONS.MANAGE_REPORTS);
+const canAudit    = hasPermission(permissions, PERMISSIONS.MANAGE_AUDIT);
+
 const { role: myRole } = ctx;
-const users = await fetchUsersForAdmin(supabase, myRole, partyId);
-const activeUsers = users.filter((u) => u.role > ROLE.USER).length;
+
+let totalUsers = 0;
+let activeUsers = 0;
+if (canUsers) {
+  const users = await fetchUsersForAdmin(supabase, myRole, partyId);
+  totalUsers = users.length;
+  activeUsers = users.filter((u) => u.role > ROLE.USER).length;
+}
 
 let totalProducts = 0;
 let activeProducts = 0;
 let totalOrders = 0;
 let recentOrders: Awaited<ReturnType<typeof fetchOrders>>["data"] = [];
 let revenue = 0;
-let partyReady = false;
 
 const { error: tablesProbeError } = await supabase.from("parties").select("id").limit(0);
 const tablesReady = !tablesProbeError;
 
 if (tablesReady && partyId) {
-  try {
-    const [allProds, activProds, ordersResult] = await Promise.all([
+  if (canProducts) {
+    const [allProds, activProds] = await Promise.all([
       fetchProducts(supabase, partyId, { pageSize: 1 }),
       fetchProducts(supabase, partyId, { status: "active", pageSize: 1 }),
-      fetchOrders(supabase, partyId, { pageSize: 5 }),
     ]);
     totalProducts = allProds.total;
     activeProducts = activProds.total;
+  }
+  if (canOrders) {
+    const ordersResult = await fetchOrders(supabase, partyId, { pageSize: 5 });
     totalOrders = ordersResult.total;
     recentOrders = ordersResult.data;
+  }
+  if (canOrders || canReports) {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const monthOrders = await fetchOrders(supabase, partyId, { from: monthStart, pageSize: 100 });
     revenue = monthOrders.data.reduce((sum, o) => sum + o.total_amount, 0);
-    partyReady = true;
-  } catch { }
+  }
 }
 
 const kpis = [
-  { label: t.admin.kpiTotalUsers, value: users.length },
-  { label: t.admin.kpiActiveUsers, value: activeUsers },
-  { label: t.admin.kpiTotalProducts, value: totalProducts },
-  { label: t.admin.kpiActiveProducts, value: activeProducts },
-  { label: t.admin.kpiTotalOrders, value: totalOrders },
-  { label: t.admin.kpiRevenue, value: `${revenue.toFixed(2)} Kč` },
+  ...(canUsers    ? [{ key: "total-users",    label: t.admin.kpiTotalUsers,    value: totalUsers },
+                     { key: "active-users",   label: t.admin.kpiActiveUsers,   value: activeUsers }] : []),
+  ...(canProducts ? [{ key: "total-products", label: t.admin.kpiTotalProducts, value: totalProducts },
+                     { key: "active-products", label: t.admin.kpiActiveProducts, value: activeProducts }] : []),
+  ...(canOrders   ? [{ key: "total-orders",   label: t.admin.kpiTotalOrders,   value: totalOrders }] : []),
+  ...((canOrders || canReports) ? [{ key: "revenue", label: t.admin.kpiRevenue, value: `${revenue.toFixed(2)} Kč` }] : []),
 ];
 
 function statusClass(s: string) {
@@ -69,64 +87,77 @@ function statusClass(s: string) {
 }
 ---
 
-<CmsLayout title={t.admin.dashboard} userPermissions={permissions} currentPath={Astro.url.pathname}>
+<CmsLayout title={t.admin.dashboard} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   {!tablesReady && (
     <div class="info-banner">⚠️ {t.admin.infoBanner}</div>
   )}
-  {tablesReady && !partyId && (
+  {tablesReady && !partyId && ctx.isOwner && (
+    <div class="info-banner">
+      No organizations created yet.
+      <a href="/admin/parties/new" class="banner-link">Create your first organization</a> to start managing your store.
+    </div>
+  )}
+  {tablesReady && !partyId && !ctx.isOwner && (
     <div class="info-banner">
       ⚠️ {t.admin.infoBannerNoParty} <a href="/admin/parties" class="banner-link">{t.admin.infoBannerPartiesLink}</a>.
     </div>
   )}
 
   <div class="stats-row">
-    {kpis.map(({ label, value }) => (
-      <div class="card stat-card">
+    {kpis.map(({ key, label, value }) => (
+      <div class="card stat-card" data-kpi={key}>
         <span class="stat-num">{value}</span>
         <span class="stat-label">{label}</span>
       </div>
     ))}
   </div>
 
-  <div class="dashboard-grid">
-    <div class="card">
-      <h2 class="section-title">{t.admin.recentOrders}</h2>
-      {recentOrders.length === 0 ? (
-        <p class="empty">{t.admin.noOrders}</p>
-      ) : (
-        <table class="data-table">
-          <thead>
-            <tr><th>{t.admin.orders.colNumber}</th><th>{t.admin.orders.colStatus}</th><th>{t.admin.orders.colTotal}</th><th>{t.admin.orders.colDate}</th></tr>
-          </thead>
-          <tbody>
-            {recentOrders.map((o) => (
-              <tr>
-                <td><a href={`/admin/orders/${o.id}`}>{o.order_number}</a></td>
-                <td><span class={`badge ${statusClass(o.status)}`}>{o.status}</span></td>
-                <td>{o.total_amount.toFixed(2)} Kč</td>
-                <td>{new Date(o.created_at).toLocaleDateString("cs-CZ")}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+  {(canOrders || canReports) && (
+    <div class="dashboard-grid">
+      {canOrders && (
+        <div class="card" data-section="recent-orders">
+          <h2 class="section-title">{t.admin.recentOrders}</h2>
+          {recentOrders.length === 0 ? (
+            <p class="empty">{t.admin.noOrders}</p>
+          ) : (
+            <table class="data-table">
+              <thead>
+                <tr><th>{t.admin.orders.colNumber}</th><th>{t.admin.orders.colStatus}</th><th>{t.admin.orders.colTotal}</th><th>{t.admin.orders.colDate}</th></tr>
+              </thead>
+              <tbody>
+                {recentOrders.map((o) => (
+                  <tr>
+                    <td><a href={`/admin/orders/${o.id}`}>{o.order_number}</a></td>
+                    <td><span class={`badge ${statusClass(o.status)}`}>{o.status}</span></td>
+                    <td>{o.total_amount.toFixed(2)} Kč</td>
+                    <td>{new Date(o.created_at).toLocaleDateString("cs-CZ")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {(canOrders || canReports) && (
+        <div class="card" data-section="revenue-chart">
+          <h2 class="section-title">{t.admin.revenueChart}</h2>
+          <div class="chart-placeholder">{t.admin.chartSoon}</div>
+        </div>
       )}
     </div>
+  )}
 
-    <div class="card">
-      <h2 class="section-title">{t.admin.revenueChart}</h2>
-      <div class="chart-placeholder">{t.admin.chartSoon}</div>
+  {canAudit && (
+    <div class="card" data-section="recent-activity" style="margin-top:24px">
+      <h2 class="section-title">{t.admin.recentActivity}</h2>
+      <p class="empty">{t.admin.noAudit}</p>
     </div>
-  </div>
-
-  <div class="card" style="margin-top:24px">
-    <h2 class="section-title">{t.admin.recentActivity}</h2>
-    <p class="empty">{t.admin.noAudit}</p>
-  </div>
+  )}
 </CmsLayout>
 
 <style>
   .info-banner { background:#EEF2FF; border:1px solid #C7D2FE; border-radius:8px; padding:12px 16px; color:#3730A3; margin-bottom:24px; font-size:14px; }
-  .info-banner code { background:#C7D2FE; padding:2px 6px; border-radius:4px; font-size:12px; }
   .banner-link { color:#3730A3; font-weight:600; text-decoration:underline; }
   .dashboard-grid { display:grid; grid-template-columns:2fr 1fr; gap:24px; }
   .chart-placeholder { height:160px; background:var(--bg-subtle); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:14px; }

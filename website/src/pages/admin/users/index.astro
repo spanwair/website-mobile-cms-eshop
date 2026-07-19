@@ -4,15 +4,17 @@ import { createSupabase } from "../../../lib/supabase";
 import { fetchUsersForAdmin } from "@shared/services/profileService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
-import { ROLE, ROLE_LABEL, assignableRoles } from "@shared/constants/permissions";
+import { ROLE, ROLE_LABEL, assignableRoles, canAssignRole, PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
 const { permissions, role: myRole } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_USERS)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
 let error = "";
@@ -22,9 +24,9 @@ if (Astro.request.method === "POST") {
   const userId = form.get("user_id") as string;
   const newRole = Number(form.get("role"));
 
-  if (!Number.isInteger(newRole) || newRole <= 0) {
+  if (!Object.values(ROLE).includes(newRole as typeof ROLE[keyof typeof ROLE])) {
     error = t.admin.users.errorInvalidRole;
-  } else if (newRole >= myRole) {
+  } else if (!canAssignRole(myRole, newRole)) {
     error = t.admin.users.errorRoleTooHigh;
   } else {
     const { error: updateErr } = await supabase
@@ -39,6 +41,22 @@ if (Astro.request.method === "POST") {
 const users = await fetchUsersForAdmin(supabase, myRole, ctx.partyId);
 const canAssign = assignableRoles(myRole);
 
+// For a given user row, can the current viewer change their role?
+function canChangeUser(u: { id: string; role: number; admin_assigned_by: string | null }): boolean {
+  if (u.id === session.user.id) return false;
+  if (u.role >= ROLE.OWNER) return false;
+  if (u.role === ROLE.ADMIN) {
+    return myRole >= ROLE.OWNER || (myRole === ROLE.ADMIN && u.admin_assigned_by === session.user.id);
+  }
+  return canAssign.length > 0;
+}
+
+// Roles available in the dropdown for a given target user.
+function rolesForUser(u: { role: number }): typeof canAssign {
+  if (u.role === ROLE.ADMIN) return canAssign.filter(r => r < ROLE.ADMIN);
+  return canAssign;
+}
+
 function roleClass(r: number) {
   if (r >= ROLE.OWNER) return "badge-error";
   if (r >= ROLE.ADMIN) return "badge-pending";
@@ -47,7 +65,7 @@ function roleClass(r: number) {
 }
 ---
 
-<CmsLayout title={t.admin.users.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+<CmsLayout title={t.admin.users.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   {error && <div class="alert-error">{error}</div>}
 
   <div class="toolbar">
@@ -76,11 +94,11 @@ function roleClass(r: number) {
               {u.id === session.user.id && (
                 <span style="font-size:12px;color:var(--text-muted)">{t.admin.users.you}</span>
               )}
-              {u.id !== session.user.id && canAssign.length > 0 && (
+              {canChangeUser(u) && (
                 <form method="POST" class="role-form">
                   <input type="hidden" name="user_id" value={u.id} />
                   <select class="form-input role-select" name="role">
-                    {canAssign.map(r => (
+                    {rolesForUser(u).map(r => (
                       <option value={r} selected={u.role === r}>
                         {ROLE_LABEL[r as keyof typeof ROLE_LABEL]}
                       </option>

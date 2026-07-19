@@ -2,6 +2,7 @@
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { fetchReturn, updateReturnStatus } from "@shared/services/returnService";
 import { useT } from "../../../lib/i18n";
 
@@ -9,9 +10,12 @@ const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_ORDERS)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
 const { id } = Astro.params;
@@ -56,7 +60,7 @@ function statusClass(s: string) {
 }
 ---
 
-<CmsLayout title={`Return ${rma.return_number}`} userPermissions={permissions} currentPath="/admin/returns">
+<CmsLayout title={`Return ${rma.return_number}`} userPermissions={permissions} currentPath="/admin/returns" parties={ctx.parties} partyId={ctx.partyId}>
   <div class="toolbar">
     <a href="/admin/returns" class="btn btn-ghost">{t.admin.returns.back}</a>
     <h1 class="page-title">{rma.return_number}</h1>

@@ -1,0 +1,33 @@
+---
+interface Props {
+  parties: Array<{ id: string; name: string }>;
+  partyId: string | null;
+}
+const { parties, partyId } = Astro.props;
+const current = parties.find((p) => p.id === partyId);
+---
+
+{parties.length > 1 && (
+  <form method="POST" action="/api/switch-party" class="party-switcher">
+    <select name="partyId" onchange="this.form.submit()" class="party-select">
+      {parties.map((p) => (
+        <option value={p.id} selected={p.id === partyId}>{p.name}</option>
+      ))}
+    </select>
+    <input type="hidden" name="redirect" value={Astro.url.pathname} />
+  </form>
+)}
+{parties.length === 1 && current && (
+  <span class="party-name">{current.name}</span>
+)}
+
+<style>
+  .party-switcher { display: flex; align-items: center; }
+  .party-select {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px; color: inherit; font-size: 13px; font-weight: 600;
+    padding: 4px 8px; cursor: pointer; max-width: 200px;
+  }
+  .party-select:focus { outline: none; }
+  .party-name { font-size: 13px; font-weight: 600; opacity: 0.85; color: #fff; }
+</style>

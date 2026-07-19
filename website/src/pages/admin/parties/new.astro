@@ -9,8 +9,11 @@ const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
+// Only owners can create new organizations.
+if (!ctx.isOwner) return Astro.redirect("/admin/parties");
 const { permissions } = ctx;
 const t = useT(Astro);
 
@@ -33,7 +36,7 @@ if (Astro.request.method === "POST") {
 }
 ---
 
-<CmsLayout title={t.admin.parties.newTitle} userPermissions={permissions} currentPath="/admin/parties">
+<CmsLayout title={t.admin.parties.newTitle} userPermissions={permissions} currentPath="/admin/parties" parties={ctx.parties} partyId={ctx.partyId}>
   <div class="card" style="max-width:640px">
     <a href="/admin/parties" class="back-link">{t.admin.parties.back}</a>
     {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}

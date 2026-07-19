@@ -4,15 +4,19 @@ import { createSupabase } from "../../../lib/supabase";
 import { fetchOrders } from "@shared/services/orderService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import type { Order } from "@shared/types/index";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_ORDERS)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
 const url = new URL(Astro.request.url);
@@ -20,14 +24,9 @@ const page = parseInt(url.searchParams.get("page") ?? "1", 10);
 const status = (url.searchParams.get("status") ?? "") as Order["status"] | "";
 const pageSize = 20;
 
-let orders: Order[] = [];
-let total = 0;
-
-if (partyId) {
-  const result = await fetchOrders(supabase, partyId, { page, pageSize, status: status || undefined });
-  orders = result.data;
-  total = result.total;
-}
+const ordersResult = await fetchOrders(supabase, partyId, { page, pageSize, status: status || undefined });
+const orders = ordersResult.data;
+const total = ordersResult.total;
 
 const totalPages = Math.ceil(total / pageSize);
 
@@ -50,7 +49,7 @@ function statusClass(s: string) {
 }
 ---
 
-<CmsLayout title={t.admin.orders.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+<CmsLayout title={t.admin.orders.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   <div class="tabs">
     {STATUS_TABS.map((tab) => (
       <a

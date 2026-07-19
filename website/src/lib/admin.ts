@@ -1,59 +1,70 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@shared/supabase/types";
-import { ROLE } from "@shared/constants/permissions";
+import { ROLE, ALL_PERMISSIONS } from "@shared/constants/permissions";
 import { getUserPermissions } from "@shared/services/permissionsService";
 
 type Client = SupabaseClient<Database>;
 
-export const FULL_PERMISSIONS = 0xffff;
+export interface PartyRef {
+  id: string;
+  name: string;
+}
 
 export interface AdminCtx {
   role: number;
-  permissions: number;
-  partyId: string | null;
+  permissions: number;    // effective permission bits for the current party
+  partyId: string | null; // currently selected organization
+  parties: PartyRef[];    // all accessible organizations
+  isOwner: boolean;       // true for ROLE.OWNER — global access, no party required
+  isGlobal: boolean;      // true for ROLE.OWNER only — no party restriction
 }
 
-export async function requireAdminCtx(client: Client, userId: string): Promise<AdminCtx | null> {
+// Returns null when the user has no admin access at all (pure customers).
+// For eshop_admin with no party assigned, still returns ctx so /admin/setup can render.
+// Every admin page must call this and redirect to /dashboard on null.
+// Pages requiring a party (products, orders, etc.) must additionally check ctx.partyId.
+export async function requireAdminCtx(
+  client: Client,
+  userId: string,
+  activePartyId?: string | null
+): Promise<AdminCtx | null> {
   const { data: profile } = await client
     .from("profiles")
     .select("role")
     .eq("id", userId)
     .single();
 
-  const systemRole = (profile?.role ?? 0) as number;
-  let partyId: string | null = null;
-  let permissions = 0;
+  const role = (profile?.role ?? 0) as number;
+  if (role < ROLE.ESHOP_ADMIN) return null;
 
-  try {
-    const { data: membership } = await client
-      .from("user_party_roles")
-      .select("party_id")
-      .eq("user_id", userId)
-      .limit(1)
-      .maybeSingle();
-    partyId = membership?.party_id ?? null;
+  const isOwner = role >= ROLE.OWNER;
+  // isGlobal = no party restriction (owner only). Admin has full perms per party but still needs one.
+  const isGlobal = role >= ROLE.OWNER;
+  const isAdmin  = role >= ROLE.ADMIN;
 
-    // Admins/Owners without explicit party membership fall back to the first active party.
-    if (!partyId && systemRole >= ROLE.ADMIN) {
-      const { data: firstParty } = await client
-        .from("parties")
-        .select("id")
-        .eq("is_active", true)
-        .limit(1)
-        .maybeSingle();
-      partyId = firstParty?.id ?? null;
-    }
+  const { data: partyRows, error: partyErr } = await client
+    .from("parties")
+    .select("id, name")
+    .eq("is_active", true)
+    .order("name", { ascending: true });
 
-    if (systemRole >= ROLE.ADMIN) {
-      permissions = FULL_PERMISSIONS;
-    } else if (partyId) {
-      permissions = await getUserPermissions(client, userId, partyId);
-    }
-  } catch { /* party tables not yet migrated */ }
+  if (partyErr && partyErr.code !== "PGRST116" && !partyErr.message.includes("does not exist")) {
+    console.error("[requireAdminCtx] parties query failed:", partyErr.message);
+  }
 
-  // Allow entry: high system role OR explicit party membership (invited users).
-  // A regular user with no party membership has no reason to be in admin.
-  if (systemRole < ROLE.ESHOP_ADMIN && !partyId) return null;
+  const parties = (partyRows ?? []) as PartyRef[];
+  const partyIds = parties.map((p) => p.id);
 
-  return { role: systemRole, permissions, partyId };
+  const partyId =
+    activePartyId && partyIds.includes(activePartyId)
+      ? activePartyId
+      : partyIds[0] ?? null;
+
+  const permissions = (isOwner || isAdmin)
+    ? ALL_PERMISSIONS
+    : partyId
+      ? await getUserPermissions(client, userId, partyId)
+      : 0;
+
+  return { role, permissions, partyId, parties, isOwner, isGlobal };
 }

@@ -24,14 +24,15 @@ if (session) {
   displayName = data?.display_name ?? session.user.email?.split("@")[0] ?? null;
   const systemRole = (data?.role ?? 0) as number;
   if (systemRole >= ROLE.ESHOP_ADMIN) {
-    isAdmin = true;
-  } else {
-    // Also allow users who are members of any party (invited users with party roles)
-    const { count } = await supabase
-      .from("user_party_roles")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", session.user.id);
-    isAdmin = (count ?? 0) > 0;
+    if (systemRole >= ROLE.ADMIN) {
+      isAdmin = true;
+    } else {
+      const { count } = await supabase
+        .from("user_party_roles")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.user.id);
+      isAdmin = (count ?? 0) > 0;
+    }
   }
 }
 const navInitial = displayName?.[0]?.toUpperCase() ?? "?";

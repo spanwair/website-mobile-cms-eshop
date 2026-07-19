@@ -2,6 +2,7 @@
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { fetchReturns } from "@shared/services/returnService";
 import { useT } from "../../../lib/i18n";
 
@@ -9,9 +10,12 @@ const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_ORDERS)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
 const url = new URL(Astro.request.url);
@@ -19,18 +23,13 @@ const page = parseInt(url.searchParams.get("page") ?? "1", 10);
 const statusFilter = url.searchParams.get("status") ?? "";
 const pageSize = 20;
 
-let returns: Awaited<ReturnType<typeof fetchReturns>>["data"] = [];
-let total = 0;
-
-if (partyId) {
-  const result = await fetchReturns(supabase, partyId, {
-    status: statusFilter || undefined,
-    page,
-    pageSize,
-  });
-  returns = result.data;
-  total = result.total;
-}
+const returnsResult = await fetchReturns(supabase, partyId, {
+  status: statusFilter || undefined,
+  page,
+  pageSize,
+});
+const returns = returnsResult.data;
+const total = returnsResult.total;
 
 const totalPages = Math.ceil(total / pageSize);
 
@@ -68,7 +67,7 @@ function reasonLabel(r: string) {
 }
 ---
 
-<CmsLayout title={t.admin.returns.title} userPermissions={permissions} currentPath="/admin/returns">
+<CmsLayout title={t.admin.returns.title} userPermissions={permissions} currentPath="/admin/returns" parties={ctx.parties} partyId={ctx.partyId}>
   <div class="toolbar">
     <h1 class="page-title">{t.admin.returns.title}</h1>
     <span class="toolbar-count">{total}</span>

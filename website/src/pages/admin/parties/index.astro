@@ -4,23 +4,27 @@ import { createSupabase } from "../../../lib/supabase";
 import { fetchParties } from "@shared/services/partyService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
 const { permissions } = ctx;
 const t = useT(Astro);
 
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_USERS)) return Astro.redirect("/admin");
+
 const parties = await fetchParties(supabase);
 ---
 
-<CmsLayout title={t.admin.parties.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+<CmsLayout title={t.admin.parties.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   <div class="toolbar">
     <span class="total-label">{parties.length} {t.admin.parties.title.toLowerCase()}</span>
-    <a href="/admin/parties/new" class="btn btn-primary">{t.admin.parties.new}</a>
+    {ctx.isOwner && <a href="/admin/parties/new" class="btn btn-primary">{t.admin.parties.new}</a>}
   </div>
 
   <div class="card" style="padding:0;overflow:hidden">

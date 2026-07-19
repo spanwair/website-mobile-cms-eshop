@@ -4,15 +4,23 @@ import path from "path";
 
 export const BASE = "http://localhost:4321";
 
+export const OWNER = { email: "owner@test.com", password: "Owner1234!" };
 export const ADMIN = { email: "admin@test.com", password: "Admin1234!" };
 export const USER = { email: "user@test.com", password: "User1234!" };
 export const ESHOP = { email: "eshop@test.com", password: "Eshop1234!" };
 
+export const OWNER_ID = "ffffffff-0000-0000-0000-000000000008";
 export const ADMIN_ID = "27d68c79-fb83-43e4-83fa-b2d3a6f15c7f";
 export const USER_ID = "6f9296bf-3073-4c85-a7b6-ec227ff1b758";
 export const ESHOP_ID = "bf11ea77-6a24-4fc8-8487-882d6a48c8ba";
 
+// Role for eshop_admin with only MANAGE_PRODUCTS permission (perm bit = 8)
+export const LIMITED_ESHOP_ROLE_ID = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
+// Role with VIEW_DASHBOARD + MANAGE_PRODUCTS + MANAGE_CATEGORIES (1|8|16 = 25) — tests dashboard section gating
+export const DASHBOARD_PROD_CAT_ROLE_ID = "dddddddd-dddd-dddd-dddd-dddddddddddd";
+
 export const PARTY_ID = "11111111-1111-1111-1111-111111111111";
+export const PARTY2_ID = "11111111-2222-2222-2222-111111111111";
 export const CUSTOMER_ID = "22222222-2222-2222-2222-111111111111";
 export const WAREHOUSE_ID = "33333333-3333-3333-3333-111111111111";
 export const PRODUCT_ID = "44444444-4444-4444-4444-111111111111";

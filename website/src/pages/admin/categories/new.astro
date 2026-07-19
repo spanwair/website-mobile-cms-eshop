@@ -3,25 +3,30 @@ import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { createCategory, fetchCategories } from "@shared/services/categoryService";
 import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT } from "../../../lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
-const { permissions, partyId } = ctx;
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions } = ctx;
+const multiParty = ctx.parties.length > 1;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_CATEGORIES)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
-const categories = partyId ? await fetchCategories(supabase, partyId) : [];
-
 let error = "";
+let selectedPartyId = ctx.partyId;
 
-if (Astro.request.method === "POST" && partyId) {
+if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
+  if (multiParty) selectedPartyId = (form.get("party_id") as string) || ctx.partyId;
   const result = await createCategory(supabase, {
-    party_id: partyId,
+    party_id: selectedPartyId,
     name: form.get("name") as string,
     slug: form.get("slug") as string,
     parent_id: (form.get("parent_id") as string) || null,
@@ -35,13 +40,25 @@ if (Astro.request.method === "POST" && partyId) {
     return Astro.redirect("/admin/categories");
   }
 }
+
+const categories = await fetchCategories(supabase, selectedPartyId!);
 ---
 
-<CmsLayout title={t.admin.categories.newTitle} userPermissions={permissions} currentPath="/admin/categories">
+<CmsLayout title={t.admin.categories.newTitle} userPermissions={permissions} currentPath="/admin/categories" parties={ctx.parties} partyId={ctx.partyId}>
   <div class="card" style="max-width:560px">
     <a href="/admin/categories" class="back-link">{t.admin.categories.back}</a>
     {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
     <form method="POST" class="cat-form">
+      {multiParty && (
+        <div class="form-group">
+          <label class="form-label">{t.admin.categories.fieldOrganization}</label>
+          <select class="form-input" name="party_id">
+            {ctx.parties.map((p) => (
+              <option value={p.id} selected={p.id === selectedPartyId}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
       <div class="form-group">
         <label class="form-label">{t.admin.categories.fieldName}</label>
         <input class="form-input" name="name" required placeholder={t.admin.categories.fieldNamePlaceholder} />

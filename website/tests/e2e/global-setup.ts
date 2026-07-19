@@ -1,10 +1,17 @@
 import { execSync } from "child_process";
+import { writeFileSync, unlinkSync } from "fs";
 
+const OWNER_ID = "ffffffff-0000-0000-0000-000000000008";
 const ADMIN_ID = "27d68c79-fb83-43e4-83fa-b2d3a6f15c7f";
 const USER_ID = "6f9296bf-3073-4c85-a7b6-ec227ff1b758";
 const ESHOP_ID = "bf11ea77-6a24-4fc8-8487-882d6a48c8ba";
+// Role with MANAGE_PRODUCTS only (bit 8) — tests limited eshop_admin access
+const LIMITED_ESHOP_ROLE_ID = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
+// Role with VIEW_DASHBOARD + MANAGE_PRODUCTS + MANAGE_CATEGORIES (1|8|16=25) — tests dashboard section gating
+const DASHBOARD_PROD_CAT_ROLE_ID = "dddddddd-dddd-dddd-dddd-dddddddddddd";
 
 const PARTY_ID = "11111111-1111-1111-1111-111111111111";
+const PARTY2_ID = "11111111-2222-2222-2222-111111111111";
 const CUSTOMER_ID = "22222222-2222-2222-2222-111111111111";
 const WAREHOUSE_ID = "33333333-3333-3333-3333-111111111111";
 const PRODUCT_ID = "44444444-4444-4444-4444-111111111111";
@@ -20,10 +27,16 @@ const SUPABASE_URL = "http://127.0.0.1:54321";
 const CATEGORY_ID = "aa111111-1111-1111-1111-111111111111";
 
 function psql(sql: string) {
-  return execSync(
-    `PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "${sql}"`,
-    { stdio: "pipe" }
-  ).toString();
+  const tmp = `/tmp/e2e-${Date.now()}.sql`;
+  writeFileSync(tmp, sql);
+  try {
+    return execSync(
+      `PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -f ${tmp}`,
+      { stdio: "pipe" }
+    ).toString();
+  } finally {
+    unlinkSync(tmp);
+  }
 }
 
 function psqlRaw(sql: string) {
@@ -47,7 +60,36 @@ function apiPut(path: string, body: Record<string, unknown>) {
 }
 
 export default async function globalSetup() {
+  // Ensure owner auth user exists (create if missing, then ensure profile row exists)
+  const ownerCheck = execSync(
+    `curl -s "${SUPABASE_URL}/auth/v1/admin/users/${OWNER_ID}" \
+      -H "apikey: ${SERVICE_ROLE_KEY}" \
+      -H "Authorization: Bearer ${SERVICE_ROLE_KEY}"`,
+    { stdio: "pipe" }
+  ).toString();
+  if (ownerCheck.includes('"error"') || !ownerCheck.includes(OWNER_ID)) {
+    execSync(
+      `curl -s -X POST "${SUPABASE_URL}/auth/v1/admin/users" \
+        -H "apikey: ${SERVICE_ROLE_KEY}" \
+        -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+        -H "Content-Type: application/json" \
+        -d '{"id":"${OWNER_ID}","email":"owner@test.com","password":"Owner1234!","email_confirm":true}'`,
+      { stdio: "pipe" }
+    );
+    // Wait briefly for auth trigger to create the profile
+    execSync("sleep 1");
+  }
+  // Ensure profile row exists (trigger may not fire in test env)
+  psql(`
+    SET session_replication_role = replica;
+    INSERT INTO public.profiles (id, role, display_name)
+    VALUES ('${OWNER_ID}', 8, 'Owner')
+    ON CONFLICT (id) DO NOTHING;
+    SET session_replication_role = DEFAULT;
+  `);
+
   // Reset passwords for test users (idempotent)
+  apiPut(`/users/${OWNER_ID}`, { password: "Owner1234!" });
   apiPut(`/users/${ADMIN_ID}`, { password: "Admin1234!" });
   apiPut(`/users/${USER_ID}`, { password: "User1234!" });
   apiPut(`/users/${ESHOP_ID}`, { password: "Eshop1234!" });
@@ -63,19 +105,28 @@ export default async function globalSetup() {
   psql(`${replica} DELETE FROM public.discount_rules WHERE id = '${RULE_ID}'; ${defaultRole}`);
   psql(`${replica} DELETE FROM public.orders WHERE id = '${ORDER_ID}'; ${defaultRole}`);
   psql(`${replica} DELETE FROM public.inventory_items WHERE id = '${INVENTORY_ID}'; ${defaultRole}`);
+  psql(`${replica} DELETE FROM public.product_images WHERE product_id = '${PRODUCT_ID}'; ${defaultRole}`);
   psql(`${replica} DELETE FROM public.products WHERE id = '${PRODUCT_ID}' OR (party_id = '${PARTY_ID}' AND slug IN ('test-product', 'test-draft', 'test-active', 'another-product', 'seed-product', 'e2e-test-product', 'featured-active-e2e')); ${defaultRole}`);
   psql(`${replica} DELETE FROM public.customers WHERE id = '${CUSTOMER_ID}'; ${defaultRole}`);
   psql(`${replica} DELETE FROM public.warehouses WHERE id = '${WAREHOUSE_ID}'; ${defaultRole}`);
   psql(`${replica} DELETE FROM public.categories WHERE party_id = '${PARTY_ID}' OR id = '${CATEGORY_ID}'; ${defaultRole}`);
-  psql(`${replica} DELETE FROM public.user_party_roles WHERE party_id = '${PARTY_ID}'; ${defaultRole}`);
-  psql(`${replica} DELETE FROM public.roles WHERE party_id = '${PARTY_ID}'; ${defaultRole}`);
-  psql(`${replica} DELETE FROM public.parties WHERE id = '${PARTY_ID}' OR slug IN ('second-org', 'test-org-2', 'e2e-party', 'full-fields-org'); ${defaultRole}`);
+  psql(`${replica} DELETE FROM public.user_party_roles WHERE party_id IN ('${PARTY_ID}', '${PARTY2_ID}'); ${defaultRole}`);
+  psql(`${replica} DELETE FROM public.roles WHERE party_id IN ('${PARTY_ID}', '${PARTY2_ID}'); ${defaultRole}`);
+  psql(`${replica} DELETE FROM public.parties WHERE id IN ('${PARTY_ID}', '${PARTY2_ID}') OR slug IN ('second-org', 'test-org-2', 'e2e-party', 'full-fields-org', 'other-organisation') OR slug LIKE 'e2e-org-%'; ${defaultRole}`);
 
   console.log("[global-setup] Cleanup done.");
 
   // Set user profile roles (use replica to bypass role hierarchy trigger)
-  psql(`${replica} UPDATE public.profiles SET role = 1, display_name = 'Regular User' WHERE id = '${USER_ID}'; ${defaultRole}`);
-  psql(`${replica} UPDATE public.profiles SET role = 2, display_name = 'Eshop Admin' WHERE id = '${ESHOP_ID}'; ${defaultRole}`);
+  psql(`
+    SET session_replication_role = replica;
+    INSERT INTO public.profiles (id, role, display_name)
+      VALUES ('${OWNER_ID}', 8, 'Owner')
+      ON CONFLICT (id) DO UPDATE SET role = 8, display_name = 'Owner';
+    UPDATE public.profiles SET role = 4, display_name = 'Admin'        WHERE id = '${ADMIN_ID}';
+    UPDATE public.profiles SET role = 2, display_name = 'Eshop Admin'  WHERE id = '${ESHOP_ID}';
+    UPDATE public.profiles SET role = 1, display_name = 'Regular User' WHERE id = '${USER_ID}';
+    SET session_replication_role = DEFAULT;
+  `);
 
   // Seed party
   psql(`
@@ -120,12 +171,30 @@ export default async function globalSetup() {
     ${defaultRole}
   `);
 
-  // Link eshop@test.com to party so admin party-gated features work
+  // Link eshop@test.com to party with Super Admin role (full permissions for standard tests)
   psql(`
     ${replica}
     INSERT INTO public.user_party_roles (user_id, party_id, role_id)
     VALUES ('${ESHOP_ID}', '${PARTY_ID}', '${superAdminRoleId.trim()}')
     ON CONFLICT DO NOTHING;
+    ${defaultRole}
+  `);
+
+  // Seed limited role with ONLY MANAGE_PRODUCTS (bit 8) — used to test permission isolation
+  psql(`
+    ${replica}
+    INSERT INTO public.roles (id, party_id, name, permissions, is_system)
+    VALUES ('${LIMITED_ESHOP_ROLE_ID}', '${PARTY_ID}', 'Products Only', 8, false)
+    ON CONFLICT (id) DO UPDATE SET permissions = 8;
+    ${defaultRole}
+  `);
+
+  // Seed dashboard+products+categories role (VIEW_DASHBOARD|MANAGE_PRODUCTS|MANAGE_CATEGORIES = 25)
+  psql(`
+    ${replica}
+    INSERT INTO public.roles (id, party_id, name, permissions, is_system)
+    VALUES ('${DASHBOARD_PROD_CAT_ROLE_ID}', '${PARTY_ID}', 'Dashboard+Products+Categories', 25, false)
+    ON CONFLICT (id) DO UPDATE SET permissions = 25;
     ${defaultRole}
   `);
 
@@ -228,8 +297,43 @@ export default async function globalSetup() {
     ${defaultRole}
   `);
 
+  // Seed second party (PARTY2) — ESHOP user is member, ADMIN is NOT
+  psql(`
+    ${replica}
+    INSERT INTO public.parties (id, name, slug, is_active)
+    VALUES ('${PARTY2_ID}', 'Other Organisation', 'other-organisation', true);
+    ${defaultRole}
+  `);
+
+  let superAdminRole2Id = psqlRaw(`
+    SELECT id FROM public.roles
+    WHERE party_id = '${PARTY2_ID}' AND name = 'Super Admin'
+    LIMIT 1;
+  `);
+
+  if (!superAdminRole2Id) {
+    psql(`
+      ${replica}
+      INSERT INTO public.roles (id, party_id, name, permissions, is_system)
+      VALUES ('22222222-2222-2222-2222-333333333333', '${PARTY2_ID}', 'Super Admin', 32767, true)
+      ON CONFLICT DO NOTHING;
+      ${defaultRole}
+    `);
+    superAdminRole2Id = "22222222-2222-2222-2222-333333333333";
+  }
+
+  // Only ESHOP user belongs to PARTY2 (not ADMIN — this tests cross-org isolation)
+  psql(`
+    ${replica}
+    INSERT INTO public.user_party_roles (user_id, party_id, role_id)
+    VALUES ('${ESHOP_ID}', '${PARTY2_ID}', '${superAdminRole2Id.trim()}')
+    ON CONFLICT DO NOTHING;
+    ${defaultRole}
+  `);
+
   console.log("[global-setup] All test data seeded successfully.");
   console.log(`  Party:        ${PARTY_ID}`);
+  console.log(`  Party2:       ${PARTY2_ID} (eshop-only, admin excluded)`);
   console.log(`  Customer:     ${CUSTOMER_ID}`);
   console.log(`  Warehouse:    ${WAREHOUSE_ID}`);
   console.log(`  Product:      ${PRODUCT_ID} (qty=50)`);

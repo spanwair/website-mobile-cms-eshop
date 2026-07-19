@@ -3,6 +3,7 @@ import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { fetchOrder, updateOrderStatus, updateOrder } from "@shared/services/orderService";
 import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT } from "../../../lib/i18n";
 import type { Order } from "@shared/types/index";
 
@@ -10,9 +11,12 @@ const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_ORDERS)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
 const { id } = Astro.params;
@@ -58,7 +62,7 @@ function statusClass(s: string) {
 }
 ---
 
-<CmsLayout title={`${t.admin.orders.colNumber} ${order.order_number}`} userPermissions={permissions} currentPath="/admin/orders">
+<CmsLayout title={`${t.admin.orders.colNumber} ${order.order_number}`} userPermissions={permissions} currentPath="/admin/orders" parties={ctx.parties} partyId={ctx.partyId}>
   <a href="/admin/orders" class="back-link">{t.admin.orders.back}</a>
   {error && <div class="alert-error">{error}</div>}
 

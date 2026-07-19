@@ -4,43 +4,38 @@ import { createSupabase } from "../../../lib/supabase";
 import { fetchOrders } from "@shared/services/orderService";
 import { fetchProducts } from "@shared/services/productService";
 import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT } from "../../../lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_REPORTS)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
 const now = new Date();
 const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 const yearStart = new Date(now.getFullYear(), 0, 1).toISOString();
 
-let totalOrders = 0;
-let monthOrders = 0;
-let monthRevenue = 0;
-let yearRevenue = 0;
-let totalProducts = 0;
-let activeProducts = 0;
-
-if (partyId) {
-  const [allOrders, mOrders, yOrders, tProds, aProds] = await Promise.all([
-    fetchOrders(supabase, partyId, { pageSize: 1 }),
-    fetchOrders(supabase, partyId, { from: monthStart, pageSize: 100 }),
-    fetchOrders(supabase, partyId, { from: yearStart, pageSize: 500 }),
-    fetchProducts(supabase, partyId, { pageSize: 1 }),
-    fetchProducts(supabase, partyId, { status: "active", pageSize: 1 }),
-  ]);
-  totalOrders = allOrders.total;
-  monthOrders = mOrders.total;
-  monthRevenue = mOrders.data.reduce((s, o) => s + o.total_amount, 0);
-  yearRevenue = yOrders.data.reduce((s, o) => s + o.total_amount, 0);
-  totalProducts = tProds.total;
-  activeProducts = aProds.total;
-}
+const [allOrders, mOrders, yOrders, tProds, aProds] = await Promise.all([
+  fetchOrders(supabase, partyId, { pageSize: 1 }),
+  fetchOrders(supabase, partyId, { from: monthStart, pageSize: 100 }),
+  fetchOrders(supabase, partyId, { from: yearStart, pageSize: 500 }),
+  fetchProducts(supabase, partyId, { pageSize: 1 }),
+  fetchProducts(supabase, partyId, { status: "active", pageSize: 1 }),
+]);
+const totalOrders = allOrders.total;
+const monthOrders = mOrders.total;
+const monthRevenue = mOrders.data.reduce((s, o) => s + o.total_amount, 0);
+const yearRevenue = yOrders.data.reduce((s, o) => s + o.total_amount, 0);
+const totalProducts = tProds.total;
+const activeProducts = aProds.total;
 
 const reports = [
   {
@@ -75,7 +70,7 @@ const reports = [
 ];
 ---
 
-<CmsLayout title={t.admin.reports.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+<CmsLayout title={t.admin.reports.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   <div class="reports-grid">
     {reports.map((r) => (
       <div class="card report-card">

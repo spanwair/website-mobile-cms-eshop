@@ -75,12 +75,14 @@ export async function createCoupon(
 
 export async function validateCoupon(
   client: Client,
-  code: string
+  code: string,
+  partyId: string
 ): Promise<{ coupon: Coupon | null; valid: boolean; reason?: string }> {
   const { data, error } = await client
     .from("coupons")
     .select("*, discount_rule:discount_rule_id(*)")
     .eq("code", code)
+    .eq("party_id", partyId)
     .single();
 
   if (error || !data) return { coupon: null, valid: false, reason: "Coupon not found" };

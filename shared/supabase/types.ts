@@ -1435,6 +1435,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          admin_assigned_by: string | null
           avatar_url: string | null
           created_at: string
           display_name: string | null
@@ -1450,6 +1451,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_assigned_by?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -1465,6 +1467,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_assigned_by?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null

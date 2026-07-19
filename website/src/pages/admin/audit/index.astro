@@ -3,15 +3,19 @@ import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { fetchAuditLogs } from "@shared/services/auditService";
 import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT } from "../../../lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_AUDIT)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
 const url = new URL(Astro.request.url);
@@ -19,29 +23,22 @@ const page = parseInt(url.searchParams.get("page") ?? "1", 10);
 const tableFilter = url.searchParams.get("table") ?? "";
 const pageSize = 50;
 
-let logs: Awaited<ReturnType<typeof fetchAuditLogs>>["data"] = [];
-let total = 0;
-const tableNames: string[] = [];
+const auditResult = await fetchAuditLogs(supabase, {
+  party_id: partyId,
+  page,
+  pageSize,
+  table_name: tableFilter || undefined,
+});
+const logs = auditResult.data;
+const total = auditResult.total;
 
-if (partyId) {
-  const result = await fetchAuditLogs(supabase, {
-    party_id: partyId,
-    page,
-    pageSize,
-    table_name: tableFilter || undefined,
-  });
-  logs = result.data;
-  total = result.total;
+const { data: allLogs } = await supabase
+  .from("audit_logs")
+  .select("table_name")
+  .eq("party_id", partyId)
+  .not("table_name", "is", null);
 
-  const { data: allLogs } = await supabase
-    .from("audit_logs")
-    .select("table_name")
-    .eq("party_id", partyId)
-    .not("table_name", "is", null);
-
-  const uniqueTables = new Set((allLogs ?? []).map((r: { table_name: string | null }) => r.table_name).filter(Boolean) as string[]);
-  tableNames.push(...uniqueTables);
-}
+const tableNames = [...new Set((allLogs ?? []).map((r: { table_name: string | null }) => r.table_name).filter(Boolean) as string[])];
 
 const totalPages = Math.ceil(total / pageSize);
 
@@ -53,7 +50,7 @@ function actionClass(action: string) {
 }
 ---
 
-<CmsLayout title={t.admin.audit.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+<CmsLayout title={t.admin.audit.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   <div class="toolbar">
     <form method="GET" class="filter-form">
       <select class="form-input" name="table" style="width:200px">

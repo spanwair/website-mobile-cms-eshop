@@ -9,7 +9,8 @@ const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login");
 
-const ctx = await requireAdminCtx(supabase, session.user.id);
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
 const { permissions } = ctx;
 const t = useT(Astro);
@@ -17,7 +18,7 @@ const t = useT(Astro);
 const notifications = await fetchUserNotifications(supabase, session.user.id);
 ---
 
-<CmsLayout title={t.admin.notifications.title} userPermissions={permissions} currentPath={Astro.url.pathname}>
+<CmsLayout title={t.admin.notifications.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>

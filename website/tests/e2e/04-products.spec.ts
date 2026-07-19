@@ -77,7 +77,10 @@ test.describe("04 — Products: CRUD, Search, Filter, Status", () => {
     await page.selectOption("select[name='status']", "draft");
     await screenshot(page, "04-06-new-product-filled");
     await page.locator("form.product-form button.btn-primary").click();
-    await page.waitForURL(`${BASE}/admin/products`, { timeout: 10000 });
+    // Creation redirects to the product detail page, then navigate to the list to verify
+    await page.waitForURL((url) => url.pathname.startsWith("/admin/products/") && url.pathname !== "/admin/products", { timeout: 10000 });
+    await page.goto(`${BASE}/admin/products`);
+    await page.waitForLoadState("networkidle");
     await screenshot(page, "04-06-after-create-product");
     await expect(page.getByText("E2E Test Product")).toBeVisible();
   });
@@ -169,7 +172,9 @@ test.describe("04 — Products: CRUD, Search, Filter, Status", () => {
     }
     await screenshot(page, "04-14-featured-product-form");
     await page.locator("form.product-form button.btn-primary").click();
-    await page.waitForURL(`${BASE}/admin/products`, { timeout: 10000 });
+    await page.waitForURL((url) => url.pathname.startsWith("/admin/products/") && url.pathname !== "/admin/products", { timeout: 10000 });
+    await page.goto(`${BASE}/admin/products`);
+    await page.waitForLoadState("networkidle");
     await expect(page.getByText("Featured Active Product")).toBeVisible();
     await screenshot(page, "04-14-featured-product-created");
   });
