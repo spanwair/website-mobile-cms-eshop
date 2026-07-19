@@ -4,6 +4,7 @@ import { createSupabase } from "../../../lib/supabase";
 import { createParty } from "@shared/services/partyService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
+import { ROLE } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -12,8 +13,8 @@ if (!session) return Astro.redirect("/login");
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
-// Only owners can create new organizations.
-if (!ctx.isOwner) return Astro.redirect("/admin/parties");
+// Admins and owners can create new organizations.
+if (ctx.role < ROLE.ADMIN) return Astro.redirect("/admin/parties");
 const { permissions } = ctx;
 const t = useT(Astro);
 

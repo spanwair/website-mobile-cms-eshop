@@ -1,66 +1,95 @@
 ---
 title: Inventory
-description: How to track and adjust stock levels.
+description: How to track stock levels, make adjustments, and monitor low-stock items.
 ---
 
-## What inventory tracks
+Inventory tracks how many units of each product are physically available, reserved for orders, and available to sell. Every stock change is recorded as a movement so you have a full audit trail.
 
-Each **inventory item** links a product to a warehouse and tracks:
+## Permission required
 
-- **Qty on hand** — how many units are physically in stock
-- **Qty reserved** — units allocated to pending orders
-- **Low stock threshold** — if qty drops below this, the item shows as "Low Stock"
+| Permission bit | Name | Who has it by default |
+|---|---|---|
+| 64 | MANAGE_INVENTORY | Owner, Admin, Eshop Admin (with this bit) |
 
-## Where to find inventory
+## Inventory list (`/admin/inventory`)
 
-Go to **Admin → Inventory** (`/admin/inventory`).
+### Filters
 
-## Filters
+| Toggle | Shows |
+|---|---|
+| All | Every inventory item |
+| Low Stock | Only items where `qty_on_hand` is at or below `low_stock_threshold` |
 
-At the top, two buttons filter the list:
+Low stock items display the quantity in **red**.
 
-| Filter | Shows |
-|--------|-------|
-| **All** | Every inventory item |
-| **Low Stock** | Only items where `qty_on_hand ≤ low_stock_threshold` |
+### Table columns
 
-Low stock items show a **red badge** and the quantity is displayed in red.
+| Column | Description |
+|---|---|
+| Product | The product this inventory item belongs to |
+| Variant | Product variant (e.g. size, color) if applicable |
+| Qty on hand | Units physically in stock |
+| Qty reserved | Units allocated to confirmed/processing orders (not yet shipped) |
+| Qty available | `qty_on_hand − qty_reserved` — what can actually be sold right now |
+| Low stock threshold | Alert level — when `qty_on_hand` drops to or below this, item shows in Low Stock filter |
 
-## Making a stock adjustment
+## Understanding the three quantities
 
-Each row in the inventory table has an inline adjustment form:
+```
+qty_on_hand = qty_reserved + qty_available
+```
 
-1. Enter the **quantity** (positive number — the system handles direction based on type)
-2. Select the **type**:
-   - `purchase` — new stock arrived, quantity increases
-   - `sale` — sold to customer, quantity decreases
-   - `return` — customer returned item, quantity increases
-   - `damage` — stock written off, quantity decreases
-   - `adjustment` — manual correction
-3. Optionally add a **note** (e.g. "Restock from supplier XYZ")
+- **On hand**: physical count of units in your warehouse
+- **Reserved**: units "held" for orders that have been confirmed but not yet shipped — the customer has paid, the item is committed
+- **Available**: what's actually free to sell to new customers
+
+When a new order is confirmed, `qty_reserved` increases. When the order ships, `qty_reserved` decreases and `qty_on_hand` decreases (the item left the warehouse).
+
+## Adjusting stock
+
+Each row has an inline form. To adjust:
+
+1. Enter the **quantity** as a signed integer:
+   - Positive number (e.g. `+50`) to add stock
+   - Negative number (e.g. `-3`) to reduce stock
+2. Select the **movement type** (see below)
+3. Add an optional **note** (e.g. "Restock from supplier ABC, invoice #1234")
 4. Click **Apply**
 
-The quantity updates immediately and the change is recorded in the adjustment history.
+The adjustment records a new entry in `stock_movements` and updates `qty_on_hand` immediately.
 
-## Warehouses
+### Movement types
 
-Inventory items are linked to a **warehouse**. Each organization can have multiple warehouses. One warehouse can be set as the **default**.
+| Type | When to use | Effect |
+|---|---|---|
+| `purchase` | New stock arrived from supplier | Increases `qty_on_hand` |
+| `adjustment` | Manual correction (count discrepancy, data fix) | Increases or decreases depending on signed quantity |
+| `return` | Customer return restocked (usually done automatically via [Returns](/admin/returns)) | Increases `qty_on_hand` |
+| `damage` | Items damaged/expired/lost and written off | Decreases `qty_on_hand` |
 
-Warehouses are managed under **Admin → Inventory** (warehouse tab, if configured).
+## What happens when stock hits 0
 
-## Low stock alerts
+When `qty_available = 0`:
+- The product is shown as "out of stock" on the eshop
+- Customers cannot add it to their cart
+- Existing reserved quantities (from confirmed orders) are not affected
 
-When an inventory item's `qty_on_hand` drops below its `low_stock_threshold`:
-- The dashboard KPI card "Low Stock Items" increments
-- The item shows in the Low Stock filter
-- The quantity is displayed in red in the inventory table
+When `qty_on_hand = 0`:
+- All of the above, plus reserved stock becomes a problem — orders may be stuck without product to ship
 
-Set the threshold based on your reorder point — e.g. if you order a product when you have fewer than 10 units left, set the threshold to 10.
+Keep an eye on the Low Stock filter to restock before hitting zero.
 
-## Adding inventory for a new product
+## Setting up inventory for a new product
 
-When you create a product, it doesn't automatically have inventory. You need to create an inventory item:
+When you create a product in [Products](/admin/products), an inventory item is not created automatically. To set up inventory:
 
-1. Go to **Admin → Inventory**
-2. The product should appear if the database has an inventory item for it, or set it up via SQL or a future UI
-3. Set initial `qty_on_hand` via a `purchase` adjustment
+1. Go to `/admin/inventory`
+2. Find the product's inventory row (created automatically by a DB trigger when a product is saved, or check with your Owner if the row is missing)
+3. Make a `purchase` adjustment with your initial stock quantity
+4. Set the `low_stock_threshold` to your reorder point
+
+## Related pages
+
+- [Products](/admin/products) — products that have inventory items
+- [Orders](/admin/orders) — confirmed orders increase `qty_reserved`
+- [Returns & Refunds](/admin/returns) — completed returns with `restock = true` automatically add back to inventory

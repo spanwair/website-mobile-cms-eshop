@@ -1,48 +1,51 @@
 ---
 title: Notifications
-description: How the notification system works.
+description: How to view and manage your admin notification inbox.
 ---
 
-## What notifications are
+Notifications are internal alerts delivered to your admin account. They cover system events, order updates, and low-stock alerts. All admin roles can access notifications — no specific permission bit is required beyond being an admin.
 
-The CMS has a built-in notification system for internal alerts. Notifications can be sent to specific users or all admins in an organization.
+## Permission required
 
-## Where to find notifications
+Accessible to all admin roles (Owner, Admin, Eshop Admin). No specific permission bit needed.
 
-Go to **Admin → Notifications** (`/admin/notifications`).
+## Notification list (`/admin/notifications`)
 
-## Notification structure
-
-| Field | Description |
-|-------|-------------|
-| Title | Headline of the notification |
-| Body | Full message text |
-| Type | `system_alert`, `order_update`, `low_stock`, or custom |
-| Read/Unread | Whether the user has seen it |
-
-## Unread notifications
-
-Unread notifications:
-- Show with an **Unread** badge in the table
-- The row may be styled in **bold** for visibility
-
-## Audit log
-
-The **Audit Log** page (`/admin/audit`) shows a history of all data changes in the CMS:
+The page shows all notifications sent to your account in a table:
 
 | Column | Description |
-|--------|-------------|
-| Table | Which database table was changed |
-| Action | INSERT, UPDATE, or DELETE |
-| Actor | Which user made the change |
-| When | Timestamp |
-| Record ID | The affected row's ID |
+|---|---|
+| Timestamp | When the notification was created |
+| Type | Machine-readable event type (e.g. `order_update`, `low_stock`, `system_alert`) |
+| Title | Headline of the notification |
+| Message | Full notification body |
+| Status | Read / Unread badge |
 
-### Filtering the audit log
+Unread notifications are displayed in **bold**. Click a notification row to mark it as read.
 
-Use the **Filter by table** dropdown to see only changes to a specific table. Click **Clear** to remove the filter.
+## Notification types
 
-The audit log is useful for:
-- Seeing who deleted a product
-- Tracking when an order status changed
-- Reviewing what a team member changed
+| Type | Triggered by |
+|---|---|
+| `system_alert` | System-level events (e.g. maintenance, configuration changes) |
+| `order_update` | Order status changes (e.g. new order placed, order shipped) |
+| `low_stock` | Inventory item drops to or below its low-stock threshold |
+| Custom types | Any notification sent programmatically by your app or Edge Functions |
+
+## Reading notifications
+
+Notifications are personal — each admin sees only their own notifications. There is no shared inbox.
+
+Marking a notification as read is done by clicking the row. There is no bulk "mark all as read" button in the current version.
+
+## What to do with notifications
+
+- **Order updates**: Navigate to [Orders](/admin/orders) to process the order
+- **Low stock alerts**: Go to [Inventory](/admin/inventory) to restock the item
+- **System alerts**: Review the message and take the indicated action or contact your Owner
+
+## Related pages
+
+- [Orders](/admin/orders) — process orders mentioned in order_update notifications
+- [Inventory](/admin/inventory) — restock items mentioned in low_stock notifications
+- [Audit Log](/admin/audit) — full history of data changes (requires MANAGE_AUDIT permission)

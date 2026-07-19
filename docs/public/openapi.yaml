@@ -1,0 +1,994 @@
+openapi: 3.0.3
+info:
+  title: CMS API
+  version: 1.0.0
+  description: |
+    Multi-tenant e-commerce CMS API. Endpoints are served by **Supabase PostgREST**
+    (table access) or **Supabase Edge Functions** (custom logic), as noted per endpoint.
+
+    ## Multi-tenant isolation
+
+    This platform hosts multiple organizations (parties). Public endpoints return data
+    from **all** organizations unless you filter by `party_id`. Always add
+    `?party_id=eq.{YOUR_PARTY_ID}` to every public read. Find your `party_id` in the
+    admin panel at **Admin → Organizations**.
+
+    ## Authentication
+
+    | Key | When to use |
+    |-----|-------------|
+    | `apikey: <anon_key>` | All requests — public and authenticated |
+    | `Authorization: Bearer <user_jwt>` | Authenticated endpoints (cart, orders, admin) |
+
+    **Never use the `service_role` key** in eshop code. It bypasses all Row Level
+    Security policies and exposes every tenant's data.
+
+    ## PostgREST filtering syntax
+
+    | Filter | Example |
+    |--------|---------|
+    | Equals | `?status=eq.active` |
+    | Not equals | `?status=neq.draft` |
+    | Greater than | `?price=gt.100` |
+    | Less than or equal | `?price=lte.500` |
+    | In list | `?status=in.(active,inactive)` |
+    | Pattern match | `?title=ilike.*shirt*` |
+    | Select columns | `?select=id,title,price` |
+    | Order | `?order=title.asc` |
+    | Pagination | `?limit=20&offset=0` |
+
+servers:
+  - url: https://{project_ref}.supabase.co/rest/v1
+    description: PostgREST — table endpoints
+    variables:
+      project_ref:
+        default: your_project_ref
+        description: Your Supabase project reference (found in project settings)
+  - url: https://{project_ref}.supabase.co/functions/v1
+    description: Edge Functions — custom logic endpoints
+    variables:
+      project_ref:
+        default: your_project_ref
+
+components:
+  securitySchemes:
+    AnonKey:
+      type: apiKey
+      in: header
+      name: apikey
+      description: Supabase anon key. Safe for frontend and public use.
+    BearerToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: User JWT from `supabase.auth.getSession()`. Required for user-scoped data.
+
+  parameters:
+    PartyIdFilter:
+      name: party_id
+      in: query
+      required: false
+      description: |
+        Filter by organization ID. Use `eq.{uuid}` format.
+        **Required on public endpoints** to scope results to your organization only.
+      schema:
+        type: string
+        example: "eq.550e8400-e29b-41d4-a716-446655440000"
+    SelectParam:
+      name: select
+      in: query
+      description: Comma-separated list of columns to return. Use `*` for all.
+      schema:
+        type: string
+        example: "id,title,price,slug"
+    OrderParam:
+      name: order
+      in: query
+      description: Sort order. Format `column.asc` or `column.desc`.
+      schema:
+        type: string
+        example: "title.asc"
+    LimitParam:
+      name: limit
+      in: query
+      description: Maximum number of rows to return.
+      schema:
+        type: integer
+        example: 20
+    OffsetParam:
+      name: offset
+      in: query
+      description: Number of rows to skip (for pagination).
+      schema:
+        type: integer
+        example: 0
+
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        party_id:
+          type: string
+          format: uuid
+          description: Organization this product belongs to.
+        title:
+          type: string
+        slug:
+          type: string
+        sku:
+          type: string
+        barcode:
+          type: string
+          nullable: true
+        price:
+          type: number
+          format: float
+        discount_price:
+          type: number
+          format: float
+          nullable: true
+        status:
+          type: string
+          enum: [draft, active, inactive]
+        is_featured:
+          type: boolean
+        is_visible:
+          type: boolean
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        party_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Parent category ID for hierarchical categories.
+        icon:
+          type: string
+          nullable: true
+          description: Emoji icon for the category.
+        sort_order:
+          type: integer
+        is_visible:
+          type: boolean
+
+    ProductImage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        is_primary:
+          type: boolean
+        sort_order:
+          type: integer
+
+    ProductVariant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        sku:
+          type: string
+        price:
+          type: number
+          format: float
+          nullable: true
+          description: Override price. Null means use the parent product price.
+        status:
+          type: string
+          enum: [active, inactive]
+        attributes:
+          type: object
+          description: Key-value pairs for variant attributes (e.g. size, color).
+
+    ProductReview:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        author_name:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        title:
+          type: string
+          nullable: true
+        body:
+          type: string
+          nullable: true
+        verified_purchase:
+          type: boolean
+        status:
+          type: string
+          enum: [pending, approved, rejected, hidden]
+        created_at:
+          type: string
+          format: date-time
+
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        variant_id:
+          type: string
+          format: uuid
+          nullable: true
+        quantity:
+          type: integer
+          minimum: 1
+
+    WishlistItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        variant_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        order_number:
+          type: string
+        party_id:
+          type: string
+          format: uuid
+        customer_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, confirmed, processing, shipped, delivered, cancelled]
+        payment_status:
+          type: string
+          enum: [unpaid, paid, refunded, partially_refunded]
+        subtotal:
+          type: number
+          format: float
+        discount_amount:
+          type: number
+          format: float
+        tax_amount:
+          type: number
+          format: float
+        shipping_amount:
+          type: number
+          format: float
+        total:
+          type: number
+          format: float
+        created_at:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: string
+          nullable: true
+
+paths:
+
+  # ─────────────────────────────────────────────
+  # PUBLIC ENDPOINTS — anon key only, no JWT
+  # ─────────────────────────────────────────────
+
+  /products:
+    get:
+      summary: List products
+      description: |
+        Returns active products. Without a `party_id` filter, returns products from
+        **all organizations**. Always filter by your party to get only your products.
+
+        **Recommended query:**
+        `?party_id=eq.{YOUR_PARTY_ID}&status=eq.active&is_visible=eq.true&order=title.asc`
+      tags:
+        - Products (public)
+      security:
+        - AnonKey: []
+      parameters:
+        - $ref: '#/components/parameters/PartyIdFilter'
+        - name: status
+          in: query
+          description: Filter by product status. Use `eq.active` for published products.
+          schema:
+            type: string
+            example: "eq.active"
+        - name: is_visible
+          in: query
+          description: Filter to visible products only (`eq.true`).
+          schema:
+            type: string
+            example: "eq.true"
+        - name: is_featured
+          in: query
+          description: Filter to featured products only (`eq.true`).
+          schema:
+            type: string
+            example: "eq.true"
+        - $ref: '#/components/parameters/SelectParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: Array of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+              example:
+                - id: "550e8400-e29b-41d4-a716-446655440001"
+                  party_id: "550e8400-e29b-41d4-a716-446655440000"
+                  title: "Classic White T-Shirt"
+                  slug: "classic-white-t-shirt"
+                  sku: "TS-WHT-001"
+                  price: 29.99
+                  discount_price: 24.99
+                  status: "active"
+                  is_featured: true
+                  is_visible: true
+                  created_at: "2025-01-15T10:00:00Z"
+
+  /categories:
+    get:
+      summary: List categories
+      description: |
+        Returns visible categories. Filter by `party_id` to get your org's categories.
+        Categories support parent-child hierarchy via the `parent_id` field.
+
+        **Recommended query:**
+        `?party_id=eq.{YOUR_PARTY_ID}&is_visible=eq.true&order=sort_order.asc`
+      tags:
+        - Categories (public)
+      security:
+        - AnonKey: []
+      parameters:
+        - $ref: '#/components/parameters/PartyIdFilter'
+        - name: is_visible
+          in: query
+          description: Filter to visible categories (`eq.true`).
+          schema:
+            type: string
+            example: "eq.true"
+        - name: parent_id
+          in: query
+          description: Filter by parent category. Use `is.null` for top-level categories.
+          schema:
+            type: string
+            example: "is.null"
+        - $ref: '#/components/parameters/SelectParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: Array of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+  /product_images:
+    get:
+      summary: List product images
+      description: |
+        Returns product images. Filter by `product_id` to get images for a specific product.
+        All product images are publicly accessible (CDN-friendly — no auth required).
+
+        **Recommended query:**
+        `?product_id=eq.{PRODUCT_ID}&order=sort_order.asc`
+      tags:
+        - Products (public)
+      security:
+        - AnonKey: []
+      parameters:
+        - name: product_id
+          in: query
+          description: Filter images by product ID (`eq.{uuid}`).
+          schema:
+            type: string
+            example: "eq.550e8400-e29b-41d4-a716-446655440001"
+        - name: is_primary
+          in: query
+          description: Filter to primary image only (`eq.true`).
+          schema:
+            type: string
+            example: "eq.true"
+        - $ref: '#/components/parameters/OrderParam'
+      responses:
+        '200':
+          description: Array of product images
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductImage'
+
+  /product_categories:
+    get:
+      summary: List product-category associations
+      description: |
+        Junction table linking products to categories. Query by `product_id` to get
+        a product's categories, or by `category_id` to get a category's products.
+      tags:
+        - Products (public)
+      security:
+        - AnonKey: []
+      parameters:
+        - name: product_id
+          in: query
+          description: Filter by product ID (`eq.{uuid}`).
+          schema:
+            type: string
+        - name: category_id
+          in: query
+          description: Filter by category ID (`eq.{uuid}`).
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Array of product-category associations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    product_id:
+                      type: string
+                      format: uuid
+                    category_id:
+                      type: string
+                      format: uuid
+
+  /product_variants:
+    get:
+      summary: List product variants
+      description: |
+        Returns product variants (e.g. sizes, colors). Filter by `product_id` to get
+        variants for a specific product.
+
+        **Recommended query:**
+        `?product_id=eq.{PRODUCT_ID}&status=eq.active`
+      tags:
+        - Products (public)
+      security:
+        - AnonKey: []
+      parameters:
+        - name: product_id
+          in: query
+          description: Filter variants by product ID (`eq.{uuid}`).
+          schema:
+            type: string
+            example: "eq.550e8400-e29b-41d4-a716-446655440001"
+        - name: status
+          in: query
+          description: Filter by variant status (`eq.active`).
+          schema:
+            type: string
+            example: "eq.active"
+      responses:
+        '200':
+          description: Array of product variants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductVariant'
+
+  /product_reviews:
+    get:
+      summary: List product reviews
+      description: |
+        Returns approved product reviews. Only reviews with `status=approved` are
+        publicly visible. Filter by `product_id` to get reviews for a specific product.
+
+        **Recommended query:**
+        `?product_id=eq.{PRODUCT_ID}&status=eq.approved&order=created_at.desc`
+      tags:
+        - Products (public)
+      security:
+        - AnonKey: []
+      parameters:
+        - name: product_id
+          in: query
+          description: Filter reviews by product ID (`eq.{uuid}`).
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by review status. Public access limited to `eq.approved`.
+          schema:
+            type: string
+            example: "eq.approved"
+        - $ref: '#/components/parameters/OrderParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: Array of approved product reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductReview'
+
+  /brands:
+    get:
+      summary: List brands
+      description: |
+        Returns active brands. Filter by `party_id` to get your org's brands.
+      tags:
+        - Products (public)
+      security:
+        - AnonKey: []
+      parameters:
+        - $ref: '#/components/parameters/PartyIdFilter'
+        - name: status
+          in: query
+          description: Filter by brand status (`eq.active`).
+          schema:
+            type: string
+            example: "eq.active"
+      responses:
+        '200':
+          description: Array of brands
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    party_id:
+                      type: string
+                      format: uuid
+                    name:
+                      type: string
+                    slug:
+                      type: string
+                    status:
+                      type: string
+                      enum: [active, inactive]
+
+  # ─────────────────────────────────────────────
+  # AUTHENTICATED ENDPOINTS — anon key + Bearer JWT
+  # ─────────────────────────────────────────────
+
+  /cart_items:
+    get:
+      summary: Get cart items
+      description: |
+        Returns the authenticated user's cart. RLS automatically scopes results to
+        the current user — no user_id filter needed.
+      tags:
+        - Cart (authenticated)
+      security:
+        - AnonKey: []
+          BearerToken: []
+      parameters:
+        - $ref: '#/components/parameters/SelectParam'
+      responses:
+        '200':
+          description: Array of cart items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CartItem'
+        '401':
+          description: Missing or invalid JWT
+    post:
+      summary: Add item to cart
+      description: Add a product (or variant) to the authenticated user's cart.
+      tags:
+        - Cart (authenticated)
+      security:
+        - AnonKey: []
+          BearerToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id, quantity]
+              properties:
+                product_id:
+                  type: string
+                  format: uuid
+                variant_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+                quantity:
+                  type: integer
+                  minimum: 1
+            example:
+              product_id: "550e8400-e29b-41d4-a716-446655440001"
+              variant_id: null
+              quantity: 2
+      responses:
+        '201':
+          description: Cart item created
+        '401':
+          description: Missing or invalid JWT
+    patch:
+      summary: Update cart item quantity
+      description: |
+        Update the quantity of an existing cart item.
+        Use the PostgREST filter: `?id=eq.{cart_item_id}`
+      tags:
+        - Cart (authenticated)
+      security:
+        - AnonKey: []
+          BearerToken: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Cart item ID to update (`eq.{uuid}`).
+          schema:
+            type: string
+            example: "eq.550e8400-e29b-41d4-a716-446655440099"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 1
+      responses:
+        '204':
+          description: Updated
+        '401':
+          description: Missing or invalid JWT
+    delete:
+      summary: Remove item from cart
+      description: |
+        Remove an item from the cart.
+        Use the PostgREST filter: `?id=eq.{cart_item_id}`
+      tags:
+        - Cart (authenticated)
+      security:
+        - AnonKey: []
+          BearerToken: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Cart item ID to delete (`eq.{uuid}`).
+          schema:
+            type: string
+            example: "eq.550e8400-e29b-41d4-a716-446655440099"
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          description: Missing or invalid JWT
+
+  /wishlist_items:
+    get:
+      summary: Get wishlist items
+      description: Returns the authenticated user's wishlist. Auto-scoped by RLS.
+      tags:
+        - Wishlist (authenticated)
+      security:
+        - AnonKey: []
+          BearerToken: []
+      parameters:
+        - $ref: '#/components/parameters/SelectParam'
+        - $ref: '#/components/parameters/OrderParam'
+      responses:
+        '200':
+          description: Array of wishlist items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WishlistItem'
+        '401':
+          description: Missing or invalid JWT
+    post:
+      summary: Add item to wishlist
+      tags:
+        - Wishlist (authenticated)
+      security:
+        - AnonKey: []
+          BearerToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id]
+              properties:
+                product_id:
+                  type: string
+                  format: uuid
+                variant_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+      responses:
+        '201':
+          description: Wishlist item created
+        '401':
+          description: Missing or invalid JWT
+    delete:
+      summary: Remove item from wishlist
+      description: Use filter `?id=eq.{wishlist_item_id}` to target specific item.
+      tags:
+        - Wishlist (authenticated)
+      security:
+        - AnonKey: []
+          BearerToken: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Wishlist item ID (`eq.{uuid}`).
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          description: Missing or invalid JWT
+
+  /orders:
+    get:
+      summary: Get orders (customer view)
+      description: |
+        Returns orders for the authenticated user. RLS restricts results to the
+        current user's own orders only.
+      tags:
+        - Orders (authenticated)
+      security:
+        - AnonKey: []
+          BearerToken: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by order status (`eq.pending`, `eq.delivered`, etc.).
+          schema:
+            type: string
+        - $ref: '#/components/parameters/OrderParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: Array of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '401':
+          description: Missing or invalid JWT
+    post:
+      summary: Create order (checkout)
+      description: |
+        Create a new order from the user's cart or explicit items. After a successful
+        order, you should clear the relevant cart items.
+      tags:
+        - Orders (authenticated)
+      security:
+        - AnonKey: []
+          BearerToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [party_id, shipping_address_id]
+              properties:
+                party_id:
+                  type: string
+                  format: uuid
+                  description: The organization (eshop) this order is placed with.
+                shipping_address_id:
+                  type: string
+                  format: uuid
+                coupon_code:
+                  type: string
+                  nullable: true
+                items:
+                  type: array
+                  description: Explicit items to order. If omitted, items come from cart.
+                  items:
+                    type: object
+                    properties:
+                      product_id:
+                        type: string
+                        format: uuid
+                      variant_id:
+                        type: string
+                        format: uuid
+                        nullable: true
+                      quantity:
+                        type: integer
+                        minimum: 1
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Missing or invalid JWT
+
+  # ─────────────────────────────────────────────
+  # EDGE FUNCTIONS
+  # ─────────────────────────────────────────────
+
+  /delete-account:
+    post:
+      summary: Delete own account
+      description: |
+        Permanently deletes the authenticated user's account from Supabase Auth.
+        This action is irreversible. All associated data may be cascade-deleted
+        depending on your database FK policies.
+
+        **Base URL for this endpoint:** `https://{project_ref}.supabase.co/functions/v1`
+      tags:
+        - Account (Edge Functions)
+      security:
+        - AnonKey: []
+          BearerToken: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Empty body is acceptable.
+      responses:
+        '200':
+          description: Account deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          description: Missing or invalid JWT
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized"
+        '500':
+          description: Server error during deletion
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /hello-template:
+    get:
+      summary: Health check / template demo
+      description: |
+        Returns a hello message and the current user's ID if authenticated.
+        Used to verify that Edge Functions are deployed and reachable.
+
+        **Base URL for this endpoint:** `https://{project_ref}.supabase.co/functions/v1`
+      tags:
+        - Account (Edge Functions)
+      security:
+        - AnonKey: []
+      responses:
+        '200':
+          description: Hello message
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Hello from template!"
+                  userId:
+                    type: string
+                    format: uuid
+                    nullable: true
+                    description: Current user's ID, or null if unauthenticated.

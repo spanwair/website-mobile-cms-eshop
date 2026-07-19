@@ -1,0 +1,18 @@
+{
+  "night": 3,
+  "project": "/home/jan/PROJECTS/react-native/website-mobile-template",
+  "started_at": "2026-07-19T15:09:15",
+  "ended_at": "2026-07-19T15:15:28",
+  "n_sessions": 7,
+  "n_tasks": 3,
+  "n_replayed": 3,
+  "baseline_score": 0.16666666666666666,
+  "candidate_score": 0.16666666666666666,
+  "accepted": false,
+  "gate_action": "reject",
+  "no_edits_reason": "",
+  "edits": [],
+  "rejected_edits": [],
+  "tokens_used": 9724,
+  "notes": []
+}

@@ -1,7 +1,7 @@
 ---
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
-import { fetchCustomer, updateCustomer } from "@shared/services/customerService";
+import { fetchCustomer, updateCustomer, addAddress, deleteAddress } from "@shared/services/customerService";
 import { fetchOrders } from "@shared/services/orderService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
@@ -25,20 +25,46 @@ let error = "";
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
-  const result = await updateCustomer(supabase, id!, {
-    first_name: form.get("first_name") as string,
-    last_name: form.get("last_name") as string,
-    email: form.get("email") as string,
-    phone: (form.get("phone") as string) || null,
-    is_active: form.get("is_active") === "on",
-    notes: (form.get("notes") as string) || null,
-  });
-  if (result.error) { error = result.error.message; }
-  else { return Astro.redirect(`/admin/customers/${id}`); }
+  const action = form.get("_action") as string;
+
+  if (action === "add_address") {
+    const result = await addAddress(supabase, {
+      customer_id: id!,
+      type: (form.get("type") as "shipping" | "billing") || "shipping",
+      first_name: form.get("first_name") as string,
+      last_name: form.get("last_name") as string,
+      line1: form.get("street") as string,
+      line2: (form.get("building_number") as string) || null,
+      city: form.get("city") as string,
+      postal_code: form.get("postal_code") as string,
+      country_code: (form.get("country_code") as string) || "CZ",
+      is_default: form.get("is_default") === "on",
+    });
+    if (result.error) { error = result.error.message; }
+    else { return Astro.redirect(`/admin/customers/${id}`); }
+  } else if (action === "delete_address") {
+    const addressId = form.get("address_id") as string;
+    const result = await deleteAddress(supabase, addressId);
+    if (result.error) { error = result.error.message; }
+    else { return Astro.redirect(`/admin/customers/${id}`); }
+  } else {
+    const result = await updateCustomer(supabase, id!, {
+      first_name: form.get("first_name") as string,
+      last_name: form.get("last_name") as string,
+      email: form.get("email") as string,
+      phone: (form.get("phone") as string) || null,
+      is_active: form.get("is_active") === "on",
+      notes: (form.get("notes") as string) || null,
+    });
+    if (result.error) { error = result.error.message; }
+    else { return Astro.redirect(`/admin/customers/${id}`); }
+  }
 }
 
 const customer = await fetchCustomer(supabase, id!);
 if (!customer) return Astro.redirect("/admin/customers");
+
+const showAddressForm = Astro.url.searchParams.get("addAddress") === "1";
 
 const orders = partyId
   ? (await fetchOrders(supabase, partyId, { customer_id: id, pageSize: 10 })).data
@@ -62,6 +88,7 @@ function statusClass(s: string) {
       <div class="card">
         <h2 class="section-title">{t.admin.customers.sectionPersonal}</h2>
         <form method="POST" class="info-form">
+          <input type="hidden" name="_action" value="update_customer" />
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">{t.admin.customers.fieldFirstName}</label>
@@ -94,18 +121,99 @@ function statusClass(s: string) {
         </form>
       </div>
 
-      {customer.addresses.length > 0 && (
-        <div class="card" style="margin-top:16px">
+      <div class="card" style="margin-top:16px">
+        <div class="section-header">
           <h2 class="section-title">{t.admin.customers.sectionAddresses} ({customer.addresses.length})</h2>
-          {customer.addresses.map((addr) => (
-            <div class="address-card">
-              <span class={`badge ${addr.is_default ? "badge-active" : "badge-inactive"}`}>{addr.type}</span>
-              {addr.is_default && <span class="badge badge-pending" style="margin-left:4px">{t.admin.customers.defaultBadge}</span>}
-              <p style="margin-top:8px;font-size:14px">{addr.first_name} {addr.last_name}<br />{addr.line1}{addr.line2 ? `, ${addr.line2}` : ""}<br />{addr.city} {addr.postal_code}, {addr.country_code}</p>
-            </div>
-          ))}
+          {!showAddressForm && (
+            <a href={`/admin/customers/${id}?addAddress=1`} class="btn btn-secondary btn-sm">{t.admin.customers.addAddressBtn}</a>
+          )}
         </div>
-      )}
+
+        {customer.addresses.length === 0 && !showAddressForm && (
+          <p class="empty-text">{t.admin.customers.noAddresses}</p>
+        )}
+
+        {customer.addresses.map((addr) => (
+          <div class="address-card">
+            <div class="address-card-header">
+              <div>
+                <span class={`badge ${addr.is_default ? "badge-active" : "badge-inactive"}`}>{addr.type}</span>
+                {addr.is_default && <span class="badge badge-pending" style="margin-left:4px">{t.admin.customers.defaultBadge}</span>}
+              </div>
+              <form method="POST" onsubmit="return confirm('Delete this address?')">
+                <input type="hidden" name="_action" value="delete_address" />
+                <input type="hidden" name="address_id" value={addr.id} />
+                <button type="submit" class="btn btn-ghost btn-sm btn-danger">{t.admin.customers.deleteAddressBtn}</button>
+              </form>
+            </div>
+            <p class="address-text">
+              {addr.first_name} {addr.last_name}<br />
+              {addr.line1}{addr.line2 ? ` ${addr.line2}` : ""}<br />
+              {addr.postal_code} {addr.city}, {addr.country_code}
+            </p>
+          </div>
+        ))}
+
+        {showAddressForm && (
+          <div class="add-address-form">
+            <h3 class="subsection-title">{t.admin.customers.addAddressTitle}</h3>
+            <form method="POST" class="info-form">
+              <input type="hidden" name="_action" value="add_address" />
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">{t.admin.customers.fieldStreet}</label>
+                  <input class="form-input" name="street" required placeholder="Václavské náměstí" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">{t.admin.customers.fieldBuildingNumber}</label>
+                  <input class="form-input" name="building_number" required placeholder="1" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">{t.admin.customers.fieldPostalCode}</label>
+                  <input class="form-input" name="postal_code" required placeholder="110 00" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">{t.admin.customers.fieldCity}</label>
+                  <input class="form-input" name="city" required placeholder="Praha" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">{t.admin.customers.fieldCountry}</label>
+                  <input class="form-input" name="country_code" value="CZ" maxlength="2" style="text-transform:uppercase" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">{t.admin.customers.fieldAddressType}</label>
+                  <select class="form-input" name="type">
+                    <option value="shipping">Shipping</option>
+                    <option value="billing">Billing</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">{t.admin.customers.fieldFirstName}</label>
+                  <input class="form-input" name="first_name" required value={customer.first_name} />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">{t.admin.customers.fieldLastName}</label>
+                  <input class="form-input" name="last_name" required value={customer.last_name} />
+                </div>
+              </div>
+              <div class="form-check">
+                <input type="checkbox" name="is_default" id="addr_is_default" />
+                <label for="addr_is_default">{t.admin.customers.fieldIsDefault}</label>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">{t.admin.customers.saveAddressBtn}</button>
+                <a href={`/admin/customers/${id}`} class="btn btn-ghost">{t.admin.customers.cancelBtn}</a>
+              </div>
+            </form>
+          </div>
+        )}
+      </div>
     </div>
 
     <div class="card">
@@ -137,11 +245,22 @@ function statusClass(s: string) {
   .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
   .customer-grid { display:grid; grid-template-columns:3fr 2fr; gap:24px; }
   .section-title { font-size:15px; font-weight:700; margin-bottom:16px; }
+  .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .section-header .section-title { margin-bottom:0; }
+  .subsection-title { font-size:14px; font-weight:600; margin-bottom:14px; color:var(--text-primary); }
   .info-form { display:flex; flex-direction:column; gap:14px; }
   .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
   .form-check input { width:auto; }
+  .form-actions { display:flex; gap:10px; align-items:center; }
+  .btn-sm { padding:5px 10px; font-size:12px; }
+  .btn-danger { color:var(--error); }
+  .btn-danger:hover { background:rgba(239,68,68,0.08); }
+  .empty-text { font-size:14px; color:var(--text-muted); }
   .address-card { padding:12px 0; border-bottom:1px solid var(--border-default); }
   .address-card:last-child { border-bottom:none; }
+  .address-card-header { display:flex; justify-content:space-between; align-items:center; }
+  .address-text { margin-top:8px; font-size:14px; line-height:1.6; color:var(--text-secondary); }
+  .add-address-form { margin-top:16px; padding-top:16px; border-top:1px solid var(--border-default); }
   @media(max-width:768px) { .customer-grid { grid-template-columns:1fr; } .form-row { grid-template-columns:1fr; } }
 </style>

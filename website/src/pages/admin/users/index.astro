@@ -23,6 +23,8 @@ if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const userId = form.get("user_id") as string;
   const newRole = Number(form.get("role"));
+  const partyId = (form.get("party_id") as string) || null;
+  const rawPartyIds = form.getAll("party_ids") as string[];
 
   if (!Object.values(ROLE).includes(newRole as typeof ROLE[keyof typeof ROLE])) {
     error = t.admin.users.errorInvalidRole;
@@ -33,15 +35,39 @@ if (Astro.request.method === "POST") {
       .from("profiles")
       .update({ role: newRole })
       .eq("id", userId);
-    if (updateErr) { error = updateErr.message; }
-    else { return Astro.redirect("/admin/users"); }
+    if (updateErr) {
+      error = updateErr.message;
+    } else {
+      const validPartyIds = new Set(ctx.parties.map(p => p.id));
+      const selectedPartyIds =
+        newRole === ROLE.ESHOP_ADMIN
+          ? (partyId && validPartyIds.has(partyId) ? [partyId] : [])
+          : newRole === ROLE.ADMIN
+            ? rawPartyIds.filter(pid => validPartyIds.has(pid))
+            : [];
+      for (const pid of selectedPartyIds) {
+        const { data: sysRole } = await supabase
+          .from("roles")
+          .select("id")
+          .eq("party_id", pid)
+          .eq("is_system", true)
+          .limit(1)
+          .maybeSingle();
+        if (sysRole) {
+          await supabase.from("user_party_roles").upsert(
+            { user_id: userId, party_id: pid, role_id: sysRole.id },
+            { ignoreDuplicates: true }
+          );
+        }
+      }
+      return Astro.redirect("/admin/users");
+    }
   }
 }
 
 const users = await fetchUsersForAdmin(supabase, myRole, ctx.partyId);
 const canAssign = assignableRoles(myRole);
 
-// For a given user row, can the current viewer change their role?
 function canChangeUser(u: { id: string; role: number; admin_assigned_by: string | null }): boolean {
   if (u.id === session.user.id) return false;
   if (u.role >= ROLE.OWNER) return false;
@@ -51,7 +77,6 @@ function canChangeUser(u: { id: string; role: number; admin_assigned_by: string 
   return canAssign.length > 0;
 }
 
-// Roles available in the dropdown for a given target user.
 function rolesForUser(u: { role: number }): typeof canAssign {
   if (u.role === ROLE.ADMIN) return canAssign.filter(r => r < ROLE.ADMIN);
   return canAssign;
@@ -97,13 +122,29 @@ function roleClass(r: number) {
               {canChangeUser(u) && (
                 <form method="POST" class="role-form">
                   <input type="hidden" name="user_id" value={u.id} />
-                  <select class="form-input role-select" name="role">
+                  <select class="form-input role-select" name="role" onchange="onRoleChange(this)">
                     {rolesForUser(u).map(r => (
                       <option value={r} selected={u.role === r}>
                         {ROLE_LABEL[r as keyof typeof ROLE_LABEL]}
                       </option>
                     ))}
                   </select>
+                  {ctx.parties.length > 0 && (
+                    <>
+                      <select name="party_id" class="form-input party-single" style="display:none;width:160px;font-size:13px">
+                        <option value="">{t.admin.users.pickOrg}</option>
+                        {ctx.parties.map(p => <option value={p.id}>{p.name}</option>)}
+                      </select>
+                      <div class="party-multi" style="display:none">
+                        <span class="party-multi-label">{t.admin.users.pickOrgs}</span>
+                        {ctx.parties.map(p => (
+                          <label class="party-check">
+                            <input type="checkbox" name="party_ids" value={p.id} /> {p.name}
+                          </label>
+                        ))}
+                      </div>
+                    </>
+                  )}
                   <button type="submit" class="btn btn-secondary" style="padding:7px 12px;font-size:13px">
                     {t.admin.users.applyBtn}
                   </button>
@@ -117,10 +158,25 @@ function roleClass(r: number) {
   </div>
 </CmsLayout>
 
+<script define:vars={{ ROLE_ESHOP_ADMIN: ROLE.ESHOP_ADMIN, ROLE_ADMIN: ROLE.ADMIN }}>
+function onRoleChange(sel) {
+  const form = sel.closest('form');
+  const single = form.querySelector('.party-single');
+  const multi = form.querySelector('.party-multi');
+  const role = Number(sel.value);
+  if (single) single.style.display = role === ROLE_ESHOP_ADMIN ? '' : 'none';
+  if (multi) multi.style.display = role === ROLE_ADMIN ? '' : 'none';
+}
+document.querySelectorAll('.role-select').forEach(sel => onRoleChange(sel));
+</script>
+
 <style>
   .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
   .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
   .total-label { font-size:14px; color:var(--text-muted); }
-  .role-form { display:flex; gap:6px; align-items:center; }
+  .role-form { display:flex; gap:6px; align-items:flex-start; flex-wrap:wrap; }
   .role-select { width:140px; padding:6px 10px; font-size:13px; }
+  .party-multi { display:flex; flex-direction:column; gap:4px; border:1px solid var(--border); border-radius:6px; padding:6px 10px; background:var(--surface); }
+  .party-multi-label { font-size:11px; color:var(--text-muted); margin-bottom:2px; }
+  .party-check { display:flex; align-items:center; gap:5px; font-size:13px; white-space:nowrap; cursor:pointer; }
 </style>

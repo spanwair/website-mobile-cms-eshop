@@ -1,41 +1,64 @@
 ---
 title: Dashboard
-description: Understanding the admin dashboard and its KPI cards.
+description: The admin dashboard gives you an at-a-glance overview of your store's key performance indicators, recent orders, and activity.
 ---
 
-## What you see on the dashboard
+The Dashboard is the home page of your admin panel. It shows live KPIs, your five most recent orders, and a summary of recent activity. Every admin with the **VIEW_DASHBOARD** permission lands here after login.
 
-When you log in to the admin panel, the **Dashboard** (`/admin`) shows a quick overview of your shop's current state.
+## Permission required
 
-## KPI cards
+| Permission bit | Name | Who has it by default |
+|---|---|---|
+| 1 | VIEW_DASHBOARD | Owner, Admin, Eshop Admin |
 
-The dashboard shows **6 stat cards** at the top:
+If your role does not include VIEW_DASHBOARD, you are redirected to [Notifications](/admin/notifications) instead.
+
+## Understanding the KPI cards
+
+Four cards appear at the top of the dashboard:
 
 | Card | What it shows |
-|------|---------------|
-| Total Products | Count of all products in your catalog |
-| Active Products | Products with status = "active" (visible to customers) |
-| Total Orders | All orders ever placed |
-| Pending Orders | Orders waiting to be processed |
-| Total Customers | Registered customer accounts |
-| Low Stock Items | Inventory items below their threshold |
+|---|---|
+| Total Users | Count of all profiles in your organization |
+| Active Users | Profiles where `is_active = true` |
+| Products | Total products belonging to your organization |
+| Orders | Total order count across all statuses |
+| Revenue | Sum of all order totals (all time) |
 
-These numbers update in real time every time you reload the page.
+These numbers update on every page load — they always reflect the current state of the database.
 
-## Recent orders
+## Recent orders table
 
-Below the KPI cards, you see a list of the most recent orders. Click any order number to open its detail page and process it.
+The table shows the **5 most recent orders** for your organization. Each row contains:
 
-## Sidebar navigation
+| Column | Description |
+|---|---|
+| Order number | Unique identifier — click to open the full [order detail](/admin/orders) |
+| Status | Current order status (Pending, Confirmed, Processing, etc.) |
+| Total | Order grand total including tax and shipping |
+| Date | When the order was placed |
 
-The left sidebar links to every section of the admin panel. Which links you see depends on your role and permissions — sections you don't have access to are hidden.
+Click any row to go directly to that order's detail page.
 
-## Getting to the dashboard
+## Revenue chart
 
-- Direct URL: `http://localhost:4321/admin` (local) or your production domain `/admin`
-- After logging in, you are redirected to `/dashboard` (public profile page). Click the "Admin" link to go to the admin panel.
-- Bookmark `/admin` for quick access.
+The revenue chart area is currently a placeholder. Full chart functionality is on the [roadmap](/roadmap/future).
 
-## No organization yet?
+## Recent activity
 
-If you log in and see a message saying you need to join an organization, contact your Owner to add you to a party. Without an organization, you cannot manage any data.
+The recent activity section shows a stub of the audit log. For the full audit trail, go to [Audit Log](/admin/audit) (requires MANAGE_AUDIT permission).
+
+## How to use
+
+1. Check the KPI cards each morning to spot unexpected drops in active users or orders.
+2. Use the Recent Orders table to quickly open and process orders that just came in.
+3. If a KPI looks wrong, navigate to the relevant section — [Orders](/admin/orders), [Products](/admin/products), or [Customers](/admin/customers) — to investigate.
+4. If you see "No organization yet" instead of the dashboard, ask your Owner to add you via [Organizations](/admin/parties).
+
+## Related pages
+
+- [Orders](/admin/orders) — full order list and processing
+- [Products](/admin/products) — manage your product catalog
+- [Reports](/admin/reports) — revenue and order aggregations
+- [Organizations](/admin/parties) — manage your organization settings
+- [Audit Log](/admin/audit) — full activity history

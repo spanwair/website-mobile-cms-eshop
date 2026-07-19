@@ -295,10 +295,8 @@ test.describe("15-C — ADMIN: full access within org", () => {
     await expectAccess(adminPage, "/admin/parties");
   });
 
-  test("15-C-11 admin is blocked from /admin/parties/new (owner-only)", async () => {
-    await adminPage.goto(`${BASE}/admin/parties/new`);
-    await adminPage.waitForLoadState("networkidle");
-    await expect(adminPage).not.toHaveURL(`${BASE}/admin/parties/new`);
+  test("15-C-11 admin can access /admin/parties/new", async () => {
+    await expectAccess(adminPage, "/admin/parties/new");
   });
 
   test("15-C-12 admin accesses /admin/reports", async () => {

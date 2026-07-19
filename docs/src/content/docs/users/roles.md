@@ -24,9 +24,10 @@ The CMS uses a **numeric role system** where higher numbers mean more power. Eve
 
 ### Admin (role = 4)
 - Sees **everyone in their own organization**, but not Owners (role 8)
-- Can assign roles up to Eshop Admin (2) to others
+- Can assign roles up to **and including Admin (4)** to others — an Admin can promote a peer to Admin
 - Full access to products, orders, customers, inventory within their org
-- Cannot create or modify other Admins or Owners
+- **Can create new organizations** — but can only read, write, or delete data within organizations they are assigned to
+- Cannot create or modify Owners
 
 ### Eshop Admin (role = 2)
 - Sees **only Eshop Admins and Users** (roles 1–2) within their organization
@@ -56,8 +57,15 @@ Only **Owners** and **Admins** can change roles, and only for users with a lower
 3. Select the new role from the dropdown
 4. Click **Apply**
 
-> **Important**: You can never assign a role equal to or higher than your own. An Admin (4) cannot create another Admin or an Owner.
+> **Important**: You can never assign a role higher than your own. An Admin (4) **can** assign another Admin (peer), but cannot create an Owner. An Eshop Admin (2) can only assign the User (1) role.
 
 ## The "You" indicator
 
-In the users table, your own row shows **"You"** (or "Vy" in Czech) instead of a role dropdown — you cannot change your own role.
+In the users table, your own row shows **"You"** instead of a role dropdown — you cannot change your own role.
+
+## Related
+
+- [Permissions System](/users/permissions) — which permission bits each role grants and how bitmasks work
+- [Roles (admin page)](/admin/roles) — create and manage custom roles for Eshop Admins
+- [Users (admin page)](/admin/users) — assign roles to users
+- [Organizations (admin page)](/admin/parties) — invite members with specific roles to your org

@@ -1,0 +1,24 @@
+{
+  "night": 3,
+  "backend": "claude",
+  "gate_mode": "on",
+  "n_tasks": 3,
+  "baseline_score": 0.16666666666666666,
+  "candidate_score": 0.16666666666666666,
+  "accepted": false,
+  "n_applied_edits": 0,
+  "n_rejected_edits": 0,
+  "call_error": "",
+  "reflect_raw_head": "",
+  "holdout_detail": [
+    {
+      "id": "llm_d408444fc337",
+      "reference_kind": "rule",
+      "hard": 0.0,
+      "soft": 0.3333333333333333,
+      "response_len": 11322,
+      "response_head": "<function_calls>\n<invoke name=\"mcp__bash__bash\">\n<parameter name=\"command\">python3 -c \"print('hello')\" 2>&1</parameter>\n</invoke>\n</function_calls>\n\n<function_calls>\n<invoke name=\"mcp__bash__bash\">\n<p",
+      "why": "failed: contains=owner, section_present=owner"
+    }
+  ]
+}
