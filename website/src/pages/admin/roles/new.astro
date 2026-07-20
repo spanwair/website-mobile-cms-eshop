@@ -31,7 +31,7 @@ if (Astro.request.method === "POST") {
     if (!isNaN(n) && n > 0) permBits |= n;
   }
 
-  const result = await createRole(supabase, partyId, name, permBits, description);
+  const result = await createRole(supabase, name, permBits, description);
   if (result.error) {
     error = result.error.message;
   } else {

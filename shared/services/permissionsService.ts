@@ -17,12 +17,11 @@ export async function getUserPermissions(
   return data as number;
 }
 
-export async function fetchRoles(client: Client, partyId: string): Promise<Role[]> {
+export async function fetchRoles(client: Client): Promise<Role[]> {
   const { data, error } = await client
     .from("roles")
     .select("*")
-    .eq("party_id", partyId)
-    .order("is_system", { ascending: false })
+    .is("party_id", null)
     .order("name", { ascending: true });
 
   if (error) throw new Error(error.message);
@@ -31,14 +30,13 @@ export async function fetchRoles(client: Client, partyId: string): Promise<Role[
 
 export async function createRole(
   client: Client,
-  partyId: string,
   name: string,
   permissions: number,
   description?: string
 ): Promise<{ data: Role | null; error: Error | null }> {
   const { data, error } = await client
     .from("roles")
-    .insert({ party_id: partyId, name, permissions, description: description ?? null })
+    .insert({ name, permissions, description: description ?? null })
     .select()
     .single();
 

@@ -39,14 +39,6 @@ function psql(sql: string) {
   }
 }
 
-function psqlRaw(sql: string) {
-  return execSync(
-    `PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres --tuples-only -c "${sql}"`,
-    { stdio: "pipe" }
-  )
-    .toString()
-    .trim();
-}
 
 function apiPut(path: string, body: Record<string, unknown>) {
   return execSync(
@@ -111,7 +103,12 @@ export default async function globalSetup() {
   psql(`${replica} DELETE FROM public.warehouses WHERE id = '${WAREHOUSE_ID}'; ${defaultRole}`);
   psql(`${replica} DELETE FROM public.categories WHERE party_id = '${PARTY_ID}' OR id = '${CATEGORY_ID}'; ${defaultRole}`);
   psql(`${replica} DELETE FROM public.user_party_roles WHERE party_id IN ('${PARTY_ID}', '${PARTY2_ID}'); ${defaultRole}`);
-  psql(`${replica} DELETE FROM public.roles WHERE party_id IN ('${PARTY_ID}', '${PARTY2_ID}'); ${defaultRole}`);
+  // Delete only the known seeded role IDs — preserves custom roles created manually for these parties
+  psql(`${replica} DELETE FROM public.roles WHERE id IN (
+    '22222222-2222-2222-2222-222222222222',
+    '${LIMITED_ESHOP_ROLE_ID}',
+    '${DASHBOARD_PROD_CAT_ROLE_ID}'
+  ); ${defaultRole}`);
   psql(`${replica} DELETE FROM public.parties WHERE id IN ('${PARTY_ID}', '${PARTY2_ID}') OR slug IN ('second-org', 'test-org-2', 'e2e-party', 'full-fields-org', 'other-organisation') OR slug LIKE 'e2e-org-%'; ${defaultRole}`);
 
   console.log("[global-setup] Cleanup done.");
@@ -144,38 +141,28 @@ export default async function globalSetup() {
     ${defaultRole}
   `);
 
-  // Get or create Super Admin role (trigger fires on party INSERT)
-  let superAdminRoleId = psqlRaw(`
-    SELECT id FROM public.roles
-    WHERE party_id = '${PARTY_ID}' AND name = 'Super Admin'
-    LIMIT 1;
+  // Seed global Super Admin role (full permissions) for test party memberships
+  psql(`
+    ${replica}
+    INSERT INTO public.roles (id, name, permissions, is_system)
+    VALUES ('22222222-2222-2222-2222-222222222222', 'Super Admin', 32767, false)
+    ON CONFLICT (id) DO UPDATE SET permissions = 32767;
+    ${defaultRole}
   `);
 
-  if (!superAdminRoleId) {
-    psql(`
-      ${replica}
-      INSERT INTO public.roles (id, party_id, name, permissions, is_system)
-      VALUES ('22222222-2222-2222-2222-222222222222', '${PARTY_ID}', 'Super Admin', 32767, true)
-      ON CONFLICT DO NOTHING;
-      ${defaultRole}
-    `);
-    superAdminRoleId = "22222222-2222-2222-2222-222222222222";
-  }
-
-  // Link admin to party as Super Admin
+  // Link admin and eshop to PARTY_ID as Super Admin
   psql(`
     ${replica}
     INSERT INTO public.user_party_roles (user_id, party_id, role_id)
-    VALUES ('${ADMIN_ID}', '${PARTY_ID}', '${superAdminRoleId.trim()}')
+    VALUES ('${ADMIN_ID}', '${PARTY_ID}', '22222222-2222-2222-2222-222222222222')
     ON CONFLICT DO NOTHING;
     ${defaultRole}
   `);
 
-  // Link eshop@test.com to party with Super Admin role (full permissions for standard tests)
   psql(`
     ${replica}
     INSERT INTO public.user_party_roles (user_id, party_id, role_id)
-    VALUES ('${ESHOP_ID}', '${PARTY_ID}', '${superAdminRoleId.trim()}')
+    VALUES ('${ESHOP_ID}', '${PARTY_ID}', '22222222-2222-2222-2222-222222222222')
     ON CONFLICT DO NOTHING;
     ${defaultRole}
   `);
@@ -183,8 +170,8 @@ export default async function globalSetup() {
   // Seed limited role with ONLY MANAGE_PRODUCTS (bit 8) — used to test permission isolation
   psql(`
     ${replica}
-    INSERT INTO public.roles (id, party_id, name, permissions, is_system)
-    VALUES ('${LIMITED_ESHOP_ROLE_ID}', '${PARTY_ID}', 'Products Only', 8, false)
+    INSERT INTO public.roles (id, name, permissions, is_system)
+    VALUES ('${LIMITED_ESHOP_ROLE_ID}', 'Products Only', 8, false)
     ON CONFLICT (id) DO UPDATE SET permissions = 8;
     ${defaultRole}
   `);
@@ -192,8 +179,8 @@ export default async function globalSetup() {
   // Seed dashboard+products+categories role (VIEW_DASHBOARD|MANAGE_PRODUCTS|MANAGE_CATEGORIES = 25)
   psql(`
     ${replica}
-    INSERT INTO public.roles (id, party_id, name, permissions, is_system)
-    VALUES ('${DASHBOARD_PROD_CAT_ROLE_ID}', '${PARTY_ID}', 'Dashboard+Products+Categories', 25, false)
+    INSERT INTO public.roles (id, name, permissions, is_system)
+    VALUES ('${DASHBOARD_PROD_CAT_ROLE_ID}', 'Dashboard+Products+Categories', 25, false)
     ON CONFLICT (id) DO UPDATE SET permissions = 25;
     ${defaultRole}
   `);
@@ -305,28 +292,11 @@ export default async function globalSetup() {
     ${defaultRole}
   `);
 
-  let superAdminRole2Id = psqlRaw(`
-    SELECT id FROM public.roles
-    WHERE party_id = '${PARTY2_ID}' AND name = 'Super Admin'
-    LIMIT 1;
-  `);
-
-  if (!superAdminRole2Id) {
-    psql(`
-      ${replica}
-      INSERT INTO public.roles (id, party_id, name, permissions, is_system)
-      VALUES ('22222222-2222-2222-2222-333333333333', '${PARTY2_ID}', 'Super Admin', 32767, true)
-      ON CONFLICT DO NOTHING;
-      ${defaultRole}
-    `);
-    superAdminRole2Id = "22222222-2222-2222-2222-333333333333";
-  }
-
   // Only ESHOP user belongs to PARTY2 (not ADMIN — this tests cross-org isolation)
   psql(`
     ${replica}
     INSERT INTO public.user_party_roles (user_id, party_id, role_id)
-    VALUES ('${ESHOP_ID}', '${PARTY2_ID}', '${superAdminRole2Id.trim()}')
+    VALUES ('${ESHOP_ID}', '${PARTY2_ID}', '22222222-2222-2222-2222-222222222222')
     ON CONFLICT DO NOTHING;
     ${defaultRole}
   `);

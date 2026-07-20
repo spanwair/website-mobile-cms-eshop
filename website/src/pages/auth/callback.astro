@@ -1,5 +1,5 @@
 ---
-import { createSupabase } from "../../lib/supabase";
+import { createSupabase, createAdminClient } from "../../lib/supabase";
 
 const supabase = createSupabase(Astro);
 const code = Astro.url.searchParams.get("code");
@@ -26,6 +26,8 @@ if (code) {
   }
 }
 
+let redirectTo = "/dashboard";
+
 if (userId) {
   const googleName = userMeta["full_name"] ?? userMeta["name"] ?? null;
   const googleAvatar = userMeta["avatar_url"] ?? userMeta["picture"] ?? null;
@@ -36,12 +38,33 @@ if (userId) {
     .eq("id", userId)
     .single();
 
+  const isNewUser = !existing;
+
   await supabase.from("profiles").upsert({
     id: userId,
     display_name: existing?.display_name ?? googleName ?? userEmail?.split("@")[0] ?? null,
     avatar_url: existing?.avatar_url ?? googleAvatar ?? null,
   }, { onConflict: "id" });
+
+  const adminClient = createAdminClient();
+
+  const pendingPartyId = userMeta["pending_party_id"] ?? null;
+  const pendingRoleId = userMeta["pending_role_id"] ?? null;
+  const invitedBy = userMeta["invited_by"] ?? null;
+  if (pendingPartyId && pendingRoleId) {
+    await adminClient.from("user_party_roles").upsert(
+      { user_id: userId, party_id: pendingPartyId, role_id: pendingRoleId, ...(invitedBy ? { invited_by: invitedBy } : {}) },
+      { ignoreDuplicates: true }
+    );
+  }
+
+  // Invite: always set a password (no password was set yet).
+  // Magic link + new user: they came through the invite→signup flow, still need a password.
+  // Google OAuth and regular signup confirmation: skip set-password.
+  if (type === "invite" || (type === "magiclink" && isNewUser)) {
+    redirectTo = "/auth/set-password";
+  }
 }
 
-return Astro.redirect("/dashboard");
+return Astro.redirect(redirectTo);
 ---

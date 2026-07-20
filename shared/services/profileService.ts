@@ -109,7 +109,7 @@ export async function fetchProfileWithRoles(
 
   const [permissions, roles] = await Promise.all([
     getUserPermissions(client, userId, partyId),
-    fetchRoles(client, partyId),
+    fetchRoles(client),
   ]);
 
   const { data: memberRows } = await client
@@ -127,6 +127,26 @@ export async function fetchProfileWithRoles(
     permissions,
     roles: userRoles,
   };
+}
+
+export async function fetchUserParties(
+  client: Client,
+  userIds: string[]
+): Promise<Map<string, { id: string; name: string }[]>> {
+  if (userIds.length === 0) return new Map();
+  const { data } = await client
+    .from("user_party_roles")
+    .select("user_id, parties(id, name)")
+    .in("user_id", userIds);
+  const map = new Map<string, { id: string; name: string }[]>();
+  for (const row of (data ?? [])) {
+    const party = (row as any).parties;
+    if (!party) continue;
+    if (!map.has(row.user_id)) map.set(row.user_id, []);
+    const arr = map.get(row.user_id)!;
+    if (!arr.some(p => p.id === party.id)) arr.push(party);
+  }
+  return map;
 }
 
 export async function updateLastLogin(

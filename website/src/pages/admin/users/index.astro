@@ -1,7 +1,8 @@
 ---
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
-import { fetchUsersForAdmin } from "@shared/services/profileService";
+import { fetchUsersForAdmin, fetchUserParties } from "@shared/services/profileService";
+import { fetchRoles } from "@shared/services/permissionsService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
 import { ROLE, ROLE_LABEL, assignableRoles, canAssignRole, PERMISSIONS, hasPermission } from "@shared/constants/permissions";
@@ -24,6 +25,7 @@ if (Astro.request.method === "POST") {
   const userId = form.get("user_id") as string;
   const newRole = Number(form.get("role"));
   const partyId = (form.get("party_id") as string) || null;
+  const customRoleId = (form.get("custom_role_id") as string) || null;
   const rawPartyIds = form.getAll("party_ids") as string[];
 
   if (!Object.values(ROLE).includes(newRole as typeof ROLE[keyof typeof ROLE])) {
@@ -31,57 +33,79 @@ if (Astro.request.method === "POST") {
   } else if (!canAssignRole(myRole, newRole)) {
     error = t.admin.users.errorRoleTooHigh;
   } else {
-    const { error: updateErr } = await supabase
-      .from("profiles")
-      .update({ role: newRole })
-      .eq("id", userId);
-    if (updateErr) {
-      error = updateErr.message;
-    } else {
-      const validPartyIds = new Set(ctx.parties.map(p => p.id));
-      const selectedPartyIds =
-        newRole === ROLE.ESHOP_ADMIN
-          ? (partyId && validPartyIds.has(partyId) ? [partyId] : [])
-          : newRole === ROLE.ADMIN
-            ? rawPartyIds.filter(pid => validPartyIds.has(pid))
-            : [];
-      for (const pid of selectedPartyIds) {
-        const { data: sysRole } = await supabase
-          .from("roles")
-          .select("id")
-          .eq("party_id", pid)
-          .eq("is_system", true)
-          .limit(1)
-          .maybeSingle();
-        if (sysRole) {
-          await supabase.from("user_party_roles").upsert(
-            { user_id: userId, party_id: pid, role_id: sysRole.id },
-            { ignoreDuplicates: true }
-          );
+    const actorPartyIds = ctx.parties.map(p => p.id);
+    if (actorPartyIds.length > 0) {
+      const { error: clearErr } = await supabase
+        .from("user_party_roles")
+        .delete()
+        .eq("user_id", userId)
+        .in("party_id", actorPartyIds);
+      if (clearErr) error = clearErr.message;
+    }
+    if (!error) {
+      const { error: updateErr } = await supabase
+        .from("profiles")
+        .update({ role: newRole })
+        .eq("id", userId);
+      if (updateErr) {
+        error = updateErr.message;
+      } else {
+        const validPartyIds = new Set(actorPartyIds);
+        const selectedPartyIds =
+          newRole === ROLE.ESHOP_ADMIN
+            ? (partyId && validPartyIds.has(partyId) ? [partyId] : [])
+            : newRole === ROLE.ADMIN
+              ? rawPartyIds.filter(pid => validPartyIds.has(pid))
+              : [];
+        if (newRole === ROLE.ESHOP_ADMIN && selectedPartyIds.length > 0 && customRoleId) {
+          const { data: chosenRole } = await supabase
+            .from("roles").select("id")
+            .eq("id", customRoleId)
+            .is("party_id", null)
+            .maybeSingle();
+          if (chosenRole) {
+            await supabase.from("user_party_roles").upsert(
+              { user_id: userId, party_id: selectedPartyIds[0], role_id: chosenRole.id },
+              { ignoreDuplicates: true }
+            );
+          }
+        } else if (selectedPartyIds.length > 0) {
+          const { data: globalRole } = await supabase
+            .from("roles").select("id")
+            .is("party_id", null)
+            .order("permissions", { ascending: false })
+            .limit(1).maybeSingle();
+          if (globalRole) {
+            for (const pid of selectedPartyIds) {
+              await supabase.from("user_party_roles").upsert(
+                { user_id: userId, party_id: pid, role_id: globalRole.id },
+                { ignoreDuplicates: true }
+              );
+            }
+          }
         }
+        return Astro.redirect("/admin/users");
       }
-      return Astro.redirect("/admin/users");
     }
   }
 }
 
 const users = await fetchUsersForAdmin(supabase, myRole, ctx.partyId);
 const canAssign = assignableRoles(myRole);
+const [userPartiesMap, globalRoles] = await Promise.all([
+  fetchUserParties(supabase, users.map(u => u.id)),
+  fetchRoles(supabase),
+]);
 
 function canChangeUser(u: { id: string; role: number; admin_assigned_by: string | null }): boolean {
   if (u.id === session.user.id) return false;
   if (u.role >= ROLE.OWNER) return false;
-  if (u.role === ROLE.ADMIN) {
-    return myRole >= ROLE.OWNER || (myRole === ROLE.ADMIN && u.admin_assigned_by === session.user.id);
-  }
+  if (u.role === ROLE.ADMIN) return myRole >= ROLE.OWNER || (myRole === ROLE.ADMIN && u.admin_assigned_by === session.user.id);
   return canAssign.length > 0;
 }
-
 function rolesForUser(u: { role: number }): typeof canAssign {
-  if (u.role === ROLE.ADMIN) return canAssign.filter(r => r < ROLE.ADMIN);
-  return canAssign;
+  return u.role === ROLE.ADMIN ? canAssign.filter(r => r < ROLE.ADMIN) : canAssign;
 }
-
 function roleClass(r: number) {
   if (r >= ROLE.OWNER) return "badge-error";
   if (r >= ROLE.ADMIN) return "badge-pending";
@@ -92,9 +116,20 @@ function roleClass(r: number) {
 
 <CmsLayout title={t.admin.users.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   {error && <div class="alert-error">{error}</div>}
-
   <div class="toolbar">
     <span class="total-label">{users.length} {t.admin.users.title.toLowerCase()}</span>
+  </div>
+
+  <div class="filter-bar">
+    <input id="f-name" type="text" class="form-input filter-input" placeholder={t.admin.users.colName} />
+    <input id="f-email" type="text" class="form-input filter-input" placeholder={t.admin.users.colEmail} />
+    <select id="f-role" class="form-input filter-input">
+      <option value="">{t.admin.users.filterByRole}</option>
+      {canAssign.map(r => <option value={r}>{ROLE_LABEL[r as keyof typeof ROLE_LABEL]}</option>)}
+    </select>
+    <select id="f-org" class="form-input filter-input">
+      <option value="">{t.admin.users.filterByOrg}</option>
+    </select>
   </div>
 
   <div class="card" style="padding:0;overflow:hidden">
@@ -104,79 +139,165 @@ function roleClass(r: number) {
           <th>{t.admin.users.colName}</th>
           <th>{t.admin.users.colEmail}</th>
           <th>{t.admin.users.colRole}</th>
+          <th>{t.admin.users.colOrgs}</th>
           <th>{t.admin.users.colJoined}</th>
           <th>{t.admin.users.colChangeRole}</th>
         </tr>
       </thead>
       <tbody>
-        {users.map((u) => (
-          <tr>
-            <td style="font-weight:600">{u.display_name ?? t.common.unnamed}</td>
-            <td style="color:var(--text-muted);font-size:13px">{u.email}</td>
-            <td><span class={`badge ${roleClass(u.role)}`}>{ROLE_LABEL[u.role as keyof typeof ROLE_LABEL] ?? u.role}</span></td>
-            <td style="color:var(--text-muted);font-size:13px">{new Date(u.created_at).toLocaleDateString()}</td>
-            <td>
-              {u.id === session.user.id && (
-                <span style="font-size:12px;color:var(--text-muted)">{t.admin.users.you}</span>
-              )}
-              {canChangeUser(u) && (
-                <form method="POST" class="role-form">
-                  <input type="hidden" name="user_id" value={u.id} />
-                  <select class="form-input role-select" name="role" onchange="onRoleChange(this)">
-                    {rolesForUser(u).map(r => (
-                      <option value={r} selected={u.role === r}>
-                        {ROLE_LABEL[r as keyof typeof ROLE_LABEL]}
-                      </option>
-                    ))}
-                  </select>
-                  {ctx.parties.length > 0 && (
-                    <>
-                      <select name="party_id" class="form-input party-single" style="display:none;width:160px;font-size:13px">
-                        <option value="">{t.admin.users.pickOrg}</option>
-                        {ctx.parties.map(p => <option value={p.id}>{p.name}</option>)}
-                      </select>
-                      <div class="party-multi" style="display:none">
-                        <span class="party-multi-label">{t.admin.users.pickOrgs}</span>
-                        {ctx.parties.map(p => (
-                          <label class="party-check">
-                            <input type="checkbox" name="party_ids" value={p.id} /> {p.name}
-                          </label>
+        {users.map((u) => {
+          const uParties = userPartiesMap.get(u.id) ?? [];
+          const orgNames = uParties.map(p => p.name).join(", ");
+          return (
+            <tr data-name={(u.display_name ?? "").toLowerCase()} data-email={u.email.toLowerCase()} data-role={u.role} data-orgs={uParties.map(p => p.name).join("|")}>
+              <td style="font-weight:600">{u.display_name ?? t.common.unnamed}</td>
+              <td style="color:var(--text-muted);font-size:13px">{u.email}</td>
+              <td><span class={`badge ${roleClass(u.role)}`}>{ROLE_LABEL[u.role as keyof typeof ROLE_LABEL] ?? u.role}</span></td>
+              <td style="color:var(--text-muted);font-size:13px">{orgNames || t.admin.users.noOrgs}</td>
+              <td style="color:var(--text-muted);font-size:13px">{new Date(u.created_at).toLocaleDateString()}</td>
+              <td>
+                {u.id === session.user.id
+                  ? <span style="font-size:12px;color:var(--text-muted)">{t.admin.users.you}</span>
+                  : canChangeUser(u) && (
+                    <form method="POST" class="role-form">
+                      <input type="hidden" name="user_id" value={u.id} />
+                      <select class="form-input role-select" name="role">
+                        {rolesForUser(u).map(r => (
+                          <option value={r} selected={u.role === r}>{ROLE_LABEL[r as keyof typeof ROLE_LABEL]}</option>
                         ))}
-                      </div>
-                    </>
-                  )}
-                  <button type="submit" class="btn btn-secondary" style="padding:7px 12px;font-size:13px">
-                    {t.admin.users.applyBtn}
-                  </button>
-                </form>
-              )}
-            </td>
-          </tr>
-        ))}
+                      </select>
+                      {ctx.parties.length > 0 && (
+                        <>
+                          <select name="party_id" class="form-input party-single" style="display:none;width:180px;font-size:13px">
+                            <option value="">{t.admin.users.pickOrg}</option>
+                            {ctx.parties.map(p => <option value={p.id}>{p.name}</option>)}
+                          </select>
+                          <select name="custom_role_id" class="form-input role-id-single" style="display:none;width:180px;font-size:13px">
+                            <option value="">{t.admin.users.pickRole}</option>
+                            {globalRoles.map(r => <option value={r.id}>{r.name}</option>)}
+                          </select>
+                          <div class="ms-root party-multi" style="display:none">
+                            <button type="button" class="ms-trigger">
+                              <span class="ms-label">{t.admin.users.pickOrgs}</span>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="ms-panel" hidden>
+                              {ctx.parties.map(p => (
+                                <label class="ms-option">
+                                  <input type="checkbox" name="party_ids" value={p.id} class="ms-cb" />
+                                  <span>{p.name}</span>
+                                  <svg class="ms-check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      <button type="submit" class="btn btn-secondary" style="padding:7px 12px;font-size:13px">
+                        {t.admin.users.applyBtn}
+                      </button>
+                    </form>
+                  )
+                }
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   </div>
 </CmsLayout>
 
 <script define:vars={{ ROLE_ESHOP_ADMIN: ROLE.ESHOP_ADMIN, ROLE_ADMIN: ROLE.ADMIN }}>
-function onRoleChange(sel) {
-  const form = sel.closest('form');
-  const single = form.querySelector('.party-single');
-  const multi = form.querySelector('.party-multi');
-  const role = Number(sel.value);
-  if (single) single.style.display = role === ROLE_ESHOP_ADMIN ? '' : 'none';
-  if (multi) multi.style.display = role === ROLE_ADMIN ? '' : 'none';
-}
-document.querySelectorAll('.role-select').forEach(sel => onRoleChange(sel));
+// Role picker visibility
+document.querySelectorAll('.role-select').forEach(sel => {
+  function sync() {
+    const form = sel.closest('form');
+    const role = Number(sel.value);
+    const s = form.querySelector('.party-single');
+    const r = form.querySelector('.role-id-single');
+    const m = form.querySelector('.party-multi');
+    if (s) s.style.display = role === ROLE_ESHOP_ADMIN ? '' : 'none';
+    if (r) r.style.display = role === ROLE_ESHOP_ADMIN ? '' : 'none';
+    if (m) m.style.display = role === ROLE_ADMIN ? '' : 'none';
+  }
+  sync();
+  sel.addEventListener('change', sync);
+});
+
+// Custom multi-select
+document.querySelectorAll('.ms-root').forEach(root => {
+  const trigger = root.querySelector('.ms-trigger');
+  const panel = root.querySelector('.ms-panel');
+  const label = root.querySelector('.ms-label');
+  const placeholder = label.textContent;
+
+  trigger.addEventListener('click', e => { e.stopPropagation(); panel.hidden = !panel.hidden; });
+  document.addEventListener('click', e => { if (!root.contains(e.target)) panel.hidden = true; });
+
+  root.querySelectorAll('.ms-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const names = [...root.querySelectorAll('.ms-cb:checked')].map(c => c.closest('.ms-option').querySelector('span').textContent);
+      label.textContent = names.length ? names.join(', ') : placeholder;
+    });
+  });
+});
+
+// Filters
+(function () {
+  const rows = [...document.querySelectorAll('tbody tr')];
+
+  // Populate org filter from data-orgs attributes
+  const orgSelect = document.getElementById('f-org');
+  const allOrgs = new Set();
+  rows.forEach(r => (r.dataset.orgs || '').split('|').filter(Boolean).forEach(o => allOrgs.add(o)));
+  [...allOrgs].sort().forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o;
+    opt.textContent = o;
+    orgSelect.appendChild(opt);
+  });
+
+  function applyFilters() {
+    const name = document.getElementById('f-name').value.toLowerCase();
+    const email = document.getElementById('f-email').value.toLowerCase();
+    const role = document.getElementById('f-role').value;
+    const org = orgSelect.value.toLowerCase();
+    rows.forEach(r => {
+      const match =
+        (!name  || (r.dataset.name  || '').includes(name))  &&
+        (!email || (r.dataset.email || '').includes(email)) &&
+        (!role  || r.dataset.role === role)                  &&
+        (!org   || (r.dataset.orgs || '').toLowerCase().split('|').includes(org));
+      r.style.display = match ? '' : 'none';
+    });
+  }
+
+  ['f-name', 'f-email', 'f-role', 'f-org'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', applyFilters);
+  });
+})();
 </script>
 
 <style>
   .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
-  .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
   .total-label { font-size:14px; color:var(--text-muted); }
+  .filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .filter-input { width:180px; padding:6px 10px; font-size:13px; }
   .role-form { display:flex; gap:6px; align-items:flex-start; flex-wrap:wrap; }
   .role-select { width:140px; padding:6px 10px; font-size:13px; }
-  .party-multi { display:flex; flex-direction:column; gap:4px; border:1px solid var(--border); border-radius:6px; padding:6px 10px; background:var(--surface); }
-  .party-multi-label { font-size:11px; color:var(--text-muted); margin-bottom:2px; }
-  .party-check { display:flex; align-items:center; gap:5px; font-size:13px; white-space:nowrap; cursor:pointer; }
+  /* multi-select */
+  .ms-root { position:relative; width:180px; }
+  .ms-trigger { width:100%; display:flex; justify-content:space-between; align-items:center; gap:6px; background:var(--bg-page); border:1.5px solid var(--border-strong); border-radius:var(--radius-sm); padding:6px 10px; font-size:13px; color:var(--text-primary); cursor:pointer; font-family:inherit; font-weight:400; }
+  .ms-trigger:hover { border-color:var(--accent-primary); }
+  .ms-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; text-align:left; }
+  .ms-panel { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--bg-page); border:1.5px solid var(--border-strong); border-radius:var(--radius-sm); box-shadow:var(--shadow-md); z-index:50; overflow:hidden; }
+  .ms-option { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 12px; cursor:pointer; font-size:13px; }
+  .ms-option:hover { background:var(--bg-subtle); }
+  .ms-cb { display:none; }
+  .ms-check { visibility:hidden; color:var(--accent-primary); flex-shrink:0; }
+  .ms-cb:checked ~ span { font-weight:600; }
+  .ms-cb:checked ~ .ms-check { visibility:visible; }
 </style>

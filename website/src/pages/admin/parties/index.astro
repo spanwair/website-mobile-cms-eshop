@@ -38,7 +38,7 @@ const parties = await fetchParties(supabase);
             <td style="font-weight:600">{p.name}</td>
             <td style="font-family:monospace;font-size:13px;color:var(--text-muted)">{p.slug}</td>
             <td style="color:var(--text-muted)">{p.company_name ?? "—"}</td>
-            <td><span class={`badge ${p.is_active ? "badge-active" : "badge-inactive"}`}>{p.is_active ? t.admin.parties.statusActive : t.admin.parties.statusInactive}</span></td>
+            <td><span class={`badge badge-${p.status}`}>{t.admin.parties[p.status === 'active' ? 'statusActive' : p.status === 'closed' ? 'statusClosed' : 'statusInactive']}</span></td>
             <td style="font-size:13px;color:var(--text-muted)">{new Date(p.created_at).toLocaleDateString()}</td>
             <td><a href={`/admin/parties/${p.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.parties.view}</a></td>
           </tr>

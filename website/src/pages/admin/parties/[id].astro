@@ -6,7 +6,8 @@ import { fetchRoles } from "@shared/services/permissionsService";
 import { findUserByEmail } from "@shared/services/profileService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
-import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { PERMISSIONS, hasPermission, ROLE, ROLE_LABEL, assignableRoles, canAssignRole } from "@shared/constants/permissions";
+import { sendPartyInvitation, buildDevInviteMetadata } from "../../../lib/integrations/email";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -15,7 +16,7 @@ if (!session) return Astro.redirect("/login");
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
-const { permissions } = ctx;
+const { permissions, isOwner } = ctx;
 const t = useT(Astro);
 
 const { id } = Astro.params;
@@ -27,6 +28,8 @@ if (!ctx.isOwner && !ctx.parties.some((p) => p.id === id)) {
 
 const canManageUsers    = hasPermission(permissions, PERMISSIONS.MANAGE_USERS);
 const canManageSettings = hasPermission(permissions, PERMISSIONS.MANAGE_AUDIT);
+const myRole = ctx.role;
+const systemRoleOptions = assignableRoles(myRole).filter(r => r >= ROLE.ESHOP_ADMIN && r < ROLE.OWNER);
 
 if (!canManageUsers && !canManageSettings) return Astro.redirect("/admin");
 
@@ -41,15 +44,20 @@ if (Astro.request.method === "POST") {
     if (!canManageSettings) {
       error = "Insufficient permissions";
     } else {
-      const result = await updateParty(supabase, id!, {
-        name: form.get("name") as string,
-        company_name: (form.get("company_name") as string) || undefined,
-        vat_number: (form.get("vat_number") as string) || undefined,
-        billing_email: (form.get("billing_email") as string) || undefined,
-        is_active: form.get("is_active") === "on",
-      });
-      if (result.error) { error = result.error.message; }
-      else { success = t.admin.parties.updatedSuccess; }
+      const { data: current } = await supabase.from("parties").select("status").eq("id", id!).single();
+      if (!isOwner && current?.status === "closed") {
+        error = t.admin.parties.errorClosedOrg;
+      } else {
+        const result = await updateParty(supabase, id!, {
+          name: form.get("name") as string,
+          company_name: (form.get("company_name") as string) || undefined,
+          vat_number: (form.get("vat_number") as string) || undefined,
+          billing_email: (form.get("billing_email") as string) || undefined,
+          status: form.get("status") as string,
+        });
+        if (result.error) { error = result.error.message; }
+        else { success = t.admin.parties.updatedSuccess; }
+      }
     }
   } else if (action === "invite") {
     if (!canManageUsers) {
@@ -57,25 +65,82 @@ if (Astro.request.method === "POST") {
     } else {
       const email = (form.get("email") as string).trim().toLowerCase();
       const roleId = form.get("role_id") as string;
+      const rawSystemRole = form.get("system_role") as string;
+      const systemRole = rawSystemRole ? Number(rawSystemRole) : null;
+      const validSystemRole = systemRole && canAssignRole(myRole, systemRole) ? systemRole : null;
+      const adminOnly = validSystemRole === ROLE.ADMIN;
+
+      const origin = new URL(Astro.request.url).origin;
+      const adminClient = createAdminClient();
+
+      const { data: senderProf } = await supabase.from("profiles").select("lang").eq("id", session.user.id).single();
+      const emailLang: 'cs' | 'en' = senderProf?.lang === 'en' ? 'en' : 'cs';
+      const partyName = ctx.parties.find(p => p.id === id)?.name ?? id!;
+
+      let inviteRoleName = '';
+      let inviteRolePerms = 0;
+      if (!adminOnly && roleId) {
+        const { data: roleRow } = await supabase.from("roles").select("name, permissions").eq("id", roleId).single();
+        if (roleRow) { inviteRoleName = roleRow.name; inviteRolePerms = Number(roleRow.permissions); }
+      }
 
       const existingUser = await findUserByEmail(supabase, email);
       if (existingUser) {
-        const result = await inviteUserToParty(supabase, existingUser.id, id!, roleId, session.user.id);
-        if (result.error) { error = result.error.message; }
-        else { return Astro.redirect(`/admin/parties/${id}`); }
+        const { data: memberships } = await adminClient.from("user_party_roles").select("party_id").eq("user_id", existingUser.id);
+        const memberPartyIds = (memberships ?? []).map((m) => m.party_id);
+
+        if (existingUser.role < ROLE.ADMIN && memberPartyIds.some(pid => pid !== id)) {
+          error = t.admin.parties.errorUserInOtherOrg;
+        }
+
+        if (!error && !adminOnly && roleId) {
+          const result = await inviteUserToParty(supabase, existingUser.id, id!, roleId, session.user.id);
+          if (result.error) { error = result.error.message; }
+        }
+
+        if (!error) {
+          if (validSystemRole) {
+            await supabase.from("profiles").update({ role: validSystemRole }).eq("id", existingUser.id);
+          }
+          const allPartyIds = [...new Set([...memberPartyIds, id!])];
+          const { data: partyRows } = await adminClient.from("parties").select("name").in("id", allPartyIds);
+          const orgNames = (partyRows ?? []).map((p) => p.name);
+          try {
+            await sendPartyInvitation({ to: email, lang: emailLang, partyName, roleName: inviteRoleName, systemRole: validSystemRole, rolePermissions: inviteRolePerms, inviteLink: null, userOrganizations: orgNames, siteUrl: origin });
+          } catch (e) { console.error('[invite] email send failed:', e); }
+          return Astro.redirect(`/admin/parties/${id}`);
+        }
       } else {
-        const adminClient = createAdminClient();
-        const origin = new URL(Astro.request.url).origin;
-        const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
-          redirectTo: `${origin}/auth/callback`,
-          data: {
-            pending_party_id: id,
-            pending_role_id: roleId,
-            invited_by: session.user.id,
-          },
-        });
-        if (inviteError) { error = inviteError.message; }
-        else { success = t.admin.parties.inviteSentPrefix + email + t.admin.parties.inviteSentSuffix; }
+        const authData = {
+          ...(!adminOnly && roleId ? { pending_party_id: id, pending_role_id: roleId } : {}),
+          invited_by: session.user.id,
+          ...(validSystemRole ? { pending_system_role: validSystemRole } : {}),
+        };
+        if (!import.meta.env.RESEND_API_KEY) {
+          // Dev: inviteUserByEmail → GoTrue renders supabase/templates/invite.html → Mailpit
+          const emailMeta = buildDevInviteMetadata({ lang: emailLang, partyName, roleName: inviteRoleName, systemRole: validSystemRole, rolePermissions: inviteRolePerms });
+          const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
+            redirectTo: `${origin}/auth/callback`,
+            data: { ...authData, ...emailMeta },
+          });
+          if (inviteErr) { error = inviteErr.message; }
+          else { success = t.admin.parties.inviteSentPrefix + email + t.admin.parties.inviteSentSuffix; }
+        } else {
+          // Prod: generateLink + styled Resend email
+          const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
+            type: 'invite', email,
+            options: { redirectTo: `${origin}/auth/callback`, data: authData },
+          });
+          if (linkErr) {
+            error = linkErr.message;
+          } else {
+            const inviteLink = (linkData as { properties?: { action_link?: string } })?.properties?.action_link ?? null;
+            try {
+              await sendPartyInvitation({ to: email, lang: emailLang, partyName, roleName: inviteRoleName, systemRole: validSystemRole, rolePermissions: inviteRolePerms, inviteLink, userOrganizations: [partyName], siteUrl: origin });
+            } catch (e) { console.error('[invite] email send failed:', e); }
+            success = t.admin.parties.inviteSentPrefix + email + t.admin.parties.inviteSentSuffix;
+          }
+        }
       }
     }
   } else if (action === "remove") {
@@ -94,7 +159,7 @@ if (!party) return Astro.redirect("/admin/parties");
 
 const [members, roles] = await Promise.all([
   fetchPartyMembers(supabase, id!),
-  fetchRoles(supabase, id!),
+  fetchRoles(supabase),
 ]);
 
 function roleName(roleId: string) {
@@ -134,9 +199,18 @@ function roleName(roleId: string) {
               <label class="form-label">{t.admin.parties.fieldSlug}</label>
               <code>{party.slug}</code>
             </div>
-            <div class="form-check">
-              <input type="checkbox" name="is_active" id="is_active" checked={party.is_active} />
-              <label for="is_active">{t.admin.parties.statusActive}</label>
+            <div class="form-group">
+              <label class="form-label" for="status">{t.admin.parties.fieldStatus}</label>
+              {!isOwner && party.status === 'closed'
+                ? <p class="status-locked">{t.admin.parties.statusClosedReadonly}</p>
+                : (
+                  <select class="form-input" name="status" id="status">
+                    <option value="active" selected={party.status === 'active'}>{t.admin.parties.statusActive}</option>
+                    <option value="inactive" selected={party.status === 'inactive'}>{t.admin.parties.statusInactive}</option>
+                    {isOwner && <option value="closed" selected={party.status === 'closed'}>{t.admin.parties.statusClosed}</option>}
+                  </select>
+                )
+              }
             </div>
             <div class="form-meta">
               <span class="meta-label">{t.admin.parties.fieldCreated}</span>
@@ -151,10 +225,15 @@ function roleName(roleId: string) {
         <div class="card" style={canManageSettings ? "margin-top:16px" : ""}>
           <h2 class="section-title">{t.admin.parties.sectionInvite}</h2>
           <p class="invite-note">
-            {t.admin.parties.inviteNote}<br /><br />
-            <strong>{t.admin.parties.inviteNoteExtra}</strong>{" "}
-            <a href="/admin/users">{t.admin.sidebar.users}</a>{" "}
-            {t.admin.parties.inviteNoteSuffix}
+            {t.admin.parties.inviteNote}
+            {systemRoleOptions.length === 0 && (
+              <>
+                <br /><br />
+                <strong>{t.admin.parties.inviteNoteExtra}</strong>{" "}
+                <a href="/admin/users">{t.admin.sidebar.users}</a>{" "}
+                {t.admin.parties.inviteNoteSuffix}
+              </>
+            )}
           </p>
           <form method="POST" class="invite-form">
             <input type="hidden" name="action" value="invite" />
@@ -162,13 +241,24 @@ function roleName(roleId: string) {
               <label class="form-label">{t.admin.parties.fieldEmail}</label>
               <input class="form-input" type="email" name="email" required placeholder={t.auth.emailPlaceholder} />
             </div>
-            <div class="form-group">
+            {systemRoleOptions.length > 0 && (
+              <div class="form-group">
+                <label class="form-label">{t.admin.parties.fieldSystemRole}</label>
+                <select class="form-input system-role-select" name="system_role">
+                  <option value="">{t.admin.parties.systemRoleNone}</option>
+                  {systemRoleOptions.map(r => (
+                    <option value={r}>{ROLE_LABEL[r as keyof typeof ROLE_LABEL]}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div class="form-group party-role-group">
               <label class="form-label">
                 {t.admin.parties.fieldRole}
                 <span class="role-hint">{t.admin.parties.roleHint}</span>
               </label>
-              <select class="form-input" name="role_id" required>
-                <option value="">{t.admin.parties.selectRole}</option>
+              <select class="form-input party-role-select" name="role_id">
+                <option value="">{roles.length === 0 ? t.admin.parties.noRoles : t.admin.parties.selectRole}</option>
                 {roles.map((r) => (
                   <option value={r.id}>
                     {r.name}{r.description ? ` — ${r.description}` : ""}
@@ -211,6 +301,22 @@ function roleName(roleId: string) {
   </div>
 </CmsLayout>
 
+<script define:vars={{ ROLE_ADMIN: ROLE.ADMIN }}>
+document.querySelectorAll('.system-role-select').forEach(sel => {
+  const form = sel.closest('form');
+  const roleGroup = form.querySelector('.party-role-group');
+  const roleSelect = form.querySelector('.party-role-select');
+
+  function sync() {
+    const isAdmin = Number(sel.value) === ROLE_ADMIN;
+    roleGroup.style.display = (isAdmin || !sel.value) ? 'none' : '';
+    roleSelect.required = !isAdmin && roleSelect.options.length > 1;
+  }
+  sync();
+  sel.addEventListener('change', sync);
+});
+</script>
+
 <style>
   .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
   .back-link:hover { color:var(--text-primary); }
@@ -231,5 +337,6 @@ function roleName(roleId: string) {
   .invite-note a { color:var(--primary); font-weight:600; }
   .role-hint { font-weight:400; font-style:italic; color:var(--text-muted); }
   code { font-family:monospace; font-size:13px; background:var(--bg-subtle); padding:2px 6px; border-radius:4px; }
+  .status-locked { font-size:13px; color:var(--text-muted); padding:8px 10px; background:var(--bg-subtle); border-radius:var(--radius-sm); border:1px solid var(--border-default); }
   @media(max-width:768px) { .party-grid { grid-template-columns:1fr; } }
 </style>

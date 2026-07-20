@@ -41,18 +41,19 @@ export interface Party {
   billing_email: string | null;
   logo_url: string | null;
   settings: Record<string, unknown>;
-  is_active: boolean;
+  status: 'active' | 'inactive' | 'closed';
   created_at: string;
   updated_at: string;
 }
 
 export interface Role {
   id: string;
-  party_id: string;
+  party_id: string | null;
   name: string;
   permissions: number;
   is_system: boolean;
   description: string | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 }

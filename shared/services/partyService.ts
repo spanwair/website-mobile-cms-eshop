@@ -34,21 +34,28 @@ export async function createParty(
     logo_url?: string;
   }
 ): Promise<{ data: Party | null; error: Error | null }> {
-  const { data, error } = await client
+  const { error: insertError } = await client
     .from("parties")
-    .insert(input)
+    .insert(input);
+  if (insertError) return { data: null, error: new Error(insertError.message) };
+
+  // Fetch back via slug after insert: avoids INSERT ... RETURNING which is blocked by RLS
+  // SELECT policies until the AFTER trigger assigns the admin to user_party_roles.
+  const { data, error: selectError } = await client
+    .from("parties")
     .select()
+    .eq("slug", input.slug)
     .single();
   return {
-    data: error ? null : (data as Party),
-    error: error ? new Error(error.message) : null,
+    data: selectError ? null : (data as Party),
+    error: selectError ? new Error(selectError.message) : null,
   };
 }
 
 export async function updateParty(
   client: Client,
   partyId: string,
-  updates: Partial<Pick<Party, "name" | "slug" | "company_name" | "vat_number" | "billing_email" | "logo_url" | "settings" | "is_active">>
+  updates: Partial<Pick<Party, "name" | "slug" | "company_name" | "vat_number" | "billing_email" | "logo_url" | "settings" | "status">>
 ): Promise<{ error: Error | null }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await client.from("parties").update(updates as any).eq("id", partyId);

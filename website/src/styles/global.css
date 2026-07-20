@@ -57,6 +57,7 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .badge-active   { background: rgba(16,185,129,0.12); color: #059669; }
 .badge-inactive { background: rgba(108,117,125,0.12); color: var(--text-muted); }
+.badge-closed   { background: rgba(239,68,68,0.12); color: var(--error); }
 .badge-draft    { background: rgba(245,158,11,0.12); color: #D97706; }
 .badge-pending  { background: rgba(79,70,229,0.12); color: var(--accent-primary); }
 .badge-error    { background: rgba(239,68,68,0.12); color: var(--error); }

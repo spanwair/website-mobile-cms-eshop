@@ -1,3 +1,5 @@
+WARN: config section [inbucket] is deprecated. Please use [local_smtp] instead.
+Connecting to db 5432
 export type Json =
   | string
   | number
@@ -990,11 +992,11 @@ export type Database = {
           company_name: string | null
           created_at: string
           id: string
-          is_active: boolean
           logo_url: string | null
           name: string
           settings: Json
           slug: string
+          status: string
           updated_at: string
           vat_number: string | null
         }
@@ -1003,11 +1005,11 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           id?: string
-          is_active?: boolean
           logo_url?: string | null
           name: string
           settings?: Json
           slug: string
+          status?: string
           updated_at?: string
           vat_number?: string | null
         }
@@ -1016,11 +1018,11 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           id?: string
-          is_active?: boolean
           logo_url?: string | null
           name?: string
           settings?: Json
           slug?: string
+          status?: string
           updated_at?: string
           vat_number?: string | null
         }
@@ -1155,6 +1157,7 @@ export type Database = {
           created_at: string
           id: string
           is_primary: boolean
+          media_type: string
           product_id: string
           sort_order: number
           url: string
@@ -1164,6 +1167,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_primary?: boolean
+          media_type?: string
           product_id: string
           sort_order?: number
           url: string
@@ -1173,6 +1177,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_primary?: boolean
+          media_type?: string
           product_id?: string
           sort_order?: number
           url?: string
@@ -1671,31 +1676,34 @@ export type Database = {
       roles: {
         Row: {
           created_at: string
+          created_by: string | null
           description: string | null
           id: string
           is_system: boolean
           name: string
-          party_id: string
+          party_id: string | null
           permissions: number
           updated_at: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           description?: string | null
           id?: string
           is_system?: boolean
           name: string
-          party_id: string
+          party_id?: string | null
           permissions?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           description?: string | null
           id?: string
           is_system?: boolean
           name?: string
-          party_id?: string
+          party_id?: string | null
           permissions?: number
           updated_at?: string
         }
@@ -2029,9 +2037,23 @@ export type Database = {
         Returns: number
       }
       is_admin: { Args: never; Returns: boolean }
+      is_admin_of: { Args: { p_party_id: string }; Returns: boolean }
+      is_owner: { Args: never; Returns: boolean }
       user_has_permission: {
         Args: { p_party_id: string; p_permission: number; p_user_id: string }
         Returns: boolean
+      }
+      validate_coupon_for_party: {
+        Args: { p_code: string; p_party_id: string }
+        Returns: {
+          code: string
+          discount_rule_id: string
+          id: string
+          is_active: boolean
+          max_uses: number
+          party_id: string
+          uses_count: number
+        }[]
       }
     }
     Enums: {

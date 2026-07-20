@@ -45,7 +45,6 @@ export async function requireAdminCtx(
   const { data: partyRows, error: partyErr } = await client
     .from("parties")
     .select("id, name")
-    .eq("is_active", true)
     .order("name", { ascending: true });
 
   if (partyErr && partyErr.code !== "PGRST116" && !partyErr.message.includes("does not exist")) {

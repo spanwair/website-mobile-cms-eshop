@@ -14,9 +14,11 @@ const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
-const { permissions, partyId } = ctx;
+const { permissions } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_ROLES)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const isOwner = ctx.isOwner;
+const userId = session.user.id;
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
@@ -25,9 +27,8 @@ if (Astro.request.method === "POST") {
   return Astro.redirect("/admin/roles");
 }
 
-const roles = await fetchRoles(supabase, partyId);
+const roles = await fetchRoles(supabase);
 
-// Labels for each permission key, sourced from i18n.
 const PERM_LABELS: Partial<Record<keyof typeof PERMISSIONS, string>> = {
   VIEW_DASHBOARD:    t.admin.roles.permDashboard,
   MANAGE_USERS:      t.admin.roles.permUsers,
@@ -51,18 +52,26 @@ function activePerms(bits: number) {
 
 <CmsLayout title={t.admin.roles.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
   <div class="toolbar">
-    <span class="total-label">{roles.length} {t.admin.roles.title.toLowerCase()}</span>
+    <span class="total-label" id="roles-count">{roles.length} {t.admin.roles.title.toLowerCase()}</span>
     <a href="/admin/roles/new" class="btn btn-primary">{t.admin.roles.new}</a>
+  </div>
+
+  <div class="filter-bar">
+    <input id="role-search" class="form-input" type="search" placeholder={t.admin.roles.searchPlaceholder} />
+    <label class="filter-check">
+      <input type="checkbox" id="my-roles-check" />
+      <span>{t.admin.roles.filterMyRoles}</span>
+    </label>
   </div>
 
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>
-        <tr><th>{t.admin.roles.colName}</th><th>{t.admin.roles.colDescription}</th><th>{t.admin.roles.colPermissions}</th><th>{t.admin.roles.colType}</th><th>{t.admin.roles.colActions}</th></tr>
+        <tr><th>{t.admin.roles.colName}</th><th>{t.admin.roles.colDescription}</th><th>{t.admin.roles.colPermissions}</th><th>{t.admin.roles.colActions}</th></tr>
       </thead>
-      <tbody>
+      <tbody id="roles-body">
         {roles.map((r) => (
-          <tr>
+          <tr data-name={r.name.toLowerCase()} data-desc={(r.description ?? "").toLowerCase()} data-created-by={r.created_by ?? ""}>
             <td style="font-weight:600">{r.name}</td>
             <td style="color:var(--text-muted);font-size:13px">{r.description ?? "—"}</td>
             <td>
@@ -74,13 +83,7 @@ function activePerms(bits: number) {
               </div>
             </td>
             <td>
-              {r.is_system
-                ? <span class="badge badge-pending">{t.admin.roles.typeSystem}</span>
-                : <span class="badge badge-inactive">{t.admin.roles.typeCustom}</span>
-              }
-            </td>
-            <td>
-              {!r.is_system && (
+              {(isOwner || r.created_by === userId) && (
                 <form method="POST" onsubmit={`return confirm('${t.admin.roles.deleteConfirm}')`} style="display:inline">
                   <input type="hidden" name="role_id" value={r.id} />
                   <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{t.common.delete}</button>
@@ -90,17 +93,54 @@ function activePerms(bits: number) {
           </tr>
         ))}
         {roles.length === 0 && (
-          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.roles.noRoles}</td></tr>
+          <tr id="empty-row"><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.roles.noRoles}</td></tr>
         )}
       </tbody>
     </table>
+    <div id="no-results-row" class="hidden" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.roles.noRoles}</div>
   </div>
 </CmsLayout>
 
+<script define:vars={{ userId }}>
+  const search = document.getElementById("role-search");
+  const myCheck = document.getElementById("my-roles-check");
+  const body = document.getElementById("roles-body");
+  const noResults = document.getElementById("no-results-row");
+  const countEl = document.getElementById("roles-count");
+  const allRows = Array.from(body.querySelectorAll("tr[data-name]"));
+
+  function applyFilter() {
+    const q = search.value.toLowerCase().trim();
+    const myOnly = myCheck.checked;
+    let visible = 0;
+
+    allRows.forEach((row) => {
+      const name = row.dataset.name ?? "";
+      const desc = row.dataset.desc ?? "";
+      const createdBy = row.dataset.createdBy ?? "";
+      const matchSearch = !q || name.includes(q) || desc.includes(q);
+      const matchOwner = !myOnly || createdBy === userId;
+      const show = matchSearch && matchOwner;
+      row.style.display = show ? "" : "none";
+      if (show) visible++;
+    });
+
+    noResults.classList.toggle("hidden", visible > 0);
+    countEl.textContent = `${visible} ${countEl.textContent.split(" ").slice(1).join(" ")}`;
+  }
+
+  search.addEventListener("input", applyFilter);
+  myCheck.addEventListener("change", applyFilter);
+</script>
+
 <style>
-  .alert { background:#FFF3CD; border:1px solid #FFEAA7; border-radius:8px; padding:12px 16px; color:#856404; margin-bottom:24px; font-size:14px; }
-  .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
   .total-label { font-size:14px; color:var(--text-muted); }
+  .filter-bar { display:flex; gap:12px; align-items:center; margin-bottom:16px; }
+  .filter-bar .form-input { max-width:280px; }
+  .filter-check { display:flex; align-items:center; gap:6px; font-size:14px; cursor:pointer; white-space:nowrap; }
+  .filter-check input { width:auto; }
   .perm-chips { display:flex; flex-wrap:wrap; gap:4px; }
   .perm-chip { display:inline-block; padding:2px 8px; background:rgba(79,70,229,0.08); color:var(--accent-primary); border-radius:999px; font-size:11px; font-weight:600; }
+  .hidden { display:none; }
 </style>
