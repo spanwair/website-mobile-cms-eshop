@@ -62,10 +62,7 @@ function setEshopFullRole(superAdminRoleId: string) {
 }
 
 function getSuperAdminRoleId(): string {
-  return execSync(
-    `PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres --tuples-only -c "SELECT id FROM public.roles WHERE party_id = '${PARTY_ID}' AND name = 'Super Admin' LIMIT 1;"`,
-    { stdio: "pipe" }
-  ).toString().trim();
+  return "22222222-2222-2222-2222-222222222222";
 }
 
 /** Expect page stays at the target URL (not redirected away) */

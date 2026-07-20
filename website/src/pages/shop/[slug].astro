@@ -2,11 +2,15 @@
 import Layout from "../../components/layout/Layout.astro";
 import { createSupabase } from "../../lib/supabase";
 import { fetchProductReviews, submitReview } from "@shared/services/reviewService";
+import { fetchInventoryByProduct } from "@shared/services/inventoryService";
+import { getOrCreateCart, addToCart } from "@shared/services/cartService";
 import { useT } from "../../lib/i18n";
 
 const supabase = createSupabase(Astro);
 const t = useT(Astro);
 const { slug } = Astro.params;
+let cartSuccess = false;
+let cartError = "";
 
 // Handle review submission
 if (Astro.request.method === "POST") {
@@ -30,6 +34,23 @@ if (Astro.request.method === "POST") {
     });
     return Astro.redirect(`/shop/${slug}?reviewed=1`);
   }
+
+  if (action === "add_to_cart") {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return Astro.redirect(`/login?redirect=/shop/${slug}`);
+    const productId = form.get("product_id") as string;
+    const partyId = form.get("party_id") as string;
+    const unitPrice = parseFloat(form.get("unit_price") as string);
+    const qty = Math.max(1, parseInt(form.get("quantity") as string, 10) || 1);
+    try {
+      const cart = await getOrCreateCart(supabase, partyId, session.user.id);
+      const result = await addToCart(supabase, cart.id, productId, qty, unitPrice);
+      if (result.error) { cartError = result.error.message; }
+      else { return Astro.redirect(`/shop/${slug}?added=1`); }
+    } catch (e: any) {
+      cartError = e?.message ?? "Failed to add to cart";
+    }
+  }
 }
 
 // Fetch product
@@ -37,7 +58,7 @@ const { data: product } = await supabase
   .from("products")
   .select(`
     *,
-    product_images(id, url, alt_text, is_primary, sort_order),
+    product_images(id, url, alt, is_primary, sort_order),
     product_categories(category:categories(id, name, slug)),
     product_variants(id, name, price, attributes, is_active),
     brands(name, slug)
@@ -69,9 +90,18 @@ const { data: reviews, total: reviewTotal, averageRating } = await fetchProductR
 );
 
 const reviewed = new URL(Astro.request.url).searchParams.has("reviewed");
+const addedToCart = new URL(Astro.request.url).searchParams.has("added");
 
 // Fetch related products (same categories, different product)
 const categoryIds = categories.map((c: any) => c.id);
+// Fetch inventory for stock display
+const inventoryItem = await fetchInventoryByProduct(supabase, product.id);
+const qtyAvailable = inventoryItem ? (inventoryItem.qty_on_hand - inventoryItem.qty_reserved) : null;
+const isOutOfStock = qtyAvailable !== null && qtyAvailable <= 0;
+
+// Fetch session for cart button
+const { data: { session: pageSession } } = await supabase.auth.getSession();
+
 let relatedProducts: any[] = [];
 if (categoryIds.length > 0) {
   const { data: related } = await supabase
@@ -102,7 +132,7 @@ if (categoryIds.length > 0) {
     <div class="images-col">
       <div class="main-image-wrap">
         {primaryImage ? (
-          <img id="main-img" src={primaryImage.url} alt={primaryImage.alt_text ?? product.title} class="main-image" />
+          <img id="main-img" src={primaryImage.url} alt={(primaryImage as any).alt ?? product.title} class="main-image" />
         ) : (
           <div class="no-image">No image</div>
         )}
@@ -111,7 +141,7 @@ if (categoryIds.length > 0) {
         <div class="thumb-row">
           {images.map((img: any) => (
             <button class="thumb-btn" onclick={`document.getElementById('main-img').src='${img.url}'`}>
-              <img src={img.url} alt={img.alt_text ?? ""} class="thumb-img" loading="lazy" />
+              <img src={img.url} alt={(img as any).alt ?? ""} class="thumb-img" loading="lazy" />
             </button>
           ))}
         </div>
@@ -169,14 +199,32 @@ if (categoryIds.length > 0) {
         </div>
       )}
 
+      {addedToCart && <div class="cart-success">✓ Added to cart! <a href="/shop/cart">View cart</a></div>}
+      {cartError && <div class="cart-error">{cartError}</div>}
+
       <div class="add-to-cart-section">
-        <div class="qty-row">
-          <label>{t.shop.qty}</label>
-          <input type="number" id="qty" value="1" min="1" max="99" class="qty-input" />
-        </div>
-        <button class="btn btn-primary btn-large" type="button" onclick="alert('Cart integration coming — connect Stripe checkout here')">
-          {t.shop.addToCart}
-        </button>
+        {isOutOfStock ? (
+          <div class="out-of-stock-badge">{t.shop.outOfStock}</div>
+        ) : (
+          <form method="POST" class="cart-form">
+            <input type="hidden" name="_action" value="add_to_cart" />
+            <input type="hidden" name="product_id" value={product.id} />
+            <input type="hidden" name="party_id" value={product.party_id} />
+            <input type="hidden" name="unit_price" value={String(product.discount_price ?? product.price)} />
+            <div class="qty-row">
+              <label>{t.shop.qty}</label>
+              <input type="number" name="quantity" value="1" min="1" max={qtyAvailable ?? 99} class="qty-input" />
+            </div>
+            {qtyAvailable !== null && qtyAvailable <= 10 && qtyAvailable > 0 && (
+              <p class="low-stock-hint">{t.shop.stockRemaining.replace("{{n}}", String(qtyAvailable))}</p>
+            )}
+            {!pageSession ? (
+              <a href={`/login?redirect=/shop/${slug}`} class="btn btn-primary btn-large">{t.shop.loginToCheckout}</a>
+            ) : (
+              <button type="submit" class="btn btn-primary btn-large">{t.shop.addToCart}</button>
+            )}
+          </form>
+        )}
       </div>
 
       {product.description && (
@@ -314,10 +362,16 @@ if (categoryIds.length > 0) {
   .variants-section { margin-bottom:20px; } .variants-label { font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:8px; }
   .variants-grid { display:flex; flex-direction:column; gap:6px; }
   .variant-option { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; }
-  .add-to-cart-section { display:flex; align-items:center; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
+  .add-to-cart-section { display:flex; align-items:flex-start; gap:12px; margin-bottom:24px; flex-direction:column; }
+  .cart-form { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .qty-row { display:flex; align-items:center; gap:8px; font-size:14px; }
   .qty-input { width:60px; padding:8px; border:1px solid var(--border); border-radius:8px; text-align:center; font-size:16px; }
   .btn-large { padding:12px 32px; font-size:16px; }
+  .out-of-stock-badge { background:#fee2e2; color:#dc2626; font-size:14px; font-weight:700; padding:10px 20px; border-radius:8px; }
+  .low-stock-hint { font-size:13px; color:#f59e0b; font-weight:600; margin:0; }
+  .cart-success { background:#dcfce7; border:1px solid #86efac; color:#15803d; border-radius:8px; padding:10px 16px; font-size:14px; margin-bottom:12px; }
+  .cart-success a { color:#15803d; font-weight:700; }
+  .cart-error { background:#fee2e2; border:1px solid #fca5a5; color:#dc2626; border-radius:8px; padding:10px 16px; font-size:14px; margin-bottom:12px; }
   .section-title { font-size:20px; font-weight:700; margin-bottom:16px; }
   .description { border-top:1px solid var(--border); padding-top:20px; }
   .description p { font-size:15px; line-height:1.7; color:var(--text-secondary); }

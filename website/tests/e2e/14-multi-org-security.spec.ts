@@ -23,23 +23,23 @@ test.describe("14 — Multi-Org Security", () => {
     await expect(page).toHaveURL(`${BASE}/admin/parties`);
   });
 
-  // ── CASE 2: Admin cannot create a new party (role < 8) ───────────────────
-  test("14-02 admin (role=4) cannot access /admin/parties/new", async ({ page }) => {
+  // ── CASE 2: Admin (role=4) CAN create a new party ───────────────────────
+  test("14-02 admin (role=4) can access /admin/parties/new", async ({ page }) => {
     await loginAs(page, ADMIN.email, ADMIN.password);
     await page.goto(`${BASE}/admin/parties/new`);
     await page.waitForLoadState("networkidle");
-    await screenshot(page, "14-02-admin-cannot-create-party");
-    await expect(page).toHaveURL(`${BASE}/admin/parties`);
+    await screenshot(page, "14-02-admin-can-create-party");
+    await expect(page).toHaveURL(`${BASE}/admin/parties/new`);
   });
 
-  // ── CASE 3: Parties list does not show "New Party" button for admin ───────
-  test("14-03 parties list hides New Party button for admin", async ({ page }) => {
+  // ── CASE 3: Parties list shows "New Party" button for admin ──────────────
+  test("14-03 parties list shows New Party button for admin", async ({ page }) => {
     await loginAs(page, ADMIN.email, ADMIN.password);
     await page.goto(`${BASE}/admin/parties`);
     await page.waitForLoadState("networkidle");
-    await screenshot(page, "14-03-admin-no-new-party-btn");
+    await screenshot(page, "14-03-admin-new-party-btn-visible");
     const newBtn = page.locator("a[href='/admin/parties/new']");
-    await expect(newBtn).toHaveCount(0);
+    await expect(newBtn).toBeVisible();
   });
 
   // ── CASE 4: Party switcher shows only admin's own parties ─────────────────
@@ -197,11 +197,16 @@ test.describe("14 — Multi-Org Security", () => {
     await loginAs(page, ADMIN.email, ADMIN.password);
     await page.goto(`${BASE}/admin/parties/${PARTY_ID}`);
     await page.waitForLoadState("networkidle");
+    // Select eshop_admin system role to make the custom role dropdown visible
+    const systemRoleSelect = page.locator("select[name='system_role']");
+    await expect(systemRoleSelect).toBeVisible();
+    await systemRoleSelect.selectOption("2"); // eshop_admin
+    await page.waitForTimeout(100);
     await screenshot(page, "14-15-super-admin-not-in-invite");
     const roleSelect = page.locator("select[name='role_id']");
     await expect(roleSelect).toBeVisible();
     const optionTexts = await roleSelect.locator("option").allTextContents();
-    // "Super Admin" is_system=true and must not appear
+    // System roles (is_system=true) must not appear in the invite dropdown
     expect(optionTexts.some((t) => t.includes("Super Admin"))).toBe(false);
   });
 

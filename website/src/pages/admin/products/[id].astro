@@ -5,6 +5,7 @@ import { createSupabase } from "../../../lib/supabase";
 import { fetchProduct, updateProduct, deleteProduct, setProductCategories } from "@shared/services/productService";
 import { addProductImage, deleteProductImage, setPrimaryImage } from "@shared/services/productImageService";
 import { fetchCategories } from "@shared/services/categoryService";
+import { fetchInventoryByProduct, updateStock, fetchStockMovements } from "@shared/services/inventoryService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT } from "../../../lib/i18n";
@@ -81,6 +82,22 @@ if (Astro.request.method === "POST") {
     return Astro.redirect(`/admin/products/${id}`);
   }
 
+  if (action === "adjust_inventory" && hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY)) {
+    const inventoryItemId = form.get("inventory_item_id") as string;
+    const quantity = parseInt(form.get("quantity") as string, 10);
+    const type = form.get("type") as "adjustment" | "purchase" | "return" | "damage";
+    const note = (form.get("note") as string) || null;
+    await updateStock(supabase, {
+      inventory_item_id: inventoryItemId,
+      party_id: partyId,
+      quantity,
+      type,
+      note,
+      created_by: session.user.id,
+    });
+    return Astro.redirect(`/admin/products/${id}`);
+  }
+
   const result = await updateProduct(supabase, id!, {
     title: form.get("title") as string,
     slug: form.get("slug") as string,
@@ -105,6 +122,12 @@ if (!product) return Astro.redirect("/admin/products");
 
 const categories = await fetchCategories(supabase, partyId);
 const selectedCats = new Set(product.categories);
+
+const inventoryItem = await fetchInventoryByProduct(supabase, id!);
+const canManageInventory = hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY);
+const recentMovements = inventoryItem
+  ? (await fetchStockMovements(supabase, { inventory_item_id: inventoryItem.id, pageSize: 5 })).data
+  : [];
 ---
 
 <CmsLayout title={t.admin.products.editTitle} userPermissions={permissions} currentPath="/admin/products" parties={ctx.parties} partyId={ctx.partyId}>
@@ -185,6 +208,71 @@ const selectedCats = new Set(product.categories);
   </div>
 
   <ProductImages images={product.images} productId={id!} />
+
+  <div class="card inv-card" style="max-width:720px">
+    <h2 class="inv-title">Inventory</h2>
+    {inventoryItem ? (
+      <>
+        <div class="inv-stats">
+          <div class="inv-stat">
+            <span class="inv-label">On hand</span>
+            <span class={`inv-value${inventoryItem.qty_on_hand <= 0 ? " danger" : inventoryItem.is_low_stock ? " warning" : ""}`}>{inventoryItem.qty_on_hand}</span>
+          </div>
+          <div class="inv-stat">
+            <span class="inv-label">Reserved</span>
+            <span class="inv-value">{inventoryItem.qty_reserved}</span>
+          </div>
+          <div class="inv-stat">
+            <span class="inv-label">Available</span>
+            <span class="inv-value">{inventoryItem.qty_available}</span>
+          </div>
+          <div class="inv-stat">
+            <span class="inv-label">Min. threshold</span>
+            <span class="inv-value">{inventoryItem.low_stock_threshold}</span>
+          </div>
+        </div>
+        <div class="inv-badges">
+          {inventoryItem.qty_on_hand <= 0 && <span class="badge badge-error">Out of stock</span>}
+          {inventoryItem.is_low_stock && inventoryItem.qty_on_hand > 0 && <span class="badge badge-warning">Low stock</span>}
+        </div>
+        {canManageInventory && (
+          <form method="POST" class="inv-adjust-form">
+            <input type="hidden" name="action" value="adjust_inventory" />
+            <input type="hidden" name="inventory_item_id" value={inventoryItem.id} />
+            <input class="form-input qty-input" name="quantity" type="number" required placeholder="±qty" />
+            <select class="form-input type-select" name="type">
+              <option value="adjustment">Adjustment</option>
+              <option value="purchase">Purchase</option>
+              <option value="return">Return</option>
+              <option value="damage">Damage</option>
+            </select>
+            <input class="form-input note-input" name="note" placeholder="Note (optional)" />
+            <button type="submit" class="btn btn-secondary">Adjust</button>
+          </form>
+        )}
+        {recentMovements.length > 0 && (
+          <div class="movements-section">
+            <h3 class="movements-title">Recent stock movements</h3>
+            <table class="data-table">
+              <thead><tr><th>Type</th><th>Qty</th><th>Note</th><th>Date</th></tr></thead>
+              <tbody>
+                {recentMovements.map(m => (
+                  <tr>
+                    <td><span class={`badge badge-${m.type === "sale" || m.type === "damage" ? "error" : "active"}`}>{m.type}</span></td>
+                    <td style={m.type === "sale" || m.type === "damage" ? "color:var(--error)" : ""}>{m.type === "sale" || m.type === "damage" ? "-" : "+"}{m.quantity}</td>
+                    <td style="color:var(--text-muted);font-size:13px">{m.note ?? "—"}</td>
+                    <td style="color:var(--text-muted);font-size:12px">{new Date(m.created_at).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </>
+    ) : (
+      <p style="color:var(--text-muted);font-size:14px">No inventory record yet. A warehouse must exist for this organisation to track inventory.</p>
+    )}
+  </div>
 </CmsLayout>
 
 <style>
@@ -199,4 +287,20 @@ const selectedCats = new Set(product.categories);
   .cat-check { display:flex; align-items:center; gap:6px; font-size:14px; cursor:pointer; }
   .cat-check input { width:auto; }
   @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+  .inv-card { margin-top:24px; }
+  .inv-title { font-size:16px; font-weight:700; margin:0 0 16px; }
+  .inv-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px; }
+  .inv-stat { background:var(--bg-subtle); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:4px; }
+  .inv-label { font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+  .inv-value { font-size:22px; font-weight:800; }
+  .inv-value.danger { color:var(--error); }
+  .inv-value.warning { color:#f59e0b; }
+  .inv-badges { display:flex; gap:8px; margin-bottom:16px; }
+  .inv-adjust-form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:20px; }
+  .qty-input { width:80px; padding:8px 10px; font-size:14px; }
+  .type-select { width:130px; padding:8px 10px; font-size:14px; }
+  .note-input { flex:1; min-width:120px; padding:8px 10px; font-size:14px; }
+  .movements-section { margin-top:16px; }
+  .movements-title { font-size:14px; font-weight:700; margin:0 0 10px; }
+  @media(max-width:600px) { .inv-stats { grid-template-columns:1fr 1fr; } .inv-adjust-form { flex-direction:column; align-items:stretch; } .qty-input,.type-select,.note-input { width:100%; } }
 </style>

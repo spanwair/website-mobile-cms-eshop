@@ -157,13 +157,14 @@ if (Astro.request.method === "POST") {
 const party = await fetchParty(supabase, id!);
 if (!party) return Astro.redirect("/admin/parties");
 
-const [members, roles] = await Promise.all([
+const [members, allRoles] = await Promise.all([
   fetchPartyMembers(supabase, id!),
   fetchRoles(supabase),
 ]);
+const roles = allRoles.filter(r => !r.is_system);
 
 function roleName(roleId: string) {
-  return roles.find((r) => r.id === roleId)?.name ?? roleId.slice(0, 8);
+  return allRoles.find((r) => r.id === roleId)?.name ?? roleId.slice(0, 8);
 }
 ---
 

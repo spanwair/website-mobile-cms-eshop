@@ -97,6 +97,24 @@ export async function updateStock(
   };
 }
 
+export async function fetchInventoryByProduct(
+  client: Client,
+  productId: string
+): Promise<InventoryItem | null> {
+  const { data } = await client
+    .from("inventory_items")
+    .select("*")
+    .eq("product_id", productId)
+    .is("variant_id", null)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) return null;
+  const row = data as Database["public"]["Tables"]["inventory_items"]["Row"];
+  return { ...row, qty_available: row.qty_on_hand - row.qty_reserved } as InventoryItem;
+}
+
 export async function fetchStockMovements(
   client: Client,
   opts: {

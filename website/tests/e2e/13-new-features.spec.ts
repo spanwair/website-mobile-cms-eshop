@@ -174,8 +174,8 @@ test.describe("13b — Product Image Uploads", () => {
     // (other images from previous runs may still exist, so .media-grid may still be visible)
     const imageSection = page.locator(".media-card").nth(1);
     await expect(imageSection.locator(".primary-badge")).not.toBeVisible();
-    // Upload form still present
-    await expect(page.locator("form.upload-form")).toBeVisible();
+    // Upload form still present (first one is the image upload)
+    await expect(page.locator("form.upload-form").first()).toBeVisible();
   });
 });
 

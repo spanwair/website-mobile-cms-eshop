@@ -56,10 +56,27 @@ const { data: rawProducts, count } = await productQuery.range(from, from + pageS
 const totalPages = Math.ceil((count ?? 0) / pageSize);
 
 // Get primary image for each product
+const productIds = (rawProducts ?? []).map((p: any) => p.id);
+
+// Fetch inventory for all shown products in one query
+const { data: inventoryRows } = productIds.length > 0
+  ? await supabase
+      .from("inventory_items")
+      .select("product_id, qty_on_hand, qty_reserved")
+      .in("product_id", productIds)
+      .is("variant_id", null)
+      .eq("track_inventory", true)
+  : { data: [] };
+
+const inventoryMap = new Map(
+  (inventoryRows ?? []).map((r: any) => [r.product_id, r.qty_on_hand - r.qty_reserved])
+);
+
 const products = (rawProducts ?? []).map(p => {
   const images = (p as any).product_images ?? [];
   const primary = images.find((i: any) => i.is_primary) ?? images[0];
-  return { ...p, primaryImage: primary?.url ?? null };
+  const qtyAvailable = inventoryMap.has((p as any).id) ? inventoryMap.get((p as any).id)! : null;
+  return { ...p, primaryImage: primary?.url ?? null, isOutOfStock: qtyAvailable !== null && qtyAvailable <= 0 };
 });
 
 function buildUrl(params: Record<string, string>) {
@@ -156,6 +173,7 @@ function buildUrl(params: Record<string, string>) {
                 )}
                 {product.is_featured && <span class="featured-badge">{t.shop.featured}</span>}
                 {product.discount_price && <span class="sale-badge">{t.shop.sale}</span>}
+                {(product as any).isOutOfStock && <span class="oos-badge">{t.shop.outOfStock}</span>}
               </div>
               <div class="product-info">
                 <h3 class="product-title">{product.title}</h3>
@@ -224,6 +242,7 @@ function buildUrl(params: Record<string, string>) {
   .product-img-placeholder { display:flex; align-items:center; justify-content:center; height:100%; font-size:13px; color:var(--text-muted); }
   .featured-badge { position:absolute; top:8px; left:8px; background:#6366f1; color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:12px; }
   .sale-badge { position:absolute; top:8px; right:8px; background:#dc2626; color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:12px; }
+  .oos-badge { position:absolute; inset:0; background:rgba(0,0,0,.45); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; border-radius:0; }
   .product-info { padding:12px; display:flex; flex-direction:column; gap:6px; flex:1; }
   .product-title { font-size:14px; font-weight:600; line-height:1.4; margin:0; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
   .product-pricing { display:flex; align-items:center; gap:8px; }

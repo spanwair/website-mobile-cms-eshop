@@ -103,12 +103,12 @@ export default async function globalSetup() {
   psql(`${replica} DELETE FROM public.warehouses WHERE id = '${WAREHOUSE_ID}'; ${defaultRole}`);
   psql(`${replica} DELETE FROM public.categories WHERE party_id = '${PARTY_ID}' OR id = '${CATEGORY_ID}'; ${defaultRole}`);
   psql(`${replica} DELETE FROM public.user_party_roles WHERE party_id IN ('${PARTY_ID}', '${PARTY2_ID}'); ${defaultRole}`);
-  // Delete only the known seeded role IDs — preserves custom roles created manually for these parties
+  // Delete known seeded role IDs and any E2E-created roles that may have survived a prior failed run
   psql(`${replica} DELETE FROM public.roles WHERE id IN (
     '22222222-2222-2222-2222-222222222222',
     '${LIMITED_ESHOP_ROLE_ID}',
     '${DASHBOARD_PROD_CAT_ROLE_ID}'
-  ); ${defaultRole}`);
+  ) OR name = 'E2E Viewer'; ${defaultRole}`);
   psql(`${replica} DELETE FROM public.parties WHERE id IN ('${PARTY_ID}', '${PARTY2_ID}') OR slug IN ('second-org', 'test-org-2', 'e2e-party', 'full-fields-org', 'other-organisation') OR slug LIKE 'e2e-org-%'; ${defaultRole}`);
 
   console.log("[global-setup] Cleanup done.");
@@ -128,7 +128,7 @@ export default async function globalSetup() {
   // Seed party
   psql(`
     ${replica}
-    INSERT INTO public.parties (id, name, slug, company_name, vat_number, billing_email, is_active)
+    INSERT INTO public.parties (id, name, slug, company_name, vat_number, billing_email, status)
     VALUES (
       '${PARTY_ID}',
       'Test Organisation',
@@ -136,7 +136,7 @@ export default async function globalSetup() {
       'Test Company s.r.o.',
       'CZ12345678',
       'billing@testorg.com',
-      true
+      'active'
     );
     ${defaultRole}
   `);
@@ -145,8 +145,8 @@ export default async function globalSetup() {
   psql(`
     ${replica}
     INSERT INTO public.roles (id, name, permissions, is_system)
-    VALUES ('22222222-2222-2222-2222-222222222222', 'Super Admin', 32767, false)
-    ON CONFLICT (id) DO UPDATE SET permissions = 32767;
+    VALUES ('22222222-2222-2222-2222-222222222222', 'Super Admin', 32767, true)
+    ON CONFLICT (id) DO UPDATE SET permissions = 32767, is_system = true;
     ${defaultRole}
   `);
 
@@ -287,8 +287,8 @@ export default async function globalSetup() {
   // Seed second party (PARTY2) — ESHOP user is member, ADMIN is NOT
   psql(`
     ${replica}
-    INSERT INTO public.parties (id, name, slug, is_active)
-    VALUES ('${PARTY2_ID}', 'Other Organisation', 'other-organisation', true);
+    INSERT INTO public.parties (id, name, slug, status)
+    VALUES ('${PARTY2_ID}', 'Other Organisation', 'other-organisation', 'active');
     ${defaultRole}
   `);
 

@@ -1,0 +1,218 @@
+---
+import Layout from "../../components/layout/Layout.astro";
+import { createSupabase, createAdminClient } from "../../lib/supabase";
+import { clearCart, calcCartTotal } from "@shared/services/cartService";
+import { createOrder, addOrderItem } from "@shared/services/orderService";
+import { useT } from "../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const t = useT(Astro);
+
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login?redirect=/shop/checkout");
+
+// Fetch user's active cart
+const { data: cartRaw } = await supabase
+  .from("carts")
+  .select("*, cart_items(*, product:products(id, title, slug, price, discount_price, sku))")
+  .eq("user_id", session.user.id)
+  .order("updated_at", { ascending: false })
+  .limit(1)
+  .maybeSingle();
+
+const cart = cartRaw as any;
+if (!cart || !(cart.cart_items?.length > 0)) return Astro.redirect("/shop/cart");
+
+const items = cart.cart_items ?? [];
+const { subtotal } = calcCartTotal(items.map((i: any) => ({ ...i, unit_price: Number(i.unit_price) })));
+const partyId = cart.party_id as string;
+
+let checkoutError = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const firstName = (form.get("first_name") as string).trim();
+  const lastName = (form.get("last_name") as string).trim();
+  const phone = (form.get("phone") as string)?.trim() || null;
+  const line1 = (form.get("line1") as string).trim();
+  const city = (form.get("city") as string).trim();
+  const postalCode = (form.get("postal_code") as string).trim();
+  const countryCode = ((form.get("country_code") as string)?.trim() || "CZ").toUpperCase().slice(0, 2);
+
+  const adminClient = createAdminClient();
+
+  try {
+    // Find or create customer record
+    let { data: customer } = await adminClient
+      .from("customers")
+      .select("id")
+      .eq("party_id", partyId)
+      .eq("email", session.user.email!)
+      .maybeSingle();
+
+    if (!customer) {
+      const { data: newCust, error: custErr } = await adminClient
+        .from("customers")
+        .insert({
+          party_id: partyId,
+          email: session.user.email!,
+          first_name: firstName,
+          last_name: lastName,
+          phone,
+          user_id: session.user.id,
+          is_active: true,
+          gdpr_consent: true,
+        })
+        .select("id")
+        .single();
+      if (custErr) throw new Error(custErr.message);
+      customer = newCust!;
+    }
+
+    // Create shipping address
+    const { data: address, error: addrErr } = await adminClient
+      .from("addresses")
+      .insert({
+        customer_id: customer.id,
+        first_name: firstName,
+        last_name: lastName,
+        line1,
+        city,
+        postal_code: postalCode,
+        country_code: countryCode,
+        type: "shipping",
+        is_default: true,
+      })
+      .select("id")
+      .single();
+    if (addrErr) throw new Error(addrErr.message);
+
+    // Generate order number
+    const orderNumber = "ORD-" + String(Math.floor(Math.random() * 1_000_000)).padStart(8, "0");
+
+    // Create order
+    const { data: order, error: orderErr } = await createOrder(adminClient, {
+      party_id: partyId,
+      customer_id: customer.id,
+      shipping_address_id: address!.id,
+      order_number: orderNumber,
+      status: "pending",
+      payment_status: "unpaid",
+      subtotal,
+      total_amount: subtotal,
+      currency: "CZK",
+    });
+    if (orderErr || !order) throw new Error(orderErr?.message ?? "Order creation failed");
+
+    // Add items — triggers deduct_stock_on_order_item trigger
+    for (const item of items) {
+      await addOrderItem(adminClient, {
+        order_id: order.id,
+        product_id: item.product_id,
+        variant_id: item.variant_id ?? null,
+        title: item.product?.title ?? "Product",
+        sku: item.product?.sku ?? null,
+        quantity: item.quantity,
+        unit_price: Number(item.unit_price),
+        discount_amount: 0,
+        tax_amount: 0,
+        total_price: Number(item.unit_price) * item.quantity,
+      });
+    }
+
+    // Clear cart
+    await clearCart(supabase, cart.id);
+
+    return Astro.redirect(`/shop/order-confirmation?order=${order.order_number}`);
+  } catch (e: any) {
+    checkoutError = e?.message ?? "Checkout failed. Please try again.";
+  }
+}
+---
+
+<Layout title={t.shop.checkoutTitle}>
+  <div class="checkout-page">
+    <h1 class="page-title">{t.shop.checkoutTitle}</h1>
+
+    {checkoutError && <div class="form-error" style="margin-bottom:16px">{checkoutError}</div>}
+
+    <div class="checkout-layout">
+      <form method="POST" class="address-form card">
+        <h2 class="section-title">{t.shop.shippingAddress}</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">{t.shop.firstName}</label>
+            <input class="form-input" name="first_name" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{t.shop.lastName}</label>
+            <input class="form-input" name="last_name" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{t.shop.phone}</label>
+          <input class="form-input" name="phone" type="tel" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{t.shop.addressLine1}</label>
+          <input class="form-input" name="line1" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">{t.shop.city}</label>
+            <input class="form-input" name="city" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{t.shop.postalCode}</label>
+            <input class="form-input" name="postal_code" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{t.shop.country}</label>
+          <input class="form-input" name="country_code" value="CZ" maxlength="2" style="max-width:80px" required />
+        </div>
+
+        <div class="form-actions">
+          <a href="/shop/cart" class="btn btn-ghost">{t.shop.backToCart}</a>
+          <button type="submit" class="btn btn-primary">{t.shop.placeOrder}</button>
+        </div>
+      </form>
+
+      <aside class="order-summary card">
+        <h2 class="section-title">{t.shop.orderSummary}</h2>
+        {items.map((item: any) => (
+          <div class="summary-item">
+            <span class="summary-name">{item.product?.title} × {item.quantity}</span>
+            <span class="summary-price">{(Number(item.unit_price) * item.quantity).toFixed(2)} Kč</span>
+          </div>
+        ))}
+        <div class="summary-total">
+          <span>Total</span>
+          <span class="total-price">{subtotal.toFixed(2)} Kč</span>
+        </div>
+      </aside>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .checkout-page { max-width:1000px; margin:0 auto; padding:32px 24px; }
+  .page-title { font-size:28px; font-weight:800; margin-bottom:24px; }
+  .checkout-layout { display:grid; grid-template-columns:1fr 320px; gap:32px; align-items:start; }
+  .address-form { display:flex; flex-direction:column; gap:16px; }
+  .section-title { font-size:18px; font-weight:700; margin:0 0 16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-actions { display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
+  .order-summary { display:flex; flex-direction:column; gap:12px; }
+  .summary-item { display:flex; justify-content:space-between; font-size:14px; }
+  .summary-name { color:var(--text-secondary); }
+  .summary-price { font-weight:600; }
+  .summary-total { display:flex; justify-content:space-between; padding-top:12px; border-top:1px solid var(--border); font-size:16px; font-weight:700; }
+  .total-price { color:var(--primary); font-size:20px; }
+  @media(max-width:768px) { .checkout-layout { grid-template-columns:1fr; } .form-row { grid-template-columns:1fr; } }
+</style>
