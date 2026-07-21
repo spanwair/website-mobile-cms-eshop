@@ -572,7 +572,9 @@ export type Database = {
           created_at: string
           id: string
           is_low_stock: boolean | null
+          is_overstock: boolean | null
           low_stock_threshold: number
+          max_threshold: number | null
           party_id: string
           product_id: string
           qty_incoming: number
@@ -587,7 +589,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_low_stock?: boolean | null
+          is_overstock?: boolean | null
           low_stock_threshold?: number
+          max_threshold?: number | null
           party_id: string
           product_id: string
           qty_incoming?: number
@@ -602,7 +606,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_low_stock?: boolean | null
+          is_overstock?: boolean | null
           low_stock_threshold?: number
+          max_threshold?: number | null
           party_id?: string
           product_id?: string
           qty_incoming?: number

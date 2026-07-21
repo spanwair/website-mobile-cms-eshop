@@ -41,7 +41,21 @@ const totalPages = Math.ceil(total / pageSize);
 function statusClass(s: string) {
   return s === "active" ? "badge-active" : s === "draft" ? "badge-draft" : "badge-inactive";
 }
+const stockColors = {
+  muted: "var(--text-muted)",
+  error: "var(--error)",
+  warning: "var(--warning)",
+  success: "var(--success)",
+} as const;
 
+type StockVariant = keyof typeof stockColors;
+
+function stockDisplay(stock: number | null): { variant: StockVariant; label: string } {
+  if (stock === null) return { variant: "muted", label: t.admin.products.noStockTracking };
+  if (stock <= 0) return { variant: "error", label: t.admin.products.outOfStock };
+  if (stock <= 10) return { variant: "warning", label: `${stock} ${t.admin.products.inStock}` };
+  return { variant: "success", label: `${stock} ${t.admin.products.inStock}` };
+}
 const filterQs = `&search=${encodeURIComponent(search)}&status=${status}&category=${categoryId}`;
 ---
 
@@ -79,6 +93,7 @@ const filterQs = `&search=${encodeURIComponent(search)}&status=${status}&categor
           <th>{t.admin.products.colSku}</th>
           <th>{t.admin.products.colStatus}</th>
           <th>{t.admin.products.colPrice}</th>
+          <th>{t.admin.products.colStock}</th>
           <th>{t.admin.products.colActions}</th>
         </tr>
       </thead>
@@ -90,12 +105,22 @@ const filterQs = `&search=${encodeURIComponent(search)}&status=${status}&categor
             <td><span class={`badge ${statusClass(p.status)}`}>{p.status}</span></td>
             <td>{p.price.toFixed(2)} Kč</td>
             <td>
+              {(() => {
+                const s = stockDisplay(p.stock);
+                return (
+                  <span style={`color:${stockColors[s.variant]};${s.variant !== "muted" ? "font-weight:600" : ""}`}>
+                    {s.label}
+                  </span>
+                );
+              })()}
+            </td>
+            <td>
               <a href={`/admin/products/${p.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.products.edit}</a>
             </td>
           </tr>
         ))}
         {products.length === 0 && (
-          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.products.noProducts}</td></tr>
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.products.noProducts}</td></tr>
         )}
       </tbody>
     </table>
@@ -118,4 +143,5 @@ const filterQs = `&search=${encodeURIComponent(search)}&status=${status}&categor
   .search-form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .pagination { display:flex; align-items:center; gap:12px; margin-top:16px; }
   .page-info { font-size:13px; color:var(--text-muted); }
+  .capacity-full { color: var(--error); font-weight: 600; }
 </style>

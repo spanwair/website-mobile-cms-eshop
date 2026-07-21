@@ -1,0 +1,61 @@
+{
+  "testFailure": "E2E test 04-10 fails due to browser context lifecycle issue",
+  "description": "Product edit test receives 'Target page, context or browser has been closed' error",
+  "rootCause": {
+    "problem": "Sequential test dependency with incomplete page state management",
+    "details": [
+      "Test assumes the product created in 04-06 still exists and is accessible",
+      "Page navigation after product creation may have left browser in inconsistent state",
+      "Edit form may not be loading correctly due to missing product ID",
+      "Tests need proper isolation and cleanup between product CRUD operations"
+    ]
+  },
+  "impact": "All subsequent product tests (status changes, duplicates, featured) are affected",
+  "filesToFix": [
+    "website/tests/e2e/04-products.spec.ts"
+  ],
+  "fixesNeeded": [
+    {
+      "test": "04-10 edit product",
+      "problem": "Browser context closed during fill operation",
+      "solution": "Ensure proper page navigation and wait for element readiness"
+    },
+    {
+      "test": "04-06 create product",
+      "problem": "Product may not be accessible for subsequent tests",
+      "solution": "Store created product ID and ensure proper cleanup"
+    },
+    {
+      "test": "04-11, 04-12 status changes",
+      "problem": "Depend on product from 04-06 that may not exist",
+      "solution": "Refactor to be independent tests"
+    }
+  ],
+  "verificationSteps": [
+    "Fix edit product test to handle missing/nonexistent product gracefully",
+    "Add proper waits and error handling for page navigation",
+    "Ensure tests are isolated from each other",
+    "Store and manage test product IDs properly",
+    "Add retry logic for flaky operations"
+  ],
+  "testingPlan": {
+    "beforeFix": [
+      "Run existing tests to confirm failures",
+      "Document all error messages and screenshots",
+      "Analyze test dependencies and flow",
+      "Identify exact points of failure"
+    ],
+    "afterFix": [
+      "Fix the specific failing test (04-10)",
+      "Ensure product creation test completes successfully",
+      "Add proper test isolation",
+      "Run full test suite to verify all tests pass"
+    ]
+  },
+  "urgency": "HIGH",
+  "blockers": [
+    "Browser context management issues",
+    "Missing product state between tests",
+    "Incomplete error handling for test failures"
+  ]
+}

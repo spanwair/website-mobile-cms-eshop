@@ -4,8 +4,9 @@
       "/home/jan/.nvm/versions/node/v22.21.0/bin/node",
       "/home/jan/PROJECTS/react-native/website-mobile-template/website/node_modules/.pnpm/@playwright+test@1.61.1/node_modules/@playwright/test/cli.js",
       "test",
-      "tests/e2e/16-invite-flow.spec.ts",
-      "--timeout=60000"
+      "--project=chromium",
+      "--grep",
+      "04-06|04-07|04-08|04-09|04-10"
     ],
     "configFile": "/home/jan/PROJECTS/react-native/website-mobile-template/website/playwright.config.ts",
     "rootDir": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e",
@@ -37,7 +38,7 @@
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 60000
+        "timeout": 45000
       }
     ],
     "quiet": false,
@@ -67,25 +68,25 @@
   },
   "suites": [
     {
-      "title": "16-invite-flow.spec.ts",
-      "file": "16-invite-flow.spec.ts",
+      "title": "04-products.spec.ts",
+      "file": "04-products.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "16 — Invite flow: invite → accept → set-password → login",
-          "file": "16-invite-flow.spec.ts",
-          "line": 125,
+          "title": "04 — Products: CRUD, Search, Filter, Status",
+          "file": "04-products.spec.ts",
+          "line": 4,
           "column": 6,
           "specs": [
             {
-              "title": "16-01 invite link (generate_link) → set-password page → login with password",
-              "ok": false,
+              "title": "04-06 create draft product with all fields",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
-                  "timeout": 60000,
+                  "timeout": 45000,
                   "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
@@ -94,208 +95,242 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 21729,
-                      "error": {
-                        "message": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation to \"http://localhost:4321/auth/set-password\" until \"load\"\n============================================================",
-                        "stack": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation to \"http://localhost:4321/auth/set-password\" until \"load\"\n============================================================\n    at /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts:139:16",
-                        "location": {
-                          "file": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts",
-                          "column": 16,
-                          "line": 139
-                        },
-                        "snippet": "  137 |     // Navigate to invite link → should land on /auth/set-password\n  138 |     await page.goto(inviteLink);\n> 139 |     await page.waitForURL(`${BASE}/auth/set-password`, { timeout: 20000 });\n      |                ^\n  140 |     await screenshot(page, \"16-01-set-password-page\");\n  141 |     await expect(page).toHaveURL(`${BASE}/auth/set-password`);\n  142 |"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts",
-                            "column": 16,
-                            "line": 139
-                          },
-                          "message": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation to \"http://localhost:4321/auth/set-password\" until \"load\"\n============================================================\n\n  137 |     // Navigate to invite link → should land on /auth/set-password\n  138 |     await page.goto(inviteLink);\n> 139 |     await page.waitForURL(`${BASE}/auth/set-password`, { timeout: 20000 });\n      |                ^\n  140 |     await screenshot(page, \"16-01-set-password-page\");\n  141 |     await expect(page).toHaveURL(`${BASE}/auth/set-password`);\n  142 |\n    at /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts:139:16"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-07-19T22:16:35.614Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/16-invite-flow-16-—-Invite-71bd7--page-→-login-with-password-chromium/test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/16-invite-flow-16-—-Invite-71bd7--page-→-login-with-password-chromium/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/16-invite-flow-16-—-Invite-71bd7--page-→-login-with-password-chromium/error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts",
-                        "column": 16,
-                        "line": 139
-                      }
-                    }
-                  ],
-                  "status": "unexpected"
-                }
-              ],
-              "id": "e37a53cb773ce75c0976-ef05c0641c30b2fd7e07",
-              "file": "16-invite-flow.spec.ts",
-              "line": 131,
-              "column": 3
-            },
-            {
-              "title": "16-02 register with invited email → magic link email → set-password → login",
-              "ok": false,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 9735,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#success-su')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#success-su')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#success-su')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#success-su')\u001b[22m\n\n    at /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts:187:47",
-                        "location": {
-                          "file": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts",
-                          "column": 47,
-                          "line": 187
-                        },
-                        "snippet": "  185 |     await page.waitForTimeout(3000);\n  186 |     await screenshot(page, \"16-02-magic-link-sent-success\");\n> 187 |     await expect(page.locator(\"#success-su\")).toBeVisible();\n      |                                               ^\n  188 |\n  189 |     // Step 3: Get magic link from email\n  190 |     const html = await waitForEmail(INVITE_EMAIL, \"sign-in\");"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts",
-                            "column": 47,
-                            "line": 187
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#success-su')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#success-su')\u001b[22m\n\n\n  185 |     await page.waitForTimeout(3000);\n  186 |     await screenshot(page, \"16-02-magic-link-sent-success\");\n> 187 |     await expect(page.locator(\"#success-su\")).toBeVisible();\n      |                                               ^\n  188 |\n  189 |     // Step 3: Get magic link from email\n  190 |     const html = await waitForEmail(INVITE_EMAIL, \"sign-in\");\n    at /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts:187:47"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 2036,
+                      "errors": [],
                       "stdout": [
                         {
-                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/001-16-02-signup-form-filled.png\n"
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/001-login-fill-admin.png\n"
                         },
                         {
-                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/002-16-02-magic-link-sent-success.png\n"
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/002-after-login-dashboard.png\n"
+                        },
+                        {
+                          "text": "Starting 04-06: Creating draft product with all fields\n"
+                        },
+                        {
+                          "text": "Filling product form\n"
+                        },
+                        {
+                          "text": "Submitting product form\n"
+                        },
+                        {
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/003-04-06-new-product-filled.png\n"
+                        },
+                        {
+                          "text": "Waiting for navigation after product creation\n"
+                        },
+                        {
+                          "text": "Navigating to products list to verify\n"
+                        },
+                        {
+                          "text": "Verifying product was created\n"
+                        },
+                        {
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/004-04-06-after-create-product.png\n"
+                        },
+                        {
+                          "text": "✅ 04-06 product creation test completed successfully\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-07-19T22:16:58.194Z",
+                      "startTime": "2026-07-21T10:05:11.441Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/16-invite-flow-16-—-Invite-ef6c2-mail-→-set-password-→-login-chromium/test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/16-invite-flow-16-—-Invite-ef6c2-mail-→-set-password-→-login-chromium/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/16-invite-flow-16-—-Invite-ef6c2-mail-→-set-password-→-login-chromium/error-context.md"
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/04-products-04-—-Products--4a9bf-aft-product-with-all-fields-chromium/test-finished-1.png"
                         }
-                      ],
-                      "errorLocation": {
-                        "file": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts",
-                        "column": 47,
-                        "line": 187
-                      }
+                      ]
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
-              "id": "e37a53cb773ce75c0976-cd60cb9b1cf058217000",
-              "file": "16-invite-flow.spec.ts",
-              "line": 167,
+              "id": "122a339dc3eefc5615be-fd6990e78230b6519396",
+              "file": "04-products.spec.ts",
+              "line": 71,
               "column": 3
             },
             {
-              "title": "16-03 invite email is styled HTML in Czech",
-              "ok": false,
+              "title": "04-07 draft product badge shows draft status",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
-                  "timeout": 60000,
+                  "timeout": 45000,
                   "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 129,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected substring: \u001b[32m\"Odeslali\"\u001b[39m\nReceived string:    \u001b[31m\"<!DOCTYPE html>·\u001b[39m\n\u001b[31m<html lang=\\\"cs\\\">·\u001b[39m\n\u001b[31m<head><meta charset=\\\"UTF-8\\\"><meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\"></head>·\u001b[39m\n\u001b[31m<body style=\\\"margin:0;padding:0;background:#f4f4f8\\\">·\u001b[39m\n\u001b[31m<table width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"background:#f4f4f8;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif\\\">·\u001b[39m\n\u001b[31m<tr><td align=\\\"center\\\">·\u001b[39m\n\u001b[31m<table width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"max-width:600px;width:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)\\\">·······\u001b[39m\n\u001b[31m  <tr><td style=\\\"background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);padding:40px 48px\\\">·\u001b[39m\n\u001b[31m    <div style=\\\"color:#fff;font-size:26px;font-weight:700\\\">Test Organisation</div>·\u001b[39m\n\u001b[31m    <div style=\\\"color:rgba(255,255,255,0.8);font-size:15px;margin-top:8px\\\">·\u001b[39m\n\u001b[31m      Obdrželi jste pozvánku·\u001b[39m\n\u001b[31m    </div>·\u001b[39m\n\u001b[31m  </td></tr>·······\u001b[39m\n\u001b[31m  <tr><td style=\\\"padding:40px 48px\\\">···\u001b[39m\n\u001b[31m    <p style=\\\"margin:0 0 24px;color:#4b5563;font-size:15px;line-height:1.7\\\">·········\u001b[39m\n\u001b[31m        Byli jste pozváni, abyste se připojili k organizaci <strong>Test Organisation</strong>. Klikněte na tlačítko níže pro vytvoření účtu.·········\u001b[39m\n\u001b[31m    </p>···············\u001b[39m\n\u001b[31m    <div style=\\\"background:#f8f7ff;border:1px solid #e0ddff;border-radius:8px;padding:20px;margin-bottom:24px\\\">·\u001b[39m\n\u001b[31m      <div style=\\\"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:8px\\\">·\u001b[39m\n\u001b[31m        Vaše role·\u001b[39m\n\u001b[31m      </div>·\u001b[39m\n\u001b[31m      <div style=\\\"font-size:18px;font-weight:700;color:#4f46e5\\\">·\u001b[39m\n\u001b[31m        Super Admin·\u001b[39m\n\u001b[31m      </div>·········\u001b[39m\n\u001b[31m    </div>·····························\u001b[39m\n\u001b[31m    <div style=\\\"text-align:center;margin:32px 0\\\">·\u001b[39m\n\u001b[31m      <a href=\\\"http://127.0.0.1:54321/auth/v1/verify?token=03abdbb11826d28c075312d8592fa97aaa929a044438957b6bf60956&amp;type=invite&amp;redirect_to=http://localhost:4321\\\" style=\\\"display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;font-weight:600\\\">·\u001b[39m\n\u001b[31m        Přijmout pozvánku·\u001b[39m\n\u001b[31m      </a>·\u001b[39m\n\u001b[31m      <div style=\\\"font-size:11px;color:#9ca3af;margin-top:12px\\\">·\u001b[39m\n\u001b[31m        Odkaz je platný 24 hodin.·\u001b[39m\n\u001b[31m      </div>·\u001b[39m\n\u001b[31m    </div>···\u001b[39m\n\u001b[31m  </td></tr>·······\u001b[39m\n\u001b[31m  <tr><td style=\\\"background:#f9fafb;padding:20px 48px;border-top:1px solid #e5e7eb\\\">·\u001b[39m\n\u001b[31m    <div style=\\\"font-size:12px;color:#9ca3af\\\">·\u001b[39m\n\u001b[31m      <a href=\\\"http://localhost:4321/admin\\\" style=\\\"color:#4f46e5;text-decoration:none\\\">Admin</a> &nbsp;·&nbsp;·\u001b[39m\n\u001b[31m      <a href=\\\"http://localhost:4321/login\\\" style=\\\"color:#4f46e5;text-decoration:none\\\">·\u001b[39m\n\u001b[31m        Přihlásit se·\u001b[39m\n\u001b[31m      </a> &nbsp;·&nbsp;·\u001b[39m\n\u001b[31m      <a href=\\\"http://localhost:4321/shop\\\" style=\\\"color:#4f46e5;text-decoration:none\\\">Shop</a> &nbsp;·&nbsp;·\u001b[39m\n\u001b[31m      <a href=\\\"http://localhost:4321/profile\\\" style=\\\"color:#4f46e5;text-decoration:none\\\">Profile</a>·\u001b[39m\n\u001b[31m    </div>·\u001b[39m\n\u001b[31m  </td></tr>···\u001b[39m\n\u001b[31m</table>·\u001b[39m\n\u001b[31m</td></tr>·\u001b[39m\n\u001b[31m</table>·\u001b[39m\n\u001b[31m</body>·\u001b[39m\n\u001b[31m</html>·\u001b[39m\n\u001b[31m\"\u001b[39m",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected substring: \u001b[32m\"Odeslali\"\u001b[39m\nReceived string:    \u001b[31m\"<!DOCTYPE html>·\u001b[39m\n\u001b[31m<html lang=\\\"cs\\\">·\u001b[39m\n\u001b[31m<head><meta charset=\\\"UTF-8\\\"><meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\"></head>·\u001b[39m\n\u001b[31m<body style=\\\"margin:0;padding:0;background:#f4f4f8\\\">·\u001b[39m\n\u001b[31m<table width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"background:#f4f4f8;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif\\\">·\u001b[39m\n\u001b[31m<tr><td align=\\\"center\\\">·\u001b[39m\n\u001b[31m<table width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"max-width:600px;width:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)\\\">·······\u001b[39m\n\u001b[31m  <tr><td style=\\\"background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);padding:40px 48px\\\">·\u001b[39m\n\u001b[31m    <div style=\\\"color:#fff;font-size:26px;font-weight:700\\\">Test Organisation</div>·\u001b[39m\n\u001b[31m    <div style=\\\"color:rgba(255,255,255,0.8);font-size:15px;margin-top:8px\\\">·\u001b[39m\n\u001b[31m      Obdrželi jste pozvánku·\u001b[39m\n\u001b[31m    </div>·\u001b[39m\n\u001b[31m  </td></tr>·······\u001b[39m\n\u001b[31m  <tr><td style=\\\"padding:40px 48px\\\">···\u001b[39m\n\u001b[31m    <p style=\\\"margin:0 0 24px;color:#4b5563;font-size:15px;line-height:1.7\\\">·········\u001b[39m\n\u001b[31m        Byli jste pozváni, abyste se připojili k organizaci <strong>Test Organisation</strong>. Klikněte na tlačítko níže pro vytvoření účtu.·········\u001b[39m\n\u001b[31m    </p>···············\u001b[39m\n\u001b[31m    <div style=\\\"background:#f8f7ff;border:1px solid #e0ddff;border-radius:8px;padding:20px;margin-bottom:24px\\\">·\u001b[39m\n\u001b[31m      <div style=\\\"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:8px\\\">·\u001b[39m\n\u001b[31m        Vaše role·\u001b[39m\n\u001b[31m      </div>·\u001b[39m\n\u001b[31m      <div style=\\\"font-size:18px;font-weight:700;color:#4f46e5\\\">·\u001b[39m\n\u001b[31m        Super Admin·\u001b[39m\n\u001b[31m      </div>·········\u001b[39m\n\u001b[31m    </div>·····························\u001b[39m\n\u001b[31m    <div style=\\\"text-align:center;margin:32px 0\\\">·\u001b[39m\n\u001b[31m      <a href=\\\"http://127.0.0.1:54321/auth/v1/verify?token=03abdbb11826d28c075312d8592fa97aaa929a044438957b6bf60956&amp;type=invite&amp;redirect_to=http://localhost:4321\\\" style=\\\"display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;font-weight:600\\\">·\u001b[39m\n\u001b[31m        Přijmout pozvánku·\u001b[39m\n\u001b[31m      </a>·\u001b[39m\n\u001b[31m      <div style=\\\"font-size:11px;color:#9ca3af;margin-top:12px\\\">·\u001b[39m\n\u001b[31m        Odkaz je platný 24 hodin.·\u001b[39m\n\u001b[31m      </div>·\u001b[39m\n\u001b[31m    </div>···\u001b[39m\n\u001b[31m  </td></tr>·······\u001b[39m\n\u001b[31m  <tr><td style=\\\"background:#f9fafb;padding:20px 48px;border-top:1px solid #e5e7eb\\\">·\u001b[39m\n\u001b[31m    <div style=\\\"font-size:12px;color:#9ca3af\\\">·\u001b[39m\n\u001b[31m      <a href=\\\"http://localhost:4321/admin\\\" style=\\\"color:#4f46e5;text-decoration:none\\\">Admin</a> &nbsp;·&nbsp;·\u001b[39m\n\u001b[31m      <a href=\\\"http://localhost:4321/login\\\" style=\\\"color:#4f46e5;text-decoration:none\\\">·\u001b[39m\n\u001b[31m        Přihlásit se·\u001b[39m\n\u001b[31m      </a> &nbsp;·&nbsp;·\u001b[39m\n\u001b[31m      <a href=\\\"http://localhost:4321/shop\\\" style=\\\"color:#4f46e5;text-decoration:none\\\">Shop</a> &nbsp;·&nbsp;·\u001b[39m\n\u001b[31m      <a href=\\\"http://localhost:4321/profile\\\" style=\\\"color:#4f46e5;text-decoration:none\\\">Profile</a>·\u001b[39m\n\u001b[31m    </div>·\u001b[39m\n\u001b[31m  </td></tr>···\u001b[39m\n\u001b[31m</table>·\u001b[39m\n\u001b[31m</td></tr>·\u001b[39m\n\u001b[31m</table>·\u001b[39m\n\u001b[31m</body>·\u001b[39m\n\u001b[31m</html>·\u001b[39m\n\u001b[31m\"\u001b[39m\n    at /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts:230:18",
-                        "location": {
-                          "file": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts",
-                          "column": 18,
-                          "line": 230
-                        },
-                        "snippet": "  228 |     // Must be Czech (lang=cs)\n  229 |     expect(html).toContain(\"Přijmout pozvánku\");\n> 230 |     expect(html).toContain(\"Odeslali\");\n      |                  ^\n  231 |   });\n  232 | });\n  233 |"
-                      },
-                      "errors": [
+                      "status": "passed",
+                      "duration": 739,
+                      "errors": [],
+                      "stdout": [
                         {
-                          "location": {
-                            "file": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts",
-                            "column": 18,
-                            "line": 230
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected substring: \u001b[32m\"Odeslali\"\u001b[39m\nReceived string:    \u001b[31m\"<!DOCTYPE html>·\u001b[39m\n\u001b[31m<html lang=\\\"cs\\\">·\u001b[39m\n\u001b[31m<head><meta charset=\\\"UTF-8\\\"><meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\"></head>·\u001b[39m\n\u001b[31m<body style=\\\"margin:0;padding:0;background:#f4f4f8\\\">·\u001b[39m\n\u001b[31m<table width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"background:#f4f4f8;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif\\\">·\u001b[39m\n\u001b[31m<tr><td align=\\\"center\\\">·\u001b[39m\n\u001b[31m<table width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"max-width:600px;width:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)\\\">·······\u001b[39m\n\u001b[31m  <tr><td style=\\\"background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);padding:40px 48px\\\">·\u001b[39m\n\u001b[31m    <div style=\\\"color:#fff;font-size:26px;font-weight:700\\\">Test Organisation</div>·\u001b[39m\n\u001b[31m    <div style=\\\"color:rgba(255,255,255,0.8);font-size:15px;margin-top:8px\\\">·\u001b[39m\n\u001b[31m      Obdrželi jste pozvánku·\u001b[39m\n\u001b[31m    </div>·\u001b[39m\n\u001b[31m  </td></tr>·······\u001b[39m\n\u001b[31m  <tr><td style=\\\"padding:40px 48px\\\">···\u001b[39m\n\u001b[31m    <p style=\\\"margin:0 0 24px;color:#4b5563;font-size:15px;line-height:1.7\\\">·········\u001b[39m\n\u001b[31m        Byli jste pozváni, abyste se připojili k organizaci <strong>Test Organisation</strong>. Klikněte na tlačítko níže pro vytvoření účtu.·········\u001b[39m\n\u001b[31m    </p>···············\u001b[39m\n\u001b[31m    <div style=\\\"background:#f8f7ff;border:1px solid #e0ddff;border-radius:8px;padding:20px;margin-bottom:24px\\\">·\u001b[39m\n\u001b[31m      <div style=\\\"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:8px\\\">·\u001b[39m\n\u001b[31m        Vaše role·\u001b[39m\n\u001b[31m      </div>·\u001b[39m\n\u001b[31m      <div style=\\\"font-size:18px;font-weight:700;color:#4f46e5\\\">·\u001b[39m\n\u001b[31m        Super Admin·\u001b[39m\n\u001b[31m      </div>·········\u001b[39m\n\u001b[31m    </div>·····························\u001b[39m\n\u001b[31m    <div style=\\\"text-align:center;margin:32px 0\\\">·\u001b[39m\n\u001b[31m      <a href=\\\"http://127.0.0.1:54321/auth/v1/verify?token=03abdbb11826d28c075312d8592fa97aaa929a044438957b6bf60956&amp;type=invite&amp;redirect_to=http://localhost:4321\\\" style=\\\"display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;font-weight:600\\\">·\u001b[39m\n\u001b[31m        Přijmout pozvánku·\u001b[39m\n\u001b[31m      </a>·\u001b[39m\n\u001b[31m      <div style=\\\"font-size:11px;color:#9ca3af;margin-top:12px\\\">·\u001b[39m\n\u001b[31m        Odkaz je platný 24 hodin.·\u001b[39m\n\u001b[31m      </div>·\u001b[39m\n\u001b[31m    </div>···\u001b[39m\n\u001b[31m  </td></tr>·······\u001b[39m\n\u001b[31m  <tr><td style=\\\"background:#f9fafb;padding:20px 48px;border-top:1px solid #e5e7eb\\\">·\u001b[39m\n\u001b[31m    <div style=\\\"font-size:12px;color:#9ca3af\\\">·\u001b[39m\n\u001b[31m      <a href=\\\"http://localhost:4321/admin\\\" style=\\\"color:#4f46e5;text-decoration:none\\\">Admin</a> &nbsp;·&nbsp;·\u001b[39m\n\u001b[31m      <a href=\\\"http://localhost:4321/login\\\" style=\\\"color:#4f46e5;text-decoration:none\\\">·\u001b[39m\n\u001b[31m        Přihlásit se·\u001b[39m\n\u001b[31m      </a> &nbsp;·&nbsp;·\u001b[39m\n\u001b[31m      <a href=\\\"http://localhost:4321/shop\\\" style=\\\"color:#4f46e5;text-decoration:none\\\">Shop</a> &nbsp;·&nbsp;·\u001b[39m\n\u001b[31m      <a href=\\\"http://localhost:4321/profile\\\" style=\\\"color:#4f46e5;text-decoration:none\\\">Profile</a>·\u001b[39m\n\u001b[31m    </div>·\u001b[39m\n\u001b[31m  </td></tr>···\u001b[39m\n\u001b[31m</table>·\u001b[39m\n\u001b[31m</td></tr>·\u001b[39m\n\u001b[31m</table>·\u001b[39m\n\u001b[31m</body>·\u001b[39m\n\u001b[31m</html>·\u001b[39m\n\u001b[31m\"\u001b[39m\n\n  228 |     // Must be Czech (lang=cs)\n  229 |     expect(html).toContain(\"Přijmout pozvánku\");\n> 230 |     expect(html).toContain(\"Odeslali\");\n      |                  ^\n  231 |   });\n  232 | });\n  233 |\n    at /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts:230:18"
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/005-04-07-draft-badge.png\n"
                         }
                       ],
-                      "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-07-19T22:17:08.759Z",
+                      "startTime": "2026-07-21T10:05:14.975Z",
                       "annotations": [],
                       "attachments": [
                         {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/16-invite-flow-16-—-Invite-9e355-ail-is-styled-HTML-in-Czech-chromium/error-context.md"
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/04-products-04-—-Products--341c7-ct-badge-shows-draft-status-chromium/test-finished-1.png"
                         }
-                      ],
-                      "errorLocation": {
-                        "file": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/16-invite-flow.spec.ts",
-                        "column": 18,
-                        "line": 230
-                      }
+                      ]
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
-              "id": "e37a53cb773ce75c0976-fefbcf6a7675f39e43a5",
-              "file": "16-invite-flow.spec.ts",
-              "line": 220,
+              "id": "122a339dc3eefc5615be-e3919e891934e2470f00",
+              "file": "04-products.spec.ts",
+              "line": 109,
+              "column": 3
+            },
+            {
+              "title": "04-08 navigate to product detail page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1376,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/006-04-08-product-detail.png\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-21T10:05:15.719Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/04-products-04-—-Products--300e4-gate-to-product-detail-page-chromium/test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "122a339dc3eefc5615be-f1d65c7383c9111723b7",
+              "file": "04-products.spec.ts",
+              "line": 136,
+              "column": 3
+            },
+            {
+              "title": "04-09 product detail pre-fills correct values",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 725,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/007-04-09-product-prefilled.png\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-21T10:05:17.100Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/04-products-04-—-Products--dee66-il-pre-fills-correct-values-chromium/test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "122a339dc3eefc5615be-1aa79994656b54875e50",
+              "file": "04-products.spec.ts",
+              "line": 169,
+              "column": 3
+            },
+            {
+              "title": "04-10 edit product — change title and price",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1516,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/008-04-10-edit-product-filled.png\n"
+                        },
+                        {
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/009-04-10-after-edit-product.png\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-21T10:05:17.830Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/04-products-04-—-Products--4cfd2-ct-—-change-title-and-price-chromium/test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "122a339dc3eefc5615be-a1f553220f96462afa78",
+              "file": "04-products.spec.ts",
+              "line": 183,
               "column": 3
             }
           ]
@@ -305,11 +340,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-07-19T22:16:33.331Z",
-    "duration": 35627.205,
-    "expected": 0,
+    "startTime": "2026-07-21T10:05:09.598Z",
+    "duration": 9853.917,
+    "expected": 5,
     "skipped": 0,
-    "unexpected": 3,
+    "unexpected": 0,
     "flaky": 0
   }
 }

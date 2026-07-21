@@ -123,6 +123,7 @@ export interface Product {
   status: "draft" | "active" | "inactive";
   is_featured: boolean;
   is_visible: boolean;
+  stock: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -150,7 +151,6 @@ export interface ProductImage {
   media_type: "image" | "video";
   created_at: string;
 }
-
 export interface ProductWithDetails extends Product {
   images: ProductImage[];
   variants: ProductVariant[];
@@ -326,7 +326,9 @@ export interface InventoryItem {
   qty_incoming: number;
   qty_available: number;
   low_stock_threshold: number;
+  max_threshold: number | null;
   track_inventory: boolean;
+  is_overstock: boolean | null;
   created_at: string;
   updated_at: string;
 }

@@ -1,10 +1,10 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
-import { fetchInventory, updateStock } from "@shared/services/inventoryService";
+import { fetchInventory, updateStock, updateThresholds } from "@shared/services/inventoryService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -142,4 +142,33 @@ const isLowMap = new Map(items.map((i) => [i.id, i.qty_on_hand <= i.low_stock_th
   .note-input { width:120px; padding:6px 10px; font-size:13px; }
   .pagination { display:flex; align-items:center; gap:12px; margin-top:16px; }
   .page-info { font-size:13px; color:var(--text-muted); }
+  .threshold-form { display:flex; gap:6px; align-items:center; }
+  .threshold-input { width:80px; padding:6px 10px; font-size:13px; }
+  .threshold-input.invalid { border-color: var(--error); background: rgba(239,68,68,0.08); }
 </style>
+
+<script>
+  // Client-side validation for threshold forms
+  document.querySelectorAll('.threshold-form').forEach(form => {
+    form.addEventListener('submit', (e) => {
+      const minInput = form.querySelector('.min-threshold');
+      const maxInput = form.querySelector('.max-threshold');
+      
+      // Clear previous validation states
+      minInput.classList.remove('invalid');
+      maxInput.classList.remove('invalid');
+      
+      const minVal = minInput.value ? parseInt(minInput.value, 10) : null;
+      const maxVal = maxInput.value ? parseInt(maxInput.value, 10) : null;
+      
+      // Validate: if both are set, min must be <= max
+      if (minVal !== null && maxVal !== null && minVal > maxVal) {
+        e.preventDefault();
+        minInput.classList.add('invalid');
+        maxInput.classList.add('invalid');
+        alert('Min threshold cannot be greater than Max threshold');
+      }
+    });
+  });
+</script>
+

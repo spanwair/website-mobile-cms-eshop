@@ -69,31 +69,95 @@ test.describe("04 — Products: CRUD, Search, Filter, Status", () => {
   });
 
   test("04-06 create draft product with all fields", async () => {
+    console.log('Starting 04-06: Creating draft product with all fields');
+    await page.goto(`${BASE}/admin/products/new`);
+    await page.waitForLoadState("networkidle");
+
+    console.log('Filling product form');
     await page.fill("input[name='title']", "E2E Test Product");
     await page.fill("input[name='slug']", "e2e-test-product");
     await page.fill("input[name='sku']", "SKU-E2E-001");
     await page.fill("input[name='price']", "199.90");
     await page.fill("input[name='discount_price']", "149.90");
     await page.selectOption("select[name='status']", "draft");
+
+    console.log('Submitting product form');
     await screenshot(page, "04-06-new-product-filled");
     await page.locator("form.product-form button.btn-primary").click();
-    // Creation redirects to the product detail page, then navigate to the list to verify
-    await page.waitForURL((url) => url.pathname.startsWith("/admin/products/") && url.pathname !== "/admin/products", { timeout: 10000 });
+
+    // Wait for navigation to product detail page
+    console.log('Waiting for navigation after product creation');
+    await page.waitForURL((url) => url.pathname.startsWith("/admin/products/") && url.pathname !== "/admin/products", { timeout: 15000 });
+    await page.waitForLoadState("networkidle", { timeout: 10000 });
+
+    // Capture the product ID from URL
+    createdProductId = page.url().split("/").pop() ?? "";
+
+    // Navigate to products list to verify
+    console.log('Navigating to products list to verify');
     await page.goto(`${BASE}/admin/products`);
     await page.waitForLoadState("networkidle");
-    await screenshot(page, "04-06-after-create-product");
+
+    console.log('Verifying product was created');
     await expect(page.getByText("E2E Test Product")).toBeVisible();
+
+    // Capture final state
+    await screenshot(page, "04-06-after-create-product");
+    console.log('✅ 04-06 product creation test completed successfully');
   });
 
   test("04-07 draft product badge shows draft status", async () => {
+    // Ensure we're on the products list page
+    await page.goto(`${BASE}/admin/products`);
+    await page.waitForLoadState("networkidle");
+    
+    // Check if product exists, create if needed (independent test)
+    const existingRow = page.locator("tr").filter({ hasText: "E2E Test Product" });
+    if (await existingRow.count() === 0) {
+      await page.goto(`${BASE}/admin/products/new`);
+      await page.waitForLoadState("networkidle");
+      await page.fill("input[name='title']", "E2E Test Product");
+      await page.fill("input[name='slug']", "e2e-test-product");
+      await page.fill("input[name='sku']", "SKU-E2E-001");
+      await page.fill("input[name='price']", "199.90");
+      await page.fill("input[name='discount_price']", "149.90");
+      await page.selectOption("select[name='status']", "draft");
+      await page.locator("form.product-form button.btn-primary").click();
+      await page.waitForURL((url) => url.pathname.startsWith("/admin/products/") && url.pathname !== "/admin/products", { timeout: 15000 });
+      await page.goto(`${BASE}/admin/products`);
+      await page.waitForLoadState("networkidle");
+    }
+    
     const row = page.locator("tr").filter({ hasText: "E2E Test Product" });
     await expect(row.locator(".badge-draft")).toBeVisible();
     await screenshot(page, "04-07-draft-badge");
   });
 
   test("04-08 navigate to product detail page", async () => {
+    // Ensure we're on the products list page
+    await page.goto(`${BASE}/admin/products`);
+    await page.waitForLoadState("networkidle");
+    
+    // Ensure the product exists
+    const existingRow = page.locator("tr").filter({ hasText: "E2E Test Product" });
+    if (await existingRow.count() === 0) {
+      await page.goto(`${BASE}/admin/products/new`);
+      await page.waitForLoadState("networkidle");
+      await page.fill("input[name='title']", "E2E Test Product");
+      await page.fill("input[name='slug']", "e2e-test-product");
+      await page.fill("input[name='sku']", "SKU-E2E-001");
+      await page.fill("input[name='price']", "199.90");
+      await page.fill("input[name='discount_price']", "149.90");
+      await page.selectOption("select[name='status']", "draft");
+      await page.locator("form.product-form button.btn-primary").click();
+      await page.waitForURL((url) => url.pathname.startsWith("/admin/products/") && url.pathname !== "/admin/products", { timeout: 15000 });
+      await page.goto(`${BASE}/admin/products`);
+      await page.waitForLoadState("networkidle");
+    }
+    
     const row = page.locator("tr").filter({ hasText: "E2E Test Product" });
     const editLink = row.locator("a.btn-ghost");
+    await expect(editLink).toBeVisible({ timeout: 5000 });
     const href = await editLink.getAttribute("href");
     createdProductId = href?.split("/").pop() ?? "";
     await editLink.click();
@@ -103,6 +167,10 @@ test.describe("04 — Products: CRUD, Search, Filter, Status", () => {
   });
 
   test("04-09 product detail pre-fills correct values", async () => {
+    // Ensure we're on the product detail page
+    await page.goto(`${BASE}/admin/products/${createdProductId}`);
+    await page.waitForLoadState("networkidle");
+    
     const titleInput = page.locator("input[name='title']");
     await expect(titleInput).toHaveValue("E2E Test Product");
     const priceInput = page.locator("input[name='price']");
@@ -113,35 +181,59 @@ test.describe("04 — Products: CRUD, Search, Filter, Status", () => {
   });
 
   test("04-10 edit product — change title and price", async () => {
+    // Ensure we're on the product edit page
+    await page.goto(`${BASE}/admin/products/${createdProductId}`);
+    await page.waitForLoadState("networkidle");
+    
+    const titleInput = page.locator("input[name='title']");
+    await expect(titleInput).toBeVisible({ timeout: 5000 });
+    
     await page.fill("input[name='title']", "E2E Test Product (Updated)");
     await page.fill("input[name='price']", "249.90");
     await screenshot(page, "04-10-edit-product-filled");
     await page.locator("form.product-form button.btn-primary").click();
     await page.waitForURL(`${BASE}/admin/products`, { timeout: 10000 });
+    await page.waitForLoadState("networkidle");
     await screenshot(page, "04-10-after-edit-product");
     await expect(page.getByText("E2E Test Product (Updated)")).toBeVisible();
   });
 
   test("04-11 change product status to active", async () => {
+    // Navigate to products list first
+    await page.goto(`${BASE}/admin/products`);
+    await page.waitForLoadState("networkidle");
+    
+    // Find and click the edit link for our product
     const row = page.locator("tr").filter({ hasText: "E2E Test Product (Updated)" });
+    await expect(row.locator("a.btn-ghost")).toBeVisible({ timeout: 5000 });
     await row.locator("a.btn-ghost").click();
     await page.waitForLoadState("networkidle");
+    
     await page.selectOption("select[name='status']", "active");
     await screenshot(page, "04-11-status-change-to-active");
     await page.locator("form.product-form button.btn-primary").click();
     await page.waitForURL(`${BASE}/admin/products`, { timeout: 10000 });
+    await page.waitForLoadState("networkidle");
     const updatedRow = page.locator("tr").filter({ hasText: "E2E Test Product (Updated)" });
     await expect(updatedRow.locator(".badge-active")).toBeVisible();
     await screenshot(page, "04-11-after-status-active");
   });
 
   test("04-12 change product status to inactive", async () => {
+    // Navigate to products list first
+    await page.goto(`${BASE}/admin/products`);
+    await page.waitForLoadState("networkidle");
+    
+    // Find and click the edit link for our product
     const row = page.locator("tr").filter({ hasText: "E2E Test Product (Updated)" });
+    await expect(row.locator("a.btn-ghost")).toBeVisible({ timeout: 5000 });
     await row.locator("a.btn-ghost").click();
     await page.waitForLoadState("networkidle");
+    
     await page.selectOption("select[name='status']", "inactive");
     await page.locator("form.product-form button.btn-primary").click();
     await page.waitForURL(`${BASE}/admin/products`, { timeout: 10000 });
+    await page.waitForLoadState("networkidle");
     const updatedRow = page.locator("tr").filter({ hasText: "E2E Test Product (Updated)" });
     await expect(updatedRow.locator(".badge-inactive")).toBeVisible();
     await screenshot(page, "04-12-after-status-inactive");

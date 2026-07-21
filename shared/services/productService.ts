@@ -41,7 +41,29 @@ export async function fetchProducts(
     .range(from, to);
 
   if (error) throw new Error(error.message);
-  return { data: (data ?? []) as Product[], total: count ?? 0, page, pageSize };
+
+  // Fetch stock for all products in one query
+  const productIds = (data ?? []).map((p) => p.id);
+  let stockMap = new Map<string, number>();
+  if (productIds.length > 0) {
+    const { data: inventoryRows } = await client
+      .from("inventory_items")
+      .select("product_id, qty_on_hand, qty_reserved")
+      .in("product_id", productIds)
+      .is("variant_id", null)
+      .eq("track_inventory", true);
+
+    stockMap = new Map(
+      (inventoryRows ?? []).map((r) => [r.product_id, r.qty_on_hand - r.qty_reserved])
+    );
+  }
+
+  const products = (data ?? []).map((p) => ({
+    ...p,
+    stock: stockMap.get(p.id) ?? null,
+  })) as Product[];
+
+  return { data: products, total: count ?? 0, page, pageSize };
 }
 
 export async function fetchProduct(

@@ -17,12 +17,14 @@
 | DB-004 | Notifications schema (notifications table + user_notifications) | Supabase-A | DONE | 20260102000004_notifications.sql |
 | DB-005 | E-shop core: products, categories, brands, variants, images, tags | Supabase-B | DONE | 20260102000005_eshop_catalog.sql |
 | DB-006 | E-shop transactions: orders, order_items, customers, addresses | Supabase-B | DONE | 20260102000006_eshop_orders.sql |
-| DB-007 | E-shop pricing: price_lists, discount_rules, coupons, promotions | Supabase-B | DONE | 20260102000007_eshop_pricing.sql |
+| DB-005 | E-shop pricing: price_lists, discount_rules, coupons, promotions | Supabase-B | DONE | 20260102000007_eshop_pricing.sql |
 | DB-008 | E-shop inventory: warehouses, inventory_items, stock_movements | Supabase-B | DONE | 20260102000008_eshop_inventory.sql |
+| DB-010 | Refactored auto-inventory to enforce 1 warehouse per org + enforce constraint | Supabase-A | DONE | 20270101000000_refactored_auto_inventory.sql |
 | DB-011 | Fix parties RLS: admin INSERT + SELECT ALL policies (was missing entirely) | Tester | DONE | 20260102000011_fix_parties_admin_rls.sql |
 | DB-012 | Add `is_low_stock` generated column to inventory_items + index | Tester | DONE | 20260102000012_inventory_low_stock_column.sql |
-
----
+| DB-013 | Refactored auto-inventory trigger for mandatory 1 warehouse per org | Supabase-A | DONE | 20260103000018_auto_inventory_on_product.sql |
+|
+|---
 
 ## PHASE 2 — Shared Layer (Architect)
 *Depends on Phase 1 migrations being written. Can start once DB-001–008 are DONE.*
