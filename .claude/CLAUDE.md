@@ -104,6 +104,19 @@ Track work in `_project_specs/todos/`:
 
 ---
 
+## Skill: admin-permissions — AUTO-TRIGGER
+
+TRIGGER — invoke the `admin-permissions` skill BEFORE making any changes whenever:
+- Any file under `website/src/pages/admin/` is opened or modified
+- `website/src/components/cms/Sidebar.astro` is touched
+- `website/src/lib/admin.ts` is touched
+- `shared/constants/permissions.ts` is touched
+- The task involves roles, permissions, access control, `canAssignRole`, `requireAdminCtx`, `hasPermission`, or the invite flow
+
+Do NOT skip because a change looks small. Load the skill first, then proceed.
+
+---
+
 ## Roles & Permissions System
 
 Single source of truth: `shared/constants/permissions.ts`. Never define role numbers, permission bit values, or label strings anywhere else — import from there.

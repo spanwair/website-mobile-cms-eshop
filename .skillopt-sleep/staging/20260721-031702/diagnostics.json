@@ -1,0 +1,51 @@
+{
+  "night": 4,
+  "backend": "claude",
+  "gate_mode": "on",
+  "n_tasks": 14,
+  "baseline_score": 0.0,
+  "candidate_score": 0.0,
+  "accepted": false,
+  "n_applied_edits": 0,
+  "n_rejected_edits": 0,
+  "call_error": "Claude CLI spawn failed: [Errno 2] No such file or directory: 'claude'",
+  "reflect_raw_head": "",
+  "holdout_detail": [
+    {
+      "id": "task_51d8328b0fd1",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_0a389b458822",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_587def72976d",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_9dea3a3e4ebb",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    }
+  ]
+}
