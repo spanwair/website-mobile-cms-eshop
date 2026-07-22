@@ -333,11 +333,13 @@ export interface InventoryItem {
   updated_at: string;
 }
 
+export type StockMovementType = "purchase" | "sale" | "adjustment" | "transfer" | "return" | "damage";
+
 export interface StockMovement {
   id: string;
   inventory_item_id: string;
   party_id: string;
-  type: "purchase" | "sale" | "adjustment" | "transfer" | "return" | "damage";
+  type: StockMovementType;
   quantity: number;
   reference_type: string | null;
   reference_id: string | null;

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
-import type { InventoryItem, Warehouse, StockMovement, PaginatedResult } from "../types";
+import type { InventoryItem, Warehouse, StockMovement, PaginatedResult, StockMovementType } from "../types";
 
 type Client = SupabaseClient<Database>;
 
@@ -88,41 +88,20 @@ export async function updateThresholds(
 ): Promise<{ data: InventoryItem[] | null; error: Error | null }> {
   const results = await Promise.all(
     updates.map(async ({ id, low_stock_threshold, max_threshold }) => {
-      // First, fetch the current inventory item to get existing threshold values
-      const { data: currentItem, error: fetchError } = await client
-        .from("inventory_items")
-        .select("low_stock_threshold, max_threshold")
-        .eq("id", id)
-        .single();
+      const updateData: any = {};
 
-      if (fetchError) {
-        return { error: new Error(fetchError.message), data: null };
-      }
-
-      // Determine the effective thresholds after the update
-      // If a value is provided (not undefined), use it; otherwise use the current value from DB
-      const effectiveLowStock = low_stock_threshold !== undefined ? low_stock_threshold : currentItem.low_stock_threshold;
-      const effectiveMax = max_threshold !== undefined ? max_threshold : currentItem.max_threshold;
-
-      // Validate cross-field constraint: when both thresholds are set, min must be <= max
-      if (effectiveLowStock !== null && effectiveMax !== null && effectiveLowStock > effectiveMax) {
-        return { error: new Error(`Min threshold cannot be greater than Max threshold. Current: Min ${currentItem.low_stock_threshold}, Max ${currentItem.max_threshold}. New: Min ${low_stock_threshold}, Max ${max_threshold}`), data: null };
-      }
-
-      const updateData: Database["public"]["Tables"]["inventory_items"]["Update"] = {};
       if (low_stock_threshold !== undefined) {
         if (low_stock_threshold !== null && low_stock_threshold < 0) {
           return { error: new Error(`Low stock threshold cannot be negative: ${low_stock_threshold}`), data: null };
         }
-        // Allow null to clear the threshold (DB allows NULL)
-        updateData.low_stock_threshold = low_stock_threshold ?? undefined;
+        updateData.low_stock_threshold = low_stock_threshold;
       }
+
       if (max_threshold !== undefined) {
         if (max_threshold !== null && max_threshold < 0) {
           return { error: new Error(`Max threshold cannot be negative: ${max_threshold}`), data: null };
         }
-        // Allow null to clear the threshold (DB allows NULL)
-        updateData.max_threshold = max_threshold ?? undefined;
+        updateData.max_threshold = max_threshold;
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -188,6 +167,28 @@ export async function fetchInventoryByProduct(
   if (!data) return null;
   const row = data as Database["public"]["Tables"]["inventory_items"]["Row"];
   return { ...row, qty_available: row.qty_on_hand - row.qty_reserved } as InventoryItem;
+}
+
+export async function updateStock(
+  client: Client,
+  input: {
+    inventory_item_id: string;
+    party_id: string;
+    quantity: number;
+    type: StockMovementType;
+    note?: string | null;
+    created_by: string;
+  }
+): Promise<{ error: Error | null }> {
+  const { error } = await client.from("stock_movements").insert({
+    inventory_item_id: input.inventory_item_id,
+    party_id: input.party_id,
+    quantity: input.quantity,
+    type: input.type,
+    note: input.note ?? null,
+    created_by: input.created_by,
+  });
+  return { error: error ? new Error(error.message) : null };
 }
 
 export async function fetchStockMovements(

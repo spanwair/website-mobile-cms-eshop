@@ -1,6 +1,7 @@
 ---
 import { createSupabase } from "../../../lib/supabase";
 import { fetchInventory, updateStock, updateThresholds } from "@shared/services/inventoryService";
+import type { StockMovementType } from "@shared/types";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
@@ -22,20 +23,36 @@ let error = "";
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
+  const action = form.get("action") as string;
   const inventoryItemId = form.get("inventory_item_id") as string;
-  const quantity = parseInt(form.get("quantity") as string, 10);
-  const type = form.get("type") as "adjustment" | "purchase" | "return" | "damage";
-  const note = (form.get("note") as string) || undefined;
-  const result = await updateStock(supabase, {
-    inventory_item_id: inventoryItemId,
-    party_id: partyId,
-    quantity,
-    type,
-    note: note ?? null,
-    created_by: session.user.id,
-  });
-  if (result.error) { error = result.error.message; }
-  else { return Astro.redirect("/admin/inventory"); }
+
+  if (action === "update_thresholds") {
+    const lowStockValue = form.get("low_stock_threshold") as string;
+    const maxThresholdValue = form.get("max_threshold") as string;
+    const lowStockThreshold = lowStockValue && parseInt(lowStockValue, 10) > 0 ? parseInt(lowStockValue, 10) : null;
+    const maxThreshold = maxThresholdValue && parseInt(maxThresholdValue, 10) > 0 ? parseInt(maxThresholdValue, 10) : null;
+    const result = await updateThresholds(supabase, [{
+      id: inventoryItemId,
+      low_stock_threshold: lowStockThreshold,
+      max_threshold: maxThreshold,
+    }]);
+    if (result.error) { error = result.error.message; }
+    else { return Astro.redirect("/admin/inventory"); }
+  } else {
+    const quantity = parseInt(form.get("quantity") as string, 10);
+    const type = form.get("type") as StockMovementType;
+    const note = (form.get("note") as string) || undefined;
+    const result = await updateStock(supabase, {
+      inventory_item_id: inventoryItemId,
+      party_id: partyId,
+      quantity,
+      type,
+      note: note ?? null,
+      created_by: session.user.id,
+    });
+    if (result.error) { error = result.error.message; }
+    else { return Astro.redirect("/admin/inventory"); }
+  }
 }
 
 const url = new URL(Astro.request.url);
@@ -81,7 +98,7 @@ const isLowMap = new Map(items.map((i) => [i.id, i.qty_on_hand <= i.low_stock_th
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>
-        <tr><th>{t.admin.inventory.colProduct}</th><th>{t.admin.inventory.colSku}</th><th>{t.admin.inventory.colOnHand}</th><th>{t.admin.inventory.colReserved}</th><th>{t.admin.inventory.colAvailable}</th><th>{t.admin.inventory.colThreshold}</th><th>{t.admin.inventory.adjust}</th></tr>
+        <tr><th>{t.admin.inventory.colProduct}</th><th>{t.admin.inventory.colSku}</th><th>{t.admin.inventory.colOnHand}</th><th>{t.admin.inventory.colReserved}</th><th>{t.admin.inventory.colAvailable}</th><th>{t.admin.inventory.colThreshold}</th><th>{t.admin.inventory.updateThresholds}</th><th>{t.admin.inventory.adjust}</th></tr>
       </thead>
       <tbody>
         {items.map((item) => (
@@ -94,8 +111,24 @@ const isLowMap = new Map(items.map((i) => [i.id, i.qty_on_hand <= i.low_stock_th
             <td>{item.qty_reserved}</td>
             <td>{item.qty_available}</td>
             <td>
-              {item.low_stock_threshold}
-              {isLowMap.get(item.id) && <span class="badge badge-error" style="margin-left:6px">{t.admin.inventory.filterLow}</span>}
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:13px">
+                  <span style="color:var(--text-muted);font-size:11px;text-transform:uppercase">Min:</span> {item.low_stock_threshold || "—"}
+                </span>
+                <span style="font-size:13px">
+                  <span style="color:var(--text-muted);font-size:11px;text-transform:uppercase">Max:</span> {item.max_threshold || "—"}
+                </span>
+              </div>
+              {isLowMap.get(item.id) && <span class="badge badge-error" style="margin-top:4px">{t.admin.inventory.filterLow}</span>}
+            </td>
+            <td>
+              <form method="POST" class="threshold-form">
+                <input type="hidden" name="action" value="update_thresholds" />
+                <input type="hidden" name="inventory_item_id" value={item.id} />
+                <input class="form-input threshold-input min-threshold" name="low_stock_threshold" type="number" min="0" placeholder="0" value={item.low_stock_threshold || 0} />
+                <input class="form-input threshold-input max-threshold" name="max_threshold" type="number" min="0" placeholder="0" value={item.max_threshold || 0} />
+                <button type="submit" class="btn btn-secondary" style="padding:6px 10px;font-size:12px;white-space:nowrap">{t.common.apply}</button>
+              </form>
             </td>
             <td>
               <form method="POST" class="adjust-form">
@@ -114,7 +147,7 @@ const isLowMap = new Map(items.map((i) => [i.id, i.qty_on_hand <= i.low_stock_th
           </tr>
         ))}
         {items.length === 0 && (
-          <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.inventory.noInventory}</td></tr>
+          <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.inventory.noInventory}</td></tr>
         )}
       </tbody>
     </table>
@@ -136,39 +169,14 @@ const isLowMap = new Map(items.map((i) => [i.id, i.qty_on_hand <= i.low_stock_th
   .filter-btn { padding:8px 16px; font-size:13px; font-weight:600; border-radius:8px; color:var(--text-muted); text-decoration:none; transition:background 0.15s, color 0.15s; }
   .filter-btn:hover { background:var(--bg-subtle); color:var(--text-primary); text-decoration:none; }
   .filter-btn.active { background:var(--accent-primary); color:#fff; }
-  .adjust-form { display:flex; gap:6px; align-items:center; }
+  .adjust-form { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
   .qty-input { width:70px; padding:6px 10px; font-size:13px; }
   .type-select { width:120px; padding:6px 10px; font-size:13px; }
   .note-input { width:120px; padding:6px 10px; font-size:13px; }
   .pagination { display:flex; align-items:center; gap:12px; margin-top:16px; }
   .page-info { font-size:13px; color:var(--text-muted); }
-  .threshold-form { display:flex; gap:6px; align-items:center; }
-  .threshold-input { width:80px; padding:6px 10px; font-size:13px; }
-  .threshold-input.invalid { border-color: var(--error); background: rgba(239,68,68,0.08); }
+  .threshold-form { display:flex; gap:6px; align-items:center; flex-direction:column; }
+  .threshold-input { width:70px; padding:6px 8px; font-size:12px; }
+  @media(min-width:1200px) { .threshold-form { flex-direction:row; } }
 </style>
-
-<script>
-  // Client-side validation for threshold forms
-  document.querySelectorAll('.threshold-form').forEach(form => {
-    form.addEventListener('submit', (e) => {
-      const minInput = form.querySelector('.min-threshold');
-      const maxInput = form.querySelector('.max-threshold');
-      
-      // Clear previous validation states
-      minInput.classList.remove('invalid');
-      maxInput.classList.remove('invalid');
-      
-      const minVal = minInput.value ? parseInt(minInput.value, 10) : null;
-      const maxVal = maxInput.value ? parseInt(maxInput.value, 10) : null;
-      
-      // Validate: if both are set, min must be <= max
-      if (minVal !== null && maxVal !== null && minVal > maxVal) {
-        e.preventDefault();
-        minInput.classList.add('invalid');
-        maxInput.classList.add('invalid');
-        alert('Min threshold cannot be greater than Max threshold');
-      }
-    });
-  });
-</script>
 

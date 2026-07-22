@@ -106,7 +106,7 @@ export async function createProduct(
     .select()
     .single();
   return {
-    data: error ? null : (data as Product),
+    data: error ? null : ({ ...data, stock: null } as Product),
     error: error ? new Error(error.message) : null,
   };
 }

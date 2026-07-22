@@ -100,8 +100,10 @@ if (Astro.request.method === "POST") {
 
   if (action === "update_thresholds" && hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY)) {
     const inventoryItemId = form.get("inventory_item_id") as string;
-    const lowStockThreshold = form.get("low_stock_threshold") ? parseInt(form.get("low_stock_threshold") as string, 10) : null;
-    const maxThreshold = form.get("max_threshold") ? parseInt(form.get("max_threshold") as string, 10) : null;
+    const lowStockValue = form.get("low_stock_threshold") as string;
+    const maxThresholdValue = form.get("max_threshold") as string;
+    const lowStockThreshold = lowStockValue && parseInt(lowStockValue, 10) > 0 ? parseInt(lowStockValue, 10) : null;
+    const maxThreshold = maxThresholdValue && parseInt(maxThresholdValue, 10) > 0 ? parseInt(maxThresholdValue, 10) : null;
     const result = await updateThresholds(supabase, [{
       id: inventoryItemId,
       low_stock_threshold: lowStockThreshold,
@@ -226,81 +228,109 @@ const recentMovements = inventoryItem
   <ProductImages images={product.images} productId={id!} />
 
   <div class="inv-card" style="max-width:720px">
-      <h2 class="inv-title">Inventory</h2>
+      <h2 class="inv-title">{t.admin.inventory.title}</h2>
       {inventoryItem ? (
         <>
           <div class="inv-stats">
             <div class="inv-stat">
-              <span class="inv-label">On hand</span>
-              <div class="inv-stats">
-                <div class="inv-stat">
-                  <span class="inv-label">On hand</span>
-                  <span class={`inv-value${inventoryItem.qty_on_hand <= 0 ? " danger" : inventoryItem.is_low_stock ? " warning" : ""}`}>{inventoryItem.qty_on_hand}</span>
-                </div>
-                <div class="inv-stat">
-                  <span class="inv-label">Reserved</span>
-                  <span class="inv-value">{inventoryItem.qty_reserved}</span>
-                </div>
-                <div class="inv-stat">
-                  <span class="inv-label">Available</span>
-                  <span class="inv-value">{inventoryItem.qty_available}</span>
-                </div>
-                <div class="inv-stat">
-                  <span class="inv-label">Min. threshold</span>
-                  <span class="inv-value">{inventoryItem.low_stock_threshold}</span>
-                </div>
-                <div class="inv-stat">
-                  <span class="inv-label">Max. threshold</span>
-                  <span class="inv-value">{inventoryItem.max_threshold ?? "—"}</span>
-                </div>
+              <span class="inv-label">{t.admin.inventory.colOnHand}</span>
+              <span class={`inv-value${inventoryItem.qty_on_hand <= 0 ? " danger" : inventoryItem.is_low_stock ? " warning" : ""}`}>{inventoryItem.qty_on_hand}</span>
+            </div>
+            <div class="inv-stat">
+              <span class="inv-label">{t.admin.inventory.colReserved}</span>
+              <span class="inv-value">{inventoryItem.qty_reserved}</span>
+            </div>
+            <div class="inv-stat">
+              <span class="inv-label">{t.admin.inventory.colAvailable}</span>
+              <span class="inv-value">{inventoryItem.qty_available}</span>
+            </div>
+            <div class="inv-stat">
+              <span class="inv-label">{t.admin.inventory.minThreshold}</span>
+              <span class="inv-value">{inventoryItem.low_stock_threshold || "—"}</span>
+            </div>
+            <div class="inv-stat">
+              <span class="inv-label">{t.admin.inventory.maxThreshold}</span>
+              <span class="inv-value">{inventoryItem.max_threshold || "—"}</span>
+            </div>
+          </div>
+          <div class="inv-badges">
+            {inventoryItem.qty_on_hand <= 0 && <span class="badge badge-error">{t.admin.inventory.outOfStock}</span>}
+            {inventoryItem.is_low_stock && inventoryItem.qty_on_hand > 0 && <span class="badge badge-warning">{t.admin.inventory.lowStock}</span>}
+          </div>
+
+          {canManageInventory && (
+            <>
+              <div class="inv-form-section">
+                <h3 class="form-section-title">{t.admin.inventory.adjustStock}</h3>
+                <form method="POST" class="inv-adjust-form">
+                  <input type="hidden" name="action" value="adjust_inventory" />
+                  <input type="hidden" name="inventory_item_id" value={inventoryItem.id} />
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">{t.admin.inventory.quantity}</label>
+                      <input class="form-input" name="quantity" type="number" required placeholder="±qty" />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">{t.admin.inventory.movementType}</label>
+                      <select class="form-input" name="type">
+                        <option value="adjustment">{t.admin.inventory.typeAdjustment}</option>
+                        <option value="purchase">{t.admin.inventory.typePurchase}</option>
+                        <option value="return">{t.admin.inventory.typeReturn}</option>
+                        <option value="damage">{t.admin.inventory.typeDamage}</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">{t.admin.orders.noteOptional}</label>
+                    <input class="form-input" name="note" placeholder={t.admin.orders.noteOptional} />
+                  </div>
+                  <button type="submit" class="btn btn-secondary">{t.common.apply}</button>
+                </form>
               </div>
-              </div>
-              <div class="inv-badges">
-              {inventoryItem.qty_on_hand <= 0 && <span class="badge badge-error">Out of stock</span>}
-              {inventoryItem.is_low_stock && inventoryItem.qty_on_hand > 0 && <span class="badge badge-warning">Low stock</span>}
-              </div>
-              {canManageInventory && (
-              <div class="threshold-update-section">
-                <h3>Update thresholds</h3>
+
+              <div class="inv-form-section">
+                <h3 class="form-section-title">{t.admin.inventory.updateThresholds}</h3>
                 <form method="POST" class="threshold-form">
                   <input type="hidden" name="inventory_item_id" value={inventoryItem.id} />
                   <input type="hidden" name="action" value="update_thresholds" />
                   <div class="form-row">
                     <div class="form-group">
-                      <label class="form-label">Min. threshold</label>
-                      <input class="form-input" name="low_stock_threshold" type="number" min="0" value={inventoryItem.low_stock_threshold || ""} />
+                      <label class="form-label">{t.admin.inventory.minThreshold}</label>
+                      <input class="form-input" name="low_stock_threshold" type="number" min="0" placeholder="0" value={inventoryItem.low_stock_threshold || 0} />
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Max. threshold</label>
-                      <input class="form-input" name="max_threshold" type="number" min="0" value={inventoryItem.max_threshold || ""} />
+                      <label class="form-label">{t.admin.inventory.maxThreshold}</label>
+                      <input class="form-input" name="max_threshold" type="number" min="0" placeholder="0" value={inventoryItem.max_threshold || 0} />
                     </div>
                   </div>
-                  <button type="submit" class="btn btn-primary">Update thresholds</button>
+                  <button type="submit" class="btn btn-primary">{t.admin.inventory.updateThresholds}</button>
                 </form>
               </div>
-              )}
-        {recentMovements.length > 0 && (
-          <div class="movements-section">
-            <h3 class="movements-title">Recent stock movements</h3>
-            <table class="data-table">
-              <thead><tr><th>Type</th><th>Qty</th><th>Note</th><th>Date</th></tr></thead>
-              <tbody>
-                {recentMovements.map(m => (
-                  <tr>
-                    <td><span class={`badge badge-${m.type === "sale" || m.type === "damage" ? "error" : "active"}`}>{m.type}</span></td>
-                    <td style={m.type === "sale" || m.type === "damage" ? "color:var(--error)" : ""}>{m.type === "sale" || m.type === "damage" ? "-" : "+"}{m.quantity}</td>
-                    <td style="color:var(--text-muted);font-size:13px">{m.note ?? "—"}</td>
-                    <td style="color:var(--text-muted);font-size:12px">{new Date(m.created_at).toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </>
-    ) : (
-      <p style="color:var(--text-muted);font-size:14px">No inventory record yet. A warehouse must exist for this organisation to track inventory.</p>
-    )}
+            </>
+          )}
+
+          {recentMovements.length > 0 && (
+            <div class="movements-section">
+              <h3 class="movements-title">{t.admin.inventory.recentMovements}</h3>
+              <table class="data-table">
+                <thead><tr><th>{t.admin.inventory.movementType}</th><th>{t.admin.inventory.movementQty}</th><th>{t.admin.inventory.movementNote}</th><th>{t.admin.inventory.movementDate}</th></tr></thead>
+                <tbody>
+                  {recentMovements.map(m => (
+                    <tr>
+                      <td><span class={`badge badge-${m.type === "sale" || m.type === "damage" ? "error" : "active"}`}>{m.type}</span></td>
+                      <td style={m.type === "sale" || m.type === "damage" ? "color:var(--error)" : ""}>{m.type === "sale" || m.type === "damage" ? "-" : "+"}{m.quantity}</td>
+                      <td style="color:var(--text-muted);font-size:13px">{m.note ?? "—"}</td>
+                      <td style="color:var(--text-muted);font-size:12px">{new Date(m.created_at).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      ) : (
+        <p style="color:var(--text-muted);font-size:14px">{t.admin.inventory.noInventoryRecord}</p>
+      )}
   </div>
 </CmsLayout>
 
@@ -318,18 +348,18 @@ const recentMovements = inventoryItem
   @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
   .inv-card { margin-top:24px; }
   .inv-title { font-size:16px; font-weight:700; margin:0 0 16px; }
-  .inv-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px; }
+  .inv-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:12px; }
   .inv-stat { background:var(--bg-subtle); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:4px; }
   .inv-label { font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
   .inv-value { font-size:22px; font-weight:800; }
   .inv-value.danger { color:var(--error); }
   .inv-value.warning { color:#f59e0b; }
   .inv-badges { display:flex; gap:8px; margin-bottom:16px; }
-  .inv-adjust-form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:20px; }
-  .qty-input { width:80px; padding:8px 10px; font-size:14px; }
-  .type-select { width:130px; padding:8px 10px; font-size:14px; }
-  .note-input { flex:1; min-width:120px; padding:8px 10px; font-size:14px; }
-  .movements-section { margin-top:16px; }
+  .movements-section { margin-top:16px; margin-bottom:24px; }
   .movements-title { font-size:14px; font-weight:700; margin:0 0 10px; }
-  @media(max-width:600px) { .inv-stats { grid-template-columns:1fr 1fr; } .inv-adjust-form { flex-direction:column; align-items:stretch; } .qty-input,.type-select,.note-input { width:100%; } }
+  .inv-form-section { margin-top:20px; padding-top:20px; border-top:1px solid var(--border-color); }
+  .form-section-title { font-size:14px; font-weight:700; margin:0 0 12px; }
+  .inv-adjust-form { display:flex; flex-direction:column; gap:16px; }
+  .threshold-form { display:flex; flex-direction:column; gap:16px; }
+  @media(max-width:600px) { .inv-stats { grid-template-columns:1fr 1fr; } }
 </style>
