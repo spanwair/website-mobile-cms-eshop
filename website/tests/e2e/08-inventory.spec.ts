@@ -60,7 +60,7 @@ test.describe("08 — Inventory: Stock Levels, Adjustments, Low Stock", () => {
     await seedRow.locator("select.type-select").selectOption("purchase");
     await seedRow.locator("input.note-input").fill("Restock E2E");
     await screenshot(page, "08-05-stock-adjustment-purchase");
-    await seedRow.locator("button[type='submit']").click();
+    await seedRow.locator(".adjust-form button[type='submit']").click();
     await page.waitForURL(`${BASE}/admin/inventory`, { timeout: 10000 });
     await page.waitForLoadState("networkidle");
     await screenshot(page, "08-05-after-purchase");
@@ -74,7 +74,7 @@ test.describe("08 — Inventory: Stock Levels, Adjustments, Low Stock", () => {
     await seedRow.locator("input.qty-input").fill("5");
     await seedRow.locator("select.type-select").selectOption("damage");
     await screenshot(page, "08-06-stock-damage");
-    await seedRow.locator("button[type='submit']").click();
+    await seedRow.locator(".adjust-form button[type='submit']").click();
     await page.waitForURL(`${BASE}/admin/inventory`, { timeout: 10000 });
     await page.waitForLoadState("networkidle");
     // qty should now be 65
@@ -87,7 +87,7 @@ test.describe("08 — Inventory: Stock Levels, Adjustments, Low Stock", () => {
     const seedRow = page.locator("table.data-table tbody tr").filter({ hasText: "Seed Product" });
     await seedRow.locator("input.qty-input").fill("3");
     await seedRow.locator("select.type-select").selectOption("return");
-    await seedRow.locator("button[type='submit']").click();
+    await seedRow.locator(".adjust-form button[type='submit']").click();
     await page.waitForURL(`${BASE}/admin/inventory`, { timeout: 10000 });
     await page.waitForLoadState("networkidle");
     // qty should now be 68
@@ -101,7 +101,7 @@ test.describe("08 — Inventory: Stock Levels, Adjustments, Low Stock", () => {
     await seedRow.locator("input.qty-input").fill("60");
     await seedRow.locator("select.type-select").selectOption("damage");
     await screenshot(page, "08-08-low-stock-adjustment");
-    await seedRow.locator("button[type='submit']").click();
+    await seedRow.locator(".adjust-form button[type='submit']").click();
     await page.waitForURL(`${BASE}/admin/inventory`, { timeout: 10000 });
     await page.waitForLoadState("networkidle");
     // qty should now be 8 (< threshold=10)

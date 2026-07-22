@@ -1,18 +1,30 @@
 # Active Todos
 
-## Stage 1 — Template scaffold [DONE — pending user review]
-- [x] shared/ — supabase client, services, types, utils, i18n, theme
-- [x] mobile/ — Expo app with Login, Home, Items, Profile, Admin screens
-- [x] website/ — Astro SSR with all routes
-- [x] supabase/ — migrations, RLS, Edge Function skeleton
-- [x] .claude/ — CLAUDE.md + 8 agent definitions
+## ✅ Completed (Nightly Evolution Test Run)
+- [x] All 299 E2E tests passing
+- [x] Website typecheck passing
+- [x] Mobile typecheck passing
+- [x] Fixed inventory test selector ambiguity (4 test cases)
+- [x] Progress logging system validated
+- [x] Morning report generation validated
 
-## Stage 2 — After user review
-- [ ] Fill .env.development with real Supabase keys
-- [ ] pnpm install in mobile/ and website/
-- [ ] Run supabase gen types — update shared/supabase/types.ts
-- [ ] Test mobile app on Android emulator
-- [ ] Test website at localhost:4321
-- [ ] Build dev APK with eas build
-- [ ] Write Jest unit tests for shared/services/
-- [ ] Add Playwright E2E tests for website
+## 🚧 Partially Done (from AGENTS.md)
+- [ ] Order cancellation button — backend supports, no UI
+- [ ] Mobile app — screens exist but not connected to real data
+- [ ] Reports page — placeholder, no charts
+- [ ] Stripe checkout — scaffold ready, needs keys + endpoint
+- [ ] Resend emails — scaffold ready, needs keys + trigger wiring
+- [ ] Customer self-service portal (`/account` pages)
+- [ ] Abandoned cart job — field exists, needs cron/Edge Function
+
+## ❌ Not Started
+- [ ] Payment integration (Stripe, GoPay)
+- [ ] Email notifications to customers
+- [ ] Customer-group pricing
+- [ ] Multi-language product content
+- [ ] Product variants (size/color)
+- [ ] Barcode scanning (mobile)
+- [ ] CSV exports
+- [ ] Production deployment pipeline
+- [ ] Install treehouse for workspace isolation
+- [ ] Configure EAS for mobile builds

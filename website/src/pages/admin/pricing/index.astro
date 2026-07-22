@@ -37,9 +37,13 @@ const [priceLists, discountRules, coupons] = await Promise.all([
 
   {tab === "pricelists" && (
     <div style="margin-top:20px">
-      <div class="card" style="padding:0;overflow:hidden">
+      <div class="tab-toolbar">
+        <span class="total-label">{priceLists.length} {t.admin.pricing.title.toLowerCase()}</span>
+        <a href="/admin/pricing/pricelists/new" class="btn btn-primary">{t.admin.pricing.newPriceList}</a>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;margin-top:12px">
         <table class="data-table">
-          <thead><tr><th>{t.admin.pricing.colName}</th><th>{t.admin.pricing.colCurrency}</th><th>{t.admin.pricing.colDefault}</th><th>{t.admin.pricing.colStatus}</th><th>{t.admin.pricing.colValidFrom}</th><th>{t.admin.pricing.colValidTo}</th></tr></thead>
+          <thead><tr><th>{t.admin.pricing.colName}</th><th>{t.admin.pricing.colCurrency}</th><th>{t.admin.pricing.colDefault}</th><th>{t.admin.pricing.colStatus}</th><th>{t.admin.pricing.colValidFrom}</th><th>{t.admin.pricing.colValidTo}</th><th>{t.admin.pricing.colActions}</th></tr></thead>
           <tbody>
             {priceLists.map((pl) => (
               <tr>
@@ -49,9 +53,10 @@ const [priceLists, discountRules, coupons] = await Promise.all([
                 <td><span class={`badge ${pl.is_active ? "badge-active" : "badge-inactive"}`}>{pl.is_active ? t.common.active : t.common.inactive}</span></td>
                 <td style="font-size:13px;color:var(--text-muted)">{pl.valid_from ? new Date(pl.valid_from).toLocaleDateString() : "—"}</td>
                 <td style="font-size:13px;color:var(--text-muted)">{pl.valid_to ? new Date(pl.valid_to).toLocaleDateString() : "—"}</td>
+                <td><a href={`/admin/pricing/pricelists/${pl.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.pricing.edit}</a></td>
               </tr>
             ))}
-            {priceLists.length === 0 && <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.pricing.noPricelists}</td></tr>}
+            {priceLists.length === 0 && <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.pricing.noPricelists}</td></tr>}
           </tbody>
         </table>
       </div>
@@ -60,9 +65,13 @@ const [priceLists, discountRules, coupons] = await Promise.all([
 
   {tab === "discounts" && (
     <div style="margin-top:20px">
-      <div class="card" style="padding:0;overflow:hidden">
+      <div class="tab-toolbar">
+        <span class="total-label">{discountRules.length} {t.admin.pricing.colType.toLowerCase()}</span>
+        <a href="/admin/pricing/discounts/new" class="btn btn-primary">{t.admin.pricing.newDiscount}</a>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;margin-top:12px">
         <table class="data-table">
-          <thead><tr><th>{t.admin.pricing.colName}</th><th>{t.admin.pricing.colType}</th><th>{t.admin.pricing.colValue}</th><th>{t.admin.pricing.colStatus}</th><th>{t.admin.pricing.colStarts}</th><th>{t.admin.pricing.colEnds}</th></tr></thead>
+          <thead><tr><th>{t.admin.pricing.colName}</th><th>{t.admin.pricing.colType}</th><th>{t.admin.pricing.colValue}</th><th>{t.admin.pricing.colStatus}</th><th>{t.admin.pricing.colStarts}</th><th>{t.admin.pricing.colEnds}</th><th>{t.admin.pricing.colActions}</th></tr></thead>
           <tbody>
             {discountRules.map((r) => (
               <tr>
@@ -72,9 +81,10 @@ const [priceLists, discountRules, coupons] = await Promise.all([
                 <td><span class={`badge ${r.is_active ? "badge-active" : "badge-inactive"}`}>{r.is_active ? t.common.active : t.common.inactive}</span></td>
                 <td style="font-size:13px;color:var(--text-muted)">{r.starts_at ? new Date(r.starts_at).toLocaleDateString() : "—"}</td>
                 <td style="font-size:13px;color:var(--text-muted)">{r.ends_at ? new Date(r.ends_at).toLocaleDateString() : "—"}</td>
+                <td><a href={`/admin/pricing/discounts/${r.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.pricing.edit}</a></td>
               </tr>
             ))}
-            {discountRules.length === 0 && <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.pricing.noDiscounts}</td></tr>}
+            {discountRules.length === 0 && <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.pricing.noDiscounts}</td></tr>}
           </tbody>
         </table>
       </div>
@@ -89,7 +99,7 @@ const [priceLists, discountRules, coupons] = await Promise.all([
       </div>
       <div class="card" style="padding:0;overflow:hidden;margin-top:12px">
         <table class="data-table">
-          <thead><tr><th>{t.admin.pricing.colCode}</th><th>{t.admin.pricing.colStatus}</th><th>{t.admin.pricing.colMaxUses}</th><th>{t.admin.pricing.colUsed}</th><th>{t.admin.pricing.colCreated}</th></tr></thead>
+          <thead><tr><th>{t.admin.pricing.colCode}</th><th>{t.admin.pricing.colStatus}</th><th>{t.admin.pricing.colMaxUses}</th><th>{t.admin.pricing.colUsed}</th><th>{t.admin.pricing.colCreated}</th><th>{t.admin.pricing.colActions}</th></tr></thead>
           <tbody>
             {coupons.map((c) => (
               <tr>
@@ -98,9 +108,10 @@ const [priceLists, discountRules, coupons] = await Promise.all([
                 <td>{c.max_uses ?? t.admin.pricing.unlimited}</td>
                 <td>{c.uses_count}</td>
                 <td style="font-size:13px;color:var(--text-muted)">{new Date(c.created_at).toLocaleDateString()}</td>
+                <td><a href={`/admin/pricing/coupons/${c.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.pricing.edit}</a></td>
               </tr>
             ))}
-            {coupons.length === 0 && <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.pricing.noCoupons}</td></tr>}
+            {coupons.length === 0 && <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.pricing.noCoupons}</td></tr>}
           </tbody>
         </table>
       </div>

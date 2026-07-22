@@ -1,1 +1,6 @@
-_project_specs/nightly/test-workspaces/nightly-20260722-102241-expertise-init
+# Active Nightly Workspaces
+
+# Note: treehouse not installed - worked directly on main repo
+# Future runs should use: treehouse get --lease --lease-holder "nightly-$(date +%Y%m%d-%H%M%S)"
+
+main-repo — Fix inventory test selectors (website/tests/e2e/08-inventory.spec.ts)

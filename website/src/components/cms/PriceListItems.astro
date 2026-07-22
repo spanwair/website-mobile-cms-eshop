@@ -1,0 +1,76 @@
+---
+import type { Product } from "@shared/types";
+import { useT } from "../../lib/i18n";
+
+interface Props {
+  items: any[];
+  products: Product[];
+  currency: string;
+}
+
+const { items, products, currency } = Astro.props;
+const t = useT(Astro);
+---
+
+<div class="card" style="margin-top:24px;padding:0;overflow:hidden">
+  <div class="section-header">
+    <h3>{t.admin.pricing.productPricesTitle} ({items.length})</h3>
+  </div>
+  {items.length > 0 ? (
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>{t.admin.pricing.colProduct}</th>
+          <th>{t.admin.pricing.colSku}</th>
+          <th>{t.admin.pricing.colPrice}</th>
+          <th>{t.admin.pricing.colActions}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((item: any) => (
+          <tr>
+            <td style="font-weight:600">{item.product?.title ?? "—"}</td>
+            <td style="color:var(--text-muted)">{item.product?.sku ?? "—"}</td>
+            <td>{item.price.toFixed(2)} {currency}</td>
+            <td>
+              <form method="POST" onsubmit={`return confirm('${t.admin.pricing.removePriceConfirm}')`}>
+                <input type="hidden" name="action" value="delete_item" />
+                <input type="hidden" name="item_id" value={item.id} />
+                <button type="submit" class="btn btn-danger" style="font-size:12px;padding:4px 8px">{t.common.delete}</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) : (
+    <div style="padding:32px;text-align:center;color:var(--text-muted)">
+      {t.admin.pricing.noProductPrices}
+    </div>
+  )}
+
+  <form method="POST" class="add-item-form">
+    <input type="hidden" name="action" value="add_item" />
+    <div class="form-group">
+      <label class="form-label">{t.admin.pricing.fieldProduct}</label>
+      <select class="form-input" name="product_id" required>
+        <option value="">{t.admin.pricing.selectProduct}</option>
+        {products.map((p: Product) => (
+          <option value={p.id}>{p.title}{p.sku ? ` (${p.sku})` : ""}</option>
+        ))}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{t.admin.pricing.colPrice}</label>
+      <input class="form-input" name="price" type="number" step="0.01" min="0" required />
+    </div>
+    <button type="submit" class="btn btn-primary">{t.admin.pricing.addPriceBtn}</button>
+  </form>
+</div>
+
+<style>
+  .section-header { padding:16px 20px; border-bottom:1px solid var(--border-default); }
+  .section-header h3 { margin:0; font-size:15px; font-weight:600; }
+  .add-item-form { display:flex; align-items:flex-end; gap:12px; padding:16px 20px; border-top:1px solid var(--border-default); }
+  .add-item-form .form-group { flex:1; margin-bottom:0; }
+</style>

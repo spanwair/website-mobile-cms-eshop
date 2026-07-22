@@ -1,0 +1,106 @@
+---
+import CmsLayout from "../../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../../lib/supabase";
+import { createPriceList } from "@shared/services/pricingService";
+import { requireAdminCtx } from "../../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { useT } from "../../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_PRICING)) return Astro.redirect("/admin");
+const t = useT(Astro);
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const valid_from = form.get("valid_from") ? (form.get("valid_from") as string) : null;
+  const valid_to = form.get("valid_to") ? (form.get("valid_to") as string) : null;
+
+  if (valid_from && valid_to && valid_from > valid_to) {
+    error = t.admin.pricing.errorInvalidDateRange;
+  } else {
+    const result = await createPriceList(supabase, {
+      party_id: partyId,
+      name: (form.get("name") as string).trim(),
+      currency: form.get("currency") as string,
+      valid_from,
+      valid_to,
+      is_default: form.get("is_default") === "on",
+      is_active: form.get("is_active") === "on",
+    });
+    if (result.error) {
+      error = result.error.message;
+    } else {
+      return Astro.redirect("/admin/pricing?tab=pricelists");
+    }
+  }
+}
+---
+
+<CmsLayout title={t.admin.pricing.newPriceListTitle} userPermissions={permissions} currentPath="/admin/pricing" parties={ctx.parties} partyId={ctx.partyId}>
+  <div class="card" style="max-width:600px">
+    <a href="/admin/pricing?tab=pricelists" class="back-link">{t.admin.pricing.back}</a>
+    {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
+    <form method="POST" class="form">
+      <div class="form-group">
+        <label class="form-label">{t.admin.pricing.fieldPriceListName}</label>
+        <input class="form-input" name="name" required placeholder="Standard Price List" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{t.admin.pricing.fieldCurrency}</label>
+          <select class="form-input" name="currency" required>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="CZK" selected>CZK</option>
+            <option value="GBP">GBP</option>
+          </select>
+        </div>
+        <div class="form-check-group">
+          <div class="form-check">
+            <input type="checkbox" name="is_default" id="is_default" />
+            <label for="is_default">{t.admin.pricing.fieldDefault}</label>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" name="is_active" id="is_active" checked />
+            <label for="is_active">{t.admin.pricing.fieldActive}</label>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{t.admin.pricing.fieldValidFrom}</label>
+          <input class="form-input" name="valid_from" type="date" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{t.admin.pricing.fieldValidTo}</label>
+          <input class="form-input" name="valid_to" type="date" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <a href="/admin/pricing?tab=pricelists" class="btn btn-ghost">{t.common.cancel}</a>
+        <button type="submit" class="btn btn-primary">{t.admin.pricing.createPriceListBtn}</button>
+      </div>
+    </form>
+  </div>
+</CmsLayout>
+
+<style>
+  .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
+  .back-link:hover { color:var(--text-primary); }
+  .form { display:flex; flex-direction:column; gap:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-check-group { display:flex; flex-direction:column; gap:12px; justify-content:center; }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .form-check input { width:auto; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:8px; }
+</style>
