@@ -35,13 +35,15 @@ Higher number = more privilege. `canAssignRole(myRole, targetRole)` enforces thi
 VIEW_DASHBOARD    = 1     → /admin (dashboard KPIs, charts, recent orders)
 MANAGE_USERS      = 2     → /admin/users, /admin/parties (list + detail)
 MANAGE_ROLES      = 4     → /admin/roles, /admin/roles/new
-MANAGE_PRODUCTS   = 8     → /admin/products, /admin/reviews
+MANAGE_PRODUCTS   = 8     → /admin/products, /admin/reviews, /admin/products/conditions
 MANAGE_CATEGORIES = 16    → /admin/categories
 MANAGE_ORDERS     = 32    → /admin/orders, /admin/returns, revenue KPI
 MANAGE_INVENTORY  = 64    → /admin/inventory
 MANAGE_PRICING    = 128   → /admin/pricing
 MANAGE_CUSTOMERS  = 256   → /admin/customers
 MANAGE_REPORTS    = 512   → /admin/reports, revenue KPI
+MANAGE_SETTINGS   = 1024  → /admin/settings/branding, layout, content, benefits, footer, domains
+MANAGE_CMS        = 2048  → /admin/cms/navigation, pages, blog, team, faq
 MANAGE_AUDIT      = 4096  → /admin/audit + editing party settings in /admin/parties/[id]
 ALL_PERMISSIONS   = 0xffff → owner and admin always
 perm=0            → /admin/notifications — always visible to any admin
@@ -162,6 +164,9 @@ The dashboard (`/admin/index.astro`) is the ONLY exception — uses `!ctx.isGlob
 | /admin/notifications | none (perm=0) | always visible |
 | /admin/setup | — | shown when no party and not owner |
 | /admin/parties/new | role >= ADMIN | no partyId required |
+| /admin/products/conditions | MANAGE_PRODUCTS (8) | → /admin |
+| /admin/settings/benefits, footer (extends branding/layout/content/domains) | MANAGE_SETTINGS (1024) | → /admin |
+| /admin/cms/navigation, pages, blog, team, faq | MANAGE_CMS (2048) | → /admin |
 
 ---
 
@@ -178,10 +183,17 @@ The dashboard (`/admin/index.astro`) is the ONLY exception — uses `!ctx.isGlob
 | Eshop | Inventory | MANAGE_INVENTORY (64) |
 | Eshop | Reviews | MANAGE_PRODUCTS (8) |
 | Eshop | Returns | MANAGE_ORDERS (32) |
+| Eshop | Conditions | MANAGE_PRODUCTS (8) |
+| Content | Navigation | MANAGE_CMS (2048) |
+| Content | Pages | MANAGE_CMS (2048) |
+| Content | Blog | MANAGE_CMS (2048) |
+| Content | Team | MANAGE_CMS (2048) |
+| Content | FAQ | MANAGE_CMS (2048) |
 | Reports | Reports | MANAGE_REPORTS (512) |
 | People | Users | MANAGE_USERS (2) |
 | People | Roles | MANAGE_ROLES (4) |
 | People | Parties/Orgs | MANAGE_USERS (2) |
+| System | Settings | MANAGE_SETTINGS (1024) |
 | System | Audit | MANAGE_AUDIT (4096) |
 | System | Notifications | none (0) — always shown |
 

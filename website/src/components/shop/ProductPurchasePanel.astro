@@ -1,0 +1,187 @@
+---
+import type { BenefitItem } from "@shared/types";
+import { useT } from "../../lib/i18n";
+
+interface Condition { label: string; color_hex: string }
+interface Props {
+  product: any;
+  brand: { name: string; slug: string } | null;
+  condition?: Condition | null;
+  categories: { id: string; name: string; slug: string }[];
+  variants: { id: string; name: string; price: number | null; condition?: Condition | null }[];
+  reviewTotal: number;
+  averageRating: number;
+  isOutOfStock: boolean;
+  qtyAvailable: number | null;
+  cartError: string;
+  addedToCart: boolean;
+  isLoggedIn: boolean;
+  linkBase: string;
+  productSlug: string;
+  enableWishlists: boolean;
+  inWishlist: boolean;
+  trustBadges?: BenefitItem[];
+}
+const {
+  product, brand, condition = null, categories, variants, reviewTotal, averageRating,
+  isOutOfStock, qtyAvailable, cartError, addedToCart, isLoggedIn, linkBase, productSlug,
+  enableWishlists, inWishlist, trustBadges = [],
+} = Astro.props;
+const t = useT(Astro);
+---
+
+<div class="info-col">
+  {brand && <p class="brand-name"><a href={`${linkBase}?brand=${brand.slug}`}>{brand.name}</a></p>}
+  {condition && <span class="condition-badge" style={`background:${condition.color_hex}`}>{condition.label}</span>}
+  <h1 class="product-title">{product.title}</h1>
+
+  {reviewTotal > 0 && (
+    <div class="rating-row">
+      <span class="stars">{"★".repeat(Math.round(averageRating))}{"☆".repeat(5 - Math.round(averageRating))}</span>
+      <span class="rating-text">{averageRating.toFixed(1)} ({reviewTotal} {t.shop.reviews})</span>
+    </div>
+  )}
+
+  <div class="price-row">
+    {product.discount_price ? (
+      <>
+        <span class="price-old">{Number(product.price).toFixed(2)} Kč</span>
+        <span class="price-main sale">{Number(product.discount_price).toFixed(2)} Kč</span>
+        <span class="saving-badge">
+          {t.shop.save} {Math.round((1 - Number(product.discount_price) / Number(product.price)) * 100)}%
+        </span>
+      </>
+    ) : (
+      <span class="price-main">{Number(product.price).toFixed(2)} Kč</span>
+    )}
+  </div>
+
+  {categories.length > 0 && (
+    <div class="categories-row">
+      {categories.map((cat) => (
+        <a href={`${linkBase}?category=${cat.slug}`} class="cat-chip">{cat.name}</a>
+      ))}
+    </div>
+  )}
+
+  {variants.length > 0 && (
+    <div class="variants-section">
+      <p class="variants-label">{t.shop.variants}</p>
+      <div class="variants-grid">
+        {variants.map((v) => (
+          <label class="variant-option">
+            <input type="radio" name="variant" value={v.id} />
+            <span class="variant-label">
+              <span class="variant-name">{v.name}</span>
+              {v.price && <strong>{Number(v.price).toFixed(2)} Kč</strong>}
+              {v.condition && <span class="condition-badge condition-badge--sm" style={`background:${v.condition.color_hex}`}>{v.condition.label}</span>}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {addedToCart && <div class="cart-success">✓ {t.shop.addedToCartMessage} <a href={`${linkBase}/cart`}>{t.shop.viewCart}</a></div>}
+  {cartError && <div class="cart-error">{cartError}</div>}
+
+  <div class="add-to-cart-section">
+    {isOutOfStock ? (
+      <div class="out-of-stock-badge">{t.shop.outOfStock}</div>
+    ) : (
+      <form method="POST" class="cart-form">
+        <input type="hidden" name="_action" value="add_to_cart" />
+        <input type="hidden" name="product_id" value={product.id} />
+        <input type="hidden" name="unit_price" value={String(product.discount_price ?? product.price)} />
+        <div class="qty-row">
+          <label>{t.shop.qty}</label>
+          <input type="number" name="quantity" value="1" min="1" max={qtyAvailable ?? 99} class="qty-input" />
+        </div>
+        {qtyAvailable !== null && qtyAvailable <= 10 && qtyAvailable > 0 && (
+          <p class="low-stock-hint">{t.shop.stockRemaining.replace("{{n}}", String(qtyAvailable))}</p>
+        )}
+        {!isLoggedIn ? (
+          <a href={`/login?redirect=${linkBase}/${productSlug}`} class="btn btn-primary btn-large">{t.shop.loginToCheckout}</a>
+        ) : (
+          <button type="submit" class="btn btn-primary btn-large">{t.shop.addToCart}</button>
+        )}
+      </form>
+    )}
+    {enableWishlists && (
+      <form method="POST">
+        <input type="hidden" name="_action" value="toggle_wishlist" />
+        <input type="hidden" name="product_id" value={product.id} />
+        {!isLoggedIn ? (
+          <a href={`/login?redirect=${linkBase}/${productSlug}`} class="wishlist-toggle">
+            ♡ {t.shop.addToWishlist}
+          </a>
+        ) : (
+          <button type="submit" class={`wishlist-toggle ${inWishlist ? "wishlist-toggle--active" : ""}`}>
+            {inWishlist ? "♥" : "♡"} {inWishlist ? t.shop.removeFromWishlist : t.shop.addToWishlist}
+          </button>
+        )}
+      </form>
+    )}
+  </div>
+
+  {trustBadges.length > 0 && (
+    <div class="trust-row">
+      {trustBadges.map((b) => (
+        <span class="trust-item"><span class="trust-icon">{b.icon}</span> {b.title}</span>
+      ))}
+    </div>
+  )}
+
+  {product.description && (
+    <div class="description">
+      <h2 class="section-title">{t.shop.description}</h2>
+      <p>{product.description}</p>
+    </div>
+  )}
+</div>
+
+<style>
+  .brand-name { font-size:13px; color:var(--text-muted); margin:0 0 4px; } .brand-name a { color:var(--primary); text-decoration:none; }
+  .condition-badge { display:inline-block; color:#fff; font-size:12px; font-weight:700; padding:3px 12px; border-radius:9999px; margin-bottom:8px; }
+  .condition-badge--sm { font-size:10px; padding:1px 8px; margin-bottom:0; }
+  .product-title { font-size:28px; font-weight:800; margin:0 0 12px; line-height:1.2; }
+  .rating-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .stars { color:#f59e0b; font-size:20px; }
+  .rating-text { font-size:14px; color:var(--text-muted); }
+  .price-row { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+  .price-main { font-size:28px; font-weight:800; color:var(--primary); }
+  .price-main.sale { color:#dc2626; }
+  .price-old { font-size:16px; color:var(--text-muted); text-decoration:line-through; }
+  .saving-badge { background:#dcfce7; color:#16a34a; font-size:12px; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .categories-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .cat-chip { background:var(--bg-subtle); border:1px solid var(--border); border-radius:16px; padding:4px 12px; font-size:12px; text-decoration:none; color:var(--text-secondary); }
+  .variants-section { margin-bottom:20px; } .variants-label { font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:8px; }
+  .variants-grid { display:flex; flex-direction:column; gap:8px; }
+  .variant-option { display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:14px; }
+  .variant-option input[type="radio"] { width:auto; flex-shrink:0; margin-top:3px; }
+  .variant-label { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; }
+  .variant-name { color:var(--text-secondary); }
+  .add-to-cart-section { display:flex; align-items:flex-start; gap:12px; margin-bottom:24px; flex-direction:column; }
+  .cart-form { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .qty-row { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .qty-input { width:60px; padding:8px; border:1px solid var(--border); border-radius:8px; text-align:center; font-size:16px; }
+  .btn-large { padding:12px 32px; font-size:16px; }
+  .out-of-stock-badge { background:#fee2e2; color:#dc2626; font-size:14px; font-weight:700; padding:10px 20px; border-radius:8px; }
+  .low-stock-hint { font-size:13px; color:#f59e0b; font-weight:600; margin:0; }
+  .cart-success { background:#dcfce7; border:1px solid #86efac; color:#15803d; border-radius:8px; padding:10px 16px; font-size:14px; margin-bottom:12px; }
+  .cart-success a { color:#15803d; font-weight:700; }
+  .cart-error { background:#fee2e2; border:1px solid #fca5a5; color:#dc2626; border-radius:8px; padding:10px 16px; font-size:14px; margin-bottom:12px; }
+  .section-title { font-size:20px; font-weight:700; margin-bottom:16px; }
+  .description { border-top:1px solid var(--border); padding-top:20px; }
+  .description p { font-size:15px; line-height:1.7; color:var(--text-secondary); }
+  .wishlist-toggle {
+    display:inline-flex; align-items:center; gap:6px; background:none; border:1px solid var(--border);
+    border-radius:8px; padding:8px 16px; font-size:14px; font-weight:600; color:var(--text-secondary);
+    cursor:pointer; text-decoration:none; font-family:inherit;
+  }
+  .wishlist-toggle:hover { border-color:var(--primary); color:var(--primary); text-decoration:none; }
+  .wishlist-toggle--active { color:#dc2626; border-color:#dc2626; }
+  .trust-row { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+  .trust-item { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-secondary); }
+  .trust-icon { font-size:16px; }
+</style>

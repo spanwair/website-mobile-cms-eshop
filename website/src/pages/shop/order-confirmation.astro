@@ -1,9 +1,17 @@
 ---
 import Layout from "../../components/layout/Layout.astro";
 import { useT } from "../../lib/i18n";
+import { createAdminClient } from "../../lib/supabase";
+import { confirmStripeSession } from "../../lib/checkoutFlow";
 
 const t = useT(Astro);
-const orderNumber = new URL(Astro.request.url).searchParams.get("order") ?? "";
+const searchParams = new URL(Astro.request.url).searchParams;
+const orderNumber = searchParams.get("order") ?? "";
+const sessionId = searchParams.get("session_id");
+
+if (sessionId && orderNumber) {
+  await confirmStripeSession(createAdminClient(), sessionId, orderNumber);
+}
 ---
 
 <Layout title={t.shop.confirmationTitle}>

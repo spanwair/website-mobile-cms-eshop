@@ -1,0 +1,149 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import SettingsTabs from "../../../components/cms/SettingsTabs.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchStoreConfig, updateStoreConfig } from "@shared/services/storeConfigService";
+import {
+  fetchNewsletterSubscribers, countNewsletterSubscribers,
+  setNewsletterSubscriberStatus, deleteNewsletterSubscriber,
+} from "@shared/services/newsletterService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions, partyId, parties } = ctx;
+const partySlug = parties.find((p) => p.id === partyId)?.slug;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redirect("/admin");
+const t = useT(Astro);
+const s = t.admin.settings;
+
+let error = "";
+let success = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = (form.get("_action") as string) ?? "";
+
+  if (action === "save_visibility") {
+    const result = await updateStoreConfig(supabase, partyId, {
+      footer_newsletter_enabled: form.get("footer_newsletter_enabled") === "on",
+    });
+    if (result.error) error = result.error.message;
+    else success = s.savedSuccess;
+  } else if (action === "unsubscribe" || action === "resubscribe") {
+    const subscriberId = form.get("subscriber_id") as string;
+    const result = await setNewsletterSubscriberStatus(supabase, subscriberId, action === "unsubscribe");
+    if (result.error) error = result.error.message;
+  } else if (action === "delete") {
+    const subscriberId = form.get("subscriber_id") as string;
+    const result = await deleteNewsletterSubscriber(supabase, subscriberId);
+    if (result.error) error = result.error.message;
+  }
+}
+
+const config = await fetchStoreConfig(supabase, partyId);
+const subscribers = await fetchNewsletterSubscribers(supabase, partyId);
+const activeCount = await countNewsletterSubscribers(supabase, partyId);
+---
+
+<CmsLayout title={s.newsletterTitle} userPermissions={permissions} currentPath="/admin/settings/newsletter" parties={ctx.parties} partyId={ctx.partyId}>
+  <SettingsTabs active="newsletter" partySlug={partySlug} />
+  {error && <div class="alert-error">{error}</div>}
+  {success && <div class="alert-success">{success}</div>}
+
+  <p class="content-hint">{s.newsletterHint}</p>
+
+  <div class="card" style="max-width:640px;margin-bottom:24px">
+    <h2 class="section-title">{s.newsletterVisibilityTitle}</h2>
+    <form method="POST" class="visibility-form">
+      <input type="hidden" name="_action" value="save_visibility" />
+      <div class="form-check">
+        <input type="checkbox" name="footer_newsletter_enabled" id="footer_newsletter_enabled" checked={config?.footer_newsletter_enabled ?? true} />
+        <label for="footer_newsletter_enabled">{s.fieldFooterNewsletterEnabled}</label>
+      </div>
+      <p class="hint">{s.footerNewsletterHint}</p>
+      <p class="hint">
+        {s.homepageNewsletterHint}{" "}
+        <a href="/admin/settings/layout">{s.homepageNewsletterHintLink}</a>{" "}{s.homepageNewsletterHintSuffix}
+      </p>
+      <button type="submit" class="btn btn-primary">{t.common.saveChanges}</button>
+    </form>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="stats-row">
+      <div class="stat">
+        <span class="stat-value">{activeCount}</span>
+        <span class="stat-label">{s.statActiveSubscribers}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{subscribers.length}</span>
+        <span class="stat-label">{s.statTotalSignups}</span>
+      </div>
+      <a href="/admin/settings/newsletter/export.csv" class="btn btn-secondary export-btn">{s.exportCsvBtn}</a>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr><th>{s.colEmail}</th><th>{s.colSubscribedAt}</th><th>{s.colSubscriberStatus}</th><th>{s.colActions}</th></tr>
+      </thead>
+      <tbody>
+        {subscribers.map((sub) => {
+          const isUnsubscribed = !!sub.unsubscribed_at;
+          return (
+            <tr>
+              <td style="font-weight:600">{sub.email}</td>
+              <td style="color:var(--text-muted)">{new Date(sub.subscribed_at).toLocaleDateString()}</td>
+              <td>
+                <span class={`badge ${isUnsubscribed ? "badge-pending" : "badge-active"}`}>
+                  {isUnsubscribed ? s.statusUnsubscribed : s.statusSubscribed}
+                </span>
+              </td>
+              <td class="action-cell">
+                <form method="POST" style="display:inline">
+                  <input type="hidden" name="_action" value={isUnsubscribed ? "resubscribe" : "unsubscribe"} />
+                  <input type="hidden" name="subscriber_id" value={sub.id} />
+                  <button type="submit" class="btn btn-ghost" style="padding:6px 12px;font-size:13px">
+                    {isUnsubscribed ? s.resubscribeBtn : s.unsubscribeBtn}
+                  </button>
+                </form>
+                <form method="POST" onsubmit={`return confirm('${s.deleteSubscriberConfirm}')`} style="display:inline">
+                  <input type="hidden" name="_action" value="delete" />
+                  <input type="hidden" name="subscriber_id" value={sub.id} />
+                  <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{t.common.delete}</button>
+                </form>
+              </td>
+            </tr>
+          );
+        })}
+        {subscribers.length === 0 && (
+          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noSubscribers}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</CmsLayout>
+
+<style>
+  .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
+  .alert-success { background:rgba(34,197,94,0.08); border:1px solid #22c55e; border-radius:8px; padding:12px 16px; color:#16a34a; margin-bottom:16px; font-size:14px; }
+  .section-title { font-size:15px; font-weight:700; margin-bottom:8px; }
+  .content-hint { font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+  .visibility-form { display:flex; flex-direction:column; gap:8px; align-items:flex-start; }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .form-check input { width:auto; }
+  .hint { font-size:13px; color:var(--text-muted); margin:0; }
+  .stats-row { display:flex; align-items:center; gap:32px; padding:20px 24px; border-bottom:1px solid var(--border-default); }
+  .stat { display:flex; flex-direction:column; }
+  .stat-value { font-size:24px; font-weight:800; }
+  .stat-label { font-size:12px; color:var(--text-muted); }
+  .export-btn { margin-left:auto; text-decoration:none; }
+  .action-cell { display:flex; gap:8px; align-items:center; }
+</style>

@@ -1,0 +1,99 @@
+---
+import type { StoreMedia } from "@shared/types";
+import { useT } from "../../lib/i18n";
+
+interface Props { media: StoreMedia[] }
+const { media } = Astro.props;
+const t = useT(Astro);
+const s = t.admin.settings;
+---
+
+<div class="card">
+  <h2 class="section-title">{s.mediaLibraryTitle}</h2>
+  <p class="hint">{s.mediaHint}</p>
+
+  <form method="POST" enctype="multipart/form-data" class="upload-form">
+    <input type="hidden" name="_action" value="upload_media" />
+    <div class="form-group">
+      <label class="form-label">{s.fieldSlug}</label>
+      <input class="form-input" name="slug" placeholder={s.slugPlaceholder} required pattern="[a-z0-9]+(-[a-z0-9]+)*" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">{s.fieldAlt}</label>
+      <input class="form-input" name="alt" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">{s.fieldFile}</label>
+      <input class="form-input" type="file" name="file" accept="image/*,video/*" required />
+    </div>
+    <button type="submit" class="btn btn-primary">{s.uploadMedia}</button>
+  </form>
+
+  {media.length === 0 ? (
+    <p class="empty">{s.noMedia}</p>
+  ) : (
+    <table class="media-table">
+      <thead>
+        <tr>
+          <th>{s.colPreview}</th>
+          <th>{s.colSlug}</th>
+          <th>{s.colType}</th>
+          <th>{s.colToken}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {media.map((m) => (
+          <tr>
+            <td>
+              {m.media_type === "video" ? (
+                <video src={m.url} class="thumb" muted />
+              ) : (
+                <img src={m.url} alt={m.alt ?? ""} class="thumb" />
+              )}
+            </td>
+            <td>{m.slug}</td>
+            <td>{m.media_type}</td>
+            <td>
+              <code class="token" data-token={`{{media:${m.slug}}}`}>{`{{media:${m.slug}}}`}</code>
+              <button type="button" class="copy-btn" data-copy={`{{media:${m.slug}}}`}>{s.copyToken}</button>
+            </td>
+            <td>
+              <form method="POST">
+                <input type="hidden" name="_action" value="delete_media" />
+                <input type="hidden" name="media_id" value={m.id} />
+                <button type="submit" class="remove-btn">{t.common.delete}</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>(".copy-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const token = btn.dataset.copy ?? "";
+      await navigator.clipboard.writeText(token);
+      const original = btn.textContent;
+      btn.textContent = btn.dataset.copied ?? "Copied!";
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    });
+  });
+</script>
+
+<style>
+  .section-title { font-size:15px; font-weight:700; margin-bottom:8px; }
+  .hint { font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+  .upload-form { display:flex; flex-wrap:wrap; align-items:end; gap:12px; margin-bottom:20px; }
+  .empty { color:var(--text-muted); font-size:13px; }
+  .media-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .media-table th { text-align:left; padding:8px; border-bottom:1px solid var(--border-default); color:var(--text-muted); font-weight:600; }
+  .media-table td { padding:8px; border-bottom:1px solid var(--border-default); vertical-align:middle; }
+  .thumb { width:48px; height:48px; object-fit:cover; border-radius:6px; }
+  .token { background:var(--bg-subtle); padding:2px 6px; border-radius:4px; font-size:12px; }
+  .copy-btn { margin-left:8px; font-size:12px; padding:2px 8px; border:1px solid var(--border-default); border-radius:6px; background:none; cursor:pointer; }
+  .remove-btn { background:none; border:none; cursor:pointer; color:var(--error); font-size:13px; }
+</style>

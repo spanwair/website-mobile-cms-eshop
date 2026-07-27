@@ -1,0 +1,88 @@
+---
+import type { StoreConfig, StoreMedia, HeroSlide } from "@shared/types";
+import { useT } from "../../lib/i18n";
+import { renderContent, resolveMediaUrl } from "../../lib/contentRenderer";
+
+interface Props { storeConfig: StoreConfig | null; media?: StoreMedia[]; slides?: HeroSlide[] }
+const { storeConfig, media = [], slides = [] } = Astro.props;
+const t = useT(Astro);
+const brand = storeConfig?.brand_name ?? "Shop";
+const tagline = storeConfig?.tagline ?? t.home.heroSub;
+const customHtml = storeConfig?.hero_content
+  ? renderContent(storeConfig.hero_content, storeConfig.hero_format, media)
+  : null;
+const slideImages = slides.map((slide) => resolveMediaUrl(slide.image_url, media));
+---
+
+{slides.length > 0 ? (
+  <section class="hero-slider" data-hero-slider>
+    {slides.map((slide, i) => (
+      <div class={`hero-slide${i === 0 ? " hero-slide--active" : ""}`} style={slideImages[i] ? `background-image:url("${slideImages[i]!.replace(/"/g, "%22")}")` : ""}>
+        <div class="hero-overlay" style={`opacity:${slide.overlay_opacity}`}></div>
+        <div class="container hero-slide-content">
+          <h1 class="hero-title">{slide.headline}</h1>
+          {slide.subheadline && <p class="hero-sub">{slide.subheadline}</p>}
+          {slide.cta_text && slide.cta_link && <a href={slide.cta_link} class="btn btn-primary">{slide.cta_text}</a>}
+        </div>
+      </div>
+    ))}
+    {slides.length > 1 && (
+      <div class="hero-dots">
+        {slides.map((_, i) => <button type="button" class={`hero-dot${i === 0 ? " hero-dot--active" : ""}`} data-slide-index={i} aria-label={t.shop.heroSlideLabel.replace("{{n}}", String(i + 1))}></button>)}
+      </div>
+    )}
+  </section>
+) : (
+  <section class="hero">
+    <div class="container">
+      {customHtml ? (
+        <div class="hero-custom" set:html={customHtml} />
+      ) : (
+        <>
+          <h1 class="hero-title">{brand}</h1>
+          <p class="hero-sub">{tagline}</p>
+          <a href="#featured-products" class="btn btn-primary">{t.shop.viewAll}</a>
+        </>
+      )}
+    </div>
+  </section>
+)}
+
+<style>
+  .hero { background: linear-gradient(180deg, var(--bg-subtle) 0%, var(--bg-page) 100%); padding: 80px 0 64px; text-align: center; }
+  .hero-title { font-family: var(--font-heading); font-size: 48px; font-weight: 800; color: var(--text-primary); letter-spacing: -1px; margin-bottom: 12px; }
+  .hero-sub { font-size: 17px; color: var(--text-secondary); max-width: 480px; margin: 0 auto 28px; line-height: 1.6; }
+  .hero-custom :global(img), .hero-custom :global(video) { max-width: 100%; border-radius: var(--radius-lg); }
+  .hero-custom :global(h1) { font-family: var(--font-heading); font-size: 48px; font-weight: 800; }
+
+  .hero-slider { position: relative; height: 460px; overflow: hidden; }
+  .hero-slide {
+    position: absolute; inset: 0; display: none; align-items: center;
+    background-size: cover; background-position: center; background-color: var(--bg-subtle);
+  }
+  .hero-slide--active { display: flex; }
+  .hero-overlay { position: absolute; inset: 0; background: #000; }
+  .hero-slide-content { position: relative; z-index: 1; text-align: center; color: #fff; }
+  .hero-slide .hero-title, .hero-slide .hero-sub { color: #fff; }
+  .hero-dots { position: absolute; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; z-index: 2; }
+  .hero-dot { width: 9px; height: 9px; border-radius: 50%; border: none; background: rgba(255,255,255,0.5); cursor: pointer; padding: 0; }
+  .hero-dot--active { background: #fff; }
+  @media (max-width: 640px) { .hero-slider { height: 320px; } }
+</style>
+
+{slides.length > 1 && (
+  <script>
+    document.querySelectorAll<HTMLElement>("[data-hero-slider]").forEach((slider) => {
+      const slidesEls = slider.querySelectorAll<HTMLElement>(".hero-slide");
+      const dots = slider.querySelectorAll<HTMLElement>(".hero-dot");
+      let current = 0;
+      function show(index: number) {
+        slidesEls.forEach((s, i) => s.classList.toggle("hero-slide--active", i === index));
+        dots.forEach((d, i) => d.classList.toggle("hero-dot--active", i === index));
+        current = index;
+      }
+      dots.forEach((dot, i) => dot.addEventListener("click", () => show(i)));
+      setInterval(() => show((current + 1) % slidesEls.length), 6000);
+    });
+  </script>
+)}

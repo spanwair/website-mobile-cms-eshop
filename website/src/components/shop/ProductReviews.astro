@@ -1,0 +1,127 @@
+---
+import { useT } from "../../lib/i18n";
+
+interface Review {
+  rating: number;
+  author_name: string;
+  is_verified: boolean;
+  created_at: string;
+  title?: string | null;
+  body?: string | null;
+}
+interface Props {
+  reviews: Review[];
+  reviewTotal: number;
+  averageRating: number;
+  reviewed: boolean;
+  productId: string;
+}
+const { reviews, reviewTotal, averageRating, reviewed, productId } = Astro.props;
+const t = useT(Astro);
+---
+
+<section class="reviews-section">
+  <div class="reviews-header">
+    <h2 class="section-title">{t.shop.customerReviews}</h2>
+    {reviewTotal > 0 && (
+      <div class="avg-rating">
+        <span class="avg-stars">{"★".repeat(Math.round(averageRating))}{"☆".repeat(5 - Math.round(averageRating))}</span>
+        <span class="avg-num">{averageRating.toFixed(1)} / 5</span>
+        <span class="avg-count">({reviewTotal} {t.shop.reviews})</span>
+      </div>
+    )}
+  </div>
+
+  {reviewed && <div class="success-banner">{t.shop.reviewSubmitted}</div>}
+
+  {reviews.map((review) => (
+    <div class="review-card">
+      <div class="review-header">
+        <span class="review-stars">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
+        <strong>{review.author_name}</strong>
+        {review.is_verified && <span class="verified-badge">{t.shop.verifiedPurchase}</span>}
+        <time>{new Date(review.created_at).toLocaleDateString("cs-CZ")}</time>
+      </div>
+      {review.title && <h3 class="review-title">{review.title}</h3>}
+      {review.body && <p class="review-body">{review.body}</p>}
+    </div>
+  ))}
+
+  {reviews.length === 0 && <p class="no-reviews">{t.shop.noReviews}</p>}
+
+  <div class="write-review">
+    <h3 class="section-title">{t.shop.writeReview}</h3>
+    <form method="POST" class="review-form">
+      <input type="hidden" name="_action" value="review" />
+      <input type="hidden" name="product_id" value={productId} />
+
+      <div class="form-row">
+        <div class="field">
+          <label>{t.shop.yourName}</label>
+          <input type="text" name="author_name" required class="input" />
+        </div>
+        <div class="field">
+          <label>{t.shop.emailLabel}</label>
+          <input type="email" name="author_email" required class="input" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>{t.shop.ratingLabel}</label>
+        <div class="star-rating">
+          {[5, 4, 3, 2, 1].map((n) => (
+            <>
+              <input type="radio" name="rating" id={`star${n}`} value={n} required />
+              <label for={`star${n}`} class="star-label" title={`${n} ★`}>★</label>
+            </>
+          ))}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>{t.shop.reviewTitle}</label>
+        <input type="text" name="title" class="input" placeholder={t.shop.reviewTitlePlaceholder} />
+      </div>
+
+      <div class="field">
+        <label>{t.shop.yourReview}</label>
+        <textarea name="body" class="input textarea" rows="4" placeholder={t.shop.reviewBodyPlaceholder}></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary">{t.shop.submitReview}</button>
+    </form>
+  </div>
+</section>
+
+<style>
+  .reviews-section { max-width:1280px; margin:0 auto; padding:0 24px 48px; border-top:1px solid var(--border); padding-top:48px; }
+  .reviews-header { display:flex; align-items:center; gap:16px; margin-bottom:24px; flex-wrap:wrap; }
+  .avg-rating { display:flex; align-items:center; gap:8px; }
+  .avg-stars { color:#f59e0b; font-size:22px; }
+  .avg-num { font-size:20px; font-weight:700; }
+  .avg-count { color:var(--text-muted); font-size:14px; }
+  .section-title { font-size:20px; font-weight:700; margin-bottom:16px; }
+  .success-banner { background:#dcfce7; border:1px solid #86efac; color:#15803d; border-radius:8px; padding:12px 16px; margin-bottom:20px; font-size:14px; }
+  .review-card { border-bottom:1px solid var(--border); padding:20px 0; }
+  .review-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap; font-size:14px; color:var(--text-muted); }
+  .review-stars { color:#f59e0b; font-size:16px; }
+  .review-header strong { color:var(--text-primary); }
+  .verified-badge { background:#dbeafe; color:#1d4ed8; font-size:11px; font-weight:700; padding:2px 8px; border-radius:12px; }
+  .review-title { font-size:15px; font-weight:600; margin:0 0 6px; }
+  .review-body { font-size:14px; color:var(--text-secondary); line-height:1.6; margin:0; }
+  .no-reviews { color:var(--text-muted); font-size:14px; padding:16px 0; }
+
+  .write-review { border-top:1px solid var(--border); padding-top:32px; margin-top:32px; }
+  .review-form { display:flex; flex-direction:column; gap:16px; max-width:560px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .field { display:flex; flex-direction:column; gap:4px; }
+  .field label { font-size:13px; font-weight:600; color:var(--text-muted); }
+  .textarea { min-height:100px; resize:vertical; }
+
+  .star-rating { display:flex; flex-direction:row-reverse; gap:4px; }
+  .star-rating input { display:none; }
+  .star-label { font-size:28px; color:#d1d5db; cursor:pointer; transition:color .15s; }
+  .star-rating input:checked ~ .star-label,
+  .star-rating label:hover,
+  .star-rating label:hover ~ .star-label { color:#f59e0b; }
+</style>

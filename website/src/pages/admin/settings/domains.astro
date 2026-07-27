@@ -1,0 +1,122 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import SettingsTabs from "../../../components/cms/SettingsTabs.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchStoreDomains, getStoreDomain, addStoreDomain, verifyStoreDomain, removeStoreDomain } from "@shared/services/storeConfigService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { verifyDomainTxtRecord, VERIFICATION_SUBDOMAIN } from "../../../lib/domainVerification";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions, partyId, parties } = ctx;
+const partySlug = parties.find((p) => p.id === partyId)?.slug;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redirect("/admin");
+const t = useT(Astro);
+const s = t.admin.settings;
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = form.get("action") as string;
+
+  if (action === "add") {
+    const domain = (form.get("domain") as string).trim().toLowerCase();
+    const result = await addStoreDomain(supabase, partyId, domain);
+    if (result.error) error = result.error.message;
+  } else if (action === "verify") {
+    const domainId = form.get("domain_id") as string;
+    const row = await getStoreDomain(supabase, partyId, domainId);
+    if (!row) {
+      error = s.verifyHint;
+    } else {
+      const verified = await verifyDomainTxtRecord(row.domain, row.verification_token);
+      if (verified) await verifyStoreDomain(supabase, domainId);
+      else error = s.verifyHint;
+    }
+  } else if (action === "remove") {
+    const domainId = form.get("domain_id") as string;
+    const row = await getStoreDomain(supabase, partyId, domainId);
+    if (row) await removeStoreDomain(supabase, domainId);
+  }
+
+  if (!error) return Astro.redirect("/admin/settings/domains");
+}
+
+const domains = await fetchStoreDomains(supabase, partyId);
+---
+
+<CmsLayout title={s.title} userPermissions={permissions} currentPath="/admin/settings/domains" parties={ctx.parties} partyId={ctx.partyId}>
+  <SettingsTabs active="domains" partySlug={partySlug} />
+  {error && <div class="alert-error">{error}</div>}
+
+  <div class="card">
+    <h2 class="section-title">{s.domainsTitle}</h2>
+    <p class="hint">{s.domainsHint}</p>
+
+    <form method="POST" class="add-form">
+      <input type="hidden" name="action" value="add" />
+      <input class="form-input" type="text" name="domain" placeholder={s.domainPlaceholder} required />
+      <button type="submit" class="btn btn-primary">{s.addDomain}</button>
+    </form>
+
+    <table class="data-table">
+      <thead>
+        <tr><th>{s.colDomain}</th><th>{s.colStatus}</th><th>{s.colAdded}</th><th></th></tr>
+      </thead>
+      <tbody>
+        {domains.map((d) => (
+          <tr>
+            <td style="font-family:monospace">{d.domain}</td>
+            <td>
+              <span class={`badge ${d.verified ? "badge-active" : "badge-pending"}`}>
+                {d.verified ? s.statusVerified : s.statusPending}
+              </span>
+              {!d.verified && (
+                <p class="txt-hint">
+                  TXT <code>{VERIFICATION_SUBDOMAIN}.{d.domain}</code> = <code>{d.verification_token}</code>
+                </p>
+              )}
+            </td>
+            <td style="font-size:12px;color:var(--text-muted)">{new Date(d.created_at).toLocaleDateString()}</td>
+            <td class="action-cell">
+              {!d.verified && (
+                <form method="POST" style="display:inline">
+                  <input type="hidden" name="action" value="verify" />
+                  <input type="hidden" name="domain_id" value={d.id} />
+                  <button type="submit" class="btn btn-secondary" style="padding:6px 12px;font-size:13px">{s.verifyBtn}</button>
+                </form>
+              )}
+              <form method="POST" onsubmit={`return confirm('${s.removeBtn}?')`} style="display:inline">
+                <input type="hidden" name="action" value="remove" />
+                <input type="hidden" name="domain_id" value={d.id} />
+                <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{s.removeBtn}</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+        {domains.length === 0 && (
+          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noDomains}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</CmsLayout>
+
+<style>
+  .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
+  .section-title { font-size:15px; font-weight:700; margin-bottom:8px; }
+  .hint { font-size:13px; color:var(--text-muted); margin-bottom:20px; }
+  .add-form { display:flex; gap:8px; margin-bottom:24px; max-width:480px; }
+  .action-cell { display:flex; gap:8px; align-items:center; }
+  .txt-hint { font-size:11px; color:var(--text-muted); margin-top:4px; }
+  .txt-hint code { background:var(--bg-subtle); padding:1px 4px; border-radius:4px; }
+</style>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#F1F6EE"/>
+  <g><rect x="120" y="80" width="160" height="200" rx="30" fill="none" stroke="#5B9A3B" stroke-width="6"/>
+    <circle cx="200" cy="180" r="40" fill="#5B9A3B" opacity="0.15"/></g>
+  <text x="200" y="360" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#5B9A3B">Kryt iPad Pro</text>
+</svg>

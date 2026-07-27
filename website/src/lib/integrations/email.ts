@@ -3,6 +3,7 @@
 // Install: pnpm add resend (in website/)
 // Configure your sending domain at resend.com/domains (free tier: 100 emails/day)
 
+import { Resend } from "resend";
 import { getT } from "@shared/i18n/getT";
 import { PERMISSIONS, ROLE } from "@shared/constants/permissions";
 
@@ -11,9 +12,14 @@ type Lang = 'cs' | 'en';
 function getResend() {
   const key = import.meta.env.RESEND_API_KEY;
   if (!key) throw new Error("RESEND_API_KEY is not set — add it to .env.production");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { Resend } = require("resend");
   return new Resend(key);
+}
+
+// resend.emails.send() resolves with { error } instead of throwing — surface it.
+async function sendEmail(opts: { to: string; subject: string; html: string }): Promise<void> {
+  const resend = getResend();
+  const { error } = await resend.emails.send({ from: FROM, ...opts });
+  if (error) throw new Error(`Resend send failed: ${error.message}`);
 }
 
 const FROM = import.meta.env.EMAIL_FROM ?? "noreply@yourdomain.cz";
@@ -177,8 +183,7 @@ export async function sendPartyInvitation(opts: {
     console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${subject}${inviteLink ? `\n[email:dev] LINK: ${inviteLink}` : ''}\n`);
     return;
   }
-  const resend = getResend();
-  await resend.emails.send({ from: FROM, to: opts.to, subject, html });
+  await sendEmail({ to: opts.to, subject, html });
 }
 
 export async function sendOrderConfirmation(opts: {
@@ -189,13 +194,11 @@ export async function sendOrderConfirmation(opts: {
   items: Array<{ title: string; quantity: number; price: number }>;
   currency?: string;
 }): Promise<void> {
-  const resend = getResend();
   const itemsHtml = opts.items
     .map(i => `<tr><td>${i.title}</td><td>${i.quantity}×</td><td>${i.price.toFixed(2)} ${opts.currency ?? "Kč"}</td></tr>`)
     .join("");
 
-  await resend.emails.send({
-    from: FROM,
+  await sendEmail({
     to: opts.to,
     subject: `Order Confirmation — ${opts.orderNumber}`,
     html: `
@@ -218,9 +221,7 @@ export async function sendShippingNotification(opts: {
   trackingNumber: string;
   carrier?: string;
 }): Promise<void> {
-  const resend = getResend();
-  await resend.emails.send({
-    from: FROM,
+  await sendEmail({
     to: opts.to,
     subject: `Your order ${opts.orderNumber} has shipped!`,
     html: `
@@ -236,9 +237,7 @@ export async function sendPasswordReset(opts: {
   to: string;
   resetLink: string;
 }): Promise<void> {
-  const resend = getResend();
-  await resend.emails.send({
-    from: FROM,
+  await sendEmail({
     to: opts.to,
     subject: "Reset your password",
     html: `
@@ -257,13 +256,11 @@ export async function sendReviewRequest(opts: {
   products: Array<{ title: string; slug: string }>;
   shopBaseUrl: string;
 }): Promise<void> {
-  const resend = getResend();
   const linksHtml = opts.products
     .map(p => `<li><a href="${opts.shopBaseUrl}/shop/${p.slug}?reviewed=0">${p.title}</a></li>`)
     .join("");
 
-  await resend.emails.send({
-    from: FROM,
+  await sendEmail({
     to: opts.to,
     subject: `How was your order ${opts.orderNumber}?`,
     html: `
@@ -282,13 +279,11 @@ export async function sendAbandonedCartRecovery(opts: {
   cartUrl: string;
   couponCode?: string;
 }): Promise<void> {
-  const resend = getResend();
   const itemsHtml = opts.items
     .map(i => `<li>${i.title} — ${i.price.toFixed(2)} Kč</li>`)
     .join("");
 
-  await resend.emails.send({
-    from: FROM,
+  await sendEmail({
     to: opts.to,
     subject: opts.couponCode
       ? `${opts.customerName}, use ${opts.couponCode} to complete your order!`

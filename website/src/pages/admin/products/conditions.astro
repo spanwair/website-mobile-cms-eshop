@@ -1,0 +1,141 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import {
+  fetchProductConditions, createProductCondition, updateProductCondition, deleteProductCondition,
+} from "@shared/services/productConditionService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_PRODUCTS)) return Astro.redirect("/admin");
+const t = useT(Astro);
+const s = t.admin.conditions;
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = (form.get("_action") as string) ?? "create";
+  const id = form.get("id") as string;
+
+  if (action === "delete" && id) {
+    await deleteProductCondition(supabase, id);
+  } else {
+    const input = {
+      code: (form.get("code") as string).trim(),
+      label: (form.get("label") as string).trim(),
+      color_hex: (form.get("color_hex") as string) || "#7CB342",
+      sort_order: parseInt((form.get("sort_order") as string) || "0", 10),
+      is_active: form.get("is_active") === "on",
+    };
+    const result = action === "update" && id
+      ? await updateProductCondition(supabase, id, input)
+      : await createProductCondition(supabase, { ...input, party_id: partyId });
+    if (result.error) error = result.error.message;
+  }
+  if (!error) return Astro.redirect("/admin/products/conditions");
+}
+
+const conditions = await fetchProductConditions(supabase, partyId);
+const editId = Astro.url.searchParams.get("edit");
+const editing = editId ? conditions.find((c) => c.id === editId) ?? null : null;
+---
+
+<CmsLayout title={s.title} userPermissions={permissions} currentPath="/admin/products/conditions" parties={ctx.parties} partyId={ctx.partyId}>
+  <a href="/admin/products" class="back-link">{t.admin.products.title}</a>
+  {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
+
+  <div class="card" style="max-width:640px;margin-bottom:24px">
+    <h2 class="section-title">{editing ? s.editTitle : s.newTitle}</h2>
+    <form method="POST" class="condition-form">
+      <input type="hidden" name="_action" value={editing ? "update" : "create"} />
+      {editing && <input type="hidden" name="id" value={editing.id} />}
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldCode}</label>
+          <input class="form-input" name="code" required value={editing?.code ?? ""} placeholder="a" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldLabel}</label>
+          <input class="form-input" name="label" required value={editing?.label ?? ""} placeholder="Stav A" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldColor}</label>
+          <input class="form-input" type="color" name="color_hex" value={editing?.color_hex ?? "#7CB342"} />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldSortOrder}</label>
+          <input class="form-input" type="number" name="sort_order" value={editing?.sort_order ?? 0} />
+        </div>
+      </div>
+      <div class="form-check">
+        <input type="checkbox" name="is_active" id="is_active" checked={editing ? editing.is_active : true} />
+        <label for="is_active">{s.fieldActive}</label>
+      </div>
+      <div class="form-actions">
+        {editing && <a href="/admin/products/conditions" class="btn btn-ghost">{t.common.cancel}</a>}
+        <button type="submit" class="btn btn-primary">{editing ? s.saveBtn : s.createBtn}</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead>
+        <tr><th>{s.colCode}</th><th>{s.colLabel}</th><th>{s.colColor}</th><th>{s.colSort}</th><th>{s.colStatus}</th><th>{s.colActions}</th></tr>
+      </thead>
+      <tbody>
+        {conditions.map((c) => (
+          <tr>
+            <td style="font-weight:600">{c.code}</td>
+            <td>{c.label}</td>
+            <td><span class="swatch" style={`background:${c.color_hex}`}></span> {c.color_hex}</td>
+            <td>{c.sort_order}</td>
+            <td>
+              <span class={`badge ${c.is_active ? "badge-active" : "badge-inactive"}`}>
+                {c.is_active ? s.active : s.inactive}
+              </span>
+            </td>
+            <td class="action-cell">
+              <a href={`/admin/products/conditions?edit=${c.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.common.edit}</a>
+              <form method="POST" onsubmit={`return confirm('${s.deleteConfirm}')`} style="display:inline">
+                <input type="hidden" name="_action" value="delete" />
+                <input type="hidden" name="id" value={c.id} />
+                <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{s.deleteBtn}</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+        {conditions.length === 0 && (
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noConditions}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</CmsLayout>
+
+<style>
+  .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
+  .back-link:hover { color:var(--text-primary); }
+  .section-title { font-size:15px; font-weight:700; margin-bottom:16px; }
+  .condition-form { display:flex; flex-direction:column; gap:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .form-check input { width:auto; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; }
+  .action-cell { display:flex; gap:8px; align-items:center; }
+  .swatch { display:inline-block; width:14px; height:14px; border-radius:4px; vertical-align:middle; border:1px solid var(--border-default); }
+  @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>

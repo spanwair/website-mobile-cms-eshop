@@ -13,7 +13,7 @@ export default defineConfig({
   workers: 1,
   reporter: [["list"], ["json", { outputFile: "tests/results.json" }]],
   use: {
-    baseURL: "http://localhost:4321",
+    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:4321",
     headless: CI,
     screenshot: "on",
     video: CI ? "off" : "retain-on-failure",

@@ -1,0 +1,38 @@
+---
+import type { Category } from "@shared/types";
+import { useT } from "../../lib/i18n";
+
+interface Props {
+  categories: Pick<Category, "id" | "name" | "slug" | "icon" | "image_url">[];
+  linkBase?: string;
+}
+const { categories, linkBase = "/shop" } = Astro.props;
+const t = useT(Astro);
+---
+
+{categories.length > 0 && (
+  <section class="section container">
+    <h2 class="section-title">{t.shop.categories}</h2>
+    <div class="cat-grid">
+      {categories.map((cat) => (
+        <a href={`${linkBase}?category=${cat.slug}`} class="cat-card">
+          {cat.image_url ? (
+            <img src={cat.image_url} alt={cat.name} class="cat-img" loading="lazy" />
+          ) : (
+            <span class="cat-icon">{cat.icon ?? "📦"}</span>
+          )}
+          <span class="cat-name">{cat.name}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+)}
+
+<style>
+  .cat-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:16px; }
+  .cat-card { display:flex; flex-direction:column; align-items:center; gap:10px; padding:24px 12px; border-radius:var(--radius-md); background:var(--bg-surface); border:1px solid var(--border-default); text-decoration:none; color:inherit; transition:transform .15s, box-shadow .15s; }
+  .cat-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+  .cat-img { width:56px; height:56px; object-fit:cover; border-radius:50%; }
+  .cat-icon { font-size:32px; }
+  .cat-name { font-size:13px; font-weight:600; color:var(--text-primary); text-align:center; }
+</style>

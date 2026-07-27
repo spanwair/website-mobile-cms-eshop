@@ -1,0 +1,41 @@
+---
+import { useT } from "../../lib/i18n";
+
+interface Props {
+  images: { url: string; alt: string | null }[];
+  title: string;
+}
+const { images, title } = Astro.props;
+const primaryImage = images[0];
+const t = useT(Astro);
+---
+
+<div class="images-col">
+  <div class="main-image-wrap">
+    {primaryImage ? (
+      <img id="main-img" src={primaryImage.url} alt={primaryImage.alt ?? title} class="main-image" />
+    ) : (
+      <div class="no-image">{t.shop.noImage}</div>
+    )}
+  </div>
+  {images.length > 1 && (
+    <div class="thumb-row">
+      {images.map((img) => (
+        <button class="thumb-btn" onclick={`document.getElementById('main-img').src='${img.url}'`}>
+          <img src={img.url} alt={img.alt ?? ""} class="thumb-img" loading="lazy" />
+        </button>
+      ))}
+    </div>
+  )}
+</div>
+
+<style>
+  .images-col { display:flex; flex-direction:column; gap:12px; }
+  .main-image-wrap { aspect-ratio:1; border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--bg-subtle); }
+  .main-image { width:100%; height:100%; object-fit:cover; cursor:zoom-in; }
+  .no-image { display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); }
+  .thumb-row { display:flex; gap:8px; flex-wrap:wrap; }
+  .thumb-btn { border:2px solid transparent; border-radius:8px; overflow:hidden; cursor:pointer; padding:0; background:none; width:64px; height:64px; }
+  .thumb-btn:hover { border-color:var(--primary); }
+  .thumb-img { width:100%; height:100%; object-fit:cover; }
+</style>

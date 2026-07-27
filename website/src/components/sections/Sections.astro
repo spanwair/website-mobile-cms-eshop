@@ -1,0 +1,46 @@
+---
+import type { SectionKey, StoreConfig, StoreMedia, ProductCardVariant, Category, HeroSlide, BenefitItem, ProductCondition, BlogPost } from "@shared/types";
+import type { ProductCardData } from "../../lib/variantRegistry";
+import Hero from "./Hero.astro";
+import Subhero from "./Subhero.astro";
+import Categories from "./Categories.astro";
+import FeaturedProducts from "./FeaturedProducts.astro";
+import Newsletter from "./Newsletter.astro";
+import Benefits from "./Benefits.astro";
+import BuybackPromo from "./BuybackPromo.astro";
+import ConditionExplainer from "./ConditionExplainer.astro";
+import BlogPreview from "./BlogPreview.astro";
+
+interface Props {
+  layout: SectionKey[];
+  storeConfig: StoreConfig | null;
+  categories: Pick<Category, "id" | "name" | "slug" | "icon" | "image_url">[];
+  featuredProducts: ProductCardData[];
+  cardVariant: ProductCardVariant;
+  media?: StoreMedia[];
+  slides?: HeroSlide[];
+  benefitItems?: BenefitItem[];
+  conditions?: ProductCondition[];
+  blogPosts?: BlogPost[];
+  linkBase?: string;
+}
+const {
+  layout, storeConfig, categories, featuredProducts, cardVariant, media = [],
+  slides = [], benefitItems = [], conditions = [], blogPosts = [], linkBase = "/shop",
+} = Astro.props;
+---
+
+{layout.map((key) => {
+  switch (key) {
+    case "hero": return <Hero storeConfig={storeConfig} media={media} slides={slides} />;
+    case "subhero": return <Subhero storeConfig={storeConfig} media={media} />;
+    case "categories": return <Categories categories={categories} linkBase={linkBase} />;
+    case "featured_products": return <FeaturedProducts products={featuredProducts} variant={cardVariant} linkBase={linkBase} />;
+    case "benefits": return <Benefits items={benefitItems} />;
+    case "buyback_promo": return <BuybackPromo storeConfig={storeConfig} media={media} />;
+    case "condition_explainer": return <ConditionExplainer conditions={conditions} linkBase={linkBase} />;
+    case "blog_preview": return <BlogPreview posts={blogPosts} linkBase={linkBase} media={media} />;
+    case "newsletter": return <Newsletter />;
+    default: return null;
+  }
+})}

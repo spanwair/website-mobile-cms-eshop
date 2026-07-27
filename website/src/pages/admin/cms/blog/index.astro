@@ -1,0 +1,72 @@
+---
+import CmsLayout from "../../../../components/cms/CmsLayout.astro";
+import CmsTabs from "../../../../components/cms/CmsTabs.astro";
+import { createSupabase } from "../../../../lib/supabase";
+import { fetchBlogPosts, deleteBlogPost } from "@shared/services/blogService";
+import { requireAdminCtx } from "../../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { useT } from "../../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
+const t = useT(Astro);
+const s = t.admin.cms;
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const id = form.get("post_id") as string;
+  if (id) await deleteBlogPost(supabase, id);
+  return Astro.redirect("/admin/cms/blog");
+}
+
+const posts = await fetchBlogPosts(supabase, partyId);
+---
+
+<CmsLayout title={s.blogTitle} userPermissions={permissions} currentPath="/admin/cms/blog" parties={ctx.parties} partyId={ctx.partyId}>
+  <CmsTabs active="blog" />
+  <div class="toolbar">
+    <span class="total-label">{posts.length} {s.blogTitle.toLowerCase()}</span>
+    <a href="/admin/cms/blog/new" class="btn btn-primary">{s.blogNew}</a>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead>
+        <tr><th>{s.colTitle}</th><th>{s.colSlug}</th><th>{s.colStatus}</th><th>{s.colActions}</th></tr>
+      </thead>
+      <tbody>
+        {posts.map((p) => (
+          <tr>
+            <td style="font-weight:600">{p.title}</td>
+            <td style="color:var(--text-muted)">/blog/{p.slug}</td>
+            <td><span class={`badge ${p.status === "published" ? "badge-active" : "badge-inactive"}`}>{p.status === "published" ? s.statusPublished : s.statusDraft}</span></td>
+            <td class="action-cell">
+              <a href={`/admin/cms/blog/${p.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.common.edit}</a>
+              <form method="POST" onsubmit={`return confirm('${t.common.delete}?')`} style="display:inline">
+                <input type="hidden" name="post_id" value={p.id} />
+                <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{t.common.delete}</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+        {posts.length === 0 && (
+          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noPosts}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</CmsLayout>
+
+<style>
+  .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .total-label { font-size:14px; color:var(--text-muted); }
+  .action-cell { display:flex; gap:8px; align-items:center; }
+</style>

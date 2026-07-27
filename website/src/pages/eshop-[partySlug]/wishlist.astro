@@ -1,0 +1,85 @@
+---
+import Layout from "../../components/layout/Layout.astro";
+import ProductCard from "../../components/variants/ProductCard/ProductCard.astro";
+import { createSupabase } from "../../lib/supabase";
+import { useT } from "../../lib/i18n";
+import { fetchWishlistItems, removeFromWishlist } from "@shared/services/wishlistService";
+
+const { partySlug } = Astro.params;
+const storeParty = Astro.locals.storeParty;
+if (!storeParty) return Astro.redirect("/shop");
+const linkBase = `/eshop-${partySlug}`;
+if (storeParty.config && !storeParty.config.enable_wishlists) return Astro.redirect(linkBase);
+
+const supabase = createSupabase(Astro);
+const t = useT(Astro);
+
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect(`/login?redirect=${linkBase}/wishlist`);
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  if (form.get("_action") === "remove_item") {
+    await removeFromWishlist(supabase, storeParty.id, session.user.id, form.get("product_id") as string);
+    return Astro.redirect(`${linkBase}/wishlist`);
+  }
+}
+
+const items = await fetchWishlistItems(supabase, storeParty.id, session.user.id);
+const cardVariant = storeParty.config?.product_card_variant ?? "classic";
+---
+
+<Layout title={t.shop.wishlist}>
+  <div class="wishlist-page">
+    <h1 class="page-title">{t.shop.wishlist}</h1>
+
+    {items.length === 0 ? (
+      <div class="empty-state">
+        <p>{t.shop.wishlistEmpty}</p>
+        <a href={linkBase} class="btn btn-primary">{t.shop.continueShopping}</a>
+      </div>
+    ) : (
+      <div class="wishlist-grid">
+        {items.map((item) => {
+          const p = item.product;
+          if (!p) return null;
+          const images = p.product_images ?? [];
+          const primaryImage = (images.find((i) => i.is_primary) ?? images[0])?.url ?? null;
+          return (
+            <div class="wishlist-tile">
+              <ProductCard
+                product={{
+                  id: item.product_id, title: p.title, slug: p.slug,
+                  price: p.price, discount_price: p.discount_price,
+                  is_featured: false, review_count: 0, rating_avg: 0,
+                  primaryImage, isOutOfStock: false,
+                }}
+                variant={cardVariant}
+                linkBase={linkBase}
+              />
+              <form method="POST" class="remove-form">
+                <input type="hidden" name="_action" value="remove_item" />
+                <input type="hidden" name="product_id" value={item.product_id} />
+                <button type="submit" class="remove-btn" title={t.shop.removeFromWishlist}>✕</button>
+              </form>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .wishlist-page { max-width:1280px; margin:0 auto; padding:32px 24px; }
+  .page-title { font-size:24px; font-weight:800; margin:0 0 24px; }
+  .empty-state { text-align:center; padding:60px 24px; display:flex; flex-direction:column; align-items:center; gap:16px; color:var(--text-muted); }
+  .wishlist-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:20px; }
+  .wishlist-tile { position:relative; }
+  .remove-form { position:absolute; top:8px; right:8px; }
+  .remove-btn {
+    width:28px; height:28px; border-radius:50%; border:1px solid var(--border);
+    background:var(--bg-surface); color:var(--text-secondary); cursor:pointer; font-size:13px;
+  }
+  .remove-btn:hover { color:#dc2626; border-color:#dc2626; }
+</style>

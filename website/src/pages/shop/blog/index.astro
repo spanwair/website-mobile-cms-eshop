@@ -1,0 +1,66 @@
+---
+import Layout from "../../../components/layout/Layout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchPublishedBlogPosts } from "@shared/services/blogService";
+import { fetchStoreMedia } from "@shared/services/storeMediaService";
+import { resolveMediaUrl } from "../../../lib/contentRenderer";
+import { useT } from "../../../lib/i18n";
+
+const storeParty = Astro.locals.storeParty;
+if (!storeParty) return Astro.redirect("/shop");
+
+const supabase = createSupabase(Astro);
+const t = useT(Astro);
+const media = await fetchStoreMedia(supabase, storeParty.id);
+const page = parseInt(new URL(Astro.request.url).searchParams.get("page") ?? "1", 10);
+const pageSize = 9;
+const { posts, count } = await fetchPublishedBlogPosts(supabase, storeParty.id, { page, pageSize });
+const totalPages = Math.max(1, Math.ceil(count / pageSize));
+
+function formatDate(iso: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+}
+---
+
+<Layout title={t.blog.title}>
+  <div class="blog-page container">
+    <h1 class="page-title">{t.blog.title}</h1>
+    {posts.length === 0 ? (
+      <p class="empty">{t.blog.noPosts}</p>
+    ) : (
+      <div class="blog-grid">
+        {posts.map((post) => (
+          <a href={`/shop/blog/${post.slug}`} class="blog-card">
+            {resolveMediaUrl(post.featured_image_url, media) && <img src={resolveMediaUrl(post.featured_image_url, media)!} alt={post.title} class="blog-image" />}
+            <p class="blog-date">{formatDate(post.published_at)}</p>
+            <h3 class="blog-title">{post.title}</h3>
+            {post.excerpt && <p class="blog-excerpt">{post.excerpt}</p>}
+          </a>
+        ))}
+      </div>
+    )}
+    {totalPages > 1 && (
+      <div class="pagination">
+        {page > 1 && <a href={`/shop/blog?page=${page - 1}`} class="btn btn-ghost">← {t.common.previous}</a>}
+        <span class="page-info">{t.common.page} {page} / {totalPages}</span>
+        {page < totalPages && <a href={`/shop/blog?page=${page + 1}`} class="btn btn-ghost">{t.common.next} →</a>}
+      </div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .blog-page { max-width: 1100px; margin: 0 auto; padding: 40px 24px 64px; }
+  .page-title { font-family: var(--font-heading); font-size: 32px; font-weight: 800; color: var(--text-primary); margin-bottom: 24px; }
+  .empty { color: var(--text-muted); }
+  .blog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+  .blog-card { display: block; text-decoration: none; color: inherit; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+  .blog-image { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+  .blog-date { font-size: 12px; color: var(--text-muted); padding: 12px 16px 0; margin: 0; }
+  .blog-title { font-size: 16px; font-weight: 700; color: var(--text-primary); padding: 4px 16px 0; margin: 0; }
+  .blog-excerpt { font-size: 13px; color: var(--text-secondary); padding: 8px 16px 16px; margin: 0; }
+  .pagination { display: flex; align-items: center; gap: 16px; justify-content: center; margin-top: 32px; }
+  .page-info { color: var(--text-muted); font-size: 14px; }
+</style>

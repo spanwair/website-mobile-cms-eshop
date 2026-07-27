@@ -1,83 +1,57 @@
 ---
 import Layout from "../../components/layout/Layout.astro";
+import ProductCard from "../../components/variants/ProductCard/ProductCard.astro";
+import Sections from "../../components/sections/Sections.astro";
+import StoresDirectory from "../../components/shop/StoresDirectory.astro";
+import CategorySidebar from "../../components/shop/CategorySidebar.astro";
 import { createSupabase } from "../../lib/supabase";
 import { useT } from "../../lib/i18n";
+import { sanitizeLayout } from "../../lib/pageComposer";
+import { fetchShopData } from "../../lib/shopQueries";
+import { listActiveStores } from "@shared/services/storeConfigService";
+import { fetchStoreMedia } from "@shared/services/storeMediaService";
+import { fetchVisibleHeroSlides } from "@shared/services/heroSlideService";
+import { fetchVisibleBenefitItems } from "@shared/services/benefitItemService";
+import { fetchProductConditions } from "@shared/services/productConditionService";
+import { fetchPublishedBlogPosts } from "@shared/services/blogService";
 
 const supabase = createSupabase(Astro);
 const t = useT(Astro);
+const storeParty = Astro.locals.storeParty;
+const storeConfig = storeParty?.config ?? null;
+const cardVariant = storeConfig?.product_card_variant ?? "classic";
+const sectionsMedia = storeParty ? await fetchStoreMedia(supabase, storeParty.id) : [];
+const heroSlides = storeParty ? await fetchVisibleHeroSlides(supabase, storeParty.id) : [];
+const benefitItems = storeParty ? await fetchVisibleBenefitItems(supabase, storeParty.id) : [];
+const conditions = storeParty ? await fetchProductConditions(supabase, storeParty.id) : [];
+const blogPosts = storeParty ? (await fetchPublishedBlogPosts(supabase, storeParty.id, { page: 1, pageSize: 3 })).posts : [];
 
 const url = new URL(Astro.request.url);
 const categorySlug = url.searchParams.get("category") ?? "";
 const search = url.searchParams.get("q") ?? "";
 const sort = url.searchParams.get("sort") ?? "newest";
+const conditionCode = url.searchParams.get("condition") ?? "";
 const page = parseInt(url.searchParams.get("page") ?? "1", 10);
 const pageSize = 24;
-const from = (page - 1) * pageSize;
+const isHomepageView = !search && !categorySlug && !conditionCode && page === 1;
 
-// Fetch all visible categories for the filter sidebar
-const { data: categories } = await supabase
-  .from("categories")
-  .select("id, name, slug, parent_id")
-  .eq("is_visible", true)
-  .order("sort_order", { ascending: true });
-
-// Build product query
-let productQuery = supabase
-  .from("products")
-  .select(
-    `id, title, slug, price, discount_price, is_featured, review_count, rating_avg,
-     product_images(url, is_primary),
-     product_categories!inner(category_id)`,
-    { count: "exact" }
-  )
-  .eq("status", "active")
-  .eq("is_visible", true);
-
-if (search) {
-  productQuery = productQuery.ilike("title", `%${search}%`);
-}
-
-if (categorySlug) {
-  const cat = categories?.find(c => c.slug === categorySlug);
-  if (cat) {
-    productQuery = productQuery.eq("product_categories.category_id", cat.id);
-  }
-}
-
-switch (sort) {
-  case "price_asc":  productQuery = productQuery.order("price", { ascending: true }); break;
-  case "price_desc": productQuery = productQuery.order("price", { ascending: false }); break;
-  case "rating":     productQuery = productQuery.order("rating_avg", { ascending: false }); break;
-  default:           productQuery = productQuery.order("created_at", { ascending: false });
-}
-
-const { data: rawProducts, count } = await productQuery.range(from, from + pageSize - 1);
-
-const totalPages = Math.ceil((count ?? 0) / pageSize);
-
-// Get primary image for each product
-const productIds = (rawProducts ?? []).map((p: any) => p.id);
-
-// Fetch inventory for all shown products in one query
-const { data: inventoryRows } = productIds.length > 0
-  ? await supabase
-      .from("inventory_items")
-      .select("product_id, qty_on_hand, qty_reserved")
-      .in("product_id", productIds)
-      .is("variant_id", null)
-      .eq("track_inventory", true)
-  : { data: [] };
-
-const inventoryMap = new Map(
-  (inventoryRows ?? []).map((r: any) => [r.product_id, r.qty_on_hand - r.qty_reserved])
-);
-
-const products = (rawProducts ?? []).map(p => {
-  const images = (p as any).product_images ?? [];
-  const primary = images.find((i: any) => i.is_primary) ?? images[0];
-  const qtyAvailable = inventoryMap.has((p as any).id) ? inventoryMap.get((p as any).id)! : null;
-  return { ...p, primaryImage: primary?.url ?? null, isOutOfStock: qtyAvailable !== null && qtyAvailable <= 0 };
+const { categories, featuredProducts, products, count, totalPages } = await fetchShopData(supabase, {
+  partyId: storeParty?.id ?? null,
+  categorySlug, search, sort, page, pageSize, isHomepageView, conditionCode,
 });
+
+// No domain resolved a single organization (plain app domain) — show the cross-org directory
+// and badge each product with its owning store, since browsing here mixes every active org.
+let stores: Awaited<ReturnType<typeof listActiveStores>> = [];
+let productsWithOrg = products;
+if (!storeParty) {
+  stores = await listActiveStores(supabase);
+  const storeByPartyId = new Map(stores.map((s) => [s.party_id, s]));
+  productsWithOrg = products.map((p: any) => {
+    const org = storeByPartyId.get(p.party_id);
+    return org ? { ...p, orgName: org.brand_name ?? org.slug, orgHref: `/eshop-${org.slug}` } : p;
+  });
+}
 
 function buildUrl(params: Record<string, string>) {
   const u = new URL(Astro.request.url);
@@ -91,35 +65,26 @@ function buildUrl(params: Record<string, string>) {
 ---
 
 <Layout title={`Shop${search ? ` — ${search}` : ""}${categorySlug ? ` — ${categorySlug}` : ""}`}>
+  {isHomepageView && (
+    <Sections
+      layout={sanitizeLayout(storeConfig?.homepage_layout)}
+      storeConfig={storeConfig}
+      categories={categories.filter((c) => !c.parent_id)}
+      featuredProducts={featuredProducts}
+      cardVariant={cardVariant}
+      media={sectionsMedia}
+      slides={heroSlides}
+      benefitItems={benefitItems}
+      conditions={conditions}
+      blogPosts={blogPosts}
+      linkBase="/shop"
+    />
+  )}
+
+  <StoresDirectory stores={stores} />
+
   <div class="shop-layout">
-    <!-- Sidebar filters -->
-    <aside class="sidebar">
-      <h2 class="sidebar-title">{t.shop.categories}</h2>
-      <ul class="category-list">
-        <li>
-          <a href="/shop" class={`cat-link${!categorySlug ? " cat-active" : ""}`}>{t.shop.allProducts}</a>
-        </li>
-        {(categories ?? []).filter(c => !c.parent_id).map(cat => (
-          <li>
-            <a
-              href={buildUrl({ category: cat.slug, q: search, sort })}
-              class={`cat-link${categorySlug === cat.slug ? " cat-active" : ""}`}
-            >
-              {cat.name}
-            </a>
-            {/* Child categories */}
-            {(categories ?? []).filter(c => c.parent_id === cat.id).map(child => (
-              <a
-                href={buildUrl({ category: child.slug, q: search, sort })}
-                class={`cat-link cat-child${categorySlug === child.slug ? " cat-active" : ""}`}
-              >
-                {child.name}
-              </a>
-            ))}
-          </li>
-        ))}
-      </ul>
-    </aside>
+    <CategorySidebar categories={categories} categorySlug={categorySlug} homeHref="/shop" buildUrl={buildUrl} conditions={conditions} activeCondition={conditionCode} />
 
     <!-- Main content -->
     <main class="shop-main">
@@ -152,49 +117,19 @@ function buildUrl(params: Record<string, string>) {
           </select>
         </div>
 
-        <span class="result-count">{count ?? 0} {t.shop.products}</span>
+        <span class="result-count">{count} {t.shop.products}</span>
       </div>
 
       <!-- Product grid -->
-      {products.length === 0 ? (
+      {productsWithOrg.length === 0 ? (
         <div class="empty-state">
           <p>{t.shop.noProducts}</p>
           <a href="/shop" class="btn btn-ghost">{t.shop.viewAll}</a>
         </div>
       ) : (
         <div class="product-grid">
-          {products.map(product => (
-            <a href={`/shop/${product.slug}`} class="product-card">
-              <div class="product-img-wrap">
-                {product.primaryImage ? (
-                  <img src={product.primaryImage} alt={product.title} class="product-img" loading="lazy" />
-                ) : (
-                  <div class="product-img-placeholder">{t.shop.noImage}</div>
-                )}
-                {product.is_featured && <span class="featured-badge">{t.shop.featured}</span>}
-                {product.discount_price && <span class="sale-badge">{t.shop.sale}</span>}
-                {(product as any).isOutOfStock && <span class="oos-badge">{t.shop.outOfStock}</span>}
-              </div>
-              <div class="product-info">
-                <h3 class="product-title">{product.title}</h3>
-                <div class="product-pricing">
-                  {product.discount_price ? (
-                    <>
-                      <span class="price-old">{Number(product.price).toFixed(2)} Kč</span>
-                      <span class="price-sale">{Number(product.discount_price).toFixed(2)} Kč</span>
-                    </>
-                  ) : (
-                    <span class="price">{Number(product.price).toFixed(2)} Kč</span>
-                  )}
-                </div>
-                {product.review_count > 0 && (
-                  <div class="product-rating">
-                    <span class="stars">{"★".repeat(Math.round(Number(product.rating_avg)))}{"☆".repeat(5 - Math.round(Number(product.rating_avg)))}</span>
-                    <span class="rating-count">({product.review_count})</span>
-                  </div>
-                )}
-              </div>
-            </a>
+          {productsWithOrg.map(product => (
+            <ProductCard product={product as any} variant={cardVariant} />
           ))}
         </div>
       )}
@@ -217,13 +152,6 @@ function buildUrl(params: Record<string, string>) {
 
 <style>
   .shop-layout { display:grid; grid-template-columns:220px 1fr; gap:32px; max-width:1280px; margin:0 auto; padding:32px 24px; }
-  .sidebar { position:sticky; top:80px; align-self:start; }
-  .sidebar-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); margin-bottom:12px; }
-  .category-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:2px; }
-  .cat-link { display:block; padding:6px 10px; border-radius:6px; font-size:14px; color:var(--text-secondary); text-decoration:none; transition:background .15s; }
-  .cat-link:hover { background:var(--bg-subtle); }
-  .cat-active { background:var(--primary); color:#fff !important; }
-  .cat-child { padding-left:24px; font-size:13px; }
 
   .shop-main { min-width:0; }
   .shop-toolbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
@@ -235,23 +163,6 @@ function buildUrl(params: Record<string, string>) {
   .result-count { font-size:13px; color:var(--text-muted); white-space:nowrap; margin-left:auto; }
 
   .product-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:20px; }
-  .product-card { display:flex; flex-direction:column; border:1px solid var(--border); border-radius:12px; overflow:hidden; text-decoration:none; color:inherit; transition:box-shadow .2s, transform .2s; }
-  .product-card:hover { box-shadow:0 8px 24px rgba(0,0,0,.1); transform:translateY(-2px); }
-  .product-img-wrap { position:relative; aspect-ratio:1; background:var(--bg-subtle); overflow:hidden; }
-  .product-img { width:100%; height:100%; object-fit:cover; }
-  .product-img-placeholder { display:flex; align-items:center; justify-content:center; height:100%; font-size:13px; color:var(--text-muted); }
-  .featured-badge { position:absolute; top:8px; left:8px; background:#6366f1; color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:12px; }
-  .sale-badge { position:absolute; top:8px; right:8px; background:#dc2626; color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:12px; }
-  .oos-badge { position:absolute; inset:0; background:rgba(0,0,0,.45); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; border-radius:0; }
-  .product-info { padding:12px; display:flex; flex-direction:column; gap:6px; flex:1; }
-  .product-title { font-size:14px; font-weight:600; line-height:1.4; margin:0; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-  .product-pricing { display:flex; align-items:center; gap:8px; }
-  .price { font-size:16px; font-weight:700; color:var(--primary); }
-  .price-old { font-size:13px; color:var(--text-muted); text-decoration:line-through; }
-  .price-sale { font-size:16px; font-weight:700; color:#dc2626; }
-  .product-rating { display:flex; align-items:center; gap:4px; }
-  .stars { color:#f59e0b; font-size:13px; }
-  .rating-count { font-size:12px; color:var(--text-muted); }
 
   .empty-state { text-align:center; padding:60px 24px; display:flex; flex-direction:column; align-items:center; gap:16px; color:var(--text-muted); }
   .pagination { display:flex; align-items:center; gap:16px; justify-content:center; margin-top:32px; }

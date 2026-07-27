@@ -1,0 +1,297 @@
+---
+import type { StoreConfig, StoreMedia, FooterLink, FooterBadge } from "@shared/types";
+import { SYSTEM_FOOTER_COLUMNS, type SystemFooterColumn } from "@shared/constants/footer";
+import { renderContent, resolveMediaUrl } from "../../lib/contentRenderer";
+import { useT } from "../../lib/i18n";
+
+interface Props {
+  storeConfig: StoreConfig | null;
+  media?: StoreMedia[];
+  footerLinks?: FooterLink[];
+  footerBadges?: FooterBadge[];
+  shopHref?: string;
+}
+const { storeConfig, media = [], footerLinks = [], footerBadges = [], shopHref = "/shop" } = Astro.props;
+const t = useT(Astro);
+const f = t.storefront.footer;
+const brand = storeConfig?.brand_name ?? "Template";
+const tagline = storeConfig?.tagline ?? null;
+const customHtml = storeConfig?.footer_content
+  ? renderContent(storeConfig.footer_content, storeConfig.footer_format, media)
+  : null;
+
+function resolveHref(url: string) {
+  return url.startsWith("/") && !url.startsWith(shopHref) ? `${shopHref}${url}` : url;
+}
+
+const SYSTEM_COLUMN_LABELS: Record<SystemFooterColumn, string> = {
+  shop: f.shop,
+  information: f.information,
+  customer_service: f.customerService,
+  purchase_info: f.purchaseInfo,
+  custom: f.more,
+};
+const isSystemColumn = (key: string): key is SystemFooterColumn =>
+  (SYSTEM_FOOTER_COLUMNS as readonly string[]).includes(key);
+
+// Store-authored custom columns (any column_key beyond the fixed system ones) render after
+// them, in the order they first appear, using the raw column_key as its own label.
+const customColumnKeys = [...new Set(footerLinks.map((l) => l.column_key).filter((k) => !isSystemColumn(k)))];
+const columnKeyOrder = [...SYSTEM_FOOTER_COLUMNS, ...customColumnKeys];
+const columns = columnKeyOrder
+  .map((key) => ({
+    key,
+    label: isSystemColumn(key) ? SYSTEM_COLUMN_LABELS[key] : key,
+    links: footerLinks.filter((l) => l.column_key === key),
+  }))
+  .filter((c) => c.links.length > 0);
+
+const shippingBadges = footerBadges.filter((b) => b.kind === "shipping");
+const paymentBadges = footerBadges.filter((b) => b.kind === "payment");
+const socialBadges = footerBadges.filter((b) => b.kind === "social");
+const storeFeatures = footerBadges.filter((b) => b.kind === "store_feature");
+
+const storePhoto = resolveMediaUrl(storeConfig?.store_photo_url ?? null, media);
+const hasVisitBlock = !!(storeConfig?.store_address || storeFeatures.length > 0);
+const showNewsletterPanel = storeConfig?.footer_newsletter_enabled ?? true;
+
+// Footer color theme is an explicit per-store choice (admin-editable in Settings → Branding),
+// defaulting to "light" so a fresh store matches the rest of the site out of the box. Each
+// theme sets the same set of local custom properties so every rule below only has to be
+// written once — see the two blocks in the <style> tag.
+const footerTheme = storeConfig?.footer_theme ?? "light";
+---
+
+<footer class={`site-footer site-footer--${footerTheme}`}>
+  <div class="container">
+    {(showNewsletterPanel || hasVisitBlock) && (
+      <div class={`footer-top${showNewsletterPanel && hasVisitBlock ? "" : " footer-top--single"}`}>
+        {showNewsletterPanel && (
+          <div class="panel newsletter-panel">
+            <h2 class="footer-heading">{f.newsletterTitle}</h2>
+            <ul class="check-list">
+              <li>{f.newsletterBullet1}</li>
+              <li>{f.newsletterBullet2}</li>
+              <li>{f.newsletterBullet3}</li>
+            </ul>
+            <form class="newsletter-form" id="footer-newsletter-form">
+              <input type="email" name="email" required placeholder={f.newsletterPlaceholder} class="newsletter-input" />
+              <button type="submit" class="btn btn-primary newsletter-btn">{f.newsletterCta}</button>
+            </form>
+            <p class="newsletter-msg" id="footer-newsletter-msg"></p>
+            <p class="fine-print">
+              {f.newsletterConsent}
+              {" "}<a href={`${shopHref}/stranka/ochrana-osobnich-udaju`}>{f.newsletterConsentLink}</a>.
+            </p>
+          </div>
+        )}
+
+        {hasVisitBlock && (
+          <div class="panel visit-panel">
+            <h2 class="footer-heading">{f.visitTitle}</h2>
+            <div class="visit-body">
+              {storePhoto && <img src={storePhoto} alt={f.visitTitle} class="visit-photo" loading="lazy" />}
+              <div class="visit-info">
+                {storeConfig?.store_address && (
+                  <p class="visit-address">
+                    📍 {storeConfig.store_address}
+                    {storeConfig.store_map_url && (
+                      <>{" "}<a href={storeConfig.store_map_url} target="_blank" rel="noopener noreferrer">{f.viewOnMap}</a></>
+                    )}
+                  </p>
+                )}
+                {storeConfig?.business_hours && <p class="visit-hours">🕒 <strong>{f.hoursLabel}:</strong> {storeConfig.business_hours}</p>}
+                {storeFeatures.length > 0 && (
+                  <ul class="check-list check-list--tight">
+                    {storeFeatures.map((feat) => <li>{feat.label}</li>)}
+                  </ul>
+                )}
+                {storeConfig?.store_map_url && (
+                  <a href={storeConfig.store_map_url} target="_blank" rel="noopener noreferrer" class="btn btn-ghost visit-cta">{f.moreAboutStore} ↗</a>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )}
+
+    <div class="footer-links-grid">
+      <div class="footer-brand">
+        <p class="footer-brand-name">{brand}</p>
+        <p class="footer-daily-help">{f.dailyHelp}</p>
+        {tagline && <p class="footer-tagline">{tagline}</p>}
+        {(storeConfig?.contact_phone || storeConfig?.contact_email) && (
+          <div class="footer-contact">
+            <p class="footer-eyebrow">{f.needHelp}</p>
+            {storeConfig?.contact_phone && <a href={`tel:${storeConfig.contact_phone}`}>📞 {storeConfig.contact_phone}</a>}
+            {storeConfig?.contact_email && <a href={`mailto:${storeConfig.contact_email}`}>✉️ {storeConfig.contact_email}</a>}
+          </div>
+        )}
+        {socialBadges.length > 0 && (
+          <div class="footer-social">
+            <p class="footer-eyebrow">{f.followUs}</p>
+            <div class="footer-social-links">
+              {socialBadges.map((s) => (
+                <a href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" class="social-link">{s.icon} {s.label}</a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      {columns.map((col) => (
+        <div class="footer-col">
+          <p class="footer-col-title">{col.label}</p>
+          {col.links.map((l) => <a href={resolveHref(l.url)} class="footer-link">{l.label}</a>)}
+        </div>
+      ))}
+    </div>
+
+    {customHtml && <div class="footer-custom" set:html={customHtml} />}
+
+    <div class="footer-bottom-bar">
+      <div class="badge-rows">
+        {paymentBadges.length > 0 && (
+          <div class="badge-row">
+            <span class="badge-row-label">{f.paymentTitle}</span>
+            {paymentBadges.map((p) => <span class="chip">{p.icon} {p.label}</span>)}
+          </div>
+        )}
+        {shippingBadges.length > 0 && (
+          <div class="badge-row">
+            {shippingBadges.map((s) => <span class="chip">{s.icon} {s.label}</span>)}
+          </div>
+        )}
+      </div>
+      <p class="footer-copyright">© {new Date().getFullYear()} {brand}. {f.copyright}</p>
+    </div>
+  </div>
+</footer>
+
+<script define:vars={{ successMsg: t.storefront.footer.newsletterSuccess }}>
+  const form = document.getElementById("footer-newsletter-form");
+  const msg = document.getElementById("footer-newsletter-msg");
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = form.elements.namedItem("email").value;
+    const res = await fetch("/api/newsletter/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (msg) msg.textContent = data.error ?? successMsg;
+  });
+</script>
+
+<style>
+  /* Both themes below define the same set of local custom properties, so every rule after this
+     is written once and works for either. "light" (the default) matches the rest of a fresh
+     store's own surface/text colors; "dark" is the classic e-commerce-footer look. Admins pick
+     between them in Settings → Branding — a real per-store choice, not a hardcoded assumption. */
+  .site-footer--light {
+    --footer-bg: var(--bg-subtle);
+    --footer-fg: var(--text-primary);
+    --footer-fg-muted: var(--text-secondary);
+    --footer-fg-faint: color-mix(in srgb, var(--text-secondary) 70%, transparent);
+    --footer-heading: var(--text-primary);
+    --footer-panel-bg: var(--bg-page);
+    --footer-border: var(--border-default);
+    --footer-input-bg: var(--bg-page);
+    --footer-input-border: var(--border-default);
+    --footer-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  }
+  .site-footer--dark {
+    /* A subtle brand tint keeps a flat near-black from feeling generic. */
+    --footer-bg: color-mix(in srgb, var(--accent-primary) 10%, #14161a);
+    --footer-fg: rgba(255,255,255,0.88);
+    --footer-fg-muted: rgba(255,255,255,0.55);
+    --footer-fg-faint: rgba(255,255,255,0.4);
+    --footer-heading: #fff;
+    --footer-panel-bg: rgba(255,255,255,0.045);
+    --footer-border: rgba(255,255,255,0.1);
+    --footer-input-bg: rgba(255,255,255,0.07);
+    --footer-input-border: rgba(255,255,255,0.16);
+    --footer-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  }
+
+  .site-footer { margin-top: 64px; background: var(--footer-bg); color: var(--footer-fg); }
+  .site-footer .container { padding-top: 64px; padding-bottom: 32px; }
+  .footer-heading { font-family: var(--font-heading); font-size: 21px; font-weight: 800; color: var(--footer-heading); margin: 0 0 18px; letter-spacing: -0.01em; }
+  .footer-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--footer-fg-faint); margin: 0 0 6px; }
+
+  .panel { background: var(--footer-panel-bg); border: 1px solid var(--footer-border); border-radius: var(--radius-lg); padding: 32px; }
+
+  .footer-top { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 40px; }
+  .footer-top--single { grid-template-columns: 1fr; }
+
+  .check-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 0; margin: 0 0 20px; font-size: 13px; color: var(--footer-fg-muted); }
+  .check-list li { display: flex; align-items: center; gap: 6px; }
+  .check-list li::before { content: "✓"; color: var(--accent-primary); font-weight: 700; }
+  .check-list--tight { flex-direction: column; gap: 6px; margin: 0 0 18px; }
+
+  .newsletter-form { display: flex; gap: 10px; max-width: 460px; }
+  .newsletter-input {
+    flex: 1; padding: 13px 16px; border-radius: var(--radius-md);
+    border: 1px solid var(--footer-input-border); background: var(--footer-input-bg); color: var(--footer-fg); font-size: 14px;
+  }
+  .newsletter-input::placeholder { color: var(--footer-fg-faint); }
+  .newsletter-input:focus { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
+  .newsletter-btn { white-space: nowrap; font-weight: 700; letter-spacing: 0.02em; }
+  .newsletter-msg { font-size: 13px; color: var(--accent-primary); min-height: 18px; margin: 10px 0 0; }
+  .fine-print { font-size: 12px; color: var(--footer-fg-faint); margin: 14px 0 0; line-height: 1.5; }
+  .fine-print a { color: var(--footer-fg-muted); }
+
+  .visit-body { display: grid; grid-template-columns: 150px 1fr; gap: 20px; align-items: start; }
+  .visit-photo { width: 150px; height: 150px; object-fit: cover; border-radius: var(--radius-md); box-shadow: var(--footer-shadow); }
+  .visit-address, .visit-hours { font-size: 14px; margin: 0 0 10px; color: var(--footer-fg-muted); }
+  .visit-address a { color: var(--accent-primary); text-decoration: none; }
+  .visit-address a:hover { text-decoration: underline; }
+  .visit-cta { color: var(--footer-fg); border-color: var(--footer-border); margin-top: 4px; }
+  .visit-cta:hover { border-color: var(--footer-fg-muted); }
+
+  .footer-links-grid { display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); gap: 32px; padding: 40px 0 36px; border-top: 1px solid var(--footer-border); }
+  .footer-brand-name { font-size: 19px; font-weight: 800; color: var(--footer-heading); margin: 0 0 6px; letter-spacing: -0.01em; }
+  .footer-daily-help { font-size: 14px; color: var(--footer-fg-muted); margin: 0 0 4px; }
+  .footer-tagline { font-size: 13px; color: var(--footer-fg-faint); margin: 0 0 18px; max-width: 240px; line-height: 1.5; }
+  .footer-contact { display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px; font-size: 14px; }
+  .footer-contact a { color: var(--footer-fg); text-decoration: none; }
+  .footer-contact a:hover { color: var(--accent-primary); }
+  .footer-social-links { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  .social-link { font-size: 13px; color: var(--footer-fg-muted); text-decoration: none; }
+  .social-link:hover { color: var(--accent-primary); }
+
+  .footer-col { display: flex; flex-direction: column; gap: 10px; }
+  .footer-col-title { font-size: 13px; font-weight: 700; color: var(--footer-heading); margin: 0 0 4px; }
+  .footer-link { font-size: 13.5px; color: var(--footer-fg-muted); text-decoration: none; line-height: 1.3; }
+  .footer-link:hover { color: var(--accent-primary); text-decoration: none; }
+
+  .footer-custom { padding: 28px 0; border-top: 1px solid var(--footer-border); }
+  .footer-custom :global(img), .footer-custom :global(video) { max-width: 100%; border-radius: var(--radius-md); }
+  .footer-custom :global(a) { color: var(--accent-primary); }
+
+  .footer-bottom-bar { border-top: 1px solid var(--footer-border); padding-top: 24px; }
+  .badge-rows { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .badge-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .badge-row-label { font-size: 12px; color: var(--footer-fg-faint); margin-right: 6px; white-space: nowrap; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px;
+    background: var(--footer-input-bg); border: 1px solid var(--footer-border);
+    border-radius: var(--radius-sm); padding: 5px 11px; color: var(--footer-fg-muted);
+  }
+  .footer-copyright { text-align: left; color: var(--footer-fg-faint); font-size: 12px; margin: 0; }
+
+  @media (max-width: 900px) {
+    .footer-top { grid-template-columns: 1fr; }
+    .footer-links-grid { grid-template-columns: 1fr 1fr; }
+    .panel { padding: 24px; }
+  }
+  @media (max-width: 560px) {
+    .site-footer .container { padding-top: 40px; }
+    .footer-links-grid { grid-template-columns: 1fr; gap: 28px; }
+    .visit-body { grid-template-columns: 1fr; }
+    .visit-photo { width: 100%; height: 180px; }
+    .newsletter-form { flex-direction: column; }
+    .newsletter-btn { width: 100%; }
+  }
+</style>

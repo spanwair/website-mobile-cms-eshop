@@ -139,13 +139,15 @@ Higher number = more privilege. `canAssignRole(myRole, targetRole)` enforces thi
 | 1 | VIEW_DASHBOARD | /admin (dashboard KPIs, charts, recent orders) |
 | 2 | MANAGE_USERS | /admin/users, /admin/parties (list + detail) |
 | 4 | MANAGE_ROLES | /admin/roles, /admin/roles/new |
-| 8 | MANAGE_PRODUCTS | /admin/products, /admin/reviews |
+| 8 | MANAGE_PRODUCTS | /admin/products, /admin/reviews, /admin/products/conditions |
 | 16 | MANAGE_CATEGORIES | /admin/categories |
 | 32 | MANAGE_ORDERS | /admin/orders, /admin/returns, revenue KPI |
 | 64 | MANAGE_INVENTORY | /admin/inventory |
 | 128 | MANAGE_PRICING | /admin/pricing |
 | 256 | MANAGE_CUSTOMERS | /admin/customers |
 | 512 | MANAGE_REPORTS | /admin/reports, revenue KPI |
+| 1024 | MANAGE_SETTINGS | /admin/settings/branding, layout, content, benefits, footer, domains |
+| 2048 | MANAGE_CMS | /admin/cms/navigation, pages, blog, team, faq |
 | 4096 | MANAGE_AUDIT | /admin/audit + editing party settings in /admin/parties/[id] |
 | 0 | (none) | /admin/notifications — always visible to any admin |
 
@@ -214,6 +216,9 @@ Higher number = more privilege. `canAssignRole(myRole, targetRole)` enforces thi
 | /admin/reports | MANAGE_REPORTS (512) | → /admin |
 | /admin/audit | MANAGE_AUDIT (4096) | → /admin |
 | /admin/notifications | none (perm=0) | always visible |
+| /admin/products/conditions | MANAGE_PRODUCTS (8) | → /admin |
+| /admin/settings/* (branding/layout/content/benefits/footer/domains) | MANAGE_SETTINGS (1024) | → /admin |
+| /admin/cms/navigation, pages, blog, team, faq | MANAGE_CMS (2048) | → /admin |
 
 **What eshop_admin can NEVER do, regardless of permission bits:**
 - See or access another party's data (DB-level RLS + `ctx.parties` scoping)
@@ -267,10 +272,17 @@ Sidebar groups (defined in `website/src/components/cms/Sidebar.astro`):
 | Eshop | Inventory | MANAGE_INVENTORY (64) |
 | Eshop | Reviews | MANAGE_PRODUCTS (8) |
 | Eshop | Returns | MANAGE_ORDERS (32) |
+| Eshop | Conditions | MANAGE_PRODUCTS (8) |
+| Content | Navigation | MANAGE_CMS (2048) |
+| Content | Pages | MANAGE_CMS (2048) |
+| Content | Blog | MANAGE_CMS (2048) |
+| Content | Team | MANAGE_CMS (2048) |
+| Content | FAQ | MANAGE_CMS (2048) |
 | Reports | Reports | MANAGE_REPORTS (512) |
 | People | Users | MANAGE_USERS (2) |
 | People | Roles | MANAGE_ROLES (4) |
 | People | Parties/Orgs | MANAGE_USERS (2) |
+| System | Settings | MANAGE_SETTINGS (1024) |
 | System | Audit | MANAGE_AUDIT (4096) |
 | System | Notifications | none (0) |
 

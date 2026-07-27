@@ -1,0 +1,220 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import SettingsTabs from "../../../components/cms/SettingsTabs.astro";
+import DesignPresetPicker from "../../../components/cms/DesignPresetPicker.astro";
+import ImagePicker from "../../../components/cms/ImagePicker.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchStoreConfig, updateStoreConfig } from "@shared/services/storeConfigService";
+import { fetchStoreMedia } from "@shared/services/storeMediaService";
+import { fetchColorPresets } from "@shared/services/colorPresetService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { PRODUCT_CARD_VARIANTS } from "../../../lib/variantRegistry";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions, partyId, parties } = ctx;
+const partySlug = parties.find((p) => p.id === partyId)?.slug;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redirect("/admin");
+const t = useT(Astro);
+const s = t.admin.settings;
+
+let success = "";
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const result = await updateStoreConfig(supabase, partyId, {
+    brand_name: (form.get("brand_name") as string) || null,
+    tagline: (form.get("tagline") as string) || null,
+    logo_url: (form.get("logo_url") as string) || null,
+    favicon_url: (form.get("favicon_url") as string) || null,
+    color_primary: form.get("color_primary") as string,
+    color_secondary: form.get("color_secondary") as string,
+    color_background: form.get("color_background") as string,
+    color_surface: form.get("color_surface") as string,
+    color_text_primary: form.get("color_text_primary") as string,
+    color_text_secondary: form.get("color_text_secondary") as string,
+    color_border: form.get("color_border") as string,
+    font_heading: form.get("font_heading") as string,
+    font_body: form.get("font_body") as string,
+    radius_scale: form.get("radius_scale") as "sharp" | "default" | "soft",
+    product_card_variant: form.get("product_card_variant") as "classic" | "minimal" | "luxury",
+    contact_phone: (form.get("contact_phone") as string) || null,
+    contact_email: (form.get("contact_email") as string) || null,
+    business_hours: (form.get("business_hours") as string) || null,
+    currency_code: ((form.get("currency_code") as string) || "CZK").toUpperCase(),
+    enable_wishlists: form.get("enable_wishlists") === "on",
+    store_address: (form.get("store_address") as string) || null,
+    store_map_url: (form.get("store_map_url") as string) || null,
+    store_photo_url: (form.get("store_photo_url") as string) || null,
+    footer_theme: (form.get("footer_theme") as "light" | "dark") || "light",
+  });
+  if (result.error) error = result.error.message;
+  else success = s.savedSuccess;
+}
+
+const config = await fetchStoreConfig(supabase, partyId);
+const media = await fetchStoreMedia(supabase, partyId);
+const customPresets = await fetchColorPresets(supabase, partyId);
+---
+
+<CmsLayout title={s.title} userPermissions={permissions} currentPath="/admin/settings/branding" parties={ctx.parties} partyId={ctx.partyId}>
+  <SettingsTabs active="branding" partySlug={partySlug} />
+  {error && <div class="alert-error">{error}</div>}
+  {success && <div class="alert-success">{success}</div>}
+
+  <form method="POST" class="settings-form">
+    <div class="card">
+      <h2 class="section-title">{s.sectionPresets}</h2>
+      <DesignPresetPicker customPresets={customPresets} />
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">{s.sectionBranding}</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">{s.fieldBrandName}</label>
+          <input class="form-input" name="brand_name" value={config?.brand_name ?? ""} />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldTagline}</label>
+          <input class="form-input" name="tagline" value={config?.tagline ?? ""} />
+        </div>
+        <ImagePicker name="logo_url" label={s.fieldLogoUrl} value={config?.logo_url ?? null} media={media} />
+        <ImagePicker name="favicon_url" label={s.fieldFaviconUrl} value={config?.favicon_url ?? null} media={media} />
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">{s.sectionContact}</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">{s.fieldContactPhone}</label>
+          <input class="form-input" name="contact_phone" value={config?.contact_phone ?? ""} />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldContactEmail}</label>
+          <input class="form-input" type="email" name="contact_email" value={config?.contact_email ?? ""} />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldBusinessHours}</label>
+          <input class="form-input" name="business_hours" placeholder="Po-Ne: 8:30 - 20:00" value={config?.business_hours ?? ""} />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldCurrencyCode}</label>
+          <input class="form-input" name="currency_code" maxlength="3" style="text-transform:uppercase" value={config?.currency_code ?? "CZK"} />
+        </div>
+      </div>
+      <p class="section-note">{s.contactNote}</p>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">{s.storeVisitTitle}</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">{s.fieldStoreAddress}</label>
+          <input class="form-input" name="store_address" value={config?.store_address ?? ""} placeholder="Vodičkova 10, Praha 1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldStoreMapUrl}</label>
+          <input class="form-input" name="store_map_url" value={config?.store_map_url ?? ""} placeholder="https://maps.google.com/..." />
+        </div>
+        <ImagePicker name="store_photo_url" label={s.fieldStorePhotoUrl} value={config?.store_photo_url ?? null} media={media} />
+        <div class="form-group">
+          <label class="form-label">{s.fieldFooterTheme}</label>
+          <select class="form-input" name="footer_theme">
+            <option value="light" selected={(config?.footer_theme ?? "light") === "light"}>{s.footerThemeLight}</option>
+            <option value="dark" selected={config?.footer_theme === "dark"}>{s.footerThemeDark}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">{s.sectionColors}</h2>
+      <div class="color-grid">
+        {[
+          ["color_primary", s.fieldColorPrimary, config?.color_primary ?? "#4F46E5"],
+          ["color_secondary", s.fieldColorSecondary, config?.color_secondary ?? "#7C3AED"],
+          ["color_background", s.fieldColorBackground, config?.color_background ?? "#FFFFFF"],
+          ["color_surface", s.fieldColorSurface, config?.color_surface ?? "#F8F9FA"],
+          ["color_text_primary", s.fieldColorTextPrimary, config?.color_text_primary ?? "#212529"],
+          ["color_text_secondary", s.fieldColorTextSecondary, config?.color_text_secondary ?? "#6C757D"],
+          ["color_border", s.fieldColorBorder, config?.color_border ?? "#E9ECEF"],
+        ].map(([name, label, value]) => (
+          <div class="form-group color-field">
+            <label class="form-label">{label}</label>
+            <div class="color-input-row">
+              <input type="color" name={name} value={value} class="color-swatch" />
+              <span class="color-hex">{value}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">{s.sectionTypography}</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">{s.fieldFontHeading}</label>
+          <input class="form-input" name="font_heading" value={config?.font_heading ?? "Inter"} />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldFontBody}</label>
+          <input class="form-input" name="font_body" value={config?.font_body ?? "Inter"} />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldRadiusScale}</label>
+          <select class="form-input" name="radius_scale">
+            <option value="sharp" selected={config?.radius_scale === "sharp"}>{s.radiusSharp}</option>
+            <option value="default" selected={!config || config.radius_scale === "default"}>{s.radiusDefault}</option>
+            <option value="soft" selected={config?.radius_scale === "soft"}>{s.radiusSoft}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">{s.sectionComponents}</h2>
+      <div class="form-group">
+        <label class="form-label">{s.fieldProductCardVariant}</label>
+        <select class="form-input" name="product_card_variant">
+          {PRODUCT_CARD_VARIANTS.map((v) => (
+            <option value={v.value} selected={config?.product_card_variant === v.value}>{v.label}</option>
+          ))}
+        </select>
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" name="enable_wishlists" checked={config?.enable_wishlists ?? true} />
+        {s.fieldEnableWishlists}
+      </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">{t.common.saveChanges}</button>
+  </form>
+</CmsLayout>
+
+<style>
+  .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
+  .alert-success { background:rgba(34,197,94,0.08); border:1px solid #22c55e; border-radius:8px; padding:12px 16px; color:#16a34a; margin-bottom:16px; font-size:14px; }
+  .settings-form { display: flex; flex-direction: column; gap: 16px; }
+  .section-title { font-size:15px; font-weight:700; margin-bottom:16px; }
+  .form-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; }
+  .color-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:16px; }
+  .color-field { gap: 6px; }
+  .color-input-row { display:flex; align-items:center; gap:8px; }
+  .color-swatch { width:40px; height:36px; padding:2px; cursor:pointer; }
+  .color-hex { font-family:monospace; font-size:12px; color:var(--text-muted); }
+  .section-note { font-size:13px; color:var(--text-muted); margin:8px 0 0; }
+  .checkbox-row { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; margin-top:16px; cursor:pointer; }
+  .checkbox-row input { width:auto; }
+</style>

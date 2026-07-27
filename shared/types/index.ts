@@ -46,6 +46,98 @@ export interface Party {
   updated_at: string;
 }
 
+export type ProductCardVariant = 'classic' | 'minimal' | 'luxury';
+export type RadiusScale = 'sharp' | 'default' | 'soft';
+export type SectionKey =
+  | 'hero' | 'subhero' | 'categories' | 'featured_products' | 'newsletter'
+  | 'benefits' | 'buyback_promo' | 'condition_explainer' | 'blog_preview';
+export type ContentFormat = 'markdown' | 'html';
+
+export interface StoreConfig {
+  id: string;
+  party_id: string;
+  brand_name: string | null;
+  tagline: string | null;
+  logo_url: string | null;
+  favicon_url: string | null;
+  color_primary: string;
+  color_secondary: string;
+  color_background: string;
+  color_surface: string;
+  color_text_primary: string;
+  color_text_secondary: string;
+  color_border: string;
+  font_heading: string;
+  font_body: string;
+  radius_scale: RadiusScale;
+  product_card_variant: ProductCardVariant;
+  homepage_layout: SectionKey[];
+  enable_reviews: boolean;
+  enable_wishlists: boolean;
+  hero_content: string | null;
+  hero_format: ContentFormat;
+  subhero_content: string | null;
+  subhero_format: ContentFormat;
+  footer_content: string | null;
+  footer_format: ContentFormat;
+  contact_phone: string | null;
+  contact_email: string | null;
+  business_hours: string | null;
+  currency_code: string;
+  buyback_content: string | null;
+  buyback_format: ContentFormat;
+  store_address: string | null;
+  store_map_url: string | null;
+  store_photo_url: string | null;
+  footer_theme: 'light' | 'dark';
+  footer_newsletter_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoreDomain {
+  id: string;
+  party_id: string;
+  domain: string;
+  verified: boolean;
+  verification_token: string;
+  created_at: string;
+}
+
+export type StoreMediaType = 'image' | 'video';
+
+export interface StoreMedia {
+  id: string;
+  party_id: string;
+  slug: string;
+  media_type: StoreMediaType;
+  url: string;
+  alt: string | null;
+  created_at: string;
+}
+
+export interface PartyColorPreset {
+  id: string;
+  party_id: string;
+  name: string;
+  color_primary: string;
+  color_secondary: string;
+  color_background: string;
+  color_surface: string;
+  color_text_primary: string;
+  color_text_secondary: string;
+  color_border: string;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface MediaCategory {
+  id: string;
+  party_id: string;
+  name: string;
+  created_at: string;
+}
+
 export interface Role {
   id: string;
   party_id: string | null;
@@ -124,6 +216,7 @@ export interface Product {
   is_featured: boolean;
   is_visible: boolean;
   stock: number | null;
+  condition_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -136,6 +229,19 @@ export interface ProductVariant {
   barcode: string | null;
   price: number | null;
   attributes: Record<string, string>;
+  condition_id: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductCondition {
+  id: string;
+  party_id: string;
+  code: string;
+  label: string;
+  color_hex: string;
+  sort_order: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -388,4 +494,151 @@ export interface UserNotification {
 
 export interface NotificationWithMeta extends Notification {
   read_at: string | null;
+}
+
+export interface NavItem {
+  id: string;
+  party_id: string;
+  parent_id: string | null;
+  label: string;
+  url: string | null;
+  category_id: string | null;
+  column_label: string | null;
+  is_mega: boolean;
+  sort_order: number;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NavItemWithChildren extends NavItem {
+  children: NavItem[];
+}
+
+// A store can also define its own footer column name beyond the system ones below,
+// so this is intentionally a plain string rather than a closed union.
+export type FooterColumnKey = string;
+
+export interface FooterLink {
+  id: string;
+  party_id: string;
+  column_key: FooterColumnKey;
+  label: string;
+  url: string;
+  sort_order: number;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HeroSlide {
+  id: string;
+  party_id: string;
+  image_url: string | null;
+  headline: string;
+  subheadline: string | null;
+  cta_text: string | null;
+  cta_link: string | null;
+  overlay_opacity: number;
+  sort_order: number;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BenefitItem {
+  id: string;
+  party_id: string;
+  icon: string;
+  title: string;
+  description: string | null;
+  sort_order: number;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ContentPageTemplate = 'default' | 'about' | 'contact' | 'faq';
+
+export interface ContentPage {
+  id: string;
+  party_id: string;
+  slug: string;
+  title: string;
+  template: ContentPageTemplate;
+  body: string | null;
+  body_format: ContentFormat;
+  seo_title: string | null;
+  seo_description: string | null;
+  show_in_footer_column: string | null;
+  is_visible: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FaqItem {
+  id: string;
+  party_id: string;
+  question: string;
+  answer: string;
+  context: string;
+  sort_order: number;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BlogPost {
+  id: string;
+  party_id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string | null;
+  content_format: ContentFormat;
+  featured_image_url: string | null;
+  author_name: string | null;
+  status: 'draft' | 'published';
+  published_at: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamMember {
+  id: string;
+  party_id: string;
+  name: string;
+  position: string | null;
+  bio: string | null;
+  photo_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type FooterBadgeKind = 'shipping' | 'payment' | 'social' | 'store_feature';
+
+export interface FooterBadge {
+  id: string;
+  party_id: string;
+  kind: FooterBadgeKind;
+  label: string;
+  icon: string | null;
+  url: string | null;
+  sort_order: number;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NewsletterSubscriber {
+  id: string;
+  party_id: string;
+  email: string;
+  subscribed_at: string;
+  unsubscribed_at: string | null;
 }

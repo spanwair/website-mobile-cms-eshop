@@ -13,6 +13,8 @@ export const PERMISSIONS = {
   MANAGE_PRICING:    128,
   MANAGE_CUSTOMERS:  256,
   MANAGE_REPORTS:    512,
+  MANAGE_SETTINGS:   1024,
+  MANAGE_CMS:        2048,
   MANAGE_AUDIT:      4096,
 } as const;
 
@@ -57,6 +59,8 @@ export const PERMISSION_LABELS: Record<keyof typeof PERMISSIONS, string> = {
   MANAGE_PRICING:    'Pricing',
   MANAGE_CUSTOMERS:  'Customers',
   MANAGE_REPORTS:    'Reports',
+  MANAGE_SETTINGS:   'Store Settings',
+  MANAGE_CMS:        'Content (Pages, Blog, Nav)',
   MANAGE_AUDIT:      'Audit Log',
 };
 

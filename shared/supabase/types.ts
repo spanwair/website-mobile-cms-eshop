@@ -146,6 +146,112 @@ export type Database = {
           },
         ]
       }
+      benefit_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          is_visible: boolean
+          party_id: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_visible?: boolean
+          party_id: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_visible?: boolean
+          party_id?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "benefit_items_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_posts: {
+        Row: {
+          author_name: string | null
+          content: string | null
+          content_format: string
+          created_at: string
+          excerpt: string | null
+          featured_image_url: string | null
+          id: string
+          party_id: string
+          published_at: string | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string | null
+          content?: string | null
+          content_format?: string
+          created_at?: string
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          party_id: string
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string | null
+          content?: string | null
+          content_format?: string
+          created_at?: string
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          party_id?: string
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brands: {
         Row: {
           created_at: string
@@ -365,6 +471,65 @@ export type Database = {
           },
         ]
       }
+      content_pages: {
+        Row: {
+          body: string | null
+          body_format: string
+          created_at: string
+          id: string
+          is_visible: boolean
+          party_id: string
+          seo_description: string | null
+          seo_title: string | null
+          show_in_footer_column: string | null
+          slug: string
+          sort_order: number
+          template: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          body_format?: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          party_id: string
+          seo_description?: string | null
+          seo_title?: string | null
+          show_in_footer_column?: string | null
+          slug: string
+          sort_order?: number
+          template?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          body_format?: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          party_id?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          show_in_footer_column?: string | null
+          slug?: string
+          sort_order?: number
+          template?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_pages_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupons: {
         Row: {
           code: string
@@ -567,6 +732,194 @@ export type Database = {
           },
         ]
       }
+      faq_items: {
+        Row: {
+          answer: string
+          context: string
+          created_at: string
+          id: string
+          is_visible: boolean
+          party_id: string
+          question: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          context?: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          party_id: string
+          question: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          context?: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          party_id?: string
+          question?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_items_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      footer_badges: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          is_visible: boolean
+          kind: string
+          label: string
+          party_id: string
+          sort_order: number
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_visible?: boolean
+          kind: string
+          label: string
+          party_id: string
+          sort_order?: number
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_visible?: boolean
+          kind?: string
+          label?: string
+          party_id?: string
+          sort_order?: number
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "footer_badges_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      footer_links: {
+        Row: {
+          column_key: string
+          created_at: string
+          id: string
+          is_visible: boolean
+          label: string
+          party_id: string
+          sort_order: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          column_key: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          label: string
+          party_id: string
+          sort_order?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          column_key?: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          label?: string
+          party_id?: string
+          sort_order?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "footer_links_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hero_slides: {
+        Row: {
+          created_at: string
+          cta_link: string | null
+          cta_text: string | null
+          headline: string
+          id: string
+          image_url: string | null
+          is_visible: boolean
+          overlay_opacity: number
+          party_id: string
+          sort_order: number
+          subheadline: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_link?: string | null
+          cta_text?: string | null
+          headline: string
+          id?: string
+          image_url?: string | null
+          is_visible?: boolean
+          overlay_opacity?: number
+          party_id: string
+          sort_order?: number
+          subheadline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_link?: string | null
+          cta_text?: string | null
+          headline?: string
+          id?: string
+          image_url?: string | null
+          is_visible?: boolean
+          overlay_opacity?: number
+          party_id?: string
+          sort_order?: number
+          subheadline?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hero_slides_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_items: {
         Row: {
           created_at: string
@@ -739,6 +1092,164 @@ export type Database = {
           },
           {
             foreignKeyName: "loyalty_transactions_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          party_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          party_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          party_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_categories_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_category_assignments: {
+        Row: {
+          category_id: string
+          media_id: string
+        }
+        Insert: {
+          category_id: string
+          media_id: string
+        }
+        Update: {
+          category_id?: string
+          media_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_category_assignments_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "media_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_category_assignments_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: false
+            referencedRelation: "store_media"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nav_items: {
+        Row: {
+          category_id: string | null
+          column_label: string | null
+          created_at: string
+          id: string
+          is_mega: boolean
+          is_visible: boolean
+          label: string
+          parent_id: string | null
+          party_id: string
+          sort_order: number
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          column_label?: string | null
+          created_at?: string
+          id?: string
+          is_mega?: boolean
+          is_visible?: boolean
+          label: string
+          parent_id?: string | null
+          party_id: string
+          sort_order?: number
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          column_label?: string | null
+          created_at?: string
+          id?: string
+          is_mega?: boolean
+          is_visible?: boolean
+          label?: string
+          parent_id?: string | null
+          party_id?: string
+          sort_order?: number
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nav_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nav_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "nav_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nav_items_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      newsletter_subscribers: {
+        Row: {
+          email: string
+          id: string
+          party_id: string
+          subscribed_at: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          email: string
+          id?: string
+          party_id: string
+          subscribed_at?: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          email?: string
+          id?: string
+          party_id?: string
+          subscribed_at?: string
+          unsubscribed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "newsletter_subscribers_party_id_fkey"
             columns: ["party_id"]
             isOneToOne: false
             referencedRelation: "parties"
@@ -1032,6 +1543,59 @@ export type Database = {
         }
         Relationships: []
       }
+      party_color_presets: {
+        Row: {
+          color_background: string
+          color_border: string
+          color_primary: string
+          color_secondary: string
+          color_surface: string
+          color_text_primary: string
+          color_text_secondary: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          party_id: string
+        }
+        Insert: {
+          color_background: string
+          color_border: string
+          color_primary: string
+          color_secondary: string
+          color_surface: string
+          color_text_primary: string
+          color_text_secondary: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          party_id: string
+        }
+        Update: {
+          color_background?: string
+          color_border?: string
+          color_primary?: string
+          color_secondary?: string
+          color_surface?: string
+          color_text_primary?: string
+          color_text_secondary?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          party_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "party_color_presets_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_list_items: {
         Row: {
           id: string
@@ -1151,6 +1715,50 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_conditions: {
+        Row: {
+          code: string
+          color_hex: string
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          party_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          color_hex?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          party_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          color_hex?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          party_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_conditions_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
             referencedColumns: ["id"]
           },
         ]
@@ -1309,6 +1917,7 @@ export type Database = {
         Row: {
           attributes: Json
           barcode: string | null
+          condition_id: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -1321,6 +1930,7 @@ export type Database = {
         Insert: {
           attributes?: Json
           barcode?: string | null
+          condition_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -1333,6 +1943,7 @@ export type Database = {
         Update: {
           attributes?: Json
           barcode?: string | null
+          condition_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -1343,6 +1954,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "product_variants_condition_id_fkey"
+            columns: ["condition_id"]
+            isOneToOne: false
+            referencedRelation: "product_conditions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "product_variants_product_id_fkey"
             columns: ["product_id"]
@@ -1356,6 +1974,7 @@ export type Database = {
         Row: {
           barcode: string | null
           brand_id: string | null
+          condition_id: string | null
           created_at: string
           description: string | null
           description_rich: Json | null
@@ -1380,6 +1999,7 @@ export type Database = {
         Insert: {
           barcode?: string | null
           brand_id?: string | null
+          condition_id?: string | null
           created_at?: string
           description?: string | null
           description_rich?: Json | null
@@ -1404,6 +2024,7 @@ export type Database = {
         Update: {
           barcode?: string | null
           brand_id?: string | null
+          condition_id?: string | null
           created_at?: string
           description?: string | null
           description_rich?: Json | null
@@ -1431,6 +2052,13 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_condition_id_fkey"
+            columns: ["condition_id"]
+            isOneToOne: false
+            referencedRelation: "product_conditions"
             referencedColumns: ["id"]
           },
           {
@@ -1782,6 +2410,260 @@ export type Database = {
           },
         ]
       }
+      store_configs: {
+        Row: {
+          brand_name: string | null
+          business_hours: string | null
+          buyback_content: string | null
+          buyback_format: string
+          color_background: string
+          color_border: string
+          color_primary: string
+          color_secondary: string
+          color_surface: string
+          color_text_primary: string
+          color_text_secondary: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          currency_code: string
+          enable_reviews: boolean
+          enable_wishlists: boolean
+          favicon_url: string | null
+          font_body: string
+          font_heading: string
+          footer_content: string | null
+          footer_format: string
+          footer_newsletter_enabled: boolean
+          footer_theme: string
+          hero_content: string | null
+          hero_format: string
+          homepage_layout: Json
+          id: string
+          logo_url: string | null
+          party_id: string
+          product_card_variant: string
+          radius_scale: string
+          store_address: string | null
+          store_map_url: string | null
+          store_photo_url: string | null
+          subhero_content: string | null
+          subhero_format: string
+          tagline: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand_name?: string | null
+          business_hours?: string | null
+          buyback_content?: string | null
+          buyback_format?: string
+          color_background?: string
+          color_border?: string
+          color_primary?: string
+          color_secondary?: string
+          color_surface?: string
+          color_text_primary?: string
+          color_text_secondary?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          currency_code?: string
+          enable_reviews?: boolean
+          enable_wishlists?: boolean
+          favicon_url?: string | null
+          font_body?: string
+          font_heading?: string
+          footer_content?: string | null
+          footer_format?: string
+          footer_newsletter_enabled?: boolean
+          footer_theme?: string
+          hero_content?: string | null
+          hero_format?: string
+          homepage_layout?: Json
+          id?: string
+          logo_url?: string | null
+          party_id: string
+          product_card_variant?: string
+          radius_scale?: string
+          store_address?: string | null
+          store_map_url?: string | null
+          store_photo_url?: string | null
+          subhero_content?: string | null
+          subhero_format?: string
+          tagline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand_name?: string | null
+          business_hours?: string | null
+          buyback_content?: string | null
+          buyback_format?: string
+          color_background?: string
+          color_border?: string
+          color_primary?: string
+          color_secondary?: string
+          color_surface?: string
+          color_text_primary?: string
+          color_text_secondary?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          currency_code?: string
+          enable_reviews?: boolean
+          enable_wishlists?: boolean
+          favicon_url?: string | null
+          font_body?: string
+          font_heading?: string
+          footer_content?: string | null
+          footer_format?: string
+          footer_newsletter_enabled?: boolean
+          footer_theme?: string
+          hero_content?: string | null
+          hero_format?: string
+          homepage_layout?: Json
+          id?: string
+          logo_url?: string | null
+          party_id?: string
+          product_card_variant?: string
+          radius_scale?: string
+          store_address?: string | null
+          store_map_url?: string | null
+          store_photo_url?: string | null
+          subhero_content?: string | null
+          subhero_format?: string
+          tagline?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_configs_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: true
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_domains: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          party_id: string
+          verification_token: string
+          verified: boolean
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+          party_id: string
+          verification_token?: string
+          verified?: boolean
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          party_id?: string
+          verification_token?: string
+          verified?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_domains_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_media: {
+        Row: {
+          alt: string | null
+          created_at: string
+          id: string
+          media_type: string
+          party_id: string
+          slug: string
+          url: string
+        }
+        Insert: {
+          alt?: string | null
+          created_at?: string
+          id?: string
+          media_type: string
+          party_id: string
+          slug: string
+          url: string
+        }
+        Update: {
+          alt?: string | null
+          created_at?: string
+          id?: string
+          media_type?: string
+          party_id?: string
+          slug?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_media_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          bio: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          party_id: string
+          photo_url: string | null
+          position: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          party_id: string
+          photo_url?: string | null
+          position?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          party_id?: string
+          photo_url?: string | null
+          position?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_notifications: {
         Row: {
           notification_id: string
@@ -2043,6 +2925,25 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_admin_of: { Args: { p_party_id: string }; Returns: boolean }
       is_owner: { Args: never; Returns: boolean }
+      list_active_stores: {
+        Args: never
+        Returns: {
+          brand_name: string
+          logo_url: string
+          party_id: string
+          slug: string
+          tagline: string
+        }[]
+      }
+      party_is_active: { Args: { p_party_id: string }; Returns: boolean }
+      resolve_active_party_id_by_slug: {
+        Args: { p_slug: string }
+        Returns: string
+      }
+      subscribe_to_newsletter: {
+        Args: { p_email: string; p_party_id: string }
+        Returns: undefined
+      }
       user_has_permission: {
         Args: { p_party_id: string; p_permission: number; p_user_id: string }
         Returns: boolean

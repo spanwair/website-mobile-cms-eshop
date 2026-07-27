@@ -1,0 +1,163 @@
+---
+import Layout from "../../components/layout/Layout.astro";
+import CheckoutAddressForm from "../../components/shop/CheckoutAddressForm.astro";
+import CheckoutOrderSummary from "../../components/shop/CheckoutOrderSummary.astro";
+import { createSupabase, createAdminClient } from "../../lib/supabase";
+import { clearCart, calcCartTotal } from "@shared/services/cartService";
+import { createOrder, addOrderItem } from "@shared/services/orderService";
+import { startOrderCheckout } from "../../lib/checkoutFlow";
+import { useT } from "../../lib/i18n";
+
+const { partySlug } = Astro.params;
+const storeParty = Astro.locals.storeParty;
+if (!storeParty) return Astro.redirect("/shop");
+const partyId = storeParty.id;
+const linkBase = `/eshop-${partySlug}`;
+
+const supabase = createSupabase(Astro);
+const t = useT(Astro);
+
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect(`/login?redirect=${linkBase}/checkout`);
+
+const { data: cartRaw } = await supabase
+  .from("carts")
+  .select("*, cart_items(*, product:products(id, title, slug, price, discount_price, sku))")
+  .eq("user_id", session.user.id)
+  .eq("party_id", partyId)
+  .order("updated_at", { ascending: false })
+  .limit(1)
+  .maybeSingle();
+
+const cart = cartRaw as any;
+if (!cart || !(cart.cart_items?.length > 0)) return Astro.redirect(`${linkBase}/cart`);
+
+const items = cart.cart_items ?? [];
+const { subtotal } = calcCartTotal(items.map((i: any) => ({ ...i, unit_price: Number(i.unit_price) })));
+
+let checkoutError = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const firstName = (form.get("first_name") as string).trim();
+  const lastName = (form.get("last_name") as string).trim();
+  const phone = (form.get("phone") as string)?.trim() || null;
+  const line1 = (form.get("line1") as string).trim();
+  const city = (form.get("city") as string).trim();
+  const postalCode = (form.get("postal_code") as string).trim();
+  const countryCode = ((form.get("country_code") as string)?.trim() || "CZ").toUpperCase().slice(0, 2);
+
+  const adminClient = createAdminClient();
+
+  try {
+    let { data: customer } = await adminClient
+      .from("customers")
+      .select("id")
+      .eq("party_id", partyId)
+      .eq("email", session.user.email!)
+      .maybeSingle();
+
+    if (!customer) {
+      const { data: newCust, error: custErr } = await adminClient
+        .from("customers")
+        .insert({
+          party_id: partyId,
+          email: session.user.email!,
+          first_name: firstName,
+          last_name: lastName,
+          phone,
+          user_id: session.user.id,
+          is_active: true,
+          gdpr_consent: true,
+        })
+        .select("id")
+        .single();
+      if (custErr) throw new Error(custErr.message);
+      customer = newCust!;
+    }
+
+    const { data: address, error: addrErr } = await adminClient
+      .from("addresses")
+      .insert({
+        customer_id: customer.id,
+        first_name: firstName,
+        last_name: lastName,
+        line1,
+        city,
+        postal_code: postalCode,
+        country_code: countryCode,
+        type: "shipping",
+        is_default: true,
+      })
+      .select("id")
+      .single();
+    if (addrErr) throw new Error(addrErr.message);
+
+    const orderNumber = "ORD-" + String(Math.floor(Math.random() * 1_000_000)).padStart(8, "0");
+
+    const { data: order, error: orderErr } = await createOrder(adminClient, {
+      party_id: partyId,
+      customer_id: customer.id,
+      shipping_address_id: address!.id,
+      order_number: orderNumber,
+      status: "pending",
+      payment_status: "unpaid",
+      subtotal,
+      total_amount: subtotal,
+      currency: "CZK",
+    });
+    if (orderErr || !order) throw new Error(orderErr?.message ?? "Order creation failed");
+
+    for (const item of items) {
+      const { error: itemErr } = await addOrderItem(adminClient, {
+        order_id: order.id,
+        product_id: item.product_id,
+        variant_id: item.variant_id ?? null,
+        title: item.product?.title ?? "Product",
+        sku: item.product?.sku ?? null,
+        quantity: item.quantity,
+        unit_price: Number(item.unit_price),
+        discount_amount: 0,
+        tax_amount: 0,
+        total_price: Number(item.unit_price) * item.quantity,
+      });
+      if (itemErr) throw new Error(itemErr.message);
+    }
+
+    await clearCart(supabase, cart.id);
+
+    const { url: sessionUrl, error: sessionError } = await startOrderCheckout({
+      items,
+      orderId: order.id,
+      currency: "czk",
+      successUrl: `${Astro.url.origin}${linkBase}/order-confirmation?order=${order.order_number}&session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${Astro.url.origin}${linkBase}/checkout`,
+    });
+    if (sessionError || !sessionUrl) throw new Error(sessionError ?? "Could not start checkout session");
+
+    return Astro.redirect(sessionUrl);
+  } catch (e: any) {
+    checkoutError = e?.message ?? "Checkout failed. Please try again.";
+  }
+}
+---
+
+<Layout title={t.shop.checkoutTitle}>
+  <div class="checkout-page">
+    <h1 class="page-title">{t.shop.checkoutTitle}</h1>
+
+    {checkoutError && <div class="form-error" style="margin-bottom:16px">{checkoutError}</div>}
+
+    <div class="checkout-layout">
+      <CheckoutAddressForm cancelHref={`${linkBase}/cart`} />
+      <CheckoutOrderSummary items={items} subtotal={subtotal} />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .checkout-page { max-width:1000px; margin:0 auto; padding:32px 24px; }
+  .page-title { font-size:28px; font-weight:800; margin-bottom:24px; }
+  .checkout-layout { display:grid; grid-template-columns:1fr 320px; gap:32px; align-items:start; }
+  @media(max-width:768px) { .checkout-layout { grid-template-columns:1fr; } }
+</style>

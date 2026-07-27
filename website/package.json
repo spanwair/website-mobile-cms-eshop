@@ -15,11 +15,16 @@
     "@supabase/ssr": "^0.12.1",
     "@supabase/supabase-js": "^2.45.0",
     "astro": "^5.0.0",
-    "i18next": "^26.0.4"
+    "i18next": "^26.0.4",
+    "marked": "^18.0.7",
+    "resend": "^6.18.0",
+    "sanitize-html": "^2.17.6",
+    "stripe": "^22.3.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@types/node": "^26.1.1",
+    "@types/sanitize-html": "^2.16.1",
     "@typescript-eslint/eslint-plugin": "^8.58.2",
     "@typescript-eslint/parser": "^8.58.2",
     "typescript": "~5.9.2"

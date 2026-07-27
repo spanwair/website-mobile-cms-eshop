@@ -1,0 +1,23 @@
+---
+import type { ProductCardVariant } from "@shared/types";
+import type { ProductCardData } from "../../lib/variantRegistry";
+import ProductCard from "../variants/ProductCard/ProductCard.astro";
+import { useT } from "../../lib/i18n";
+
+interface Props { products: ProductCardData[]; variant: ProductCardVariant; linkBase?: string }
+const { products, variant, linkBase = "/shop" } = Astro.props;
+const t = useT(Astro);
+---
+
+{products.length > 0 && (
+  <section id="featured-products" class="section container">
+    <h2 class="section-title">{t.shop.featured}</h2>
+    <div class="featured-product-grid">
+      {products.map((product) => <ProductCard product={product} variant={variant} linkBase={linkBase} />)}
+    </div>
+  </section>
+)}
+
+<style>
+  .featured-product-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:20px; }
+</style>

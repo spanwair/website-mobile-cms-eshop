@@ -1,0 +1,153 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import SettingsTabs from "../../../components/cms/SettingsTabs.astro";
+import { createSupabase } from "../../../lib/supabase";
+import {
+  fetchFooterBadges, createFooterBadge, updateFooterBadge, deleteFooterBadge,
+} from "@shared/services/footerBadgeService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { useT } from "../../../lib/i18n";
+import type { FooterBadgeKind } from "@shared/types";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions, partyId, parties } = ctx;
+const partySlug = parties.find((p) => p.id === partyId)?.slug;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redirect("/admin");
+const t = useT(Astro);
+const s = t.admin.settings;
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = (form.get("_action") as string) ?? "save";
+  const id = form.get("id") as string;
+
+  if (action === "delete" && id) {
+    await deleteFooterBadge(supabase, id);
+  } else {
+    const input = {
+      kind: (form.get("kind") as FooterBadgeKind) ?? "payment",
+      label: (form.get("label") as string).trim(),
+      icon: (form.get("icon") as string) || null,
+      url: (form.get("url") as string) || null,
+      sort_order: parseInt((form.get("sort_order") as string) || "0", 10),
+      is_visible: form.get("is_visible") === "on",
+    };
+    const result = id
+      ? await updateFooterBadge(supabase, id, input)
+      : await createFooterBadge(supabase, { ...input, party_id: partyId });
+    if (result.error) error = result.error.message;
+  }
+  if (!error) return Astro.redirect("/admin/settings/badges");
+}
+
+const badges = await fetchFooterBadges(supabase, partyId);
+const editId = Astro.url.searchParams.get("edit");
+const editing = editId ? badges.find((b) => b.id === editId) ?? null : null;
+const kinds: FooterBadgeKind[] = ["shipping", "payment", "social", "store_feature"];
+const kindLabels: Record<FooterBadgeKind, string> = {
+  shipping: s.kindShipping, payment: s.kindPayment, social: s.kindSocial, store_feature: s.kindStoreFeature,
+};
+---
+
+<CmsLayout title={s.tabBadges} userPermissions={permissions} currentPath="/admin/settings/badges" parties={ctx.parties} partyId={ctx.partyId}>
+  <SettingsTabs active="badges" partySlug={partySlug} />
+  {error && <div class="alert-error">{error}</div>}
+  <p class="content-hint">{s.badgesHint}</p>
+
+  <div class="card" style="max-width:640px;margin-bottom:24px">
+    <h2 class="section-title">{editing ? t.common.edit : s.addBadgeBtn}</h2>
+    <form method="POST" class="badge-form">
+      {editing && <input type="hidden" name="id" value={editing.id} />}
+      <div class="form-group">
+        <label class="form-label">{s.fieldKind}</label>
+        <select class="form-input" name="kind">
+          {kinds.map((k) => <option value={k} selected={editing ? editing.kind === k : k === "payment"}>{kindLabels[k]}</option>)}
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldIcon}</label>
+          <input class="form-input" name="icon" value={editing?.icon ?? ""} placeholder="💳" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{t.admin.cms.fieldLabel}</label>
+          <input class="form-input" name="label" required value={editing?.label ?? ""} placeholder="Visa" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{t.admin.cms.fieldUrl}</label>
+        <input class="form-input" name="url" value={editing?.url ?? ""} placeholder="https://facebook.com/..." />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldSortOrder}</label>
+          <input class="form-input" type="number" name="sort_order" value={editing?.sort_order ?? 0} />
+        </div>
+        <div class="form-check" style="align-self:end">
+          <input type="checkbox" name="is_visible" id="badge_visible" checked={editing ? editing.is_visible : true} />
+          <label for="badge_visible">{s.fieldVisible}</label>
+        </div>
+      </div>
+      <div class="form-actions">
+        {editing && <a href="/admin/settings/badges" class="btn btn-ghost">{t.common.cancel}</a>}
+        <button type="submit" class="btn btn-primary">{editing ? s.saveSlideBtn : s.addBadgeBtn}</button>
+      </div>
+    </form>
+  </div>
+
+  {kinds.map((k) => (
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+      <div class="group-title">{kindLabels[k]}</div>
+      <table class="data-table">
+        <thead>
+          <tr><th>{s.fieldIcon}</th><th>{t.admin.cms.fieldLabel}</th><th>{s.colOrder}</th><th>{s.colVisible}</th><th>{s.colActions}</th></tr>
+        </thead>
+        <tbody>
+          {badges.filter((b) => b.kind === k).map((b) => (
+            <tr>
+              <td style="font-size:18px">{b.icon}</td>
+              <td style="font-weight:600">{b.label}</td>
+              <td>{b.sort_order}</td>
+              <td>{b.is_visible ? t.admin.categories.visible : t.admin.categories.hidden}</td>
+              <td class="action-cell">
+                <a href={`/admin/settings/badges?edit=${b.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.common.edit}</a>
+                <form method="POST" onsubmit={`return confirm('${t.common.delete}?')`} style="display:inline">
+                  <input type="hidden" name="_action" value="delete" />
+                  <input type="hidden" name="id" value={b.id} />
+                  <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{t.common.delete}</button>
+                </form>
+              </td>
+            </tr>
+          ))}
+          {badges.filter((b) => b.kind === k).length === 0 && (
+            <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">{s.noBadges}</td></tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  ))}
+</CmsLayout>
+
+<style>
+  .section-title { font-size:15px; font-weight:700; margin-bottom:16px; }
+  .group-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); padding:12px 16px; border-bottom:1px solid var(--border-default); }
+  .content-hint { font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+  .badge-form { display:flex; flex-direction:column; gap:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .form-check input { width:auto; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; }
+  .action-cell { display:flex; gap:8px; align-items:center; }
+  .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
+  @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>

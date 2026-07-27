@@ -1,0 +1,128 @@
+---
+import { useT } from "../../lib/i18n";
+const t = useT(Astro);
+const s = t.common;
+const i18n = {
+  close: t.common.close,
+  cancel: t.common.cancel,
+  loading: t.common.loading,
+  uploading: s.uploading,
+  selected: s.selected,
+  delete: t.common.delete,
+  deleteMediaConfirm: s.deleteMediaConfirm,
+  noImagesYet: s.noImagesYet,
+  error: t.common.error,
+  wrongFileType: s.wrongFileType,
+  allCategories: s.allCategories,
+  editCategories: s.editCategories,
+};
+---
+
+<div class="mp-overlay" data-mp-overlay hidden>
+  <div class="mp-modal" role="dialog" aria-modal="true" aria-label={s.chooseFromLibrary}>
+    <div class="mp-header">
+      <h2>{s.chooseFromLibrary}</h2>
+      <button type="button" class="mp-close" data-mp-close aria-label={s.close}>&times;</button>
+    </div>
+
+    <div class="mp-dropzone" data-mp-dropzone>
+      <p>{s.dragDropHint} <span class="mp-browse-link">{s.browseFiles}</span></p>
+      <input type="file" accept="image/*,video/*" multiple hidden data-mp-file-input />
+    </div>
+
+    <div class="mp-category-bar" data-mp-category-bar hidden></div>
+    <p class="mp-status" data-mp-status hidden></p>
+
+    <div class="mp-category-panel" data-mp-category-panel hidden>
+      <div class="mp-category-panel-header">
+        <span>{s.itemCategoriesLabel}</span>
+        <button type="button" class="mp-close" data-mp-category-panel-close aria-label={s.close}>&times;</button>
+      </div>
+      <div class="mp-category-checklist" data-mp-category-checklist></div>
+      <div class="mp-category-new-row">
+        <input type="text" class="form-input" placeholder={s.newCategoryPlaceholder} data-mp-new-category-input />
+        <button type="button" class="btn btn-ghost" data-mp-new-category-add>{s.addCategoryBtn}</button>
+      </div>
+    </div>
+
+    <div class="mp-grid" data-mp-grid></div>
+
+    <div class="mp-footer">
+      <span class="mp-count" data-mp-count hidden></span>
+      <button type="button" class="btn btn-ghost" data-mp-cancel>{t.common.cancel}</button>
+      <button type="button" class="btn btn-primary" data-mp-confirm hidden>{s.useSelected}</button>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ i18n }}>
+  window.__mediaPickerI18n = i18n;
+</script>
+
+<script>
+  import { initMediaPicker } from "../../lib/mediaPicker";
+  initMediaPicker();
+</script>
+
+<style is:global>
+  /* Global: the grid/items below are built client-side (no Astro scope attribute), so a
+     scoped stylesheet would silently fail to style them. */
+  .mp-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .mp-overlay[hidden] { display: none; }
+  .mp-modal [hidden] { display: none !important; }
+  .mp-modal {
+    background: var(--bg-page, #fff); border-radius: 12px; width: 100%; max-width: 720px;
+    max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .mp-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-default); }
+  .mp-header h2 { font-size: 16px; font-weight: 700; margin: 0; }
+  .mp-close { background: none; border: none; font-size: 22px; line-height: 1; cursor: pointer; color: var(--text-muted); padding: 4px; }
+  .mp-close:hover { color: var(--text-primary); }
+  .mp-dropzone {
+    margin: 16px 20px 0; padding: 20px; border: 2px dashed var(--border-default); border-radius: 10px;
+    text-align: center; font-size: 13px; color: var(--text-muted); cursor: pointer; flex-shrink: 0;
+  }
+  .mp-dropzone.is-dragover { border-color: var(--accent-primary, #4F46E5); background: rgba(79,70,229,0.05); }
+  .mp-browse-link { color: var(--accent-primary, #4F46E5); font-weight: 600; text-decoration: underline; }
+  .mp-status { margin: 12px 20px 0; font-size: 13px; color: var(--text-muted); }
+  .mp-status.is-error { color: var(--error); }
+  .mp-category-bar { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 20px 0; }
+  .mp-chip {
+    border: 1px solid var(--border-default); border-radius: 999px; background: none; cursor: pointer;
+    font-size: 12px; padding: 4px 12px; color: var(--text-secondary);
+  }
+  .mp-chip.is-active { background: var(--accent-primary, #4F46E5); border-color: var(--accent-primary, #4F46E5); color: #fff; }
+  .mp-category-panel { margin: 14px 20px 0; border: 1px solid var(--border-default); border-radius: 10px; padding: 12px 14px; flex-shrink: 0; }
+  .mp-category-panel-header { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+  .mp-category-checklist { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 10px; }
+  .mp-category-check { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+  .mp-category-check input { width: auto; }
+  .mp-category-new-row { display: flex; gap: 8px; }
+  .mp-category-new-row input { flex: 1; }
+  .mp-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px;
+    padding: 16px 20px; overflow-y: auto; flex: 1;
+  }
+  .mp-empty { grid-column: 1 / -1; color: var(--text-muted); font-size: 13px; text-align: center; padding: 24px 0; }
+  .mp-item {
+    position: relative; border: 2px solid transparent; border-radius: 8px; overflow: hidden;
+    cursor: pointer; aspect-ratio: 1; background: var(--bg-subtle);
+  }
+  .mp-item.is-selected { border-color: var(--accent-primary, #4F46E5); }
+  .mp-item img, .mp-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .mp-remove, .mp-tag {
+    position: absolute; top: 4px; width: 22px; height: 22px; padding: 0; border-radius: 50%;
+    border: none; background: rgba(0,0,0,0.6); color: #fff; font-size: 12px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .mp-remove { right: 4px; font-size: 14px; }
+  .mp-tag { left: 4px; font-weight: 700; }
+  .mp-remove:hover { background: var(--error); }
+  .mp-tag:hover { background: var(--accent-primary, #4F46E5); }
+  .mp-footer { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 14px 20px; border-top: 1px solid var(--border-default); flex-shrink: 0; }
+  .mp-count { font-size: 13px; color: var(--text-muted); margin-right: auto; }
+</style>

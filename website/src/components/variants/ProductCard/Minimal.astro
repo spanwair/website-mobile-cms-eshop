@@ -1,0 +1,39 @@
+---
+import type { ProductCardData } from "../../../lib/variantRegistry";
+import { useT } from "../../../lib/i18n";
+
+interface Props { product: ProductCardData; linkBase?: string }
+const { product, linkBase = "/shop" } = Astro.props;
+const t = useT(Astro);
+---
+
+<a href={`${linkBase}/${product.slug}`} class="product-card">
+  <div class="product-img-wrap">
+    {product.primaryImage ? (
+      <img src={product.primaryImage} alt={product.title} class="product-img" loading="lazy" />
+    ) : (
+      <div class="product-img-placeholder">{t.shop.noImage}</div>
+    )}
+    {product.isOutOfStock && <span class="oos-badge">{t.shop.outOfStock}</span>}
+  </div>
+  {product.orgName && <span class="org-badge">{product.orgName}</span>}
+  {product.condition && <span class="condition-badge" style={`background:${product.condition.color_hex}`}>{product.condition.label}</span>}
+  <div class="product-info">
+    <h3 class="product-title">{product.title}</h3>
+    <span class="price">{Number(product.discount_price ?? product.price).toFixed(2)} Kč</span>
+  </div>
+</a>
+
+<style>
+  .product-card { display:flex; flex-direction:column; text-decoration:none; color:inherit; }
+  .product-img-wrap { position:relative; aspect-ratio:1; background:var(--bg-subtle); overflow:hidden; border-radius:var(--radius-sm); }
+  .product-img { width:100%; height:100%; object-fit:cover; transition:opacity .2s; }
+  .product-card:hover .product-img { opacity:0.85; }
+  .product-img-placeholder { display:flex; align-items:center; justify-content:center; height:100%; font-size:13px; color:var(--text-muted); }
+  .oos-badge { position:absolute; inset:0; background:rgba(0,0,0,.4); color:#fff; font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center; }
+  .org-badge { margin-top:8px; font-size:10px; font-weight:600; color:var(--accent-primary); text-transform:uppercase; letter-spacing:.04em; }
+  .condition-badge { display:inline-block; margin-top:6px; font-size:9px; font-weight:700; color:#fff; padding:2px 7px; border-radius:9999px; width:fit-content; }
+  .product-info { padding:10px 2px; display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .product-title { font-size:13px; font-weight:500; color:var(--text-primary); margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .price { font-size:13px; font-weight:600; color:var(--text-primary); white-space:nowrap; }
+</style>

@@ -1,0 +1,34 @@
+---
+import { useT } from "../../lib/i18n";
+
+interface Props {
+  items: { product?: { title: string }; quantity: number; unit_price: number }[];
+  subtotal: number;
+}
+const { items, subtotal } = Astro.props;
+const t = useT(Astro);
+---
+
+<aside class="order-summary card">
+  <h2 class="section-title">{t.shop.orderSummary}</h2>
+  {items.map((item) => (
+    <div class="summary-item">
+      <span class="summary-name">{item.product?.title} × {item.quantity}</span>
+      <span class="summary-price">{(Number(item.unit_price) * item.quantity).toFixed(2)} Kč</span>
+    </div>
+  ))}
+  <div class="summary-total">
+    <span>Total</span>
+    <span class="total-price">{subtotal.toFixed(2)} Kč</span>
+  </div>
+</aside>
+
+<style>
+  .section-title { font-size:18px; font-weight:700; margin:0 0 16px; }
+  .order-summary { display:flex; flex-direction:column; gap:12px; }
+  .summary-item { display:flex; justify-content:space-between; font-size:14px; }
+  .summary-name { color:var(--text-secondary); }
+  .summary-price { font-weight:600; }
+  .summary-total { display:flex; justify-content:space-between; padding-top:12px; border-top:1px solid var(--border); font-size:16px; font-weight:700; }
+  .total-price { color:var(--primary); font-size:20px; }
+</style>

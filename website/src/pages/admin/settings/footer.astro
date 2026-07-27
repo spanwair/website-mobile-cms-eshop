@@ -1,0 +1,174 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import SettingsTabs from "../../../components/cms/SettingsTabs.astro";
+import CreatableCombobox from "../../../components/cms/CreatableCombobox.astro";
+import { createSupabase } from "../../../lib/supabase";
+import {
+  fetchFooterLinks, createFooterLink, updateFooterLink, deleteFooterLink,
+} from "@shared/services/footerLinkService";
+import { fetchContentPages } from "@shared/services/contentPageService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { useT } from "../../../lib/i18n";
+import { SYSTEM_FOOTER_COLUMNS, type SystemFooterColumn } from "@shared/constants/footer";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions, partyId, parties } = ctx;
+const partySlug = parties.find((p) => p.id === partyId)?.slug;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redirect("/admin");
+const t = useT(Astro);
+const s = t.admin.settings;
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = (form.get("_action") as string) ?? "save";
+  const id = form.get("id") as string;
+
+  if (action === "delete" && id) {
+    await deleteFooterLink(supabase, id);
+  } else {
+    const input = {
+      column_key: (form.get("column_key") as string).trim() || "shop",
+      label: (form.get("label") as string).trim(),
+      url: (form.get("url") as string).trim(),
+      sort_order: parseInt((form.get("sort_order") as string) || "0", 10),
+      is_visible: form.get("is_visible") === "on",
+    };
+    const result = id
+      ? await updateFooterLink(supabase, id, input)
+      : await createFooterLink(supabase, { ...input, party_id: partyId });
+    if (result.error) error = result.error.message;
+  }
+  if (!error) return Astro.redirect("/admin/settings/footer");
+}
+
+const links = await fetchFooterLinks(supabase, partyId);
+const contentPages = await fetchContentPages(supabase, partyId);
+const urlOptions = contentPages.map((p) => ({ label: p.title, value: `/stranka/${p.slug}` }));
+const editId = Astro.url.searchParams.get("edit");
+const editing = editId ? links.find((l) => l.id === editId) ?? null : null;
+
+const systemColumnLabels: Record<SystemFooterColumn, string> = {
+  shop: s.columnShop,
+  information: s.columnInformation,
+  purchase_info: s.columnPurchaseInfo,
+  customer_service: s.columnCustomerService,
+  custom: s.columnCustom,
+};
+const isSystemColumn = (key: string): key is SystemFooterColumn =>
+  (SYSTEM_FOOTER_COLUMNS as readonly string[]).includes(key);
+const columnLabel = (key: string) => (isSystemColumn(key) ? systemColumnLabels[key] : key);
+
+const customColumnKeys = [...new Set(links.map((l) => l.column_key).filter((k) => !isSystemColumn(k)))];
+const columnOptions = [
+  ...SYSTEM_FOOTER_COLUMNS.map((key) => ({ label: systemColumnLabels[key], value: key })),
+  ...customColumnKeys.map((key) => ({ label: key, value: key })),
+];
+---
+
+<CmsLayout title={s.title} userPermissions={permissions} currentPath="/admin/settings/footer" parties={ctx.parties} partyId={ctx.partyId}>
+  <SettingsTabs active="footer" partySlug={partySlug} />
+  {error && <div class="alert-error">{error}</div>}
+  <p class="content-hint">{s.footerLinksHint}</p>
+
+  <div class="card" style="max-width:640px;margin-bottom:24px">
+    <h2 class="section-title">{editing ? t.common.edit : s.addLinkBtn}</h2>
+    <form method="POST" class="link-form">
+      {editing && <input type="hidden" name="id" value={editing.id} />}
+      <div class="form-group">
+        <label class="form-label">{s.fieldColumn}</label>
+        <CreatableCombobox
+          name="column_key"
+          value={editing?.column_key ?? "shop"}
+          options={columnOptions}
+          required
+          createLabel={s.columnCreateLabel}
+        />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{t.admin.cms.fieldLabel}</label>
+          <input class="form-input" name="label" required value={editing?.label ?? ""} />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{t.admin.cms.fieldUrl}</label>
+          <CreatableCombobox
+            name="url"
+            value={editing?.url ?? ""}
+            options={urlOptions}
+            placeholder="/stranka/o-nas"
+            required
+            createLabel={t.admin.cms.urlCreateLabel}
+            urlOnly
+          />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldSortOrder}</label>
+          <input class="form-input" type="number" name="sort_order" value={editing?.sort_order ?? 0} />
+        </div>
+        <div class="form-check" style="align-self:end">
+          <input type="checkbox" name="is_visible" id="link_visible" checked={editing ? editing.is_visible : true} />
+          <label for="link_visible">{s.fieldVisible}</label>
+        </div>
+      </div>
+      <div class="form-actions">
+        {editing && <a href="/admin/settings/footer" class="btn btn-ghost">{t.common.cancel}</a>}
+        <button type="submit" class="btn btn-primary">{editing ? s.saveSlideBtn : s.addLinkBtn}</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead>
+        <tr><th>{s.fieldColumn}</th><th>{t.admin.cms.fieldLabel}</th><th>{t.admin.cms.fieldUrl}</th><th>{s.colOrder}</th><th>{s.colVisible}</th><th>{s.colActions}</th></tr>
+      </thead>
+      <tbody>
+        {links.map((l) => (
+          <tr>
+            <td>{columnLabel(l.column_key)}</td>
+            <td style="font-weight:600">{l.label}</td>
+            <td style="color:var(--text-muted)">{l.url}</td>
+            <td>{l.sort_order}</td>
+            <td>{l.is_visible ? t.admin.categories.visible : t.admin.categories.hidden}</td>
+            <td class="action-cell">
+              <a href={`/admin/settings/footer?edit=${l.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.common.edit}</a>
+              <form method="POST" onsubmit={`return confirm('${t.common.delete}?')`} style="display:inline">
+                <input type="hidden" name="_action" value="delete" />
+                <input type="hidden" name="id" value={l.id} />
+                <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{t.common.delete}</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+        {links.length === 0 && (
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noLinks}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</CmsLayout>
+
+<style>
+  .section-title { font-size:15px; font-weight:700; margin-bottom:16px; }
+  .content-hint { font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+  .link-form { display:flex; flex-direction:column; gap:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .form-check input { width:auto; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; }
+  .action-cell { display:flex; gap:8px; align-items:center; }
+  .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
+  @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>

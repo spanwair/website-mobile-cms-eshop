@@ -1,8 +1,11 @@
 ---
 import Layout from "../../components/layout/Layout.astro";
+import CheckoutAddressForm from "../../components/shop/CheckoutAddressForm.astro";
+import CheckoutOrderSummary from "../../components/shop/CheckoutOrderSummary.astro";
 import { createSupabase, createAdminClient } from "../../lib/supabase";
 import { clearCart, calcCartTotal } from "@shared/services/cartService";
 import { createOrder, addOrderItem } from "@shared/services/orderService";
+import { startOrderCheckout } from "../../lib/checkoutFlow";
 import { useT } from "../../lib/i18n";
 
 const supabase = createSupabase(Astro);
@@ -106,7 +109,7 @@ if (Astro.request.method === "POST") {
 
     // Add items — triggers deduct_stock_on_order_item trigger
     for (const item of items) {
-      await addOrderItem(adminClient, {
+      const { error: itemErr } = await addOrderItem(adminClient, {
         order_id: order.id,
         product_id: item.product_id,
         variant_id: item.variant_id ?? null,
@@ -118,12 +121,22 @@ if (Astro.request.method === "POST") {
         tax_amount: 0,
         total_price: Number(item.unit_price) * item.quantity,
       });
+      if (itemErr) throw new Error(itemErr.message);
     }
 
     // Clear cart
     await clearCart(supabase, cart.id);
 
-    return Astro.redirect(`/shop/order-confirmation?order=${order.order_number}`);
+    const { url: sessionUrl, error: sessionError } = await startOrderCheckout({
+      items,
+      orderId: order.id,
+      currency: "czk",
+      successUrl: `${Astro.url.origin}/shop/order-confirmation?order=${order.order_number}&session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${Astro.url.origin}/shop/checkout`,
+    });
+    if (sessionError || !sessionUrl) throw new Error(sessionError ?? "Could not start checkout session");
+
+    return Astro.redirect(sessionUrl);
   } catch (e: any) {
     checkoutError = e?.message ?? "Checkout failed. Please try again.";
   }
@@ -137,65 +150,8 @@ if (Astro.request.method === "POST") {
     {checkoutError && <div class="form-error" style="margin-bottom:16px">{checkoutError}</div>}
 
     <div class="checkout-layout">
-      <form method="POST" class="address-form card">
-        <h2 class="section-title">{t.shop.shippingAddress}</h2>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">{t.shop.firstName}</label>
-            <input class="form-input" name="first_name" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label">{t.shop.lastName}</label>
-            <input class="form-input" name="last_name" required />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">{t.shop.phone}</label>
-          <input class="form-input" name="phone" type="tel" />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">{t.shop.addressLine1}</label>
-          <input class="form-input" name="line1" required />
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">{t.shop.city}</label>
-            <input class="form-input" name="city" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label">{t.shop.postalCode}</label>
-            <input class="form-input" name="postal_code" required />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">{t.shop.country}</label>
-          <input class="form-input" name="country_code" value="CZ" maxlength="2" style="max-width:80px" required />
-        </div>
-
-        <div class="form-actions">
-          <a href="/shop/cart" class="btn btn-ghost">{t.shop.backToCart}</a>
-          <button type="submit" class="btn btn-primary">{t.shop.placeOrder}</button>
-        </div>
-      </form>
-
-      <aside class="order-summary card">
-        <h2 class="section-title">{t.shop.orderSummary}</h2>
-        {items.map((item: any) => (
-          <div class="summary-item">
-            <span class="summary-name">{item.product?.title} × {item.quantity}</span>
-            <span class="summary-price">{(Number(item.unit_price) * item.quantity).toFixed(2)} Kč</span>
-          </div>
-        ))}
-        <div class="summary-total">
-          <span>Total</span>
-          <span class="total-price">{subtotal.toFixed(2)} Kč</span>
-        </div>
-      </aside>
+      <CheckoutAddressForm cancelHref="/shop/cart" />
+      <CheckoutOrderSummary items={items} subtotal={subtotal} />
     </div>
   </div>
 </Layout>
@@ -204,15 +160,5 @@ if (Astro.request.method === "POST") {
   .checkout-page { max-width:1000px; margin:0 auto; padding:32px 24px; }
   .page-title { font-size:28px; font-weight:800; margin-bottom:24px; }
   .checkout-layout { display:grid; grid-template-columns:1fr 320px; gap:32px; align-items:start; }
-  .address-form { display:flex; flex-direction:column; gap:16px; }
-  .section-title { font-size:18px; font-weight:700; margin:0 0 16px; }
-  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  .form-actions { display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
-  .order-summary { display:flex; flex-direction:column; gap:12px; }
-  .summary-item { display:flex; justify-content:space-between; font-size:14px; }
-  .summary-name { color:var(--text-secondary); }
-  .summary-price { font-weight:600; }
-  .summary-total { display:flex; justify-content:space-between; padding-top:12px; border-top:1px solid var(--border); font-size:16px; font-weight:700; }
-  .total-price { color:var(--primary); font-size:20px; }
-  @media(max-width:768px) { .checkout-layout { grid-template-columns:1fr; } .form-row { grid-template-columns:1fr; } }
+  @media(max-width:768px) { .checkout-layout { grid-template-columns:1fr; } }
 </style>

@@ -1,0 +1,141 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import CmsTabs from "../../../components/cms/CmsTabs.astro";
+import ImagePicker from "../../../components/cms/ImagePicker.astro";
+import { createSupabase } from "../../../lib/supabase";
+import {
+  fetchTeamMembers, createTeamMember, updateTeamMember, deleteTeamMember,
+} from "@shared/services/teamMemberService";
+import { fetchStoreMedia } from "@shared/services/storeMediaService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
+const t = useT(Astro);
+const s = t.admin.cms;
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = (form.get("_action") as string) ?? "save";
+  const id = form.get("id") as string;
+
+  if (action === "delete" && id) {
+    await deleteTeamMember(supabase, id);
+  } else {
+    const input = {
+      name: (form.get("name") as string).trim(),
+      position: (form.get("position") as string) || null,
+      bio: (form.get("bio") as string) || null,
+      photo_url: (form.get("photo_url") as string) || null,
+      sort_order: parseInt((form.get("sort_order") as string) || "0", 10),
+      is_active: form.get("is_active") === "on",
+    };
+    const result = id
+      ? await updateTeamMember(supabase, id, input)
+      : await createTeamMember(supabase, { ...input, party_id: partyId });
+    if (result.error) error = result.error.message;
+  }
+  if (!error) return Astro.redirect("/admin/cms/team");
+}
+
+const members = await fetchTeamMembers(supabase, partyId);
+const media = await fetchStoreMedia(supabase, partyId);
+const editId = Astro.url.searchParams.get("edit");
+const editing = editId ? members.find((m) => m.id === editId) ?? null : null;
+---
+
+<CmsLayout title={s.teamTitle} userPermissions={permissions} currentPath="/admin/cms/team" parties={ctx.parties} partyId={ctx.partyId}>
+  <CmsTabs active="team" />
+  {error && <div class="alert-error">{error}</div>}
+  <p class="content-hint">{s.teamHint}</p>
+
+  <div class="card" style="max-width:640px;margin-bottom:24px">
+    <h2 class="section-title">{editing ? t.common.edit : s.addMemberBtn}</h2>
+    <form method="POST" class="member-form">
+      {editing && <input type="hidden" name="id" value={editing.id} />}
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldName}</label>
+          <input class="form-input" name="name" required value={editing?.name ?? ""} />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldPosition}</label>
+          <input class="form-input" name="position" value={editing?.position ?? ""} />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{s.fieldBio}</label>
+        <textarea class="form-input" name="bio" rows="2">{editing?.bio ?? ""}</textarea>
+      </div>
+      <ImagePicker name="photo_url" label={s.fieldPhoto} value={editing?.photo_url ?? null} media={media} />
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{t.admin.settings.fieldSortOrder}</label>
+          <input class="form-input" type="number" name="sort_order" value={editing?.sort_order ?? 0} />
+        </div>
+        <div class="form-check" style="align-self:end">
+          <input type="checkbox" name="is_active" id="member_active" checked={editing ? editing.is_active : true} />
+          <label for="member_active">{t.admin.conditions.fieldActive}</label>
+        </div>
+      </div>
+      <div class="form-actions">
+        {editing && <a href="/admin/cms/team" class="btn btn-ghost">{t.common.cancel}</a>}
+        <button type="submit" class="btn btn-primary">{editing ? t.common.saveChanges : s.addMemberBtn}</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead>
+        <tr><th>{s.colName}</th><th>{s.colPosition}</th><th>{s.colOrder}</th><th>{s.colActive}</th><th>{s.colActions}</th></tr>
+      </thead>
+      <tbody>
+        {members.map((m) => (
+          <tr>
+            <td style="font-weight:600">{m.name}</td>
+            <td style="color:var(--text-muted)">{m.position ?? "—"}</td>
+            <td>{m.sort_order}</td>
+            <td>{m.is_active ? t.admin.conditions.active : t.admin.conditions.inactive}</td>
+            <td class="action-cell">
+              <a href={`/admin/cms/team?edit=${m.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.common.edit}</a>
+              <form method="POST" onsubmit={`return confirm('${t.common.delete}?')`} style="display:inline">
+                <input type="hidden" name="_action" value="delete" />
+                <input type="hidden" name="id" value={m.id} />
+                <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{t.common.delete}</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+        {members.length === 0 && (
+          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noMembers}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</CmsLayout>
+
+<style>
+  .section-title { font-size:15px; font-weight:700; margin-bottom:16px; }
+  .content-hint { font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+  .member-form { display:flex; flex-direction:column; gap:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .form-check input { width:auto; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; }
+  .action-cell { display:flex; gap:8px; align-items:center; }
+  .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
+  @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>

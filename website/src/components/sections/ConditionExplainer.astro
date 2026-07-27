@@ -1,0 +1,35 @@
+---
+import type { ProductCondition } from "@shared/types";
+import { useT } from "../../lib/i18n";
+
+interface Props { conditions: ProductCondition[]; linkBase?: string }
+const { conditions, linkBase = "/shop" } = Astro.props;
+const t = useT(Astro);
+const active = conditions.filter((c) => c.is_active).sort((a, b) => a.sort_order - b.sort_order);
+---
+
+{active.length > 0 && (
+  <section class="conditions">
+    <div class="container">
+      <h2 class="conditions-title">{t.shop.conditionExplainerTitle}</h2>
+      <div class="conditions-grid">
+        {active.map((c) => (
+          <span class="condition-pill" style={`--pill-color:${c.color_hex}`}>{c.label}</span>
+        ))}
+      </div>
+      <a href={`${linkBase}/stranka/stavy-produktu`} class="conditions-link">{t.shop.conditionExplainerCta}</a>
+    </div>
+  </section>
+)}
+
+<style>
+  .conditions { padding: 48px 0; text-align: center; }
+  .conditions-title { font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 20px; }
+  .conditions-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
+  .condition-pill {
+    display: inline-block; padding: 6px 16px; border-radius: 9999px; font-size: 13px; font-weight: 700;
+    color: #fff; background: var(--pill-color);
+  }
+  .conditions-link { color: var(--accent-primary); font-weight: 600; font-size: 14px; text-decoration: none; }
+  .conditions-link:hover { text-decoration: underline; }
+</style>

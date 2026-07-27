@@ -1,0 +1,76 @@
+---
+import Layout from "../../../components/layout/Layout.astro";
+import FaqAccordion from "../../../components/shop/FaqAccordion.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchContentPageBySlug } from "@shared/services/contentPageService";
+import { fetchActiveTeamMembers } from "@shared/services/teamMemberService";
+import { fetchVisibleFaqItems } from "@shared/services/faqService";
+import { fetchStoreMedia } from "@shared/services/storeMediaService";
+import { renderContent, resolveMediaUrl } from "../../../lib/contentRenderer";
+import { useT } from "../../../lib/i18n";
+
+const storeParty = Astro.locals.storeParty;
+if (!storeParty) return Astro.redirect("/shop");
+
+const supabase = createSupabase(Astro);
+const t = useT(Astro);
+const { pageSlug } = Astro.params;
+const page = await fetchContentPageBySlug(supabase, storeParty.id, pageSlug as string);
+if (!page) return new Response("Not found", { status: 404 });
+
+const media = await fetchStoreMedia(supabase, storeParty.id);
+const bodyHtml = renderContent(page.body, page.body_format, media);
+const team = page.template === "about" ? await fetchActiveTeamMembers(supabase, storeParty.id) : [];
+const faqItems = page.template === "faq" ? await fetchVisibleFaqItems(supabase, storeParty.id) : [];
+const config = storeParty.config;
+---
+
+<Layout title={page.seo_title ?? page.title}>
+  <div class="content-page container">
+    <h1 class="page-title">{page.title}</h1>
+    {bodyHtml && <div class="page-body" set:html={bodyHtml} />}
+
+    {page.template === "contact" && (
+      <div class="contact-block">
+        {config?.store_address && (
+          <p>
+            <strong>{t.common.address}:</strong> {config.store_address}
+            {config?.store_map_url && <> — <a href={config.store_map_url} target="_blank" rel="noopener noreferrer">{t.common.viewOnMap}</a></>}
+          </p>
+        )}
+        {config?.contact_phone && <p><strong>{t.common.phone}:</strong> <a href={`tel:${config.contact_phone}`}>{config.contact_phone}</a></p>}
+        {config?.contact_email && <p><strong>{t.common.email}:</strong> <a href={`mailto:${config.contact_email}`}>{config.contact_email}</a></p>}
+        {config?.business_hours && <p><strong>{t.common.hours}:</strong> {config.business_hours}</p>}
+      </div>
+    )}
+
+    {page.template === "about" && team.length > 0 && (
+      <div class="team-grid">
+        {team.map((m) => (
+          <div class="team-card">
+            {resolveMediaUrl(m.photo_url, media) && <img src={resolveMediaUrl(m.photo_url, media)!} alt={m.name} class="team-photo" />}
+            <p class="team-name">{m.name}</p>
+            {m.position && <p class="team-position">{m.position}</p>}
+            {m.bio && <p class="team-bio">{m.bio}</p>}
+          </div>
+        ))}
+      </div>
+    )}
+
+    {page.template === "faq" && <FaqAccordion items={faqItems} />}
+  </div>
+</Layout>
+
+<style>
+  .content-page { max-width: 860px; margin: 0 auto; padding: 40px 24px 64px; }
+  .page-title { font-family: var(--font-heading); font-size: 32px; font-weight: 800; color: var(--text-primary); margin-bottom: 24px; }
+  .page-body { font-size: 16px; line-height: 1.7; color: var(--text-primary); }
+  .page-body :global(h2) { font-size: 22px; font-weight: 700; margin: 28px 0 12px; }
+  .contact-block { margin-top: 24px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
+  .team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 24px; margin-top: 32px; }
+  .team-card { text-align: center; }
+  .team-photo { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin: 0 auto 12px; display: block; }
+  .team-name { font-weight: 700; margin: 0; }
+  .team-position { font-size: 13px; color: var(--text-secondary); margin: 2px 0 8px; }
+  .team-bio { font-size: 13px; color: var(--text-secondary); }
+</style>

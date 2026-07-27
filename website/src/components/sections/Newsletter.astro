@@ -1,0 +1,43 @@
+---
+import { useT } from "../../lib/i18n";
+const t = useT(Astro);
+---
+
+<section class="newsletter">
+  <div class="container newsletter-inner">
+    <div>
+      <h2 class="section-title">{t.newsletter.title}</h2>
+      <p class="newsletter-sub">{t.newsletter.subtitle}</p>
+    </div>
+    <form class="newsletter-form" id="newsletter-form">
+      <input type="email" name="email" required placeholder={t.newsletter.placeholder} class="newsletter-input" />
+      <button type="submit" class="btn btn-primary">{t.newsletter.submit}</button>
+    </form>
+    <p class="newsletter-msg" id="newsletter-msg"></p>
+  </div>
+</section>
+
+<script>
+  const form = document.getElementById("newsletter-form") as HTMLFormElement | null;
+  const msg = document.getElementById("newsletter-msg");
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
+    const res = await fetch("/api/newsletter/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (msg) msg.textContent = data.error ?? data.message ?? "";
+  });
+</script>
+
+<style>
+  .newsletter { background: var(--bg-subtle); padding: 56px 0; }
+  .newsletter-inner { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+  .newsletter-sub { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+  .newsletter-form { display: flex; gap: 8px; width: 100%; max-width: 420px; }
+  .newsletter-input { flex: 1; }
+  .newsletter-msg { font-size: 13px; color: var(--text-muted); min-height: 16px; }
+</style>

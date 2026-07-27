@@ -12,6 +12,7 @@ if (!session) return Astro.redirect("/login?redirect=/shop/cart");
 
 let couponMessage = "";
 let couponError = "";
+let qtyError = "";
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
@@ -24,8 +25,9 @@ if (Astro.request.method === "POST") {
 
   if (action === "update_qty") {
     const qty = parseInt(form.get("quantity") as string, 10);
-    await updateCartItemQty(supabase, form.get("item_id") as string, qty);
-    return Astro.redirect("/shop/cart");
+    const result = await updateCartItemQty(supabase, form.get("item_id") as string, qty);
+    if (result.error) qtyError = result.error.message;
+    else return Astro.redirect("/shop/cart");
   }
 
   if (action === "apply_coupon") {
@@ -97,6 +99,7 @@ const { subtotal, itemCount } = calcCartTotal(
           <div class="summary-card">
             <h2 class="summary-title">{t.shop.orderSummary}</h2>
 
+            {qtyError && <p class="coupon-err">{qtyError}</p>}
             {couponMessage && <p class="coupon-ok">{couponMessage}</p>}
             {couponError && <p class="coupon-err">{couponError}</p>}
 

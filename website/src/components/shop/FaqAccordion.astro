@@ -1,0 +1,30 @@
+---
+import type { FaqItem } from "@shared/types";
+
+interface Props { items: FaqItem[] }
+const { items } = Astro.props;
+---
+
+{items.length > 0 && (
+  <div class="faq-accordion">
+    {items.map((item, i) => (
+      <details class="faq-item" name={`faq-${i}`}>
+        <summary class="faq-question">
+          {item.question}
+          <span class="faq-chevron">▾</span>
+        </summary>
+        <p class="faq-answer">{item.answer}</p>
+      </details>
+    ))}
+  </div>
+)}
+
+<style>
+  .faq-accordion { max-width: 720px; margin: 0 auto; }
+  .faq-item { border-bottom: 1px solid var(--border); padding: 16px 0; }
+  .faq-question { font-size: 16px; font-weight: 700; color: var(--text-primary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; list-style: none; }
+  .faq-question::-webkit-details-marker { display: none; }
+  .faq-chevron { transition: transform 150ms ease; color: var(--text-secondary); }
+  .faq-item[open] .faq-chevron { transform: rotate(180deg); }
+  .faq-answer { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin: 12px 0 0; }
+</style>

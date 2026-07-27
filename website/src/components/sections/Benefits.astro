@@ -1,0 +1,29 @@
+---
+import type { BenefitItem } from "@shared/types";
+
+interface Props { items: BenefitItem[] }
+const { items } = Astro.props;
+---
+
+{items.length > 0 && (
+  <section class="benefits">
+    <div class="container benefits-grid">
+      {items.map((item) => (
+        <div class="benefit">
+          <span class="benefit-icon">{item.icon}</span>
+          <p class="benefit-title">{item.title}</p>
+          {item.description && <p class="benefit-desc">{item.description}</p>}
+        </div>
+      ))}
+    </div>
+  </section>
+)}
+
+<style>
+  .benefits { background: var(--bg-subtle); padding: 48px 0; }
+  .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 24px; }
+  .benefit { text-align: center; }
+  .benefit-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+  .benefit-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
+  .benefit-desc { font-size: 13px; color: var(--text-secondary); margin: 0; }
+</style>

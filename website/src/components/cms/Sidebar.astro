@@ -36,6 +36,17 @@ const groups = [
       { href: "/admin/inventory",  label: s.inventory,  icon: "🏭", perm: PERMISSIONS.MANAGE_INVENTORY },
       { href: "/admin/reviews",    label: s.reviews,    icon: "⭐", perm: PERMISSIONS.MANAGE_PRODUCTS },
       { href: "/admin/returns",    label: s.returns,    icon: "↩️", perm: PERMISSIONS.MANAGE_ORDERS },
+      { href: "/admin/products/conditions", label: s.conditions, icon: "🏷️", perm: PERMISSIONS.MANAGE_PRODUCTS },
+    ],
+  },
+  {
+    label: s.content,
+    items: [
+      { href: "/admin/cms/navigation", label: s.navigation, icon: "🧭", perm: PERMISSIONS.MANAGE_CMS },
+      { href: "/admin/cms/pages",      label: s.pages,      icon: "📄", perm: PERMISSIONS.MANAGE_CMS },
+      { href: "/admin/cms/blog",       label: s.blog,       icon: "📰", perm: PERMISSIONS.MANAGE_CMS },
+      { href: "/admin/cms/team",       label: s.team,       icon: "🧑‍🤝‍🧑", perm: PERMISSIONS.MANAGE_CMS },
+      { href: "/admin/cms/faq",        label: s.faq,        icon: "❓", perm: PERMISSIONS.MANAGE_CMS },
     ],
   },
   {
@@ -55,8 +66,9 @@ const groups = [
   {
     label: s.system,
     items: [
-      { href: "/admin/audit",         label: s.audit,         icon: "📝", perm: PERMISSIONS.MANAGE_AUDIT },
-      { href: "/admin/notifications", label: s.notifications, icon: "🔔", perm: 0 },
+      { href: "/admin/settings/branding", label: s.settings,      icon: "🎨", perm: PERMISSIONS.MANAGE_SETTINGS },
+      { href: "/admin/audit",             label: s.audit,         icon: "📝", perm: PERMISSIONS.MANAGE_AUDIT },
+      { href: "/admin/notifications",     label: s.notifications, icon: "🔔", perm: 0 },
     ],
   },
 ];

@@ -1,0 +1,43 @@
+---
+import type { StoreConfig, StoreMedia } from "@shared/types";
+import { renderContent } from "../../lib/contentRenderer";
+
+interface Props { storeConfig: StoreConfig | null; media?: StoreMedia[] }
+const { storeConfig, media = [] } = Astro.props;
+const html = storeConfig?.buyback_content
+  ? renderContent(storeConfig.buyback_content, storeConfig.buyback_format, media)
+  : null;
+---
+
+{html && (
+  <section class="buyback">
+    <div class="container buyback-inner">
+      <div class="buyback-content" set:html={html} />
+    </div>
+  </section>
+)}
+
+<style>
+  .buyback { background: var(--accent-primary); color: #fff; padding: 64px 0; text-align: center; border-radius: var(--radius-lg); margin: 40px auto; max-width: 1280px; }
+  .buyback-inner { max-width: 640px; }
+  .buyback-content :global(h1), .buyback-content :global(h2) {
+    color: #fff; font-family: var(--font-heading); font-size: 28px; font-weight: 800;
+    letter-spacing: -0.01em; margin-bottom: 12px;
+  }
+  .buyback-content :global(p) { color: rgba(255,255,255,0.92); font-size: 16px; line-height: 1.6; max-width: 560px; margin: 0 auto; }
+  /* Plain markdown links (`[text](url)`) can't carry a class, so this is the fallback "global"
+     button look. An admin who writes raw HTML content and adds e.g. class="btn btn-secondary"
+     (see contentRenderer's allowedClasses) opts out of this rule entirely via :not([class]) and
+     gets that button skin from global.css instead — one or the other, never both at once. */
+  .buyback-content :global(a:not([class])) {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-top: 24px; background: #fff; color: var(--accent-primary);
+    padding: 12px 28px; border-radius: var(--radius-md); font-weight: 700; font-size: 15px;
+    text-decoration: none; box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,0.12));
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .buyback-content :global(a:not([class]):hover) {
+    transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.18); text-decoration: none;
+  }
+  .buyback-content :global(a[class]) { margin-top: 24px; }
+</style>

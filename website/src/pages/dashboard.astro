@@ -3,7 +3,7 @@ import Layout from "../components/layout/Layout.astro";
 import { createSupabase } from "../lib/supabase";
 import { fetchItems } from "@shared/services/itemService";
 import { useT } from "../lib/i18n";
-import { ROLE } from "@shared/constants/permissions";
+import { hasAdminAccess } from "../lib/admin";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -11,9 +11,9 @@ if (!session) return Astro.redirect("/login");
 
 const t = useT(Astro);
 
-const { data: profile } = await supabase.from("profiles").select("role, display_name, full_name").eq("id", session.user.id).single();
+const { data: profile } = await supabase.from("profiles").select("display_name, full_name").eq("id", session.user.id).single();
 const name = profile?.full_name ?? profile?.display_name ?? session.user.email;
-const isAdmin = (profile?.role ?? 0) >= ROLE.ESHOP_ADMIN;
+const isAdmin = await hasAdminAccess(supabase, session.user.id);
 
 const { data: items, total } = await fetchItems(supabase, 1, 6);
 const { total: activeTotal } = await fetchItems(supabase, 1, 1, "active");

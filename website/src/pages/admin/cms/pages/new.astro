@@ -1,0 +1,124 @@
+---
+import CmsLayout from "../../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../../lib/supabase";
+import { createContentPage } from "@shared/services/contentPageService";
+import { requireAdminCtx } from "../../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { useT } from "../../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
+const t = useT(Astro);
+const s = t.admin.cms;
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const result = await createContentPage(supabase, {
+    party_id: partyId,
+    slug: (form.get("slug") as string).trim(),
+    title: (form.get("title") as string).trim(),
+    template: (form.get("template") as "default" | "about" | "contact" | "faq") ?? "default",
+    body: (form.get("body") as string) || null,
+    body_format: (form.get("body_format") as "markdown" | "html") ?? "markdown",
+    seo_title: (form.get("seo_title") as string) || null,
+    seo_description: (form.get("seo_description") as string) || null,
+    show_in_footer_column: (form.get("show_in_footer_column") as string) || null,
+    is_visible: form.get("is_visible") === "on",
+    sort_order: parseInt((form.get("sort_order") as string) || "0", 10),
+  });
+  if (result.error) error = result.error.message;
+  else return Astro.redirect(`/admin/cms/pages/${result.data!.id}`);
+}
+
+// Optional pre-fill from a quick-create link (e.g. the Legal Documents checklist).
+const prefillSlug = Astro.url.searchParams.get("slug") ?? "";
+const prefillTitle = Astro.url.searchParams.get("title") ?? "";
+---
+
+<CmsLayout title={s.newPageTitle} userPermissions={permissions} currentPath="/admin/cms/pages" parties={ctx.parties} partyId={ctx.partyId}>
+  <div class="card" style="max-width:720px">
+    <a href="/admin/cms/pages" class="back-link">{s.back}</a>
+    {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
+    <form method="POST" class="page-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldTitle}</label>
+          <input class="form-input" name="title" required value={prefillTitle} />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldSlug}</label>
+          <input class="form-input" name="slug" required placeholder="o-nas" value={prefillSlug} />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{s.fieldTemplate}</label>
+        <select class="form-input" name="template">
+          <option value="default">{s.templateDefault}</option>
+          <option value="about">{s.templateAbout}</option>
+          <option value="contact">{s.templateContact}</option>
+          <option value="faq">{s.templateFaq}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{s.fieldBody}</label>
+        <textarea class="form-input" name="body" rows="10"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{s.fieldBodyFormat}</label>
+        <select class="form-input" name="body_format">
+          <option value="markdown">{t.admin.settings.formatMarkdown}</option>
+          <option value="html">{t.admin.settings.formatHtml}</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldSeoTitle}</label>
+          <input class="form-input" name="seo_title" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldSeoDescription}</label>
+          <input class="form-input" name="seo_description" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldFooterColumn}</label>
+          <input class="form-input" name="show_in_footer_column" placeholder="information" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldSortOrder}</label>
+          <input class="form-input" type="number" name="sort_order" value="0" />
+        </div>
+      </div>
+      <div class="form-check">
+        <input type="checkbox" name="is_visible" id="is_visible" checked />
+        <label for="is_visible">{t.admin.settings.fieldVisible}</label>
+      </div>
+      <div class="form-actions">
+        <a href="/admin/cms/pages" class="btn btn-ghost">{t.common.cancel}</a>
+        <button type="submit" class="btn btn-primary">{s.createBtn}</button>
+      </div>
+    </form>
+  </div>
+</CmsLayout>
+
+<style>
+  .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
+  .back-link:hover { color:var(--text-primary); }
+  .page-form { display:flex; flex-direction:column; gap:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .form-check input { width:auto; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; }
+  @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>

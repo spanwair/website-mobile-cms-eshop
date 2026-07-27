@@ -1,0 +1,121 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import SettingsTabs from "../../../components/cms/SettingsTabs.astro";
+import ContentSectionEditor from "../../../components/cms/ContentSectionEditor.astro";
+import MediaLibrary from "../../../components/cms/MediaLibrary.astro";
+import HeroSlideEditor from "../../../components/cms/HeroSlideEditor.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchStoreConfig, updateStoreConfig } from "@shared/services/storeConfigService";
+import { fetchStoreMedia, uploadStoreMedia, deleteStoreMedia } from "@shared/services/storeMediaService";
+import { fetchHeroSlides, createHeroSlide, updateHeroSlide, deleteHeroSlide } from "@shared/services/heroSlideService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions, partyId, parties } = ctx;
+const partySlug = parties.find((p) => p.id === partyId)?.slug;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redirect("/admin");
+const t = useT(Astro);
+const s = t.admin.settings;
+
+let success = "";
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = (form.get("_action") as string) ?? "save_content";
+
+  if (action === "save_content") {
+    const result = await updateStoreConfig(supabase, partyId, {
+      hero_content: (form.get("hero_content") as string) || null,
+      hero_format: form.get("hero_format") as "markdown" | "html",
+      subhero_content: (form.get("subhero_content") as string) || null,
+      subhero_format: form.get("subhero_format") as "markdown" | "html",
+      footer_content: (form.get("footer_content") as string) || null,
+      footer_format: form.get("footer_format") as "markdown" | "html",
+      buyback_content: (form.get("buyback_content") as string) || null,
+      buyback_format: form.get("buyback_format") as "markdown" | "html",
+    });
+    if (result.error) error = result.error.message;
+    else success = s.savedSuccess;
+  }
+
+  if (action === "save_slide") {
+    const slideId = form.get("slide_id") as string;
+    const input = {
+      headline: (form.get("headline") as string).trim(),
+      subheadline: (form.get("subheadline") as string) || null,
+      image_url: (form.get("image_url") as string) || null,
+      cta_text: (form.get("cta_text") as string) || null,
+      cta_link: (form.get("cta_link") as string) || null,
+      sort_order: parseInt((form.get("sort_order") as string) || "0", 10),
+      is_visible: form.get("is_visible") === "on",
+    };
+    const result = slideId
+      ? await updateHeroSlide(supabase, slideId, input)
+      : await createHeroSlide(supabase, { ...input, party_id: partyId });
+    if (result.error) error = result.error.message;
+    else success = s.savedSuccess;
+  }
+
+  if (action === "delete_slide") {
+    await deleteHeroSlide(supabase, form.get("slide_id") as string);
+  }
+
+  if (action === "upload_media") {
+    const file = form.get("file") as File;
+    const slug = (form.get("slug") as string)?.trim();
+    const alt = (form.get("alt") as string) || null;
+    if (file && file.size > 0 && slug) {
+      const result = await uploadStoreMedia(supabase, partyId, file, { slug, alt });
+      if (result.error) error = result.error.message;
+    }
+  }
+
+  if (action === "delete_media") {
+    await deleteStoreMedia(supabase, partyId, form.get("media_id") as string);
+  }
+}
+
+const config = await fetchStoreConfig(supabase, partyId);
+const media = await fetchStoreMedia(supabase, partyId);
+const slides = await fetchHeroSlides(supabase, partyId);
+const editSlideId = Astro.url.searchParams.get("edit_slide");
+const editingSlide = editSlideId ? slides.find((sl) => sl.id === editSlideId) ?? null : null;
+---
+
+<CmsLayout title={s.title} userPermissions={permissions} currentPath="/admin/settings/content" parties={ctx.parties} partyId={ctx.partyId}>
+  <SettingsTabs active="content" partySlug={partySlug} />
+  {error && <div class="alert-error">{error}</div>}
+  {success && <div class="alert-success">{success}</div>}
+
+  <p class="content-hint">{s.contentHint}</p>
+
+  <form method="POST" class="settings-form">
+    <input type="hidden" name="_action" value="save_content" />
+    <ContentSectionEditor name="hero" label={s.heroTitle} content={config?.hero_content ?? null} format={config?.hero_format ?? "markdown"} media={media} />
+    <ContentSectionEditor name="subhero" label={s.subheroTitle} content={config?.subhero_content ?? null} format={config?.subhero_format ?? "markdown"} media={media} />
+    <ContentSectionEditor name="buyback" label={s.buybackTitle} content={config?.buyback_content ?? null} format={config?.buyback_format ?? "markdown"} media={media} />
+    <ContentSectionEditor name="footer" label={s.footerTitle} content={config?.footer_content ?? null} format={config?.footer_format ?? "markdown"} media={media} />
+    <button type="submit" class="btn btn-primary">{t.common.saveChanges}</button>
+  </form>
+
+  <HeroSlideEditor slides={slides} editingSlide={editingSlide} media={media} />
+
+  <MediaLibrary media={media} />
+</CmsLayout>
+
+<style>
+  .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
+  .alert-success { background:rgba(34,197,94,0.08); border:1px solid #22c55e; border-radius:8px; padding:12px 16px; color:#16a34a; margin-bottom:16px; font-size:14px; }
+  .content-hint { font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+  .settings-form { display:flex; flex-direction:column; gap:16px; margin-bottom:24px; }
+</style>

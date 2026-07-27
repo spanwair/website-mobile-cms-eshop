@@ -1,0 +1,92 @@
+---
+import type { HeroSlide, StoreMedia } from "@shared/types";
+import ImagePicker from "./ImagePicker.astro";
+import { useT } from "../../lib/i18n";
+
+interface Props { slides: HeroSlide[]; editingSlide: HeroSlide | null; media: StoreMedia[] }
+const { slides, editingSlide, media } = Astro.props;
+const t = useT(Astro);
+const s = t.admin.settings;
+---
+
+<div class="card">
+  <h2 class="section-title">{s.heroSlidesTitle}</h2>
+  <p class="hint">{s.heroSlidesHint}</p>
+
+  <form method="POST" class="slide-form">
+    <input type="hidden" name="_action" value="save_slide" />
+    {editingSlide && <input type="hidden" name="slide_id" value={editingSlide.id} />}
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">{s.fieldHeadline}</label>
+        <input class="form-input" name="headline" required value={editingSlide?.headline ?? ""} />
+      </div>
+      <div class="form-group">
+        <label class="form-label">{s.fieldSubheadline}</label>
+        <input class="form-input" name="subheadline" value={editingSlide?.subheadline ?? ""} />
+      </div>
+    </div>
+    <ImagePicker name="image_url" label={s.fieldImageUrl} value={editingSlide?.image_url ?? null} media={media} />
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">{s.fieldCtaText}</label>
+        <input class="form-input" name="cta_text" value={editingSlide?.cta_text ?? ""} />
+      </div>
+      <div class="form-group">
+        <label class="form-label">{s.fieldCtaLink}</label>
+        <input class="form-input" name="cta_link" value={editingSlide?.cta_link ?? ""} />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">{s.fieldSortOrder}</label>
+        <input class="form-input" type="number" name="sort_order" value={editingSlide?.sort_order ?? 0} />
+      </div>
+      <div class="form-check" style="align-self:end">
+        <input type="checkbox" name="is_visible" id="slide_visible" checked={editingSlide ? editingSlide.is_visible : true} />
+        <label for="slide_visible">{s.fieldVisible}</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      {editingSlide && <a href="/admin/settings/content" class="btn btn-ghost">{t.common.cancel}</a>}
+      <button type="submit" class="btn btn-primary">{editingSlide ? s.saveSlideBtn : s.addSlideBtn}</button>
+    </div>
+  </form>
+
+  {slides.length > 0 && (
+    <table class="data-table" style="margin-top:16px">
+      <thead>
+        <tr><th>{s.colHeadline}</th><th>{s.colOrder}</th><th>{s.colVisible}</th><th>{s.colActions}</th></tr>
+      </thead>
+      <tbody>
+        {slides.map((sl) => (
+          <tr>
+            <td>{sl.headline}</td>
+            <td>{sl.sort_order}</td>
+            <td>{sl.is_visible ? t.admin.categories.visible : t.admin.categories.hidden}</td>
+            <td class="action-cell">
+              <a href={`/admin/settings/content?edit_slide=${sl.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.common.edit}</a>
+              <form method="POST" onsubmit={`return confirm('${s.deleteSlideConfirm}')`} style="display:inline">
+                <input type="hidden" name="_action" value="delete_slide" />
+                <input type="hidden" name="slide_id" value={sl.id} />
+                <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{t.common.delete}</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
+
+<style>
+  .section-title { font-size:15px; font-weight:700; margin-bottom:8px; }
+  .hint { font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+  .slide-form { display:flex; flex-direction:column; gap:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .form-check input { width:auto; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; }
+  .action-cell { display:flex; gap:8px; align-items:center; }
+  @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>

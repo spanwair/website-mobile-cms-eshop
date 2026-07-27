@@ -1,0 +1,40 @@
+---
+import { useT } from "../../lib/i18n";
+
+interface Props {
+  stores: { slug: string; brand_name: string | null; logo_url: string | null; tagline: string | null }[];
+}
+const { stores } = Astro.props;
+const t = useT(Astro);
+---
+
+{stores.length > 0 && (
+  <section class="stores-section">
+    <h2 class="stores-title">{t.shop.storesTitle}</h2>
+    <div class="stores-grid">
+      {stores.map((store) => (
+        <a href={`/eshop-${store.slug}`} class="store-card">
+          {store.logo_url ? (
+            <img src={store.logo_url} alt={store.brand_name ?? store.slug} class="store-logo" />
+          ) : (
+            <div class="store-logo store-logo-placeholder">{(store.brand_name ?? store.slug)[0]?.toUpperCase()}</div>
+          )}
+          <span class="store-name">{store.brand_name ?? store.slug}</span>
+          {store.tagline && <span class="store-tagline">{store.tagline}</span>}
+        </a>
+      ))}
+    </div>
+  </section>
+)}
+
+<style>
+  .stores-section { max-width:1280px; margin:0 auto; padding:24px 24px 0; }
+  .stores-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); margin-bottom:12px; }
+  .stores-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:16px; }
+  .store-card { display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; padding:16px; border:1px solid var(--border); border-radius:12px; text-decoration:none; color:inherit; transition:box-shadow .2s; }
+  .store-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
+  .store-logo { width:48px; height:48px; border-radius:50%; object-fit:cover; }
+  .store-logo-placeholder { display:flex; align-items:center; justify-content:center; background:var(--accent-primary); color:#fff; font-weight:700; font-size:18px; }
+  .store-name { font-size:14px; font-weight:700; }
+  .store-tagline { font-size:12px; color:var(--text-muted); }
+</style>

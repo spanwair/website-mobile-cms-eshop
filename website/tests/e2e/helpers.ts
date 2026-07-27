@@ -1,8 +1,77 @@
 import { type Page } from "@playwright/test";
+import { execSync } from "child_process";
+import { writeFileSync, unlinkSync } from "fs";
 import fs from "fs";
 import path from "path";
 
-export const BASE = "http://localhost:4321";
+const SUPABASE_URL = "http://127.0.0.1:54321";
+const SERVICE_ROLE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+
+// Shared DB-seeding helper — run raw SQL against the local dev Postgres as superuser.
+// `replica`/`defaultRole` toggle session_replication_role to bypass triggers/RLS while seeding.
+export function psql(sql: string): string {
+  const tmp = `/tmp/e2e-helper-${Date.now()}-${Math.random().toString(36).slice(2)}.sql`;
+  writeFileSync(tmp, sql);
+  try {
+    return execSync(
+      `PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -f ${tmp}`,
+      { stdio: "pipe" }
+    ).toString();
+  } finally {
+    unlinkSync(tmp);
+  }
+}
+export const replica = "SET session_replication_role = replica;";
+export const defaultRole = "SET session_replication_role = DEFAULT;";
+
+// Creates a throwaway auth user via the GoTrue admin API (mirrors global-setup's pattern),
+// for scenarios that need a second, independent customer identity (e.g. two buyers racing
+// for the last unit of stock) that global-setup's fixed test accounts can't represent.
+export function createTestCustomer(id: string, email: string, password: string) {
+  execSync(
+    `curl -s -X POST "${SUPABASE_URL}/auth/v1/admin/users" \
+      -H "apikey: ${SERVICE_ROLE_KEY}" \
+      -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+      -H "Content-Type: application/json" \
+      -d '{"id":"${id}","email":"${email}","password":"${password}","email_confirm":true}'`,
+    { stdio: "pipe" }
+  );
+  psql(`${replica}
+    INSERT INTO public.profiles (id, role, display_name)
+    VALUES ('${id}', 1, 'E2E Buyer')
+    ON CONFLICT (id) DO UPDATE SET role = 1;
+  ${defaultRole}`);
+}
+
+export function deleteTestCustomer(id: string) {
+  execSync(
+    `curl -s -X DELETE "${SUPABASE_URL}/auth/v1/admin/users/${id}" \
+      -H "apikey: ${SERVICE_ROLE_KEY}" \
+      -H "Authorization: Bearer ${SERVICE_ROLE_KEY}"`,
+    { stdio: "pipe" }
+  );
+}
+
+// Navigation + resource timing snapshot for a page already navigated to (waitUntil:"load").
+export async function capturePerf(page: Page) {
+  return page.evaluate(() => {
+    const [nav] = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+    const resources = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
+    const transferSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
+    return {
+      ttfb: nav.responseStart - nav.startTime,
+      domContentLoaded: nav.domContentLoadedEventEnd - nav.startTime,
+      loadEvent: nav.loadEventEnd - nav.startTime,
+      transferSize,
+      resourceCount: resources.length,
+    };
+  });
+}
+
+// Overridable so tests can target a throwaway dev server on a free port instead of
+// whatever's on 4321 — avoids fighting over the developer's own long-running `pnpm dev`.
+export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:4321";
 
 export const OWNER = { email: "owner@test.com", password: "Owner1234!" };
 export const ADMIN = { email: "admin@test.com", password: "Admin1234!" };

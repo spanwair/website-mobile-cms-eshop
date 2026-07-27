@@ -1,0 +1,142 @@
+---
+import { DESIGN_PRESETS } from "../../lib/designPresets";
+import type { PartyColorPreset } from "@shared/types";
+import { useT } from "../../lib/i18n";
+
+interface Props {
+  customPresets?: PartyColorPreset[];
+}
+const { customPresets = [] } = Astro.props;
+
+const t = useT(Astro);
+const s = t.admin.settings;
+
+const COLOR_FIELDS = [
+  "color_primary", "color_secondary", "color_background", "color_surface",
+  "color_text_primary", "color_text_secondary", "color_border",
+] as const;
+---
+
+<div class="preset-grid">
+  {DESIGN_PRESETS.map((preset) => (
+    <button type="button" class="preset-card" data-preset={JSON.stringify(preset)}>
+      <span class="preset-swatches">
+        <span class="swatch" style={`background:${preset.color_primary}`}></span>
+        <span class="swatch" style={`background:${preset.color_secondary}`}></span>
+        <span class="swatch" style={`background:${preset.color_surface}`}></span>
+      </span>
+      <span class="preset-label">{preset.label}</span>
+      <span class="preset-font" style={`font-family:${preset.font_body}, sans-serif`}>{preset.font_body}</span>
+    </button>
+  ))}
+  {customPresets.map((preset) => (
+    <span class="preset-card-custom">
+      <button type="button" class="preset-apply" data-preset={JSON.stringify(preset)}>
+        <span class="preset-swatches">
+          <span class="swatch" style={`background:${preset.color_primary}`}></span>
+          <span class="swatch" style={`background:${preset.color_secondary}`}></span>
+          <span class="swatch" style={`background:${preset.color_surface}`}></span>
+        </span>
+        <span class="preset-label">{preset.name}</span>
+        <span class="preset-font">{s.customPresetLabel}</span>
+      </button>
+      <button type="button" class="preset-remove" data-preset-id={preset.id} aria-label={s.deleteTemplate} title={s.deleteTemplate}>×</button>
+    </span>
+  ))}
+  <span class="preset-hint">{s.presetHint}</span>
+</div>
+
+<div class="save-preset-row">
+  <input type="text" class="form-input save-preset-name" placeholder={s.templateNamePlaceholder} maxlength="60" />
+  <button type="button" class="btn btn-secondary save-preset-btn">{s.saveAsTemplate}</button>
+  <span class="save-preset-error"></span>
+</div>
+
+<script define:vars={{ colorFields: COLOR_FIELDS }}>
+  document.querySelectorAll(".preset-card, .preset-apply").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const preset = JSON.parse(btn.dataset.preset ?? "{}");
+      const form = btn.closest("form");
+      if (!form) return;
+      const fields = [...colorFields, "font_heading", "font_body", "radius_scale"];
+      for (const field of fields) {
+        const input = form.elements.namedItem(field);
+        if (!input || !(field in preset)) continue;
+        input.value = preset[field];
+        if (input.type === "color") {
+          const hex = input.closest(".color-field")?.querySelector(".color-hex");
+          if (hex) hex.textContent = preset[field];
+        }
+      }
+    });
+  });
+
+  document.querySelectorAll(".preset-remove").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.presetId;
+      if (!id) return;
+      btn.disabled = true;
+      const res = await fetch(`/api/admin/color-presets?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (res.ok) location.reload();
+      else btn.disabled = false;
+    });
+  });
+
+  const saveBtn = document.querySelector(".save-preset-btn");
+  saveBtn?.addEventListener("click", async () => {
+    const errorEl = document.querySelector(".save-preset-error");
+    const nameInput = document.querySelector(".save-preset-name");
+    const form = saveBtn.closest("form");
+    if (errorEl) errorEl.textContent = "";
+    const name = nameInput?.value.trim();
+    if (!name || !form) return;
+
+    const colors = {};
+    for (const field of colorFields) {
+      const input = form.elements.namedItem(field);
+      if (input) colors[field] = input.value;
+    }
+
+    saveBtn.disabled = true;
+    const res = await fetch("/api/admin/color-presets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, ...colors }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (res.ok) {
+      location.reload();
+    } else {
+      saveBtn.disabled = false;
+      if (errorEl) errorEl.textContent = body.error ?? "Failed to save template";
+    }
+  });
+</script>
+
+<style>
+  .preset-grid { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .preset-card, .preset-apply {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+    padding: 10px 14px; border: 1px solid var(--border-default); border-radius: 10px;
+    background: var(--bg-surface); cursor: pointer; font-family: inherit;
+  }
+  .preset-card:hover, .preset-apply:hover { border-color: var(--accent-primary); }
+  .preset-card-custom {
+    display: flex; flex-direction: row; align-items: stretch; padding: 0; position: relative;
+    border: 1px solid var(--border-default); border-radius: 10px; background: var(--bg-surface);
+  }
+  .preset-card-custom .preset-apply { border: none; background: transparent; }
+  .preset-remove {
+    border: none; background: transparent; cursor: pointer; color: var(--text-muted);
+    font-size: 16px; line-height: 1; padding: 4px 8px; align-self: flex-start;
+  }
+  .preset-remove:hover { color: var(--error); }
+  .preset-swatches { display: flex; gap: 4px; }
+  .swatch { width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.08); }
+  .preset-label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .preset-font { font-size: 12px; color: var(--text-muted); }
+  .preset-hint { font-size: 12px; color: var(--text-muted); }
+  .save-preset-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .save-preset-name { max-width: 220px; }
+  .save-preset-error { font-size: 12px; color: var(--error); }
+</style>

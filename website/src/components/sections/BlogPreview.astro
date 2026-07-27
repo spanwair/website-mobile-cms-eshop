@@ -1,0 +1,68 @@
+---
+import type { BlogPost, StoreMedia } from "@shared/types";
+import { useT } from "../../lib/i18n";
+import { resolveMediaUrl } from "../../lib/contentRenderer";
+
+interface Props { posts: BlogPost[]; linkBase?: string; media?: StoreMedia[] }
+const { posts, linkBase = "/shop", media = [] } = Astro.props;
+const t = useT(Astro);
+
+function formatDate(iso: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+}
+
+function cardImage(post: BlogPost): string | null {
+  return resolveMediaUrl(post.featured_image_url, media);
+}
+---
+
+{posts.length > 0 && (
+  <section class="blog-preview">
+    <div class="container">
+      <h2 class="blog-preview-title">{t.blog.latestPosts}</h2>
+      <div class="blog-grid">
+        {posts.map((post) => (
+          <a href={`${linkBase}/blog/${post.slug}`} class="blog-card">
+            {cardImage(post) && <img src={cardImage(post)!} alt={post.title} class="blog-image" loading="lazy" />}
+            <div class="blog-card-body">
+              <p class="blog-date">{formatDate(post.published_at)}</p>
+              <h3 class="blog-title">{post.title}</h3>
+              {post.excerpt && <p class="blog-excerpt">{post.excerpt}</p>}
+            </div>
+          </a>
+        ))}
+      </div>
+      <a href={`${linkBase}/blog`} class="btn btn-secondary blog-viewall">{t.blog.viewAll}</a>
+    </div>
+  </section>
+)}
+
+<style>
+  .blog-preview { padding: 64px 0; text-align: center; }
+  .blog-preview-title {
+    font-family: var(--font-heading); font-size: 28px; font-weight: 800; color: var(--text-primary);
+    letter-spacing: -0.01em; margin-bottom: 32px;
+  }
+  .blog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; text-align: left; margin-bottom: 32px; align-items: stretch; }
+  .blog-card {
+    display: flex; flex-direction: column; height: 100%;
+    text-decoration: none; color: inherit; background: var(--bg-page, #fff);
+    border: 1px solid var(--border, var(--border-default)); border-radius: var(--radius-md);
+    overflow: hidden; box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .blog-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,0.1)); }
+  .blog-image { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+  .blog-card-body { display: flex; flex-direction: column; flex: 1; padding: 16px; }
+  .blog-date { font-size: 12px; color: var(--text-muted); margin: 0; }
+  .blog-title {
+    font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 6px 0 0;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .blog-excerpt {
+    font-size: 13px; color: var(--text-secondary); margin: 8px 0 0; flex: 1;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+</style>

@@ -1,0 +1,67 @@
+---
+import { useT } from "../../lib/i18n";
+import type { ProductCondition } from "@shared/types";
+
+interface Category { id: string; name: string; slug: string; parent_id: string | null }
+interface Props {
+  categories: Category[];
+  categorySlug: string;
+  homeHref: string;
+  buildUrl: (params: Record<string, string>) => string;
+  conditions?: ProductCondition[];
+  activeCondition?: string;
+}
+const { categories, categorySlug, homeHref, buildUrl, conditions = [], activeCondition = "" } = Astro.props;
+const t = useT(Astro);
+const topLevel = categories.filter((c) => !c.parent_id);
+---
+
+<aside class="sidebar">
+  <h2 class="sidebar-title">{t.shop.categories}</h2>
+  <ul class="category-list">
+    <li>
+      <a href={homeHref} class={`cat-link${!categorySlug ? " cat-active" : ""}`}>{t.shop.allProducts}</a>
+    </li>
+    {topLevel.map((cat) => (
+      <li>
+        <a href={buildUrl({ category: cat.slug })} class={`cat-link${categorySlug === cat.slug ? " cat-active" : ""}`}>
+          {cat.name}
+        </a>
+        {categories.filter((c) => c.parent_id === cat.id).map((child) => (
+          <a href={buildUrl({ category: child.slug })} class={`cat-link cat-child${categorySlug === child.slug ? " cat-active" : ""}`}>
+            {child.name}
+          </a>
+        ))}
+      </li>
+    ))}
+  </ul>
+
+  {conditions.length > 0 && (
+    <div class="filter-group">
+      <h2 class="sidebar-title">{t.shop.conditionExplainerTitle}</h2>
+      <ul class="category-list">
+        <li><a href={buildUrl({ condition: "" })} class={`cat-link${!activeCondition ? " cat-active" : ""}`}>{t.common.all}</a></li>
+        {conditions.filter((c) => c.is_active).map((c) => (
+          <li>
+            <a href={buildUrl({ condition: c.code })} class={`cat-link${activeCondition === c.code ? " cat-active" : ""}`}>
+              <span class="condition-dot" style={`background:${c.color_hex}`}></span> {c.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+</aside>
+
+<style>
+  .sidebar { position:sticky; top:80px; align-self:start; }
+  .sidebar-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); margin-bottom:12px; }
+  .category-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:2px; }
+  .cat-link { display:block; padding:6px 10px; border-radius:6px; font-size:14px; color:var(--text-secondary); text-decoration:none; transition:background .15s; }
+  .cat-link:hover { background:var(--bg-subtle); }
+  .cat-active { background:var(--primary); color:#fff !important; }
+  .cat-child { padding-left:24px; font-size:13px; }
+  .filter-group { margin-top:24px; }
+  .condition-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; }
+  @media(max-width:768px) { .sidebar { position:static; } }
+</style>

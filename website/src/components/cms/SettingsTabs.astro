@@ -1,0 +1,43 @@
+---
+interface Props { active: "branding" | "layout" | "domains" | "content" | "benefits" | "footer" | "badges" | "newsletter"; partySlug?: string }
+const { active, partySlug } = Astro.props;
+import { useT } from "../../lib/i18n";
+const t = useT(Astro);
+const tabs = [
+  { key: "branding",    href: "/admin/settings/branding",    label: t.admin.settings.tabBranding },
+  { key: "layout",      href: "/admin/settings/layout",      label: t.admin.settings.tabLayout },
+  { key: "content",     href: "/admin/settings/content",     label: t.admin.settings.tabContent },
+  { key: "benefits",    href: "/admin/settings/benefits",    label: t.admin.settings.tabBenefits },
+  { key: "footer",      href: "/admin/settings/footer",      label: t.admin.settings.tabFooter },
+  { key: "badges",      href: "/admin/settings/badges",      label: t.admin.settings.tabBadges },
+  { key: "newsletter",  href: "/admin/settings/newsletter",  label: t.admin.settings.tabNewsletter },
+  { key: "domains",     href: "/admin/settings/domains",     label: t.admin.settings.tabDomains },
+];
+---
+
+<div class="settings-tabs">
+  <div class="settings-tabs-list">
+    {tabs.map((tab) => (
+      <a href={tab.href} class={`settings-tab${tab.key === active ? " settings-tab--active" : ""}`}>{tab.label}</a>
+    ))}
+  </div>
+  {partySlug && (
+    <a href={`/eshop-${partySlug}`} target="_blank" rel="noopener noreferrer" class="view-storefront-btn">
+      {t.admin.settings.viewStorefront} ↗
+    </a>
+  )}
+</div>
+
+<style>
+  .settings-tabs { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; border-bottom: 1px solid var(--border-default); }
+  .settings-tabs-list { display: flex; gap: 4px; }
+  .settings-tab { padding: 10px 16px; font-size: 14px; font-weight: 600; color: var(--text-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .settings-tab:hover { color: var(--text-primary); text-decoration: none; }
+  .settings-tab--active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+  .view-storefront-btn {
+    flex-shrink: 0; margin-bottom: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600;
+    color: var(--accent-primary); border: 1px solid var(--accent-primary); border-radius: 8px;
+    text-decoration: none; white-space: nowrap;
+  }
+  .view-storefront-btn:hover { background: var(--accent-primary); color: #fff; text-decoration: none; }
+</style>

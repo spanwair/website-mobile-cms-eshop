@@ -1,0 +1,71 @@
+---
+import type { NavItemWithChildren } from "@shared/types";
+
+interface Props {
+  navTree: NavItemWithChildren[];
+  shopHref: string;
+}
+const { navTree, shopHref } = Astro.props;
+
+function resolveHref(item: { url: string | null }) {
+  if (!item.url) return "#";
+  return item.url.startsWith("/") && !item.url.startsWith(shopHref) ? `${shopHref}${item.url}` : item.url;
+}
+
+function groupByColumn(children: NavItemWithChildren["children"]) {
+  const columns = new Map<string, typeof children>();
+  for (const child of children) {
+    const key = child.column_label ?? "";
+    if (!columns.has(key)) columns.set(key, []);
+    columns.get(key)!.push(child);
+  }
+  return [...columns.entries()];
+}
+---
+
+{navTree.length > 0 && (
+  <div class="mega-nav">
+    <div class="container mega-nav-inner">
+      {navTree.map((item) => (
+        <div class={`mega-item${item.is_mega && item.children.length > 0 ? " has-dropdown" : ""}`}>
+          <a href={resolveHref(item)} class="mega-link">
+            {item.label}
+            {item.is_mega && item.children.length > 0 && <span class="chevron">▾</span>}
+          </a>
+          {item.is_mega && item.children.length > 0 && (
+            <div class="mega-dropdown">
+              {groupByColumn(item.children).map(([column, links]) => (
+                <div class="mega-column">
+                  {column && <p class="mega-column-title">{column}</p>}
+                  {links.map((l) => <a href={resolveHref(l)} class="mega-dropdown-link">{l.label}</a>)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+<style>
+  .mega-nav { border-top: 1px solid var(--border); background: var(--bg-page); }
+  .mega-nav-inner { display: flex; align-items: center; gap: 24px; height: 44px; }
+  .mega-item { position: relative; height: 100%; display: flex; align-items: center; }
+  .mega-link { font-size: 14px; font-weight: 500; color: var(--text-primary); text-decoration: none; display: flex; align-items: center; gap: 4px; }
+  .mega-link:hover { color: var(--accent-primary); text-decoration: none; }
+  .chevron { font-size: 10px; transition: transform 150ms ease; }
+  .has-dropdown:hover .chevron { transform: rotate(180deg); }
+  .mega-dropdown {
+    display: none; position: absolute; top: 100%; left: 0; z-index: 20;
+    background: var(--bg-page); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 24px; gap: 32px;
+    min-width: 420px;
+  }
+  .has-dropdown:hover .mega-dropdown { display: flex; }
+  .mega-column { display: flex; flex-direction: column; gap: 6px; min-width: 160px; }
+  .mega-column-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .mega-dropdown-link { font-size: 13px; color: var(--text-secondary); text-decoration: none; }
+  .mega-dropdown-link:hover { color: var(--accent-primary); text-decoration: none; }
+  @media (max-width: 900px) { .mega-nav { display: none; } }
+</style>

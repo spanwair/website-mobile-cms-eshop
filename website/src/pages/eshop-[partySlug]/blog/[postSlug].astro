@@ -1,0 +1,67 @@
+---
+import Layout from "../../../components/layout/Layout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchBlogPostBySlug, fetchPublishedBlogPosts } from "@shared/services/blogService";
+import { fetchStoreMedia } from "@shared/services/storeMediaService";
+import { renderContent, resolveMediaUrl } from "../../../lib/contentRenderer";
+import { useT } from "../../../lib/i18n";
+
+const { partySlug } = Astro.params;
+const storeParty = Astro.locals.storeParty;
+if (!storeParty) return Astro.redirect("/shop");
+const linkBase = `/eshop-${partySlug}`;
+
+const supabase = createSupabase(Astro);
+const t = useT(Astro);
+const { postSlug } = Astro.params;
+const post = await fetchBlogPostBySlug(supabase, storeParty.id, postSlug as string);
+if (!post) return new Response("Not found", { status: 404 });
+
+const media = await fetchStoreMedia(supabase, storeParty.id);
+const bodyHtml = renderContent(post.content, post.content_format, media);
+const featuredImage = resolveMediaUrl(post.featured_image_url, media);
+const { posts: related } = await fetchPublishedBlogPosts(supabase, storeParty.id, { page: 1, pageSize: 4 });
+const relatedPosts = related.filter((p) => p.id !== post.id).slice(0, 3);
+
+function formatDate(iso: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+}
+---
+
+<Layout title={post.seo_title ?? post.title}>
+  <article class="blog-article container">
+    <a href={`${linkBase}/blog`} class="back-link">{t.blog.backToBlog}</a>
+    <h1 class="article-title">{post.title}</h1>
+    <p class="article-date">{formatDate(post.published_at)}{post.author_name && ` · ${post.author_name}`}</p>
+    {featuredImage && <img src={featuredImage} alt={post.title} class="article-image" />}
+    {bodyHtml && <div class="article-body" set:html={bodyHtml} />}
+
+    {relatedPosts.length > 0 && (
+      <div class="related">
+        <h2 class="related-title">{t.blog.relatedPosts}</h2>
+        <div class="related-grid">
+          {relatedPosts.map((p) => (
+            <a href={`${linkBase}/blog/${p.slug}`} class="related-card">{p.title}</a>
+          ))}
+        </div>
+      </div>
+    )}
+  </article>
+</Layout>
+
+<style>
+  .blog-article { max-width: 720px; margin: 0 auto; padding: 40px 24px 64px; }
+  .back-link { font-size: 13px; color: var(--accent-primary); text-decoration: none; }
+  .article-title { font-family: var(--font-heading); font-size: 30px; font-weight: 800; color: var(--text-primary); margin: 16px 0 4px; }
+  .article-date { font-size: 13px; color: var(--text-muted); margin: 0 0 20px; }
+  .article-image { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 24px; }
+  .article-body { font-size: 16px; line-height: 1.8; color: var(--text-primary); }
+  .article-body :global(h2) { font-size: 22px; font-weight: 700; margin: 28px 0 12px; }
+  .related { margin-top: 48px; border-top: 1px solid var(--border); padding-top: 24px; }
+  .related-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+  .related-grid { display: flex; flex-direction: column; gap: 8px; }
+  .related-card { color: var(--accent-primary); text-decoration: none; font-size: 14px; font-weight: 600; }
+  .related-card:hover { text-decoration: underline; }
+</style>

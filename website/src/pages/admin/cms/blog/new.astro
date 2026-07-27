@@ -1,0 +1,121 @@
+---
+import CmsLayout from "../../../../components/cms/CmsLayout.astro";
+import ImagePicker from "../../../../components/cms/ImagePicker.astro";
+import { createSupabase } from "../../../../lib/supabase";
+import { createBlogPost } from "@shared/services/blogService";
+import { fetchStoreMedia } from "@shared/services/storeMediaService";
+import { requireAdminCtx } from "../../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { useT } from "../../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
+const t = useT(Astro);
+const s = t.admin.cms;
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const status = (form.get("status") as "draft" | "published") ?? "draft";
+  const result = await createBlogPost(supabase, {
+    party_id: partyId,
+    title: (form.get("title") as string).trim(),
+    slug: (form.get("slug") as string).trim(),
+    excerpt: (form.get("excerpt") as string) || null,
+    content: (form.get("content") as string) || null,
+    content_format: (form.get("content_format") as "markdown" | "html") ?? "markdown",
+    featured_image_url: (form.get("featured_image_url") as string) || null,
+    author_name: (form.get("author_name") as string) || null,
+    status,
+    published_at: status === "published" ? new Date().toISOString() : null,
+    seo_title: (form.get("seo_title") as string) || null,
+    seo_description: (form.get("seo_description") as string) || null,
+  });
+  if (result.error) error = result.error.message;
+  else return Astro.redirect(`/admin/cms/blog/${result.data!.id}`);
+}
+
+const media = await fetchStoreMedia(supabase, partyId);
+---
+
+<CmsLayout title={s.newPostTitle} userPermissions={permissions} currentPath="/admin/cms/blog" parties={ctx.parties} partyId={ctx.partyId}>
+  <div class="card" style="max-width:720px">
+    <a href="/admin/cms/blog" class="back-link">{s.back}</a>
+    {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
+    <form method="POST" class="post-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldTitle}</label>
+          <input class="form-input" name="title" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldSlug}</label>
+          <input class="form-input" name="slug" required placeholder="jak-vybrat-refurbished-telefon" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{s.fieldExcerpt}</label>
+        <textarea class="form-input" name="excerpt" rows="2"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{s.fieldContent}</label>
+        <textarea class="form-input" name="content" rows="10"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldContentFormat}</label>
+          <select class="form-input" name="content_format">
+            <option value="markdown">{t.admin.settings.formatMarkdown}</option>
+            <option value="html">{t.admin.settings.formatHtml}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldStatus}</label>
+          <select class="form-input" name="status">
+            <option value="draft">{s.statusDraft}</option>
+            <option value="published">{s.statusPublished}</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <ImagePicker name="featured_image_url" label={s.fieldFeaturedImage} value={null} media={media} />
+        <div class="form-group">
+          <label class="form-label">{s.fieldAuthor}</label>
+          <input class="form-input" name="author_name" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldSeoTitle}</label>
+          <input class="form-input" name="seo_title" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldSeoDescription}</label>
+          <input class="form-input" name="seo_description" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <a href="/admin/cms/blog" class="btn btn-ghost">{t.common.cancel}</a>
+        <button type="submit" class="btn btn-primary">{s.createBtnPost}</button>
+      </div>
+    </form>
+  </div>
+</CmsLayout>
+
+<style>
+  .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
+  .back-link:hover { color:var(--text-primary); }
+  .post-form { display:flex; flex-direction:column; gap:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; }
+  @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>

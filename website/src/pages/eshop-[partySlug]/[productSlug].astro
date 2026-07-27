@@ -1,0 +1,173 @@
+---
+import Layout from "../../components/layout/Layout.astro";
+import ProductGallery from "../../components/shop/ProductGallery.astro";
+import ProductPurchasePanel from "../../components/shop/ProductPurchasePanel.astro";
+import ProductReviews from "../../components/shop/ProductReviews.astro";
+import RelatedProducts from "../../components/shop/RelatedProducts.astro";
+import { createSupabase } from "../../lib/supabase";
+import { fetchProductReviews, submitReview } from "@shared/services/reviewService";
+import { fetchInventoryByProduct } from "@shared/services/inventoryService";
+import { getOrCreateCart, addToCart } from "@shared/services/cartService";
+import { addToWishlist, removeFromWishlist, isInWishlist } from "@shared/services/wishlistService";
+import { fetchVisibleBenefitItems } from "@shared/services/benefitItemService";
+
+const { partySlug, productSlug } = Astro.params;
+const storeParty = Astro.locals.storeParty;
+if (!storeParty) return Astro.redirect("/shop");
+const partyId = storeParty.id;
+const linkBase = `/eshop-${partySlug}`;
+
+const supabase = createSupabase(Astro);
+let cartError = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = form.get("_action") as string;
+
+  if (action === "review") {
+    const { data: { session } } = await supabase.auth.getSession();
+    await submitReview(supabase, {
+      party_id: partyId,
+      product_id: form.get("product_id") as string,
+      author_name: form.get("author_name") as string,
+      author_email: form.get("author_email") as string,
+      rating: parseInt(form.get("rating") as string, 10),
+      title: (form.get("title") as string) || undefined,
+      body: (form.get("body") as string) || undefined,
+      customer_id: session?.user?.id ? undefined : null,
+    });
+    return Astro.redirect(`${linkBase}/${productSlug}?reviewed=1`);
+  }
+
+  if (action === "toggle_wishlist") {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return Astro.redirect(`/login?redirect=${linkBase}/${productSlug}`);
+    const productId = form.get("product_id") as string;
+    if (await isInWishlist(supabase, partyId, session.user.id, productId)) {
+      await removeFromWishlist(supabase, partyId, session.user.id, productId);
+    } else {
+      await addToWishlist(supabase, partyId, session.user.id, productId);
+    }
+    return Astro.redirect(`${linkBase}/${productSlug}`);
+  }
+
+  if (action === "add_to_cart") {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return Astro.redirect(`/login?redirect=${linkBase}/${productSlug}`);
+    const productId = form.get("product_id") as string;
+    const unitPrice = parseFloat(form.get("unit_price") as string);
+    const qty = Math.max(1, parseInt(form.get("quantity") as string, 10) || 1);
+    try {
+      const cart = await getOrCreateCart(supabase, partyId, session.user.id);
+      const result = await addToCart(supabase, cart.id, productId, qty, unitPrice);
+      if (result.error) cartError = result.error.message;
+      else return Astro.redirect(`${linkBase}/${productSlug}?added=1`);
+    } catch (e: any) {
+      cartError = e?.message ?? "Failed to add to cart";
+    }
+  }
+}
+
+const { data: product } = await supabase
+  .from("products")
+  .select(`
+    *,
+    product_images(id, url, alt, is_primary, sort_order),
+    product_categories(category:categories(id, name, slug)),
+    product_variants(id, name, price, attributes, is_active, product_conditions(label, color_hex)),
+    product_conditions(label, color_hex),
+    brands(name, slug)
+  `)
+  .eq("party_id", partyId)
+  .eq("slug", productSlug!)
+  .eq("status", "active")
+  .eq("is_visible", true)
+  .single();
+
+if (!product) return Astro.redirect(linkBase);
+
+const images = ((product as any).product_images ?? []).sort(
+  (a: any, b: any) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0)
+);
+const categories = ((product as any).product_categories ?? []).map((pc: any) => pc.category).filter(Boolean);
+const variants = ((product as any).product_variants ?? [])
+  .filter((v: any) => v.is_active)
+  .map((v: any) => ({ ...v, condition: v.product_conditions ?? null }));
+const condition = (product as any).product_conditions ?? null;
+const brand = (product as any).brands;
+
+const { data: reviews, total: reviewTotal, averageRating } = await fetchProductReviews(supabase, product.id, { pageSize: 10 });
+const reviewed = new URL(Astro.request.url).searchParams.has("reviewed");
+const addedToCart = new URL(Astro.request.url).searchParams.has("added");
+
+const inventoryItem = await fetchInventoryByProduct(supabase, product.id);
+const qtyAvailable = inventoryItem ? inventoryItem.qty_on_hand - inventoryItem.qty_reserved : null;
+const isOutOfStock = qtyAvailable !== null && qtyAvailable <= 0;
+
+const { data: { session: pageSession } } = await supabase.auth.getSession();
+const enableWishlists = storeParty.config?.enable_wishlists ?? true;
+const inWishlist = enableWishlists && pageSession
+  ? await isInWishlist(supabase, partyId, pageSession.user.id, product.id)
+  : false;
+
+let relatedProducts: any[] = [];
+if (categories.length > 0) {
+  const { data: related } = await supabase
+    .from("products")
+    .select("id, title, slug, price, discount_price, product_images(url, is_primary), product_categories!inner(category_id)")
+    .eq("party_id", partyId)
+    .eq("status", "active")
+    .eq("is_visible", true)
+    .neq("id", product.id)
+    .in("product_categories.category_id", categories.map((c) => c.id))
+    .limit(4);
+  relatedProducts = (related ?? []).map((p) => {
+    const imgs = (p as any).product_images ?? [];
+    return { ...p, primaryImage: (imgs.find((i: any) => i.is_primary) ?? imgs[0])?.url };
+  });
+}
+
+const trustBadges = (await fetchVisibleBenefitItems(supabase, partyId)).slice(0, 4);
+---
+
+<Layout title={product.seo_title ?? product.title}>
+  <nav class="breadcrumb">
+    <a href={linkBase}>Shop</a>
+    {categories[0] && <><span>/</span><a href={`${linkBase}?category=${categories[0].slug}`}>{categories[0].name}</a></>}
+    <span>/</span>
+    <span>{product.title}</span>
+  </nav>
+
+  <div class="product-layout">
+    <ProductGallery images={images} title={product.title} />
+    <ProductPurchasePanel
+      product={product}
+      brand={brand}
+      condition={condition}
+      categories={categories}
+      variants={variants}
+      reviewTotal={reviewTotal}
+      averageRating={averageRating}
+      isOutOfStock={isOutOfStock}
+      qtyAvailable={qtyAvailable}
+      cartError={cartError}
+      addedToCart={addedToCart}
+      isLoggedIn={!!pageSession}
+      linkBase={linkBase}
+      productSlug={productSlug!}
+      enableWishlists={enableWishlists}
+      inWishlist={inWishlist}
+      trustBadges={trustBadges}
+    />
+  </div>
+
+  <ProductReviews reviews={reviews} reviewTotal={reviewTotal} averageRating={averageRating} reviewed={reviewed} productId={product.id} />
+  <RelatedProducts products={relatedProducts} linkBase={linkBase} />
+</Layout>
+
+<style>
+  .breadcrumb { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-muted); padding:16px 24px; max-width:1280px; margin:0 auto; }
+  .breadcrumb a { color:var(--text-muted); text-decoration:none; } .breadcrumb a:hover { color:var(--primary); }
+  .product-layout { display:grid; grid-template-columns:1fr 1fr; gap:48px; max-width:1280px; margin:0 auto; padding:0 24px 48px; }
+  @media(max-width:768px) { .product-layout { grid-template-columns:1fr; gap:24px; } }
+</style>

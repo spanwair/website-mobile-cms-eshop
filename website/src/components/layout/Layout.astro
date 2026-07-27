@@ -2,14 +2,48 @@
 import "../../styles/global.css";
 import { createSupabase } from "../../lib/supabase";
 import { useT } from "../../lib/i18n";
-import { ROLE } from "@shared/constants/permissions";
+import { hasAdminAccess } from "../../lib/admin";
+import { buildThemeCss, googleFontsUrl } from "../../lib/themeEngine";
+import { fetchStoreMedia } from "@shared/services/storeMediaService";
+import { fetchCartItemCount } from "@shared/services/cartService";
+import { fetchVisibleNavTree } from "@shared/services/navItemService";
+import { fetchVisibleFooterLinks } from "@shared/services/footerLinkService";
+import { fetchVisibleFooterBadges } from "@shared/services/footerBadgeService";
+import Footer from "./Footer.astro";
+import StorefrontNav from "./StorefrontNav.astro";
 
 interface Props {
   title?: string;
 }
-const { title = "Template" } = Astro.props;
+const storeParty = Astro.locals.storeParty;
+const storeConfig = storeParty?.config ?? null;
+const brandName = storeConfig?.brand_name ?? "Template";
+const { title = brandName } = Astro.props;
+const faviconUrl = storeConfig?.favicon_url ?? "/favicon.png";
+const customFontsUrl = googleFontsUrl(storeConfig);
+
+// A storefront-shaped page (/shop*, /eshop-[slug]*) with a resolved storeParty (custom
+// domain, subdomain, or the /eshop-[partySlug] path itself) should behave like visiting that
+// org's own dedicated site: internal app nav (Dashboard/Items/Admin) never appears, and every
+// in-page link stays scoped to this org rather than bouncing to the shared app/generic /shop.
+// Gated on pathname too, not just storeParty — a staff member managing their org from its own
+// custom domain must still reach /dashboard and /admin on that same domain.
+const pathname = Astro.url.pathname;
+const partySlug = Astro.params.partySlug as string | undefined;
+const isStorefrontPage = pathname === "/shop" || pathname.startsWith("/shop/") || !!partySlug;
+const isStorefront = isStorefrontPage && !!storeParty;
+const shopHref = partySlug ? `/eshop-${partySlug}` : "/shop";
+const brandHref = isStorefront ? shopHref : "/";
+
+// The admin panel has its own layout (CmsLayout) and no storefront chrome — the storefront
+// footer (with its own newsletter panel, badges, links) has no place there.
+const isAdminPage = pathname === "/admin" || pathname.startsWith("/admin/");
 
 const supabase = createSupabase(Astro);
+const footerMedia = !isAdminPage && storeParty ? await fetchStoreMedia(supabase, storeParty.id) : [];
+const navTree = storeParty ? await fetchVisibleNavTree(supabase, storeParty.id) : [];
+const footerLinks = !isAdminPage && storeParty ? await fetchVisibleFooterLinks(supabase, storeParty.id) : [];
+const footerBadges = !isAdminPage && storeParty ? await fetchVisibleFooterBadges(supabase, storeParty.id) : [];
 const { data: { session } } = await supabase.auth.getSession();
 const t = useT(Astro);
 
@@ -22,20 +56,13 @@ if (session) {
     .eq("id", session.user.id)
     .single();
   displayName = data?.display_name ?? session.user.email?.split("@")[0] ?? null;
-  const systemRole = (data?.role ?? 0) as number;
-  if (systemRole >= ROLE.ESHOP_ADMIN) {
-    if (systemRole >= ROLE.ADMIN) {
-      isAdmin = true;
-    } else {
-      const { count } = await supabase
-        .from("user_party_roles")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", session.user.id);
-      isAdmin = (count ?? 0) > 0;
-    }
-  }
+  isAdmin = await hasAdminAccess(supabase, session.user.id);
 }
 const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
+const cartCount = isStorefront && session && storeParty
+  ? await fetchCartItemCount(supabase, session.user.id, storeParty.id)
+  : 0;
+const currentPath = Astro.url.pathname + Astro.url.search;
 ---
 
 <!doctype html>
@@ -44,47 +71,70 @@ const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/png" href={faviconUrl} />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
+    {customFontsUrl && <link href={customFontsUrl} rel="stylesheet" />}
+    <style set:html={buildThemeCss(storeConfig)} />
   </head>
   <body>
-    <nav class="nav">
-      <div class="container nav-inner">
-        <a href="/" class="nav-brand">Template</a>
-        {session && (
-          <div class="nav-links">
-            <a href="/shop">Shop</a>
-            <a href="/dashboard">{t.nav.dashboard}</a>
-            <a href="/items">{t.nav.items}</a>
-            {isAdmin && <a href="/admin">{t.nav.admin}</a>}
-          </div>
-        )}
-        <div class="nav-right">
-          {session ? (
-            <div class="profile-menu">
-              <button class="profile-btn" id="profile-toggle" type="button">
-                <span class="nav-avatar">{navInitial}</span>
-                <span class="nav-name">{displayName}</span>
-                <span class="nav-chevron">▾</span>
-              </button>
-              <div class="dropdown" id="profile-dropdown">
-                <a href="/profile" class="dropdown-item">{t.nav.profile}</a>
-                <a href="/settings" class="dropdown-item">{t.nav.settings}</a>
-                <div class="dropdown-divider"></div>
-                <form action="/auth/signout" method="POST">
-                  <button type="submit" class="dropdown-item dropdown-danger">{t.nav.signOut}</button>
-                </form>
-              </div>
+    {isStorefront ? (
+      <StorefrontNav
+        storeConfig={storeConfig}
+        brandName={brandName}
+        brandHref={brandHref}
+        shopHref={shopHref}
+        hasSession={!!session}
+        displayName={displayName}
+        navInitial={navInitial}
+        cartCount={cartCount}
+        currentPath={currentPath}
+        navTree={navTree}
+        partyId={storeParty?.id ?? null}
+        isAdmin={isAdmin}
+      />
+    ) : (
+      <nav class="nav">
+        <div class="container nav-inner">
+          <a href={brandHref} class="nav-brand">{brandName}</a>
+          {session && (
+            <div class="nav-links">
+              <a href="/shop">{t.nav.shop}</a>
+              <a href="/dashboard">{t.nav.dashboard}</a>
+              <a href="/items">{t.nav.items}</a>
+              {isAdmin && <a href="/admin">{t.nav.admin}</a>}
             </div>
-          ) : (
-            <a href="/login" class="btn btn-primary nav-cta">{t.nav.signIn}</a>
           )}
+          <div class="nav-right">
+            {session ? (
+              <div class="profile-menu">
+                <button class="profile-btn" id="profile-toggle" type="button">
+                  <span class="nav-avatar">{navInitial}</span>
+                  <span class="nav-name">{displayName}</span>
+                  <span class="nav-chevron">▾</span>
+                </button>
+                <div class="dropdown" id="profile-dropdown">
+                  <a href="/profile" class="dropdown-item">{t.nav.profile}</a>
+                  <a href="/settings" class="dropdown-item">{t.nav.settings}</a>
+                  {isAdmin && <a href="/admin" class="dropdown-item">{t.nav.admin}</a>}
+                  <div class="dropdown-divider"></div>
+                  <form action="/auth/signout" method="POST">
+                    <button type="submit" class="dropdown-item dropdown-danger">{t.nav.signOut}</button>
+                  </form>
+                </div>
+              </div>
+            ) : (
+              <a href="/login" class="btn btn-primary nav-cta">{t.nav.signIn}</a>
+            )}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    )}
     <main>
       <slot />
     </main>
+    {!isAdminPage && (
+      <Footer storeConfig={storeConfig} media={footerMedia} footerLinks={footerLinks} footerBadges={footerBadges} shopHref={shopHref} />
+    )}
   </body>
 </html>
 
@@ -102,12 +152,21 @@ const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
 
 <style>
   .nav-inner { display: flex; align-items: center; gap: 32px; height: 64px; }
-  .nav-brand { font-size: 20px; font-weight: 900; color: #4F46E5; letter-spacing: -0.5px; flex-shrink: 0; text-decoration: none; }
+  .nav-brand { font-size: 20px; font-weight: 900; color: var(--accent-primary); letter-spacing: -0.5px; flex-shrink: 0; text-decoration: none; }
   .nav-links { display: flex; gap: 24px; flex: 1; }
   .nav-links a { font-size: 14px; font-weight: 600; color: #6C757D; text-decoration: none; }
   .nav-links a:hover { color: #212529; }
   .nav-right { margin-left: auto; }
   .nav-cta { padding: 8px 20px; font-size: 14px; }
+
+  /* .nav-links has no min-width:0, so by default it refuses to shrink below its content
+     width and forces the whole bar wider than the viewport on any narrow screen. Found via
+     mobile E2E testing (iPhone 13, 390px) — collapse to icon-only profile + brand below the
+     point where links+name no longer fit, rather than letting the page scroll horizontally. */
+  @media (max-width: 640px) {
+    .nav-links { display: none; }
+    .nav-name, .nav-chevron { display: none; }
+  }
 
   .profile-menu { position: relative; }
   .profile-btn {

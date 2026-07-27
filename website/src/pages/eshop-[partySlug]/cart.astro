@@ -1,0 +1,173 @@
+---
+import Layout from "../../components/layout/Layout.astro";
+import { createSupabase } from "../../lib/supabase";
+import { applyCoupon, updateCartItemQty, removeFromCart, calcCartTotal } from "@shared/services/cartService";
+import { useT } from "../../lib/i18n";
+
+const { partySlug } = Astro.params;
+const storeParty = Astro.locals.storeParty;
+if (!storeParty) return Astro.redirect("/shop");
+const linkBase = `/eshop-${partySlug}`;
+
+const supabase = createSupabase(Astro);
+const t = useT(Astro);
+
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect(`/login?redirect=${linkBase}/cart`);
+
+let couponMessage = "";
+let couponError = "";
+let qtyError = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = form.get("_action") as string;
+
+  if (action === "remove_item") {
+    await removeFromCart(supabase, form.get("item_id") as string);
+    return Astro.redirect(`${linkBase}/cart`);
+  }
+
+  if (action === "update_qty") {
+    const qty = parseInt(form.get("quantity") as string, 10);
+    const result = await updateCartItemQty(supabase, form.get("item_id") as string, qty);
+    if (result.error) qtyError = result.error.message;
+    else return Astro.redirect(`${linkBase}/cart`);
+  }
+
+  if (action === "apply_coupon") {
+    const cartId = form.get("cart_id") as string;
+    const code = form.get("coupon_code") as string;
+    const result = await applyCoupon(supabase, cartId, storeParty.id, code);
+    if (result.error) { couponError = result.error; }
+    else { couponMessage = t.shop.couponApplied; }
+  }
+}
+
+const { data: cart } = await supabase
+  .from("carts")
+  .select("*, cart_items(*, product:products(id, title, slug, price, discount_price, product_images(url, is_primary)))")
+  .eq("user_id", session.user.id)
+  .eq("party_id", storeParty.id)
+  .order("updated_at", { ascending: false })
+  .limit(1)
+  .maybeSingle();
+
+const items = (cart as any)?.cart_items ?? [];
+const { subtotal, itemCount } = calcCartTotal(
+  items.map((i: any) => ({ ...i, unit_price: Number(i.unit_price) }))
+);
+---
+
+<Layout title={t.shop.cartTitle}>
+  <div class="cart-page">
+    <h1 class="page-title">{t.shop.cartTitle}</h1>
+
+    {items.length === 0 ? (
+      <div class="empty-cart">
+        <p>{t.shop.cartEmpty}</p>
+        <a href={linkBase} class="btn btn-primary">{t.shop.continueShopping}</a>
+      </div>
+    ) : (
+      <div class="cart-layout">
+        <div class="cart-items">
+          {items.map((item: any) => {
+            const prod = item.product;
+            const images = (prod?.product_images ?? []);
+            const img = (images.find((i: any) => i.is_primary) ?? images[0])?.url;
+            const price = Number(item.unit_price);
+            return (
+              <div class="cart-item">
+                {img && <img src={img} alt={prod?.title} class="item-img" />}
+                <div class="item-info">
+                  <a href={`${linkBase}/${prod?.slug}`} class="item-title">{prod?.title}</a>
+                  <p class="item-price">{price.toFixed(2)} Kč</p>
+                </div>
+                <form method="POST" class="qty-form">
+                  <input type="hidden" name="_action" value="update_qty" />
+                  <input type="hidden" name="item_id" value={item.id} />
+                  <input type="number" name="quantity" value={item.quantity} min="1" max="99" class="qty-input"
+                    onchange="this.form.submit()" />
+                </form>
+                <p class="item-total">{(price * item.quantity).toFixed(2)} Kč</p>
+                <form method="POST">
+                  <input type="hidden" name="_action" value="remove_item" />
+                  <input type="hidden" name="item_id" value={item.id} />
+                  <button type="submit" class="remove-btn" title={t.shop.remove}>✕</button>
+                </form>
+              </div>
+            );
+          })}
+        </div>
+
+        <aside class="cart-summary">
+          <div class="summary-card">
+            <h2 class="summary-title">{t.shop.orderSummary}</h2>
+
+            {qtyError && <p class="coupon-err">{qtyError}</p>}
+            {couponMessage && <p class="coupon-ok">{couponMessage}</p>}
+            {couponError && <p class="coupon-err">{couponError}</p>}
+
+            {cart && (
+              <form method="POST" class="coupon-form">
+                <input type="hidden" name="_action" value="apply_coupon" />
+                <input type="hidden" name="cart_id" value={(cart as any).id} />
+                <div class="coupon-row">
+                  <input class="coupon-input" name="coupon_code" placeholder={t.shop.couponCode}
+                    value={(cart as any).coupon_code ?? ""} />
+                  <button type="submit" class="btn btn-secondary">{t.shop.applyCoupon}</button>
+                </div>
+              </form>
+            )}
+
+            <div class="total-row">
+              <span>Subtotal ({itemCount} items)</span>
+              <span class="total-price">{subtotal.toFixed(2)} Kč</span>
+            </div>
+
+            <a href={`${linkBase}/checkout`} class="btn btn-primary checkout-btn">{t.shop.proceedToCheckout}</a>
+            <a href={linkBase} class="continue-link">{t.shop.continueShopping}</a>
+          </div>
+        </aside>
+      </div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .cart-page { max-width:1100px; margin:0 auto; padding:32px 24px; }
+  .page-title { font-size:28px; font-weight:800; margin-bottom:24px; }
+  .empty-cart { text-align:center; padding:60px; display:flex; flex-direction:column; align-items:center; gap:16px; color:var(--text-muted); }
+  .cart-layout { display:grid; grid-template-columns:1fr 320px; gap:32px; align-items:start; }
+  .cart-items { display:flex; flex-direction:column; gap:0; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .cart-item { display:grid; grid-template-columns:80px 1fr auto auto auto; align-items:center; gap:16px; padding:16px; border-bottom:1px solid var(--border); }
+  .cart-item:last-child { border-bottom:none; }
+  .item-img { width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid var(--border); }
+  .item-info { display:flex; flex-direction:column; gap:4px; }
+  .item-title { font-size:15px; font-weight:600; text-decoration:none; color:inherit; }
+  .item-title:hover { color:var(--primary); }
+  .item-price { font-size:14px; color:var(--text-muted); margin:0; }
+  .qty-form { display:flex; }
+  .qty-input { width:60px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; text-align:center; font-size:15px; }
+  .item-total { font-size:15px; font-weight:700; color:var(--primary); min-width:80px; text-align:right; margin:0; }
+  .remove-btn { background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:16px; padding:4px 8px; border-radius:4px; }
+  .remove-btn:hover { color:var(--error); background:rgba(239,68,68,.08); }
+  .summary-card { border:1px solid var(--border); border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px; }
+  .summary-title { font-size:18px; font-weight:700; margin:0; }
+  .coupon-form { display:flex; flex-direction:column; gap:8px; }
+  .coupon-row { display:flex; gap:8px; }
+  .coupon-input { flex:1; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; }
+  .coupon-ok { color:#16a34a; font-size:13px; margin:0; }
+  .coupon-err { color:var(--error); font-size:13px; margin:0; }
+  .total-row { display:flex; justify-content:space-between; align-items:center; font-size:15px; }
+  .total-price { font-size:20px; font-weight:800; color:var(--primary); }
+  .checkout-btn { width:100%; justify-content:center; text-align:center; padding:14px; font-size:16px; }
+  .continue-link { color:var(--text-muted); font-size:13px; text-align:center; text-decoration:none; }
+  .continue-link:hover { color:var(--primary); }
+  @media(max-width:768px) {
+    .cart-layout { grid-template-columns:1fr; }
+    .cart-item { grid-template-columns:60px 1fr auto; grid-template-rows:auto auto; }
+    .item-total { grid-column:3; }
+    .remove-btn { grid-column:3; grid-row:2; }
+  }
+</style>

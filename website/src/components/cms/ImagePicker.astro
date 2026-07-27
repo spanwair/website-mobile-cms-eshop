@@ -1,0 +1,84 @@
+---
+import type { StoreMedia } from "@shared/types";
+import { resolveMediaUrl } from "../../lib/contentRenderer";
+import { useT } from "../../lib/i18n";
+
+interface Props {
+  name: string;
+  label: string;
+  value: string | null;
+  media: StoreMedia[];
+  placeholder?: string;
+  accept?: "image" | "video" | "any";
+}
+const { name, label, value, media, placeholder = "https://...", accept = "image" } = Astro.props;
+const t = useT(Astro);
+const previewUrl = resolveMediaUrl(value, media);
+---
+
+<div class="form-group image-picker">
+  <label class="form-label">{label}</label>
+  <div class="image-picker-row">
+    <input class="form-input" name={name} value={value ?? ""} placeholder={placeholder} data-image-input />
+    {previewUrl && <img src={previewUrl} alt="" class="image-picker-preview" data-image-preview />}
+    <button type="button" class="btn btn-ghost image-picker-clear" data-image-clear>{t.common.clear}</button>
+  </div>
+  <button type="button" class="image-picker-toggle" data-image-toggle data-accept={accept}>{t.common.chooseFromLibrary}</button>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>(".image-picker").forEach((picker) => {
+    const input = picker.querySelector<HTMLInputElement>("[data-image-input]");
+    const toggleBtn = picker.querySelector<HTMLButtonElement>("[data-image-toggle]");
+    const clearBtn = picker.querySelector<HTMLButtonElement>("[data-image-clear]");
+    if (!input || !toggleBtn) return;
+
+    function setPreview(url: string) {
+      let preview = picker!.querySelector<HTMLImageElement>("[data-image-preview]");
+      if (!url) {
+        preview?.remove();
+        return;
+      }
+      if (!preview) {
+        preview = document.createElement("img");
+        preview.className = "image-picker-preview";
+        preview.setAttribute("data-image-preview", "");
+        clearBtn!.before(preview);
+      }
+      preview.src = url;
+    }
+
+    toggleBtn.addEventListener("click", async () => {
+      const openMediaPicker = (window as any).openMediaPicker;
+      if (!openMediaPicker) return;
+      const accept = toggleBtn.dataset.accept || "image";
+      const picked = await openMediaPicker({ multiple: false, accept });
+      if (picked && picked.length) {
+        input.value = picked[0].url;
+        setPreview(picked[0].url);
+      }
+    });
+
+    clearBtn?.addEventListener("click", () => {
+      input.value = "";
+      setPreview("");
+    });
+  });
+</script>
+
+<style is:global>
+  /* Global: the preview <img> is created client-side (no Astro scope attribute), so a
+     scoped stylesheet would silently fail to size it. */
+  .image-picker-row { display: flex; align-items: center; gap: 10px; }
+  .image-picker-row .form-input { flex: 1; }
+  .image-picker-preview {
+    width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-default);
+    flex-shrink: 0;
+  }
+  .image-picker-clear { padding: 6px 10px; font-size: 12px; flex-shrink: 0; }
+  .image-picker-toggle {
+    margin-top: 8px; font-size: 12px; padding: 4px 10px; border: 1px solid var(--border-default);
+    border-radius: 6px; background: none; cursor: pointer; color: var(--text-secondary);
+  }
+  .image-picker-toggle:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+</style>

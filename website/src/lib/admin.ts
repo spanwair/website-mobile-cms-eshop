@@ -8,6 +8,7 @@ type Client = SupabaseClient<Database>;
 export interface PartyRef {
   id: string;
   name: string;
+  slug: string;
 }
 
 export interface AdminCtx {
@@ -44,7 +45,7 @@ export async function requireAdminCtx(
 
   const { data: partyRows, error: partyErr } = await client
     .from("parties")
-    .select("id, name")
+    .select("id, name, slug")
     .order("name", { ascending: true });
 
   if (partyErr && partyErr.code !== "PGRST116" && !partyErr.message.includes("does not exist")) {
@@ -66,4 +67,25 @@ export async function requireAdminCtx(
       : 0;
 
   return { role, permissions, partyId, parties, isOwner, isGlobal };
+}
+
+// Lightweight check for "does this user have any admin panel access at all" —
+// used by nav components to decide whether to show a link to /admin, without
+// the party/permissions resolution that requireAdminCtx does for admin pages.
+export async function hasAdminAccess(client: Client, userId: string): Promise<boolean> {
+  const { data: profile } = await client
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .single();
+
+  const role = (profile?.role ?? 0) as number;
+  if (role < ROLE.ESHOP_ADMIN) return false;
+  if (role >= ROLE.ADMIN) return true;
+
+  const { count } = await client
+    .from("user_party_roles")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId);
+  return (count ?? 0) > 0;
 }

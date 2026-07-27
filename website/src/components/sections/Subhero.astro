@@ -1,0 +1,21 @@
+---
+import type { StoreConfig, StoreMedia } from "@shared/types";
+import { renderContent } from "../../lib/contentRenderer";
+
+interface Props { storeConfig: StoreConfig | null; media?: StoreMedia[] }
+const { storeConfig, media = [] } = Astro.props;
+const html = storeConfig?.subhero_content
+  ? renderContent(storeConfig.subhero_content, storeConfig.subhero_format, media)
+  : null;
+---
+
+{html && (
+  <section class="subhero">
+    <div class="container" set:html={html} />
+  </section>
+)}
+
+<style>
+  .subhero { padding: 40px 0; }
+  .subhero .container :global(img), .subhero .container :global(video) { max-width: 100%; border-radius: var(--radius-lg); }
+</style>

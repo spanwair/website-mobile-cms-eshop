@@ -47,6 +47,23 @@ export async function getOrCreateCart(
   return { ...data, items: [] } as unknown as Cart;
 }
 
+async function getAvailableStock(
+  client: Client,
+  productId: string,
+  variantId: string | null
+): Promise<number | null> {
+  let query = client
+    .from("inventory_items")
+    .select("qty_on_hand, qty_reserved")
+    .eq("product_id", productId);
+
+  query = variantId ? query.eq("variant_id", variantId) : query.is("variant_id", null);
+
+  const { data } = await query.maybeSingle();
+  if (!data) return null;
+  return data.qty_on_hand - data.qty_reserved;
+}
+
 export async function addToCart(
   client: Client,
   cartId: string,
@@ -55,6 +72,8 @@ export async function addToCart(
   unitPrice: number,
   variantId?: string | null
 ): Promise<{ error: Error | null }> {
+  const available = await getAvailableStock(client, productId, variantId ?? null);
+
   let existingQuery = client
     .from("cart_items")
     .select("id, quantity")
@@ -66,11 +85,16 @@ export async function addToCart(
     : existingQuery.is("variant_id", null);
 
   const { data: existing } = await existingQuery.maybeSingle();
+  const requestedTotal = (existing?.quantity ?? 0) + quantity;
+
+  if (available !== null && requestedTotal > available) {
+    return { error: new Error(`Only ${available} left in stock`) };
+  }
 
   if (existing) {
     const { error } = await client
       .from("cart_items")
-      .update({ quantity: existing.quantity + quantity })
+      .update({ quantity: requestedTotal })
       .eq("id", existing.id);
     return { error: error ? new Error(error.message) : null };
   }
@@ -94,6 +118,20 @@ export async function updateCartItemQty(
     const { error } = await client.from("cart_items").delete().eq("id", itemId);
     return { error: error ? new Error(error.message) : null };
   }
+
+  const { data: item } = await client
+    .from("cart_items")
+    .select("product_id, variant_id")
+    .eq("id", itemId)
+    .maybeSingle();
+
+  if (item) {
+    const available = await getAvailableStock(client, item.product_id, item.variant_id);
+    if (available !== null && quantity > available) {
+      return { error: new Error(`Only ${available} left in stock`) };
+    }
+  }
+
   const { error } = await client
     .from("cart_items")
     .update({ quantity })
@@ -143,6 +181,22 @@ export async function applyCoupon(
     .eq("id", cartId);
 
   return { discount: 0, error: null };
+}
+
+export async function fetchCartItemCount(client: Client, userId: string, partyId: string): Promise<number> {
+  const { data: cart } = await client
+    .from("carts")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("party_id", partyId)
+    .maybeSingle();
+  if (!cart) return 0;
+
+  const { data } = await client
+    .from("cart_items")
+    .select("quantity")
+    .eq("cart_id", cart.id);
+  return (data ?? []).reduce((sum, i) => sum + i.quantity, 0);
 }
 
 export function calcCartTotal(items: CartItem[]): {

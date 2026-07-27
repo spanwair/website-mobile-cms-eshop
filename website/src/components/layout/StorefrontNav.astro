@@ -1,0 +1,396 @@
+---
+import type { StoreConfig, NavItemWithChildren } from "@shared/types";
+import { useT, getLang } from "../../lib/i18n";
+import MegaNav from "./MegaNav.astro";
+
+interface Props {
+  storeConfig: StoreConfig | null;
+  brandName: string;
+  brandHref: string;
+  shopHref: string;
+  hasSession: boolean;
+  displayName: string | null;
+  navInitial: string;
+  cartCount: number;
+  currentPath: string;
+  navTree?: NavItemWithChildren[];
+  partyId?: string | null;
+  isAdmin?: boolean;
+}
+const { storeConfig, brandName, brandHref, shopHref, hasSession, displayName, navInitial, cartCount, currentPath, navTree = [], partyId = null, isAdmin = false } = Astro.props;
+const t = useT(Astro);
+const lang = getLang(Astro);
+
+const hours = storeConfig?.business_hours ?? null;
+const phone = storeConfig?.contact_phone ?? null;
+const email = storeConfig?.contact_email ?? null;
+const currency = storeConfig?.currency_code ?? "CZK";
+const showWishlist = storeConfig?.enable_wishlists ?? true;
+---
+
+<div class="storefront-topbar">
+  <div class="container topbar-inner">
+    <div class="topbar-left">
+      {hours && <span class="topbar-item"><span class="status-dot"></span>{hours}</span>}
+      {phone && <a href={`tel:${phone}`} class="topbar-item topbar-link">📞 {phone}</a>}
+      {email && <a href={`mailto:${email}`} class="topbar-item topbar-link">✉ {email}</a>}
+    </div>
+    <div class="topbar-right">
+      <span class="currency-badge">{currency}</span>
+      <div class="lang-switch">
+        <form method="POST" action="/api/set-lang">
+          <input type="hidden" name="lang" value="cs" />
+          <input type="hidden" name="redirect" value={currentPath} />
+          <button type="submit" class={`lang-btn ${lang === "cs" ? "lang-btn--active" : ""}`}>CS</button>
+        </form>
+        <form method="POST" action="/api/set-lang">
+          <input type="hidden" name="lang" value="en" />
+          <input type="hidden" name="redirect" value={currentPath} />
+          <button type="submit" class={`lang-btn ${lang === "en" ? "lang-btn--active" : ""}`}>EN</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <a href={brandHref} class="nav-brand">{brandName}</a>
+
+    <div
+      class="search-wrap"
+      id="nav-search-wrap"
+      data-shop-href={shopHref}
+      data-party-id={partyId ?? ""}
+      data-t-no-image={t.shop.noImage}
+      data-t-in-stock={t.shop.inStock}
+      data-t-out-of-stock={t.shop.outOfStock}
+      data-t-no-results={t.shop.searchNoResults}
+    >
+      <form method="GET" action={shopHref} class="nav-search" autocomplete="off">
+        <input type="search" name="q" id="nav-search-input" placeholder={t.shop.searchPlaceholder} class="nav-search-input" />
+        <button type="submit" class="nav-search-btn" aria-label={t.shop.search}>🔍</button>
+      </form>
+      <div class="search-dropdown" id="nav-search-dropdown" hidden>
+        <div class="search-categories" id="search-categories"></div>
+        <div class="search-products" id="search-products"></div>
+        <a class="search-viewall" id="search-viewall" href="#" hidden>{t.shop.searchViewAll}</a>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      {showWishlist && (
+        <a href={`${shopHref}/wishlist`} class="icon-link" title={t.shop.wishlist}>
+          <span class="icon-glyph">♡</span>
+          <span class="icon-label">{t.shop.wishlist}</span>
+        </a>
+      )}
+
+      {hasSession ? (
+        <div class="profile-menu">
+          <button class="profile-btn" id="profile-toggle" type="button">
+            <span class="nav-avatar">{navInitial}</span>
+            <span class="nav-name">{displayName}</span>
+            <span class="nav-chevron">▾</span>
+          </button>
+          <div class="dropdown" id="profile-dropdown">
+            <a href="/profile" class="dropdown-item">{t.nav.profile}</a>
+            <a href="/settings" class="dropdown-item">{t.nav.settings}</a>
+            {isAdmin && <a href="/admin" class="dropdown-item">{t.nav.admin}</a>}
+            <div class="dropdown-divider"></div>
+            <form action="/auth/signout" method="POST">
+              <button type="submit" class="dropdown-item dropdown-danger">{t.nav.signOut}</button>
+            </form>
+          </div>
+        </div>
+      ) : (
+        <a href={`/login?redirect=${currentPath}`} class="icon-link">
+          <span class="icon-glyph">👤</span>
+          <span class="icon-label">{t.nav.signIn}</span>
+        </a>
+      )}
+
+      <a href={`${shopHref}/cart`} class="icon-link icon-link--cart">
+        <span class="icon-glyph">🛒</span>
+        <span class="icon-label">{t.shop.cart}</span>
+        {cartCount > 0 && <span class="cart-badge">{cartCount}</span>}
+      </a>
+    </div>
+  </div>
+</nav>
+
+<MegaNav navTree={navTree} shopHref={shopHref} />
+
+<script>
+  const wrap = document.getElementById("nav-search-wrap");
+  const input = document.getElementById("nav-search-input") as HTMLInputElement | null;
+  const dropdown = document.getElementById("nav-search-dropdown");
+  const categoriesEl = document.getElementById("search-categories");
+  const productsEl = document.getElementById("search-products");
+  const viewAllEl = document.getElementById("search-viewall") as HTMLAnchorElement | null;
+
+  if (wrap && input && dropdown && categoriesEl && productsEl && viewAllEl) {
+    const shopHref = wrap.dataset.shopHref || "/shop";
+    const partyId = wrap.dataset.partyId || "";
+    const tNoImage = wrap.dataset.tNoImage || "";
+    const tInStock = wrap.dataset.tInStock || "";
+    const tOutOfStock = wrap.dataset.tOutOfStock || "";
+    const tNoResults = wrap.dataset.tNoResults || "";
+
+    let debounceTimer: ReturnType<typeof setTimeout>;
+    let controller: AbortController | null = null;
+    let activeIndex = -1;
+
+    function closeDropdown() {
+      dropdown!.hidden = true;
+      activeIndex = -1;
+    }
+
+    function formatPrice(value: number | string) {
+      return `${Number(value).toFixed(2)} Kč`;
+    }
+
+    function renderResults(query: string, categories: any[], products: any[]) {
+      categoriesEl!.replaceChildren();
+      productsEl!.replaceChildren();
+
+      for (const cat of categories) {
+        const a = document.createElement("a");
+        a.className = "search-chip";
+        a.href = `${shopHref}?category=${encodeURIComponent(cat.slug)}`;
+        if (cat.icon) {
+          const iconSpan = document.createElement("span");
+          iconSpan.className = "search-chip-icon";
+          iconSpan.textContent = cat.icon;
+          a.appendChild(iconSpan);
+        }
+        a.appendChild(document.createTextNode(cat.name));
+        categoriesEl!.appendChild(a);
+      }
+
+      for (const p of products) {
+        const a = document.createElement("a");
+        a.className = "search-product";
+        a.href = `${shopHref}/${p.slug}`;
+
+        const imgWrap = document.createElement("div");
+        imgWrap.className = "search-product-img";
+        if (p.primaryImage) {
+          const img = document.createElement("img");
+          img.src = p.primaryImage;
+          img.alt = p.title;
+          img.loading = "lazy";
+          imgWrap.appendChild(img);
+        } else {
+          imgWrap.textContent = tNoImage;
+        }
+        a.appendChild(imgWrap);
+
+        const info = document.createElement("div");
+        info.className = "search-product-info";
+
+        const title = document.createElement("span");
+        title.className = "search-product-title";
+        title.textContent = p.title;
+        info.appendChild(title);
+
+        if (p.categoryName) {
+          const cat = document.createElement("span");
+          cat.className = "search-product-category";
+          cat.textContent = p.categoryName;
+          info.appendChild(cat);
+        }
+
+        const meta = document.createElement("div");
+        meta.className = "search-product-meta";
+
+        const price = document.createElement("span");
+        price.className = "search-product-price";
+        if (p.discount_price) {
+          const oldPrice = document.createElement("span");
+          oldPrice.className = "search-price-old";
+          oldPrice.textContent = formatPrice(p.price);
+          price.appendChild(oldPrice);
+          price.appendChild(document.createTextNode(formatPrice(p.discount_price)));
+        } else {
+          price.textContent = formatPrice(p.price);
+        }
+        meta.appendChild(price);
+
+        const stock = document.createElement("span");
+        stock.className = `search-stock ${p.isOutOfStock ? "search-stock--out" : "search-stock--in"}`;
+        stock.textContent = p.isOutOfStock ? tOutOfStock : tInStock;
+        meta.appendChild(stock);
+
+        info.appendChild(meta);
+        a.appendChild(info);
+        productsEl!.appendChild(a);
+      }
+
+      const hasResults = categories.length > 0 || products.length > 0;
+      if (!hasResults) {
+        const empty = document.createElement("p");
+        empty.className = "search-empty";
+        empty.textContent = tNoResults;
+        productsEl!.appendChild(empty);
+      }
+      viewAllEl!.hidden = !hasResults;
+      viewAllEl!.href = `${shopHref}?q=${encodeURIComponent(query)}`;
+
+      dropdown!.hidden = false;
+      activeIndex = -1;
+    }
+
+    input.addEventListener("input", () => {
+      const query = input!.value.trim();
+      clearTimeout(debounceTimer);
+      if (controller) controller.abort();
+
+      if (query.length < 2) {
+        closeDropdown();
+        return;
+      }
+
+      debounceTimer = setTimeout(async () => {
+        controller = new AbortController();
+        try {
+          const partyParam = partyId ? `&partyId=${encodeURIComponent(partyId)}` : "";
+          const res = await fetch(`/api/search?q=${encodeURIComponent(query)}${partyParam}`, { signal: controller.signal });
+          const data = await res.json();
+          renderResults(query, data.categories ?? [], data.products ?? []);
+        } catch (err: any) {
+          if (err?.name !== "AbortError") closeDropdown();
+        }
+      }, 250);
+    });
+
+    input.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (dropdown!.hidden) return;
+      const items = Array.from(dropdown!.querySelectorAll<HTMLElement>(".search-chip, .search-product"));
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        activeIndex = Math.min(activeIndex + 1, items.length - 1);
+        items.forEach((el, i) => el.classList.toggle("active", i === activeIndex));
+        items[activeIndex]?.scrollIntoView({ block: "nearest" });
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        activeIndex = Math.max(activeIndex - 1, -1);
+        items.forEach((el, i) => el.classList.toggle("active", i === activeIndex));
+      } else if (e.key === "Enter") {
+        if (activeIndex >= 0 && items[activeIndex]) {
+          e.preventDefault();
+          window.location.href = (items[activeIndex] as HTMLAnchorElement).href;
+        }
+      } else if (e.key === "Escape") {
+        closeDropdown();
+        input!.blur();
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!wrap!.contains(e.target as Node)) closeDropdown();
+    });
+  }
+</script>
+
+<style>
+  .storefront-topbar { background: var(--text-primary); color: var(--bg-page); font-size: 13px; }
+  .topbar-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; height:38px; }
+  .topbar-left { display:flex; align-items:center; gap:20px; overflow:hidden; }
+  .topbar-item { display:flex; align-items:center; gap:6px; white-space:nowrap; color:var(--bg-page); opacity:0.9; }
+  .topbar-link { text-decoration:none; }
+  .topbar-link:hover { opacity:1; text-decoration:underline; }
+  .status-dot { width:7px; height:7px; border-radius:50%; background:#22c55e; flex-shrink:0; }
+  .topbar-right { display:flex; align-items:center; gap:14px; flex-shrink:0; }
+  .currency-badge { font-weight:700; opacity:0.9; }
+  .lang-switch { display:flex; gap:4px; }
+  .lang-btn {
+    background:none; border:1px solid color-mix(in srgb, var(--bg-page) 40%, transparent);
+    color:var(--bg-page); border-radius:4px; padding:2px 7px; font-size:12px; font-weight:700;
+    cursor:pointer; opacity:0.75; font-family:inherit;
+  }
+  .lang-btn--active { opacity:1; border-color:var(--bg-page); }
+  @media (max-width:768px) { .topbar-left { display:none; } }
+
+  .nav-inner { display:flex; align-items:center; gap:24px; height:64px; }
+  .nav-brand { font-size:20px; font-weight:900; color:var(--accent-primary); letter-spacing:-0.5px; flex-shrink:0; text-decoration:none; }
+  .search-wrap { position:relative; flex:1; max-width:520px; }
+  .nav-search { display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .nav-search-input { flex:1; border:none; padding:9px 14px; font-size:14px; background:var(--bg-subtle); }
+  .nav-search-input:focus { outline:none; }
+  .nav-search-btn { border:none; background:var(--bg-subtle); padding:0 14px; cursor:pointer; font-size:14px; }
+  .nav-right { display:flex; align-items:center; gap:20px; margin-left:auto; }
+  .icon-link { display:flex; align-items:center; gap:6px; color:var(--text-secondary); text-decoration:none; font-size:13px; font-weight:600; position:relative; }
+  .icon-link:hover { color:var(--accent-primary); text-decoration:none; }
+  .icon-glyph { font-size:18px; line-height:1; }
+  .cart-badge {
+    position:absolute; top:-8px; right:-10px; background:var(--accent-primary); color:#fff;
+    font-size:10px; font-weight:700; border-radius:9999px; min-width:16px; height:16px;
+    display:flex; align-items:center; justify-content:center; padding:0 4px;
+  }
+  @media (max-width:900px) { .icon-label { display:none; } }
+  @media (max-width:640px) { .search-wrap { display:none; } }
+
+  .search-dropdown {
+    position:absolute; top:calc(100% + 8px); left:0; right:0; z-index:30;
+    background:var(--bg-page); border:1px solid var(--border); border-radius:12px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.1); padding:16px; max-height:70vh; overflow-y:auto;
+  }
+  .search-dropdown[hidden] { display:none; }
+  .search-categories { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .search-categories:empty { display:none; margin:0; }
+  .search-products { display:flex; flex-direction:column; gap:2px; }
+  .search-viewall {
+    display:block; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);
+    text-align:center; font-size:13px; font-weight:700; color:var(--accent-primary); text-decoration:none;
+  }
+  .search-viewall[hidden] { display:none; }
+  .search-viewall:hover { text-decoration:underline; }
+
+  .profile-menu { position:relative; }
+  .profile-btn { display:flex; align-items:center; gap:8px; background:var(--bg-subtle); border:1px solid var(--border); border-radius:9999px; padding:6px 14px 6px 6px; cursor:pointer; }
+  .nav-avatar { width:28px; height:28px; border-radius:50%; background:var(--accent-primary); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; }
+  .nav-name { font-size:13px; font-weight:600; color:var(--text-primary); max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nav-chevron { font-size:11px; color:var(--text-secondary); }
+  @media (max-width:900px) { .nav-name, .nav-chevron { display:none; } }
+
+  .dropdown { display:none; position:absolute; right:0; top:calc(100% + 8px); background:var(--bg-page); border:1px solid var(--border); border-radius:12px; padding:6px; min-width:160px; box-shadow:0 4px 16px rgba(0,0,0,0.1); z-index:10; }
+  .dropdown.open { display:flex; flex-direction:column; }
+  .dropdown-divider { height:1px; background:var(--border); margin:4px 0; }
+  .dropdown-item { display:block; padding:10px 14px; font-size:14px; font-weight:500; color:var(--text-primary); border-radius:8px; text-align:left; background:none; border:none; cursor:pointer; width:100%; font-family:inherit; text-decoration:none; }
+  .dropdown-item:hover { background:var(--bg-subtle); color:var(--text-primary); text-decoration:none; }
+  .dropdown-danger { color:#EF4444; }
+  .dropdown-danger:hover { background:rgba(239,68,68,0.08); color:#EF4444; }
+</style>
+
+<!-- Astro's scoped-style attribute is only injected into server-rendered markup — the search
+     result items below are built by nav-search's client script via document.createElement, so
+     their rules must live in a global (unscoped) block to actually apply. -->
+<style is:global>
+  .search-chip {
+    display:flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid var(--border);
+    border-radius:9999px; font-size:13px; font-weight:600; color:var(--text-primary);
+    text-decoration:none; background:var(--bg-subtle);
+  }
+  .search-chip:hover, .search-chip.active { border-color:var(--accent-primary); color:var(--accent-primary); text-decoration:none; }
+  .search-chip-icon { font-size:14px; line-height:1; }
+  .search-product { display:flex; align-items:center; gap:12px; padding:8px; border-radius:8px; text-decoration:none; color:inherit; }
+  .search-product:hover, .search-product.active { background:var(--bg-subtle); text-decoration:none; }
+  .search-product-img {
+    width:48px; height:48px; border-radius:6px; overflow:hidden; background:var(--bg-subtle);
+    flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:9px;
+    color:var(--text-muted); text-align:center; line-height:1.2;
+  }
+  .search-product-img img { width:100%; height:100%; object-fit:cover; }
+  .search-product-info { display:flex; flex-direction:column; gap:2px; min-width:0; flex:1; }
+  .search-product-title { font-size:13px; font-weight:600; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .search-product-category { font-size:11px; color:var(--text-secondary); }
+  .search-product-meta { display:flex; align-items:center; gap:10px; margin-top:2px; }
+  .search-product-price { font-size:13px; font-weight:700; color:var(--text-primary); display:flex; gap:6px; align-items:center; }
+  .search-price-old { font-size:11px; font-weight:500; color:var(--text-muted); text-decoration:line-through; }
+  .search-stock { font-size:11px; font-weight:600; }
+  .search-stock--in { color:#16a34a; }
+  .search-stock--out { color:#dc2626; }
+  .search-empty { font-size:13px; color:var(--text-secondary); padding:8px 4px; margin:0; }
+</style>

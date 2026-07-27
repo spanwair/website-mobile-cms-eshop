@@ -2,6 +2,7 @@
 import Layout from "../layout/Layout.astro";
 import Sidebar from "./Sidebar.astro";
 import PartySwitcher from "./PartySwitcher.astro";
+import MediaPickerModal from "./MediaPickerModal.astro";
 
 interface Props {
   title: string;
@@ -28,6 +29,7 @@ const { title, userPermissions, currentPath, parties = [], partyId = null } = As
       </div>
     </div>
   </div>
+  {partyId && <MediaPickerModal />}
 </Layout>
 
 <style>

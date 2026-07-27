@@ -1,0 +1,181 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import CmsTabs from "../../../components/cms/CmsTabs.astro";
+import CreatableCombobox from "../../../components/cms/CreatableCombobox.astro";
+import { createSupabase } from "../../../lib/supabase";
+import {
+  fetchNavItemsFlat, createNavItem, updateNavItem, deleteNavItem,
+} from "@shared/services/navItemService";
+import { fetchCategories } from "@shared/services/categoryService";
+import { fetchContentPages } from "@shared/services/contentPageService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions, partyId } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
+const t = useT(Astro);
+const s = t.admin.cms;
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = (form.get("_action") as string) ?? "save";
+  const id = form.get("id") as string;
+
+  if (action === "delete" && id) {
+    await deleteNavItem(supabase, id);
+  } else {
+    const categoryId = (form.get("category_id") as string) || null;
+    const input = {
+      label: (form.get("label") as string).trim(),
+      url: categoryId ? null : (form.get("url") as string) || null,
+      category_id: categoryId,
+      parent_id: (form.get("parent_id") as string) || null,
+      column_label: (form.get("column_label") as string) || null,
+      is_mega: form.get("is_mega") === "on",
+      sort_order: parseInt((form.get("sort_order") as string) || "0", 10),
+      is_visible: form.get("is_visible") === "on",
+    };
+    const result = id
+      ? await updateNavItem(supabase, id, input)
+      : await createNavItem(supabase, { ...input, party_id: partyId });
+    if (result.error) error = result.error.message;
+  }
+  if (!error) return Astro.redirect("/admin/cms/navigation");
+}
+
+const items = await fetchNavItemsFlat(supabase, partyId);
+const categories = await fetchCategories(supabase, partyId);
+const contentPages = await fetchContentPages(supabase, partyId);
+const urlOptions = contentPages.map((p) => ({ label: p.title, value: `/stranka/${p.slug}` }));
+const topLevel = items.filter((n) => !n.parent_id);
+const editId = Astro.url.searchParams.get("edit");
+const editing = editId ? items.find((n) => n.id === editId) ?? null : null;
+---
+
+<CmsLayout title={s.navTitle} userPermissions={permissions} currentPath="/admin/cms/navigation" parties={ctx.parties} partyId={ctx.partyId}>
+  <CmsTabs active="navigation" />
+  {error && <div class="alert-error">{error}</div>}
+  <p class="content-hint">{s.navHint}</p>
+
+  <div class="card" style="max-width:720px;margin-bottom:24px">
+    <h2 class="section-title">{editing ? t.common.edit : s.addNavItemBtn}</h2>
+    <form method="POST" class="nav-form">
+      {editing && <input type="hidden" name="id" value={editing.id} />}
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldLabel}</label>
+          <input class="form-input" name="label" required value={editing?.label ?? ""} />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldParent}</label>
+          <select class="form-input" name="parent_id">
+            <option value="">{t.admin.categories.noParentOption}</option>
+            {topLevel.filter((n) => n.id !== editId).map((n) => (
+              <option value={n.id} selected={editing?.parent_id === n.id}>{n.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldCategory}</label>
+          <select class="form-input" name="category_id">
+            <option value="">{s.noCategoryOption}</option>
+            {categories.map((c) => (
+              <option value={c.id} selected={editing?.category_id === c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldUrl}</label>
+          <CreatableCombobox
+            name="url"
+            value={editing?.url ?? ""}
+            options={urlOptions}
+            placeholder="/stranka/o-nas"
+            createLabel={s.urlCreateLabel}
+            urlOnly
+          />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{s.fieldColumnLabel}</label>
+          <input class="form-input" name="column_label" value={editing?.column_label ?? ""} placeholder="iPhone" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldSortOrder}</label>
+          <input class="form-input" type="number" name="sort_order" value={editing?.sort_order ?? 0} />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-check">
+          <input type="checkbox" name="is_mega" id="is_mega" checked={editing?.is_mega ?? false} />
+          <label for="is_mega">{s.fieldIsMega}</label>
+        </div>
+        <div class="form-check">
+          <input type="checkbox" name="is_visible" id="nav_visible" checked={editing ? editing.is_visible : true} />
+          <label for="nav_visible">{t.admin.settings.fieldVisible}</label>
+        </div>
+      </div>
+      <div class="form-actions">
+        {editing && <a href="/admin/cms/navigation" class="btn btn-ghost">{t.common.cancel}</a>}
+        <button type="submit" class="btn btn-primary">{editing ? t.common.saveChanges : s.addNavItemBtn}</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead>
+        <tr><th>{s.colLabel}</th><th>{s.colTarget}</th><th>{s.colParent}</th><th>{s.colMega}</th><th>{s.colOrder}</th><th>{s.colActions}</th></tr>
+      </thead>
+      <tbody>
+        {items.map((n) => (
+          <tr>
+            <td style="font-weight:600">{n.label}</td>
+            <td style="color:var(--text-muted)">{n.category_id ? categories.find((c) => c.id === n.category_id)?.name : n.url}</td>
+            <td>{items.find((p) => p.id === n.parent_id)?.label ?? "—"}</td>
+            <td>{n.is_mega ? "✓" : "—"}</td>
+            <td>{n.sort_order}</td>
+            <td class="action-cell">
+              <a href={`/admin/cms/navigation?edit=${n.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.common.edit}</a>
+              <form method="POST" onsubmit={`return confirm('${t.common.delete}?')`} style="display:inline">
+                <input type="hidden" name="_action" value="delete" />
+                <input type="hidden" name="id" value={n.id} />
+                <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{t.common.delete}</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+        {items.length === 0 && (
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noNavItems}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</CmsLayout>
+
+<style>
+  .section-title { font-size:15px; font-weight:700; margin-bottom:16px; }
+  .content-hint { font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+  .nav-form { display:flex; flex-direction:column; gap:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .form-check input { width:auto; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; }
+  .action-cell { display:flex; gap:8px; align-items:center; }
+  .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
+  @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>
