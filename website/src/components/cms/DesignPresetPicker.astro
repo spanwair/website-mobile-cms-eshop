@@ -52,7 +52,7 @@ const COLOR_FIELDS = [
   <span class="save-preset-error"></span>
 </div>
 
-<script define:vars={{ colorFields: COLOR_FIELDS }}>
+<script define:vars={{ colorFields: COLOR_FIELDS, saveTemplateError: s.saveTemplateError }}>
   document.querySelectorAll(".preset-card, .preset-apply").forEach((btn) => {
     btn.addEventListener("click", () => {
       const preset = JSON.parse(btn.dataset.preset ?? "{}");
@@ -108,7 +108,7 @@ const COLOR_FIELDS = [
       location.reload();
     } else {
       saveBtn.disabled = false;
-      if (errorEl) errorEl.textContent = body.error ?? "Failed to save template";
+      if (errorEl) errorEl.textContent = body.error ?? saveTemplateError;
     }
   });
 </script>

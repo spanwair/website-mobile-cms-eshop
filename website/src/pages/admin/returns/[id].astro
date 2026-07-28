@@ -4,7 +4,7 @@ import { createSupabase } from "../../../lib/supabase";
 import { requireAdminCtx } from "../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { fetchReturn, updateReturnStatus } from "@shared/services/returnService";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -12,11 +12,12 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_ORDERS)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const { id } = Astro.params;
 
@@ -39,6 +40,7 @@ if (Astro.request.method === "POST") {
 
   if (status === "received") updates.received_at = new Date().toISOString();
   if (status === "completed") updates.completed_at = new Date().toISOString();
+  if (status) updates.processed_by = session.user.id;
 
   await updateReturnStatus(supabase, id!, updates as Parameters<typeof updateReturnStatus>[2]);
   return Astro.redirect(`/admin/returns/${id}`);
@@ -58,13 +60,32 @@ function statusClass(s: string) {
   };
   return map[s] ?? "badge-draft";
 }
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: t.admin.returns.statusPending, approved: t.admin.returns.statusApproved,
+  received: t.admin.returns.statusReceived, processing: t.admin.returns.statusProcessing,
+  completed: t.admin.returns.statusCompleted, rejected: t.admin.returns.statusRejected,
+  cancelled: t.admin.returns.statusCancelled,
+};
+const REASON_LABELS: Record<string, string> = {
+  wrong_item: t.admin.returns.reasonWrongItem, damaged: t.admin.returns.reasonDamaged, defective: t.admin.returns.reasonDefective,
+  not_as_described: t.admin.returns.reasonNotAsDescribed, changed_mind: t.admin.returns.reasonChangedMind,
+  quality_issue: t.admin.returns.reasonQualityIssue, size_issue: t.admin.returns.reasonSizeIssue, other: t.admin.returns.reasonOther,
+};
+const RESOLUTION_LABELS: Record<string, string> = {
+  refund: t.admin.returns.resolutionRefund, exchange: t.admin.returns.resolutionExchange, store_credit: t.admin.returns.storeCredit,
+};
+const REFUND_METHOD_LABELS: Record<string, string> = {
+  original_payment: t.admin.returns.refundMethodOriginalPayment, store_credit: t.admin.returns.storeCredit,
+  bank_transfer: t.admin.returns.refundMethodBankTransfer,
+};
 ---
 
-<CmsLayout title={`Return ${rma.return_number}`} userPermissions={permissions} currentPath="/admin/returns" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.returns.detailTitle.replace("{{number}}", rma.return_number)} userPermissions={permissions} currentPath="/admin/returns" parties={ctx.parties} partyId={ctx.partyId}>
   <div class="toolbar">
     <a href="/admin/returns" class="btn btn-ghost">{t.admin.returns.back}</a>
     <h1 class="page-title">{rma.return_number}</h1>
-    <span class={`badge ${statusClass(rma.status)}`}>{rma.status}</span>
+    <span class={`badge ${statusClass(rma.status)}`}>{STATUS_LABELS[rma.status] ?? rma.status}</span>
   </div>
 
   <div class="detail-grid">
@@ -74,13 +95,13 @@ function statusClass(s: string) {
         <dt>{t.admin.returns.fieldOrder}</dt>
         <dd><a href={`/admin/orders/${rma.order_id}`}>{rma.order_id.slice(0, 8)}</a></dd>
         <dt>{t.admin.returns.fieldReason}</dt>
-        <dd>{rma.reason.replace(/_/g, " ")}</dd>
+        <dd>{REASON_LABELS[rma.reason] ?? rma.reason}</dd>
         <dt>{t.admin.returns.fieldCustomerNotes}</dt>
         <dd>{rma.customer_notes ?? "—"}</dd>
         <dt>{t.admin.returns.fieldCreated}</dt>
-        <dd>{new Date(rma.created_at).toLocaleString("cs-CZ")}</dd>
-        {rma.received_at && <><dt>{t.admin.returns.fieldReceived}</dt><dd>{new Date(rma.received_at).toLocaleString("cs-CZ")}</dd></>}
-        {rma.completed_at && <><dt>{t.admin.returns.fieldCompleted}</dt><dd>{new Date(rma.completed_at).toLocaleString("cs-CZ")}</dd></>}
+        <dd>{new Date(rma.created_at).toLocaleString(lang)}</dd>
+        {rma.received_at && <><dt>{t.admin.returns.fieldReceived}</dt><dd>{new Date(rma.received_at).toLocaleString(lang)}</dd></>}
+        {rma.completed_at && <><dt>{t.admin.returns.fieldCompleted}</dt><dd>{new Date(rma.completed_at).toLocaleString(lang)}</dd></>}
       </dl>
     </div>
 
@@ -90,14 +111,14 @@ function statusClass(s: string) {
         <div class="field">
           <label>{t.admin.returns.fieldStatus}</label>
           <select name="status" class="input">
-            {STATUSES.map(s => <option value={s} selected={s === rma.status}>{s}</option>)}
+            {STATUSES.map(s => <option value={s} selected={s === rma.status}>{STATUS_LABELS[s] ?? s}</option>)}
           </select>
         </div>
         <div class="field">
           <label>{t.admin.returns.fieldResolution}</label>
           <select name="resolution" class="input">
             <option value="">{t.admin.returns.notSet}</option>
-            {RESOLUTIONS.map(r => <option value={r} selected={r === rma.resolution}>{r.replace(/_/g, " ")}</option>)}
+            {RESOLUTIONS.map(r => <option value={r} selected={r === rma.resolution}>{RESOLUTION_LABELS[r] ?? r}</option>)}
           </select>
         </div>
         <div class="field">
@@ -108,7 +129,7 @@ function statusClass(s: string) {
           <label>{t.admin.returns.fieldRefundMethod}</label>
           <select name="refund_method" class="input">
             <option value="">{t.admin.returns.notSet}</option>
-            {REFUND_METHODS.map(m => <option value={m} selected={m === rma.refund_method}>{m.replace(/_/g, " ")}</option>)}
+            {REFUND_METHODS.map(m => <option value={m} selected={m === rma.refund_method}>{REFUND_METHOD_LABELS[m] ?? m}</option>)}
           </select>
         </div>
         <div class="field">

@@ -78,13 +78,13 @@ test.describe("24-A — permission gating: OWNER/ADMIN always in, USER always ou
     await page.close();
   });
 
-  test("24-A-03 user blocked from all settings pages (redirects to /dashboard)", async ({ browser }: { browser: Browser }) => {
+  test("24-A-03 user blocked from all settings pages (redirects to /)", async ({ browser }: { browser: Browser }) => {
     const page = await browser.newPage();
     await loginAs(page, USER.email, USER.password);
     for (const url of SETTINGS_PAGES) {
       await page.goto(`${BASE}${url}`);
       await page.waitForLoadState("networkidle");
-      await expect(page).toHaveURL(`${BASE}/dashboard`);
+      await expect(page).toHaveURL(`${BASE}/`);
     }
     await page.close();
   });

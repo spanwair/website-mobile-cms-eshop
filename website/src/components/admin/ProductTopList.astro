@@ -1,0 +1,42 @@
+---
+import type { ProductOverviewStats } from "@shared/types";
+import { useT, getLang } from "../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
+
+interface Props {
+  topProducts: ProductOverviewStats["top_products"];
+}
+
+const { topProducts } = Astro.props;
+const t = useT(Astro);
+const lang = getLang(Astro);
+const po = t.admin.productsOverview;
+---
+
+<div class="card" data-section="top-products">
+  <h2 class="section-title">{po.topProductsTitle}</h2>
+  {topProducts.length === 0 ? (
+    <p class="empty">{po.noData}</p>
+  ) : (
+    <table class="data-table">
+      <thead>
+        <tr><th>{po.colProduct}</th><th>{po.colQtySold}</th><th>{po.colRevenue}</th><th>{po.colProfit}</th></tr>
+      </thead>
+      <tbody>
+        {topProducts.map((p) => (
+          <tr>
+            <td style="font-weight:600">{p.title}</td>
+            <td>{p.qty_sold}</td>
+            <td>{formatPrice(p.revenue, lang)}</td>
+            <td style={p.profit >= 0 ? "color:var(--success)" : "color:var(--error)"}>{formatPrice(p.profit, lang)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
+
+<style>
+  .empty { color: var(--text-muted); font-size: 14px; padding: 16px 0; }
+  .section-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+</style>

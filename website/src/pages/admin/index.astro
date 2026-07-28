@@ -1,12 +1,16 @@
 ---
 import CmsLayout from "../../components/cms/CmsLayout.astro";
+import ProductsOverviewSection from "../../components/admin/ProductsOverviewSection.astro";
 import { createSupabase } from "../../lib/supabase";
 import { fetchUsersForAdmin } from "@shared/services/profileService";
 import { fetchProducts } from "@shared/services/productService";
 import { fetchOrders } from "@shared/services/orderService";
+import { fetchProductOverview, fetchProductActivityLog } from "@shared/services/productOverviewService";
+import type { ProductOverviewStats, ProductActivityEvent } from "@shared/types";
 import { requireAdminCtx } from "../../lib/admin";
-import { useT } from "../../lib/i18n";
+import { useT, getLang } from "../../lib/i18n";
 import { ROLE, PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -14,13 +18,14 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 // Eshop admin with no party has nothing to manage yet.
 if (!ctx.isGlobal && !ctx.partyId) return Astro.redirect("/admin/setup");
 
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.VIEW_DASHBOARD)) return Astro.redirect("/admin/notifications");
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const canUsers    = hasPermission(permissions, PERMISSIONS.MANAGE_USERS);
 const canProducts = hasPermission(permissions, PERMISSIONS.MANAGE_PRODUCTS);
@@ -43,6 +48,8 @@ let activeProducts = 0;
 let totalOrders = 0;
 let recentOrders: Awaited<ReturnType<typeof fetchOrders>>["data"] = [];
 let revenue = 0;
+let productOverview: ProductOverviewStats | null = null;
+let productActivity: ProductActivityEvent[] = [];
 
 const { error: tablesProbeError } = await supabase.from("parties").select("id").limit(0);
 const tablesReady = !tablesProbeError;
@@ -55,6 +62,10 @@ if (tablesReady && partyId) {
     ]);
     totalProducts = allProds.total;
     activeProducts = activProds.total;
+    [productOverview, productActivity] = await Promise.all([
+      fetchProductOverview(supabase, partyId, 30),
+      fetchProductActivityLog(supabase, partyId, 40),
+    ]);
   }
   if (canOrders) {
     const ordersResult = await fetchOrders(supabase, partyId, { pageSize: 5 });
@@ -75,7 +86,7 @@ const kpis = [
   ...(canProducts ? [{ key: "total-products", label: t.admin.kpiTotalProducts, value: totalProducts },
                      { key: "active-products", label: t.admin.kpiActiveProducts, value: activeProducts }] : []),
   ...(canOrders   ? [{ key: "total-orders",   label: t.admin.kpiTotalOrders,   value: totalOrders }] : []),
-  ...((canOrders || canReports) ? [{ key: "revenue", label: t.admin.kpiRevenue, value: `${revenue.toFixed(2)} Kč` }] : []),
+  ...((canOrders || canReports) ? [{ key: "revenue", label: t.admin.kpiRevenue, value: formatPrice(revenue, lang) }] : []),
 ];
 
 function statusClass(s: string) {
@@ -85,6 +96,12 @@ function statusClass(s: string) {
   };
   return map[s] ?? "badge-inactive";
 }
+const STATUS_LABELS: Record<string, string> = {
+  pending: t.admin.orders.tabPending, confirmed: t.admin.orders.tabConfirmed, processing: t.admin.orders.tabProcessing,
+  shipped: t.admin.orders.tabShipped, delivered: t.admin.orders.tabDelivered, cancelled: t.admin.orders.tabCancelled,
+  refunded: t.admin.orders.statusRefunded,
+};
+const dateLocale = lang === "en" ? "en-US" : "cs-CZ";
 ---
 
 <CmsLayout title={t.admin.dashboard} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
@@ -93,8 +110,8 @@ function statusClass(s: string) {
   )}
   {tablesReady && !partyId && ctx.isOwner && (
     <div class="info-banner">
-      No organizations created yet.
-      <a href="/admin/parties/new" class="banner-link">Create your first organization</a> to start managing your store.
+      {t.admin.noOrgsYet}
+      <a href="/admin/parties/new" class="banner-link">{t.admin.createFirstOrgLink}</a> {t.admin.createFirstOrgSuffix}
     </div>
   )}
   {tablesReady && !partyId && !ctx.isOwner && (
@@ -112,6 +129,10 @@ function statusClass(s: string) {
     ))}
   </div>
 
+  {canProducts && productOverview && (
+    <ProductsOverviewSection stats={productOverview} activity={productActivity} locale={dateLocale} />
+  )}
+
   {(canOrders || canReports) && (
     <div class="dashboard-grid">
       {canOrders && (
@@ -128,9 +149,9 @@ function statusClass(s: string) {
                 {recentOrders.map((o) => (
                   <tr>
                     <td><a href={`/admin/orders/${o.id}`}>{o.order_number}</a></td>
-                    <td><span class={`badge ${statusClass(o.status)}`}>{o.status}</span></td>
-                    <td>{o.total_amount.toFixed(2)} Kč</td>
-                    <td>{new Date(o.created_at).toLocaleDateString("cs-CZ")}</td>
+                    <td><span class={`badge ${statusClass(o.status)}`}>{STATUS_LABELS[o.status] ?? o.status}</span></td>
+                    <td>{formatPrice(o.total_amount, lang)}</td>
+                    <td>{new Date(o.created_at).toLocaleDateString(dateLocale)}</td>
                   </tr>
                 ))}
               </tbody>

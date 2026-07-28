@@ -1,0 +1,101 @@
+---
+interface Stage {
+  key: string;
+  label: string;
+  value: number;
+  color: string;
+}
+
+interface Props {
+  stages: Stage[];
+  unitsSuffix: string;
+  showTableLabel: string;
+  colStage: string;
+  colUnits: string;
+}
+
+const { stages, unitsSuffix, showTableLabel, colStage, colUnits } = Astro.props;
+const max = Math.max(1, ...stages.map((s) => s.value));
+
+const rowH = 40;
+const chartW = 560;
+const chartH = stages.length * rowH;
+const labelW = 160;
+const barMaxW = chartW - labelW - 60;
+---
+
+<div class="lifecycle-chart">
+  <svg viewBox={`0 0 ${chartW} ${chartH}`} role="img" aria-label={`${colStage} vs ${colUnits}`} class="chart-svg">
+    {stages.map((s, i) => {
+      const barW = Math.max(2, (s.value / max) * barMaxW);
+      const y = i * rowH;
+      return (
+        <g class="bar-row" tabindex="0" role="img" aria-label={`${s.label}: ${s.value} ${unitsSuffix}`} data-label={s.label} data-value={`${s.value} ${unitsSuffix}`}>
+          <text x={0} y={y + rowH / 2 + 4} class="row-label">{s.label}</text>
+          <rect x={labelW} y={y + 8} width={barMaxW} height={rowH - 16} rx="4" class="bar-track" />
+          <rect x={labelW} y={y + 8} width={barW} height={rowH - 16} rx="4" fill={s.color} class="bar-fill" />
+          <text x={labelW + barW + 8} y={y + rowH / 2 + 4} class="value-label">{s.value}</text>
+        </g>
+      );
+    })}
+  </svg>
+  <div class="tooltip" id="lifecycle-tooltip" hidden></div>
+
+  <details class="table-fallback">
+    <summary>{showTableLabel}</summary>
+    <table class="data-table">
+      <thead><tr><th>{colStage}</th><th>{colUnits}</th></tr></thead>
+      <tbody>
+        {stages.map((s) => (
+          <tr><td><span class="swatch" style={`background:${s.color}`}></span>{s.label}</td><td>{s.value}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </details>
+</div>
+
+<script>
+  const tooltip = document.getElementById("lifecycle-tooltip") as HTMLDivElement | null;
+  const rows = document.querySelectorAll<SVGGElement>(".lifecycle-chart .bar-row");
+
+  function show(row: SVGGElement, x: number, y: number) {
+    if (!tooltip) return;
+    tooltip.textContent = `${row.dataset.label}: ${row.dataset.value}`;
+    tooltip.style.left = `${x + 12}px`;
+    tooltip.style.top = `${y - 8}px`;
+    tooltip.hidden = false;
+  }
+  function hide() {
+    if (tooltip) tooltip.hidden = true;
+  }
+
+  rows.forEach((row) => {
+    row.addEventListener("pointermove", (e) => show(row, (e as PointerEvent).clientX, (e as PointerEvent).clientY));
+    row.addEventListener("pointerenter", (e) => show(row, (e as PointerEvent).clientX, (e as PointerEvent).clientY));
+    row.addEventListener("pointerleave", hide);
+    row.addEventListener("focus", () => {
+      const rect = row.getBoundingClientRect();
+      show(row, rect.left, rect.top);
+    });
+    row.addEventListener("blur", hide);
+  });
+</script>
+
+<style>
+  .lifecycle-chart { position: relative; }
+  .chart-svg { width: 100%; height: auto; }
+  .row-label { font-size: 12px; fill: var(--text-muted); dominant-baseline: middle; }
+  .value-label { font-size: 12px; font-weight: 700; fill: var(--text-primary); }
+  .bar-track { fill: var(--bg-subtle); }
+  .bar-fill { transition: opacity 0.15s; }
+  .bar-row:hover .bar-fill, .bar-row:focus .bar-fill { opacity: 0.85; }
+  .bar-row:focus { outline: none; }
+  .bar-row:focus .bar-track { stroke: var(--accent-primary); stroke-width: 2; }
+  .tooltip {
+    position: fixed; background: var(--text-primary); color: #fff; font-size: 12px;
+    padding: 6px 10px; border-radius: 6px; pointer-events: none; z-index: 50;
+  }
+  .table-fallback { margin-top: 12px; }
+  .table-fallback summary { cursor: pointer; font-size: 13px; color: var(--accent-primary); }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; }
+</style>

@@ -129,22 +129,22 @@ test.describe("25 — /eshop-[slug] per-organization storefront", () => {
     await expect(page.locator(".confirmation-card")).toBeVisible();
   });
 
-  test("25-07 storefront nav stays scoped to the org — no Dashboard/Items/Admin links, brand click stays inside /eshop-{slug} — but the same admin still sees them on /dashboard", async ({ browser }: { browser: Browser }) => {
+  test("25-07 storefront nav stays scoped to the org — no Items link, brand click stays inside /eshop-{slug} — generic nav elsewhere shows a smart Obchod link plus Admin in the profile dropdown", async ({ browser }: { browser: Browser }) => {
     const adminPage = await browser.newPage();
     await loginAs(adminPage, ADMIN.email, ADMIN.password);
 
     await adminPage.goto(`${BASE}/eshop-test-organisation`);
     await adminPage.waitForLoadState("networkidle");
     await screenshot(adminPage, "25-07-eshop-nav-scoped");
-    await expect(adminPage.locator('a[href="/dashboard"]')).toHaveCount(0);
     await expect(adminPage.locator('a[href="/items"]')).toHaveCount(0);
-    await expect(adminPage.locator('a[href="/admin"]')).toHaveCount(0);
+    // /admin is intentionally reachable from the storefront too, via the hidden profile dropdown.
     await expect(adminPage.locator("a.nav-brand")).toHaveAttribute("href", "/eshop-test-organisation");
 
-    await adminPage.goto(`${BASE}/dashboard`);
+    await adminPage.goto(`${BASE}/admin`);
     await adminPage.waitForLoadState("networkidle");
-    await expect(adminPage.locator('nav a[href="/dashboard"]')).toBeVisible();
-    await expect(adminPage.locator('nav a[href="/admin"]')).toBeVisible();
+    await expect(adminPage.locator('.nav-links a[href^="/eshop-"]')).toBeVisible();
+    await adminPage.locator("#profile-toggle").click();
+    await expect(adminPage.locator('.dropdown-item[href="/admin"]')).toBeVisible();
     await adminPage.close();
   });
 });

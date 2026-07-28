@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@shared/supabase/types";
+import type { AppLanguage } from "@shared/i18n/getT";
 import { createCheckoutSession, retrieveCheckoutSession } from "./integrations/stripe";
 import { sendOrderConfirmation } from "./integrations/email";
 
@@ -42,7 +43,8 @@ export async function startOrderCheckout(opts: {
 export async function confirmStripeSession(
   adminClient: AdminClient,
   sessionId: string,
-  orderNumber: string
+  orderNumber: string,
+  lang: AppLanguage = "cs"
 ): Promise<void> {
   try {
     const session = await retrieveCheckoutSession(sessionId);
@@ -83,6 +85,7 @@ export async function confirmStripeSession(
       orderTotal: order.total_amount,
       items: items.map((i) => ({ title: i.title, quantity: i.quantity, price: i.unit_price })),
       currency: order.currency,
+      lang,
     });
   } catch (err) {
     console.error("confirmStripeSession failed:", (err as Error).message);

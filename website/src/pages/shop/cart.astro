@@ -2,10 +2,12 @@
 import Layout from "../../components/layout/Layout.astro";
 import { createSupabase } from "../../lib/supabase";
 import { applyCoupon, updateCartItemQty, removeFromCart, calcCartTotal } from "@shared/services/cartService";
-import { useT } from "../../lib/i18n";
+import { useT, getLang } from "../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect("/login?redirect=/shop/cart");
@@ -76,7 +78,7 @@ const { subtotal, itemCount } = calcCartTotal(
                 {img && <img src={img} alt={prod?.title} class="item-img" />}
                 <div class="item-info">
                   <a href={`/shop/${prod?.slug}`} class="item-title">{prod?.title}</a>
-                  <p class="item-price">{price.toFixed(2)} Kč</p>
+                  <p class="item-price">{formatPrice(price, lang)}</p>
                 </div>
                 <form method="POST" class="qty-form">
                   <input type="hidden" name="_action" value="update_qty" />
@@ -84,7 +86,7 @@ const { subtotal, itemCount } = calcCartTotal(
                   <input type="number" name="quantity" value={item.quantity} min="1" max="99" class="qty-input"
                     onchange="this.form.submit()" />
                 </form>
-                <p class="item-total">{(price * item.quantity).toFixed(2)} Kč</p>
+                <p class="item-total">{formatPrice(price * item.quantity, lang)}</p>
                 <form method="POST">
                   <input type="hidden" name="_action" value="remove_item" />
                   <input type="hidden" name="item_id" value={item.id} />
@@ -118,7 +120,7 @@ const { subtotal, itemCount } = calcCartTotal(
 
             <div class="total-row">
               <span>Subtotal ({itemCount} items)</span>
-              <span class="total-price">{subtotal.toFixed(2)} Kč</span>
+              <span class="total-price">{formatPrice(subtotal, lang)}</span>
             </div>
 
             <a href="/shop/checkout" class="btn btn-primary checkout-btn">{t.shop.proceedToCheckout}</a>

@@ -3,7 +3,7 @@ import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { fetchParties } from "@shared/services/partyService";
 import { requireAdminCtx } from "../../../lib/admin";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
 import { PERMISSIONS, ROLE, hasPermission } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
@@ -12,9 +12,10 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 const { permissions } = ctx;
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_USERS)) return Astro.redirect("/admin");
 
@@ -39,7 +40,7 @@ const parties = await fetchParties(supabase);
             <td style="font-family:monospace;font-size:13px;color:var(--text-muted)">{p.slug}</td>
             <td style="color:var(--text-muted)">{p.company_name ?? "—"}</td>
             <td><span class={`badge badge-${p.status}`}>{t.admin.parties[p.status === 'active' ? 'statusActive' : p.status === 'closed' ? 'statusClosed' : 'statusInactive']}</span></td>
-            <td style="font-size:13px;color:var(--text-muted)">{new Date(p.created_at).toLocaleDateString()}</td>
+            <td style="font-size:13px;color:var(--text-muted)">{new Date(p.created_at).toLocaleDateString(lang)}</td>
             <td><a href={`/admin/parties/${p.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.parties.view}</a></td>
           </tr>
         ))}

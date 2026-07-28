@@ -1,0 +1,75 @@
+---
+import ProductStatCards from "./ProductStatCards.astro";
+import ProductLifecycleChart from "./ProductLifecycleChart.astro";
+import ProductRevenueChart from "./ProductRevenueChart.astro";
+import ProductTopList from "./ProductTopList.astro";
+import ProductActivityFeed from "./ProductActivityFeed.astro";
+import type { ProductOverviewStats, ProductActivityEvent } from "@shared/types";
+import { useT } from "../../lib/i18n";
+
+interface Props {
+  stats: ProductOverviewStats;
+  activity: ProductActivityEvent[];
+  locale: string;
+}
+
+const { stats, activity, locale } = Astro.props;
+const t = useT(Astro);
+const po = t.admin.productsOverview;
+
+const lifecycleStages = [
+  { key: "purchased", label: po.stagePurchased, value: stats.lifecycle.purchased_qty, color: "var(--accent-secondary)" },
+  { key: "sold",      label: po.stageSold,      value: stats.lifecycle.sold_qty,      color: "var(--accent-primary)" },
+  { key: "delivered", label: po.stageDelivered, value: stats.lifecycle.delivered_qty, color: "var(--success)" },
+  { key: "refunded",  label: po.stageRefunded,  value: stats.lifecycle.refunded_qty,  color: "var(--warning)" },
+  { key: "damaged",   label: po.stageDamaged,   value: stats.lifecycle.damaged_qty,   color: "var(--error)" },
+];
+---
+
+<div class="card" data-section="products-overview" style="margin-bottom:24px">
+  <div class="overview-header">
+    <h2 class="section-title" style="margin-bottom:0">{po.title}</h2>
+    <span class="range-label">{po.rangeLabel}</span>
+  </div>
+  <ProductStatCards stats={stats} />
+  <div class="overview-grid">
+    <div>
+      <h3 class="subsection-title">{po.lifecycleTitle}</h3>
+      <ProductLifecycleChart
+        stages={lifecycleStages}
+        unitsSuffix={po.unitsSuffix}
+        showTableLabel={po.showTable}
+        colStage={po.colProduct}
+        colUnits={po.colQtySold}
+      />
+    </div>
+    <div>
+      <h3 class="subsection-title">{po.revenueChartTitle}</h3>
+      <ProductRevenueChart
+        series={stats.timeseries}
+        legendRevenue={po.legendRevenue}
+        legendRefunds={po.legendRefunds}
+        showTableLabel={po.showTable}
+        colDate={po.colDate}
+        colOrders={po.colOrders}
+        colRevenue={po.colRevenue}
+        colRefunds={po.colRefunds}
+        colRefundAmount={po.colRefundAmount}
+        noDataLabel={po.noData}
+      />
+    </div>
+  </div>
+  <div class="overview-grid" style="margin-top:20px">
+    <ProductTopList topProducts={stats.top_products} />
+    <ProductActivityFeed events={activity} locale={locale} />
+  </div>
+</div>
+
+<style>
+  .section-title { font-size: 16px; font-weight: 700; }
+  .overview-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .range-label { font-size:12px; color:var(--text-muted); background:var(--bg-subtle); padding:4px 10px; border-radius:999px; }
+  .subsection-title { font-size:14px; font-weight:700; margin-bottom:12px; color:var(--text-primary); }
+  .overview-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; }
+  @media(max-width:768px) { .overview-grid { grid-template-columns:1fr; } }
+</style>

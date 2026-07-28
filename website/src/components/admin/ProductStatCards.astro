@@ -1,0 +1,59 @@
+---
+import type { ProductOverviewStats } from "@shared/types";
+import { useT, getLang } from "../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
+
+interface Props {
+  stats: ProductOverviewStats;
+}
+
+const { stats } = Astro.props;
+const t = useT(Astro);
+const lang = getLang(Astro);
+const po = t.admin.productsOverview;
+
+function money(n: number) {
+  return formatPrice(n, lang);
+}
+
+const financialCards = [
+  { label: po.statGrossRevenue, value: money(stats.financials.gross_revenue), tone: "" },
+  { label: po.statPurchaseCost, value: money(stats.financials.purchase_cost), tone: "" },
+  { label: po.statCogs, value: money(stats.financials.cogs), tone: "" },
+  { label: po.statRefunded, value: money(stats.financials.refunded_amount), tone: "warning" },
+  { label: po.statDamagedLoss, value: money(stats.financials.damaged_loss), tone: "error" },
+  { label: po.statNetProfit, value: money(stats.financials.net_profit), tone: stats.financials.net_profit >= 0 ? "success" : "error" },
+];
+
+const stageCards = [
+  { label: po.statTotalProducts, value: stats.stage_counts.total },
+  { label: po.statActiveProducts, value: stats.stage_counts.active },
+  { label: po.statDraftProducts, value: stats.stage_counts.draft },
+  { label: po.statInactiveProducts, value: stats.stage_counts.inactive },
+];
+---
+
+<div class="stat-group">
+  {stageCards.map((c) => (
+    <div class="card stat-card">
+      <span class="stat-num">{c.value}</span>
+      <span class="stat-label">{c.label}</span>
+    </div>
+  ))}
+</div>
+
+<div class="stat-group">
+  {financialCards.map((c) => (
+    <div class="card stat-card">
+      <span class={`stat-num ${c.tone ? `stat-tone-${c.tone}` : ""}`}>{c.value}</span>
+      <span class="stat-label">{c.label}</span>
+    </div>
+  ))}
+</div>
+
+<style>
+  .stat-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .stat-tone-success { color: var(--success); }
+  .stat-tone-warning { color: var(--warning); }
+  .stat-tone-error { color: var(--error); }
+</style>

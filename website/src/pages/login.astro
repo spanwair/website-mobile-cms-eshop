@@ -5,7 +5,7 @@ import { useT, getLang } from "../lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
-if (session) return Astro.redirect("/dashboard");
+if (session) return Astro.redirect("/");
 const t = useT(Astro);
 const lang = getLang(Astro);
 ---
@@ -145,7 +145,7 @@ const lang = getLang(Astro);
     btn.disabled = true; btn.textContent = d.signingIn!;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) { showError("error-si", error.message); btn.disabled = false; btn.textContent = d.signIn!; }
-    else { window.location.href = "/dashboard"; }
+    else { window.location.href = "/"; }
   });
 
   document.getElementById("signup-form")!.addEventListener("submit", async (e) => {
@@ -197,7 +197,7 @@ const lang = getLang(Astro);
     }
 
     if (data.session) {
-      window.location.href = "/dashboard";
+      window.location.href = "/";
     } else {
       const el = document.getElementById("success-su")!;
       el.textContent = d.successSignup!;

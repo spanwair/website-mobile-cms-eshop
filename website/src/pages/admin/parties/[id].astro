@@ -5,7 +5,7 @@ import { fetchParty, updateParty, fetchPartyMembers, inviteUserToParty, removeUs
 import { fetchRoles } from "@shared/services/permissionsService";
 import { findUserByEmail } from "@shared/services/profileService";
 import { requireAdminCtx } from "../../../lib/admin";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
 import { PERMISSIONS, hasPermission, ROLE, ROLE_LABEL, assignableRoles, canAssignRole } from "@shared/constants/permissions";
 import { sendPartyInvitation, buildDevInviteMetadata } from "../../../lib/integrations/email";
 
@@ -15,9 +15,10 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 const { permissions, isOwner } = ctx;
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const { id } = Astro.params;
 
@@ -42,7 +43,7 @@ if (Astro.request.method === "POST") {
 
   if (action === "update_party") {
     if (!canManageSettings) {
-      error = "Insufficient permissions";
+      error = t.admin.parties.errorInsufficientPermissions;
     } else {
       const { data: current } = await supabase.from("parties").select("status").eq("id", id!).single();
       if (!isOwner && current?.status === "closed") {
@@ -61,7 +62,7 @@ if (Astro.request.method === "POST") {
     }
   } else if (action === "invite") {
     if (!canManageUsers) {
-      error = "Insufficient permissions";
+      error = t.admin.parties.errorInsufficientPermissions;
     } else {
       const email = (form.get("email") as string).trim().toLowerCase();
       const roleId = form.get("role_id") as string;
@@ -145,7 +146,7 @@ if (Astro.request.method === "POST") {
     }
   } else if (action === "remove") {
     if (!canManageUsers) {
-      error = "Insufficient permissions";
+      error = t.admin.parties.errorInsufficientPermissions;
     } else {
       const userId = form.get("user_id") as string;
       await removeUserFromParty(supabase, userId, id!);
@@ -215,7 +216,7 @@ function roleName(roleId: string) {
             </div>
             <div class="form-meta">
               <span class="meta-label">{t.admin.parties.fieldCreated}</span>
-              <span>{new Date(party.created_at).toLocaleDateString()}</span>
+              <span>{new Date(party.created_at).toLocaleDateString(lang)}</span>
             </div>
             <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.common.saveChanges}</button>
           </form>
@@ -283,7 +284,7 @@ function roleName(roleId: string) {
               <td style="font-weight:600">{m.profile?.display_name ?? t.common.unnamed}</td>
               <td style="font-size:13px;color:var(--text-muted)">{m.profile?.email ?? "—"}</td>
               <td><span class="badge badge-pending">{roleName(m.role_id)}</span></td>
-              <td style="font-size:12px;color:var(--text-muted)">{new Date(m.joined_at).toLocaleDateString()}</td>
+              <td style="font-size:12px;color:var(--text-muted)">{new Date(m.joined_at).toLocaleDateString(lang)}</td>
               <td>
                 {canManageUsers && m.user_id !== session.user.id && (
                   <form method="POST" onsubmit={`return confirm('${t.admin.parties.removeConfirm}')`} style="display:inline">

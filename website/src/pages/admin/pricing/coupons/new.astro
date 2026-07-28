@@ -4,7 +4,8 @@ import { createSupabase } from "../../../../lib/supabase";
 import { createCoupon, fetchDiscountRules } from "@shared/services/pricingService";
 import { requireAdminCtx } from "../../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT } from "../../../../lib/i18n";
+import { useT, getLang } from "../../../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -12,11 +13,12 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_PRICING)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const discountRules = await fetchDiscountRules(supabase, partyId);
 
@@ -57,7 +59,7 @@ if (Astro.request.method === "POST") {
         <select class="form-input" name="discount_rule_id" required>
           <option value="">{t.admin.pricing.selectRule}</option>
           {discountRules.map((r) => (
-            <option value={r.id}>{r.name} ({r.type === "percentage" ? `${r.value}%` : `${r.value} Kč`})</option>
+            <option value={r.id}>{r.name} ({r.type === "percentage" ? `${r.value}%` : formatPrice(r.value, lang)})</option>
           ))}
         </select>
       </div>

@@ -4,8 +4,9 @@ import { createSupabase } from "../../../lib/supabase";
 import { fetchOrder, updateOrderStatus, updateOrder } from "@shared/services/orderService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
 import type { Order } from "@shared/types/index";
+import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -13,11 +14,12 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_ORDERS)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const { id } = Astro.params;
 
@@ -60,6 +62,13 @@ function statusClass(s: string) {
   };
   return map[s] ?? "badge-inactive";
 }
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: t.admin.orders.tabPending, confirmed: t.admin.orders.tabConfirmed, processing: t.admin.orders.tabProcessing,
+  shipped: t.admin.orders.tabShipped, delivered: t.admin.orders.tabDelivered, cancelled: t.admin.orders.tabCancelled,
+  refunded: t.admin.orders.statusRefunded,
+};
+const PAYMENT_LABELS: Record<string, string> = { paid: t.admin.orders.paymentPaid, unpaid: t.admin.orders.paymentUnpaid };
 ---
 
 <CmsLayout title={`${t.admin.orders.colNumber} ${order.order_number}`} userPermissions={permissions} currentPath="/admin/orders" parties={ctx.parties} partyId={ctx.partyId}>
@@ -78,18 +87,18 @@ function statusClass(s: string) {
                 <td style="font-weight:600">{item.title}</td>
                 <td style="color:var(--text-muted)">{item.sku ?? "—"}</td>
                 <td>{item.quantity}</td>
-                <td>{item.unit_price.toFixed(2)} Kč</td>
-                <td>{item.total_price.toFixed(2)} Kč</td>
+                <td>{formatPrice(item.unit_price, lang, order.currency)}</td>
+                <td>{formatPrice(item.total_price, lang, order.currency)}</td>
               </tr>
             ))}
           </tbody>
         </table>
         <div class="totals">
-          <div class="total-row"><span>{t.admin.orders.subtotal}</span><span>{order.subtotal.toFixed(2)} Kč</span></div>
-          <div class="total-row"><span>{t.admin.orders.discount}</span><span>-{order.discount_amount.toFixed(2)} Kč</span></div>
-          <div class="total-row"><span>{t.admin.orders.tax}</span><span>{order.tax_amount.toFixed(2)} Kč</span></div>
-          <div class="total-row"><span>{t.admin.orders.shipping}</span><span>{order.shipping_amount.toFixed(2)} Kč</span></div>
-          <div class="total-row total-grand"><span>{t.admin.orders.grandTotal}</span><span>{order.total_amount.toFixed(2)} {order.currency}</span></div>
+          <div class="total-row"><span>{t.admin.orders.subtotal}</span><span>{formatPrice(order.subtotal, lang, order.currency)}</span></div>
+          <div class="total-row"><span>{t.admin.orders.discount}</span><span>{formatPrice(-order.discount_amount, lang, order.currency)}</span></div>
+          <div class="total-row"><span>{t.admin.orders.tax}</span><span>{formatPrice(order.tax_amount, lang, order.currency)}</span></div>
+          <div class="total-row"><span>{t.admin.orders.shipping}</span><span>{formatPrice(order.shipping_amount, lang, order.currency)}</span></div>
+          <div class="total-row total-grand"><span>{t.admin.orders.grandTotal}</span><span>{formatPrice(order.total_amount, lang, order.currency)}</span></div>
         </div>
       </div>
 
@@ -106,15 +115,15 @@ function statusClass(s: string) {
     <div class="right-col">
       <div class="card">
         <h2 class="section-title">{t.admin.orders.sectionStatus}</h2>
-        <span class={`badge ${statusClass(order.status)}`} style="font-size:13px;margin-bottom:12px;display:inline-block">{order.status}</span>
-        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">{t.admin.orders.payment}: <strong>{order.payment_status}</strong></p>
+        <span class={`badge ${statusClass(order.status)}`} style="font-size:13px;margin-bottom:12px;display:inline-block">{STATUS_LABELS[order.status] ?? order.status}</span>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">{t.admin.orders.payment}: <strong>{PAYMENT_LABELS[order.payment_status] ?? order.payment_status}</strong></p>
         {nextStatuses.length > 0 && (
           <form method="POST" class="status-form">
             <input type="hidden" name="action" value="status" />
             <div class="form-group">
               <label class="form-label">{t.admin.orders.moveTo}</label>
               <select class="form-input" name="to_status">
-                {nextStatuses.map((s) => <option value={s}>{s}</option>)}
+                {nextStatuses.map((s) => <option value={s}>{STATUS_LABELS[s] ?? s}</option>)}
               </select>
             </div>
             <div class="form-group" style="margin-top:8px">

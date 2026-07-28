@@ -123,8 +123,8 @@ export async function loginAs(page: Page, email: string, password: string) {
   await page.fill("#si-password", password);
   await screenshot(page, `login-fill-${email.split("@")[0]}`);
   await page.click("#signin-btn");
-  await page.waitForURL(`${BASE}/dashboard`, { timeout: 20000 });
-  await screenshot(page, `after-login-dashboard`);
+  await page.waitForURL(`${BASE}/`, { timeout: 20000 });
+  await screenshot(page, `after-login`);
 }
 
 export async function goAdmin(page: Page) {

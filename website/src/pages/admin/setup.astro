@@ -10,7 +10,7 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 
 // Any user who already has a party is configured — send them to admin.
 if (ctx.partyId) return Astro.redirect("/admin");
@@ -28,7 +28,7 @@ const t = useT(Astro);
       {t.admin.setup.body}
     </p>
     <div style="display:flex;gap:12px;justify-content:center">
-      <a href="/dashboard" class="btn btn-ghost">{t.admin.setup.goDashboard}</a>
+      <a href="/" class="btn btn-ghost">{t.admin.setup.goHome}</a>
     </div>
   </div>
 </CmsLayout>

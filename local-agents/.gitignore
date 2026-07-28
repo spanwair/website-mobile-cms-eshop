@@ -1,0 +1,6 @@
+config.toml
+.cache/
+sessions/*.md
+!sessions/.gitkeep
+__pycache__/
+*.pyc

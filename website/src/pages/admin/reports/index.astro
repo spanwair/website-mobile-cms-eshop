@@ -5,7 +5,8 @@ import { fetchOrders } from "@shared/services/orderService";
 import { fetchProducts } from "@shared/services/productService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -13,11 +14,12 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_REPORTS)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const now = new Date();
 const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -42,8 +44,8 @@ const reports = [
     title: t.admin.reports.revenueTitle,
     description: t.admin.reports.revenueDesc,
     stats: [
-      { label: t.admin.reports.thisMonth, value: `${monthRevenue.toFixed(2)} Kč` },
-      { label: t.admin.reports.thisYear, value: `${yearRevenue.toFixed(2)} Kč` },
+      { label: t.admin.reports.thisMonth, value: formatPrice(monthRevenue, lang) },
+      { label: t.admin.reports.thisYear, value: formatPrice(yearRevenue, lang) },
     ],
   },
   {

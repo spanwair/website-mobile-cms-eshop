@@ -13,7 +13,7 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY)) return Astro.redirect("/admin");
@@ -113,10 +113,10 @@ const isLowMap = new Map(items.map((i) => [i.id, i.qty_on_hand <= i.low_stock_th
             <td>
               <div style="display:flex;flex-direction:column;gap:4px">
                 <span style="font-size:13px">
-                  <span style="color:var(--text-muted);font-size:11px;text-transform:uppercase">Min:</span> {item.low_stock_threshold || "—"}
+                  <span style="color:var(--text-muted);font-size:11px;text-transform:uppercase">{t.admin.inventory.shortMin}</span> {item.low_stock_threshold || "—"}
                 </span>
                 <span style="font-size:13px">
-                  <span style="color:var(--text-muted);font-size:11px;text-transform:uppercase">Max:</span> {item.max_threshold || "—"}
+                  <span style="color:var(--text-muted);font-size:11px;text-transform:uppercase">{t.admin.inventory.shortMax}</span> {item.max_threshold || "—"}
                 </span>
               </div>
               {isLowMap.get(item.id) && <span class="badge badge-error" style="margin-top:4px">{t.admin.inventory.filterLow}</span>}

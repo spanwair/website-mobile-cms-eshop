@@ -5,7 +5,7 @@
  *   OWNER (8)      → full access everywhere, no party required
  *   ADMIN (4)      → full access within their org, needs party
  *   ESHOP_ADMIN(2) → limited by permission bits, within org only
- *   USER (1)       → zero admin access, redirected to /dashboard
+ *   USER (1)       → zero admin access, redirected to /
  *
  * Rules (mandatory, match shared/constants/permissions.ts):
  *   - Permission bits only from PERMISSIONS constant — never raw numbers

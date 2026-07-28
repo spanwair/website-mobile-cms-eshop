@@ -1,0 +1,228 @@
+---
+import { useT } from "../../lib/i18n";
+
+interface Props {
+  productId: string;
+  reviewerName: string;
+  reviewerEmail: string;
+  isLoggedIn: boolean;
+}
+const { productId, reviewerName, reviewerEmail, isLoggedIn } = Astro.props;
+const t = useT(Astro);
+---
+
+<div class="write-review">
+  <h3 class="section-title">{t.shop.writeReview}</h3>
+
+  {!isLoggedIn ? (
+    <div class="login-gate">
+      <p>{t.shop.loginToReview}</p>
+      <a href={`/login?redirect=${Astro.url.pathname}`} class="btn btn-primary">{t.auth.signIn}</a>
+    </div>
+  ) : (
+  <div class="review-form-layout">
+    <form method="POST" class="review-form" id="review-form">
+      <input type="hidden" name="_action" value="review" />
+      <input type="hidden" name="product_id" value={productId} />
+
+      <div class="form-row">
+        <div class="field">
+          <label>{t.shop.yourName}</label>
+          <input type="text" name="author_name" required class="input" value={reviewerName} />
+        </div>
+        <div class="field">
+          <label>{t.shop.emailLabel}</label>
+          <input type="email" name="author_email" required class="input" value={reviewerEmail} />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>{t.shop.ratingLabel}</label>
+        <div class="star-rating">
+          {[5, 4, 3, 2, 1].map((n) => (
+            <>
+              <input type="radio" name="rating" id={`star${n}`} value={n} required />
+              <label for={`star${n}`} class="star-label" title={`${n} ★`}>★</label>
+            </>
+          ))}
+        </div>
+      </div>
+
+      <div class="field field-pros">
+        <label>{t.shop.pros}</label>
+        <div class="point-list point-list--pros" id="rf-pros" data-name="pros" data-placeholder={t.shop.positivePlaceholder}>
+          <div class="point-row">
+            <input type="text" name="pros" class="input point-input" placeholder={t.shop.positivePlaceholder} />
+            <button type="button" class="btn-remove" aria-label="Remove">×</button>
+          </div>
+        </div>
+        <button type="button" class="btn-add" data-add="rf-pros">{t.shop.addPositive}</button>
+      </div>
+
+      <div class="field field-cons">
+        <label>{t.shop.cons}</label>
+        <div class="point-list point-list--cons" id="rf-cons" data-name="cons" data-placeholder={t.shop.negativePlaceholder}>
+          <div class="point-row">
+            <input type="text" name="cons" class="input point-input" placeholder={t.shop.negativePlaceholder} />
+            <button type="button" class="btn-remove" aria-label="Remove">×</button>
+          </div>
+        </div>
+        <button type="button" class="btn-add" data-add="rf-cons">{t.shop.addNegative}</button>
+      </div>
+
+      <div class="field">
+        <label>{t.shop.yourReview}</label>
+        <textarea name="body" class="input textarea" rows="4" placeholder={t.shop.reviewBodyPlaceholder}></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary">{t.shop.submitReview}</button>
+    </form>
+
+    <aside class="review-preview">
+      <span class="preview-label">{t.shop.reviewPreview}</span>
+      <div class="preview-card">
+        <div class="preview-avatar">👤</div>
+        <div class="preview-body">
+          <strong id="pv-name">{reviewerName || "—"}</strong>
+          <div class="preview-recommend">
+            <span id="pv-stars" class="pv-stars"></span>
+            <span id="pv-pct" class="pv-pct"></span>
+          </div>
+          <ul class="pv-list" id="pv-pros"></ul>
+          <ul class="pv-list" id="pv-cons"></ul>
+          <p class="pv-desc" id="pv-desc"></p>
+        </div>
+      </div>
+    </aside>
+  </div>
+  )}
+</div>
+
+<script define:vars={{ noProsText: t.shop.noPros, noConsText: t.shop.noCons }}>
+  const form = document.getElementById("review-form");
+  if (form) {
+  const pvName = document.getElementById("pv-name");
+  const pvStars = document.getElementById("pv-stars");
+  const pvPct = document.getElementById("pv-pct");
+  const pvPros = document.getElementById("pv-pros");
+  const pvCons = document.getElementById("pv-cons");
+  const pvDesc = document.getElementById("pv-desc");
+
+  function renderList(ul, values, cls, emptyText) {
+    ul.innerHTML = "";
+    const li = document.createElement("li");
+    if (values.length === 0) {
+      li.className = "pv-empty";
+      li.textContent = emptyText;
+      ul.appendChild(li);
+      return;
+    }
+    for (const v of values) {
+      const item = document.createElement("li");
+      item.className = cls;
+      item.textContent = v;
+      ul.appendChild(item);
+    }
+  }
+
+  function updatePreview() {
+    pvName.textContent = form.author_name.value.trim() || "—";
+    const rating = Number(form.querySelector('input[name="rating"]:checked')?.value ?? 0);
+    pvStars.textContent = "★".repeat(rating) + "☆".repeat(5 - rating);
+    pvPct.textContent = rating ? `${Math.round((rating / 5) * 100)}%` : "";
+    const pros = [...form.querySelectorAll('input[name="pros"]')].map((i) => i.value.trim()).filter(Boolean);
+    const cons = [...form.querySelectorAll('input[name="cons"]')].map((i) => i.value.trim()).filter(Boolean);
+    renderList(pvPros, pros, "pv-pro", noProsText);
+    renderList(pvCons, cons, "pv-con", noConsText);
+    pvDesc.textContent = form.body.value.trim();
+  }
+
+  function addRow(listId, placeholder, name) {
+    const list = document.getElementById(listId);
+    const row = document.createElement("div");
+    row.className = "point-row";
+    row.innerHTML = `<input type="text" name="${name}" class="input point-input" placeholder="${placeholder}" /><button type="button" class="btn-remove" aria-label="Remove">×</button>`;
+    list.appendChild(row);
+  }
+
+  document.querySelectorAll("[data-add]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const list = document.getElementById(btn.dataset.add);
+      addRow(btn.dataset.add, list.dataset.placeholder, list.dataset.name);
+    });
+  });
+
+  document.querySelectorAll(".point-list").forEach((list) => {
+    list.addEventListener("click", (e) => {
+      if (!e.target.matches(".btn-remove")) return;
+      e.target.closest(".point-row").remove();
+      updatePreview();
+    });
+  });
+
+  form.addEventListener("input", updatePreview);
+  form.addEventListener("change", updatePreview);
+  updatePreview();
+  }
+</script>
+
+<style>
+  .write-review { border-top:1px solid var(--border); padding-top:32px; margin-top:32px; }
+  .section-title { font-size:20px; font-weight:700; margin-bottom:16px; }
+  .review-form-layout { display:grid; grid-template-columns:1fr 340px; gap:32px; align-items:start; }
+  @media(max-width:860px) { .review-form-layout { grid-template-columns:1fr; } }
+
+  .review-form { display:flex; flex-direction:column; gap:16px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .field { display:flex; flex-direction:column; gap:4px; }
+  .field label { font-size:13px; font-weight:600; color:var(--text-muted); }
+  .textarea { min-height:100px; resize:vertical; }
+
+  .star-rating { display:flex; flex-direction:row-reverse; gap:4px; position:relative; }
+  .star-rating input {
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+  .star-label { font-size:28px; color:#d1d5db; cursor:pointer; transition:color .15s; }
+  .star-rating input:checked ~ .star-label,
+  .star-rating label:hover,
+  .star-rating label:hover ~ .star-label { color:#f59e0b; }
+
+  .field-pros label { color:#16a34a; }
+  .field-cons label { color:#dc2626; }
+  .point-list { border-left:3px solid transparent; padding-left:12px; }
+  .point-list--pros { border-color:#86efac; }
+  .point-list--cons { border-color:#fca5a5; }
+
+  /* :global — rows are also appended client-side via JS and never receive Astro's scope attribute */
+  :global(.point-list) { display:flex; flex-direction:column; gap:8px; margin-bottom:8px; }
+  :global(.point-row) { display:flex; gap:8px; align-items:center; }
+  :global(.point-input) { flex:1; }
+  :global(.btn-remove) {
+    flex-shrink:0; background:var(--bg-subtle); border:none; border-radius:var(--radius-sm, 8px);
+    color:var(--text-muted); font-size:16px; line-height:1; cursor:pointer; padding:8px 12px;
+  }
+  :global(.btn-remove:hover) { color:#fff; background:var(--error, #dc2626); }
+  .btn-add { align-self:flex-start; background:none; border:1px dashed var(--border); border-radius:6px; padding:6px 12px; font-size:13px; color:var(--primary); cursor:pointer; }
+
+  .login-gate {
+    display:flex; flex-direction:column; align-items:flex-start; gap:12px;
+    background:var(--bg-subtle); border:1px solid var(--border); border-radius:var(--radius-md, 12px);
+    padding:24px; font-size:14px; color:var(--text-secondary);
+  }
+
+  .review-preview { background:var(--bg-subtle); border:1px solid var(--border); border-radius:var(--radius-md, 12px); padding:20px; position:sticky; top:24px; }
+  .preview-label { font-size:12px; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:.05em; }
+  .preview-card { display:flex; gap:12px; margin-top:12px; }
+  .preview-avatar { width:40px; height:40px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .preview-body { min-width:0; flex:1; }
+  .preview-recommend { display:flex; align-items:center; gap:6px; margin:4px 0 10px; }
+  .pv-stars { color:#f59e0b; font-size:15px; }
+  .pv-pct { font-size:13px; font-weight:700; color:var(--primary); }
+  .pv-list { list-style:none; padding:0; margin:0 0 6px; font-size:13px; }
+  .pv-list li::before { font-weight:700; margin-right:6px; }
+  .pv-list li.pv-pro::before { content:"+"; color:#16a34a; }
+  .pv-list li.pv-con::before { content:"−"; color:#dc2626; }
+  .pv-empty { color:var(--text-muted); font-style:italic; }
+  .pv-desc { font-size:13px; color:var(--text-secondary); margin:6px 0 0; white-space:pre-wrap; }
+</style>

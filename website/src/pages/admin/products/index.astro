@@ -4,8 +4,9 @@ import { createSupabase } from "../../../lib/supabase";
 import { fetchProducts } from "@shared/services/productService";
 import { fetchCategories } from "@shared/services/categoryService";
 import { requireAdminCtx } from "../../../lib/admin";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -13,11 +14,12 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_PRODUCTS)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const url = new URL(Astro.request.url);
 const page = parseInt(url.searchParams.get("page") ?? "1", 10);
@@ -40,6 +42,9 @@ const totalPages = Math.ceil(total / pageSize);
 
 function statusClass(s: string) {
   return s === "active" ? "badge-active" : s === "draft" ? "badge-draft" : "badge-inactive";
+}
+function statusLabel(s: string) {
+  return s === "active" ? t.common.active : s === "draft" ? t.common.draft : t.common.inactive;
 }
 const stockColors = {
   muted: "var(--text-muted)",
@@ -102,8 +107,8 @@ const filterQs = `&search=${encodeURIComponent(search)}&status=${status}&categor
           <tr>
             <td style="font-weight:600">{p.title}</td>
             <td style="color:var(--text-muted)">{p.sku ?? "—"}</td>
-            <td><span class={`badge ${statusClass(p.status)}`}>{p.status}</span></td>
-            <td>{p.price.toFixed(2)} Kč</td>
+            <td><span class={`badge ${statusClass(p.status)}`}>{statusLabel(p.status)}</span></td>
+            <td>{formatPrice(p.price, lang)}</td>
             <td>
               {(() => {
                 const s = stockDisplay(p.stock);

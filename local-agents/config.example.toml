@@ -1,0 +1,59 @@
+[server]
+base_url = "http://192.168.0.108:8080/v1"
+model_alias = "qwen3.6-35b-a3b"
+request_timeout_s = 600
+
+[repo]
+root = "/home/jan/PROJECTS/react-native/website-mobile-template"
+exclude = [
+  "shared/supabase/types.ts",
+  "shared/i18n/locales/en.ts",
+  "shared/i18n/locales/cs.ts",
+  "node_modules",
+  ".git",
+  "dist",
+  ".treehouse",
+]
+
+[budget]
+context_window = 100000
+reserve_output = 8000
+reserve_tool_overhead = 10000
+system_prompt_max = 6000
+repo_map_max = 3000
+retrieved_files_max = 60000
+# whatever's left after the above is the tool-call/history buffer
+
+[limits]
+max_tool_calls_per_task = 40
+max_wall_clock_s = 3600
+max_files_touched = 12
+max_lines_per_file = 200
+
+[workspace]
+lease_holder_prefix = "local-agent"
+never_commit = true
+never_push = true
+
+[loop]
+enabled_hours = "any"   # "any" | "22:00-08:00" | custom "HH:MM-HH:MM"
+poll_interval_s = 60
+
+[gate]
+website_dir = "website"
+mobile_dir = "mobile"
+shared_dir = "shared"
+admin_permission_paths = [
+  "website/src/pages/admin/",
+  "website/src/components/cms/Sidebar.astro",
+  "website/src/lib/admin.ts",
+  "shared/constants/permissions.ts",
+]
+admin_permission_specs = [
+  "09-users-roles",
+  "12-access-control",
+  "14-multi-org-security",
+  "15-role-access",
+  "16-invite-flow",
+  "17-invite-roles",
+]

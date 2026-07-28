@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
 import type { NavItem, NavItemWithChildren } from "../types";
+import { fetchNavCategories } from "./categoryService";
 
 type Client = SupabaseClient<Database>;
 
@@ -25,6 +26,49 @@ export async function fetchVisibleNavTree(client: Client, partyId: string): Prom
   const flat = (data ?? []) as NavItem[];
   const top = flat.filter((n) => !n.parent_id);
   return top.map((n) => ({ ...n, children: flat.filter((c) => c.parent_id === n.id) }));
+}
+
+// Merges the hand-curated nav_items tree with categories flagged show_in_nav — those
+// carry no url of their own, so their href is built here from the shop's own
+// ?category= filter (shopHref differs per store: /shop, /eshop-[partySlug], custom domain).
+export async function fetchStorefrontNavTree(
+  client: Client,
+  partyId: string,
+  shopHref: string
+): Promise<NavItemWithChildren[]> {
+  const [navTree, categories] = await Promise.all([
+    fetchVisibleNavTree(client, partyId),
+    fetchNavCategories(client, partyId),
+  ]);
+  const categoryItems: NavItemWithChildren[] = categories.map((c) => ({
+    id: `category-${c.id}`,
+    party_id: c.party_id,
+    parent_id: null,
+    label: c.name,
+    url: `${shopHref}?category=${c.slug}`,
+    category_id: c.id,
+    column_label: null,
+    is_mega: c.children.length > 0,
+    sort_order: c.sort_order,
+    is_visible: true,
+    created_at: c.created_at,
+    updated_at: c.updated_at,
+    children: c.children.map((ch) => ({
+      id: `category-${ch.id}`,
+      party_id: ch.party_id,
+      parent_id: c.id,
+      label: ch.name,
+      url: `${shopHref}?category=${ch.slug}`,
+      category_id: ch.id,
+      column_label: null,
+      is_mega: false,
+      sort_order: ch.sort_order,
+      is_visible: true,
+      created_at: ch.created_at,
+      updated_at: ch.updated_at,
+    })),
+  }));
+  return [...navTree, ...categoryItems].sort((a, b) => a.sort_order - b.sort_order);
 }
 
 export async function createNavItem(

@@ -16,6 +16,7 @@ export type ReturnRequest = {
   customer_notes: string | null;
   refund_amount: number | null;
   refund_method: string | null;
+  processed_by: string | null;
   received_at: string | null;
   completed_at: string | null;
   created_at: string;
@@ -105,6 +106,7 @@ export async function updateReturnStatus(
     refund_amount?: number;
     refund_method?: string;
     notes?: string;
+    processed_by?: string;
     received_at?: string;
     completed_at?: string;
   }

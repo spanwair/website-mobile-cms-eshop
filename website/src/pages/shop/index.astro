@@ -88,21 +88,15 @@ function buildUrl(params: Record<string, string>) {
 
     <!-- Main content -->
     <main class="shop-main">
+      {search && (
+        <div class="active-search">
+          <span>{t.shop.searchResultsFor} “{search}”</span>
+          <a href={buildUrl({ category: categorySlug, sort })} class="btn btn-ghost">{t.shop.clear}</a>
+        </div>
+      )}
+
       <!-- Toolbar -->
       <div class="shop-toolbar">
-        <form method="GET" action="/shop" class="search-form">
-          {categorySlug && <input type="hidden" name="category" value={categorySlug} />}
-          <input
-            type="search"
-            name="q"
-            value={search}
-            placeholder={t.shop.searchPlaceholder}
-            class="search-input"
-          />
-          <button type="submit" class="btn btn-primary">{t.shop.search}</button>
-          {search && <a href={buildUrl({ category: categorySlug, sort })} class="btn btn-ghost">{t.shop.clear}</a>}
-        </form>
-
         <div class="sort-wrap">
           <label for="sort-select" class="sort-label">{t.shop.sort}</label>
           <select
@@ -129,7 +123,7 @@ function buildUrl(params: Record<string, string>) {
       ) : (
         <div class="product-grid">
           {productsWithOrg.map(product => (
-            <ProductCard product={product as any} variant={cardVariant} />
+            <ProductCard product={product as any} variant={cardVariant} currency={storeConfig?.currency_code} />
           ))}
         </div>
       )}
@@ -154,9 +148,8 @@ function buildUrl(params: Record<string, string>) {
   .shop-layout { display:grid; grid-template-columns:220px 1fr; gap:32px; max-width:1280px; margin:0 auto; padding:32px 24px; }
 
   .shop-main { min-width:0; }
+  .active-search { display:flex; align-items:center; gap:12px; margin-bottom:16px; font-size:14px; color:var(--text-secondary); }
   .shop-toolbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
-  .search-form { display:flex; gap:8px; flex:1; min-width:200px; }
-  .search-input { flex:1; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; }
   .sort-wrap { display:flex; align-items:center; gap:6px; }
   .sort-label { font-size:13px; color:var(--text-muted); }
   .sort-select { padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px; }

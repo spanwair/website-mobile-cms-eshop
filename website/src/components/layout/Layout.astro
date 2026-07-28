@@ -2,11 +2,12 @@
 import "../../styles/global.css";
 import { createSupabase } from "../../lib/supabase";
 import { useT } from "../../lib/i18n";
-import { hasAdminAccess } from "../../lib/admin";
+import { requireAdminCtx } from "../../lib/admin";
+import { ROLE } from "@shared/constants/permissions";
 import { buildThemeCss, googleFontsUrl } from "../../lib/themeEngine";
 import { fetchStoreMedia } from "@shared/services/storeMediaService";
 import { fetchCartItemCount } from "@shared/services/cartService";
-import { fetchVisibleNavTree } from "@shared/services/navItemService";
+import { fetchStorefrontNavTree } from "@shared/services/navItemService";
 import { fetchVisibleFooterLinks } from "@shared/services/footerLinkService";
 import { fetchVisibleFooterBadges } from "@shared/services/footerBadgeService";
 import Footer from "./Footer.astro";
@@ -24,10 +25,10 @@ const customFontsUrl = googleFontsUrl(storeConfig);
 
 // A storefront-shaped page (/shop*, /eshop-[slug]*) with a resolved storeParty (custom
 // domain, subdomain, or the /eshop-[partySlug] path itself) should behave like visiting that
-// org's own dedicated site: internal app nav (Dashboard/Items/Admin) never appears, and every
-// in-page link stays scoped to this org rather than bouncing to the shared app/generic /shop.
+// org's own dedicated site: the generic app nav (Obchod link, profile dropdown) never appears,
+// and every in-page link stays scoped to this org rather than bouncing to the shared app/generic /shop.
 // Gated on pathname too, not just storeParty — a staff member managing their org from its own
-// custom domain must still reach /dashboard and /admin on that same domain.
+// custom domain must still reach /admin on that same domain.
 const pathname = Astro.url.pathname;
 const partySlug = Astro.params.partySlug as string | undefined;
 const isStorefrontPage = pathname === "/shop" || pathname.startsWith("/shop/") || !!partySlug;
@@ -41,7 +42,7 @@ const isAdminPage = pathname === "/admin" || pathname.startsWith("/admin/");
 
 const supabase = createSupabase(Astro);
 const footerMedia = !isAdminPage && storeParty ? await fetchStoreMedia(supabase, storeParty.id) : [];
-const navTree = storeParty ? await fetchVisibleNavTree(supabase, storeParty.id) : [];
+const navTree = storeParty ? await fetchStorefrontNavTree(supabase, storeParty.id, shopHref) : [];
 const footerLinks = !isAdminPage && storeParty ? await fetchVisibleFooterLinks(supabase, storeParty.id) : [];
 const footerBadges = !isAdminPage && storeParty ? await fetchVisibleFooterBadges(supabase, storeParty.id) : [];
 const { data: { session } } = await supabase.auth.getSession();
@@ -49,6 +50,7 @@ const t = useT(Astro);
 
 let displayName: string | null = null;
 let isAdmin = false;
+let obchodHref: string | null = null;
 if (session) {
   const { data } = await supabase
     .from("profiles")
@@ -56,7 +58,17 @@ if (session) {
     .eq("id", session.user.id)
     .single();
   displayName = data?.display_name ?? session.user.email?.split("@")[0] ?? null;
-  isAdmin = await hasAdminAccess(supabase, session.user.id);
+
+  const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+  const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+  isAdmin = ctx !== null && (ctx.role >= ROLE.ADMIN || ctx.parties.length > 0);
+
+  // Obchod jumps straight into whichever org is currently active (party switcher
+  // cookie, or the user's first assigned org) — hidden entirely when they have none.
+  if (ctx?.partyId) {
+    const activeParty = ctx.parties.find((p) => p.id === ctx.partyId);
+    if (activeParty) obchodHref = `/eshop-${activeParty.slug}`;
+  }
 }
 const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
 const cartCount = isStorefront && session && storeParty
@@ -96,12 +108,9 @@ const currentPath = Astro.url.pathname + Astro.url.search;
       <nav class="nav">
         <div class="container nav-inner">
           <a href={brandHref} class="nav-brand">{brandName}</a>
-          {session && (
+          {obchodHref && (
             <div class="nav-links">
-              <a href="/shop">{t.nav.shop}</a>
-              <a href="/dashboard">{t.nav.dashboard}</a>
-              <a href="/items">{t.nav.items}</a>
-              {isAdmin && <a href="/admin">{t.nav.admin}</a>}
+              <a href={obchodHref}>{t.nav.shop}</a>
             </div>
           )}
           <div class="nav-right">

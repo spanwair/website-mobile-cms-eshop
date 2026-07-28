@@ -5,7 +5,8 @@ import { fetchCustomer, updateCustomer, addAddress, deleteAddress } from "@share
 import { fetchOrders } from "@shared/services/orderService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -13,11 +14,12 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_CUSTOMERS)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const { id } = Astro.params;
 
@@ -77,6 +79,14 @@ function statusClass(s: string) {
   };
   return map[s] ?? "badge-inactive";
 }
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: t.admin.orders.tabPending, confirmed: t.admin.orders.tabConfirmed, processing: t.admin.orders.tabProcessing,
+  shipped: t.admin.orders.tabShipped, delivered: t.admin.orders.tabDelivered, cancelled: t.admin.orders.tabCancelled,
+};
+const ADDRESS_TYPE_LABELS: Record<string, string> = {
+  shipping: t.admin.customers.addressTypeShipping, billing: t.admin.customers.addressTypeBilling,
+};
 ---
 
 <CmsLayout title={`${customer.first_name} ${customer.last_name}`} userPermissions={permissions} currentPath="/admin/customers" parties={ctx.parties} partyId={ctx.partyId}>
@@ -137,10 +147,10 @@ function statusClass(s: string) {
           <div class="address-card">
             <div class="address-card-header">
               <div>
-                <span class={`badge ${addr.is_default ? "badge-active" : "badge-inactive"}`}>{addr.type}</span>
+                <span class={`badge ${addr.is_default ? "badge-active" : "badge-inactive"}`}>{ADDRESS_TYPE_LABELS[addr.type] ?? addr.type}</span>
                 {addr.is_default && <span class="badge badge-pending" style="margin-left:4px">{t.admin.customers.defaultBadge}</span>}
               </div>
-              <form method="POST" onsubmit="return confirm('Delete this address?')">
+              <form method="POST" onsubmit={`return confirm('${t.admin.customers.deleteAddressConfirm}')`}>
                 <input type="hidden" name="_action" value="delete_address" />
                 <input type="hidden" name="address_id" value={addr.id} />
                 <button type="submit" class="btn btn-ghost btn-sm btn-danger">{t.admin.customers.deleteAddressBtn}</button>
@@ -187,8 +197,8 @@ function statusClass(s: string) {
                 <div class="form-group">
                   <label class="form-label">{t.admin.customers.fieldAddressType}</label>
                   <select class="form-input" name="type">
-                    <option value="shipping">Shipping</option>
-                    <option value="billing">Billing</option>
+                    <option value="shipping">{t.admin.customers.addressTypeShipping}</option>
+                    <option value="billing">{t.admin.customers.addressTypeBilling}</option>
                   </select>
                 </div>
               </div>
@@ -227,9 +237,9 @@ function statusClass(s: string) {
             {orders.map((o) => (
               <tr>
                 <td><a href={`/admin/orders/${o.id}`}>{o.order_number}</a></td>
-                <td><span class={`badge ${statusClass(o.status)}`}>{o.status}</span></td>
-                <td>{o.total_amount.toFixed(2)} Kč</td>
-                <td style="font-size:13px;color:var(--text-muted)">{new Date(o.created_at).toLocaleDateString()}</td>
+                <td><span class={`badge ${statusClass(o.status)}`}>{STATUS_LABELS[o.status] ?? o.status}</span></td>
+                <td>{formatPrice(o.total_amount, lang, o.currency)}</td>
+                <td style="font-size:13px;color:var(--text-muted)">{new Date(o.created_at).toLocaleDateString(lang)}</td>
               </tr>
             ))}
           </tbody>

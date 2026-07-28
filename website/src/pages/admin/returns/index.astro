@@ -4,7 +4,8 @@ import { createSupabase } from "../../../lib/supabase";
 import { requireAdminCtx } from "../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { fetchReturns } from "@shared/services/returnService";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -12,11 +13,12 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_ORDERS)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const url = new URL(Astro.request.url);
 const page = parseInt(url.searchParams.get("page") ?? "1", 10);
@@ -56,6 +58,13 @@ function statusClass(s: string) {
   };
   return map[s] ?? "badge-draft";
 }
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: t.admin.returns.statusPending, approved: t.admin.returns.statusApproved,
+  received: t.admin.returns.statusReceived, processing: t.admin.returns.statusProcessing,
+  completed: t.admin.returns.statusCompleted, rejected: t.admin.returns.statusRejected,
+  cancelled: t.admin.returns.statusCancelled,
+};
 
 function reasonLabel(r: string) {
   const map: Record<string, string> = {
@@ -117,13 +126,13 @@ function reasonLabel(r: string) {
               </a>
             </td>
             <td>{reasonLabel(r.reason)}</td>
-            <td><span class={`badge ${statusClass(r.status)}`}>{r.status}</span></td>
+            <td><span class={`badge ${statusClass(r.status)}`}>{STATUS_LABELS[r.status] ?? r.status}</span></td>
             <td>
               {r.refund_amount != null
-                ? `${Number(r.refund_amount).toFixed(2)} Kč`
+                ? formatPrice(Number(r.refund_amount), lang)
                 : "—"}
             </td>
-            <td>{new Date(r.created_at).toLocaleDateString("cs-CZ")}</td>
+            <td>{new Date(r.created_at).toLocaleDateString(lang)}</td>
             <td>
               <a href={`/admin/returns/${r.id}`} class="btn btn-ghost btn-sm">{t.common.detail}</a>
             </td>

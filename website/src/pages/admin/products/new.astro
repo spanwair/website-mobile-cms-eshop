@@ -13,7 +13,7 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions } = ctx;
 const multiParty = ctx.parties.length > 1;
@@ -33,6 +33,7 @@ if (Astro.request.method === "POST") {
     sku: (form.get("sku") as string) || null,
     barcode: (form.get("barcode") as string) || null,
     price: parseFloat(form.get("price") as string) || 0,
+    cost_price: parseFloat(form.get("cost_price") as string) || 0,
     discount_price: form.get("discount_price") ? parseFloat(form.get("discount_price") as string) : null,
     status: (form.get("status") as "draft" | "active" | "inactive") ?? "draft",
     description: (form.get("description") as string) || null,
@@ -93,6 +94,10 @@ const categories = await fetchCategories(supabase, selectedPartyId!);
           <label class="form-label">{t.admin.products.fieldDiscountPrice}</label>
           <input class="form-input" name="discount_price" type="number" step="0.01" min="0" placeholder="0.00" />
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{t.admin.products.fieldCostPrice}</label>
+        <input class="form-input" name="cost_price" type="number" step="0.01" min="0" placeholder="0.00" />
       </div>
       <div class="form-group">
         <label class="form-label">{t.admin.products.fieldStatus}</label>

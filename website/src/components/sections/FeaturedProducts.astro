@@ -4,8 +4,8 @@ import type { ProductCardData } from "../../lib/variantRegistry";
 import ProductCard from "../variants/ProductCard/ProductCard.astro";
 import { useT } from "../../lib/i18n";
 
-interface Props { products: ProductCardData[]; variant: ProductCardVariant; linkBase?: string }
-const { products, variant, linkBase = "/shop" } = Astro.props;
+interface Props { products: ProductCardData[]; variant: ProductCardVariant; linkBase?: string; currency?: string }
+const { products, variant, linkBase = "/shop", currency } = Astro.props;
 const t = useT(Astro);
 ---
 
@@ -13,7 +13,7 @@ const t = useT(Astro);
   <section id="featured-products" class="section container">
     <h2 class="section-title">{t.shop.featured}</h2>
     <div class="featured-product-grid">
-      {products.map((product) => <ProductCard product={product} variant={variant} linkBase={linkBase} />)}
+      {products.map((product) => <ProductCard product={product} variant={variant} linkBase={linkBase} currency={currency} />)}
     </div>
   </section>
 )}

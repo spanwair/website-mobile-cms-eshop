@@ -4,7 +4,8 @@ import { createSupabase } from "../../../../lib/supabase";
 import { fetchCoupon, updateCoupon, deleteCoupon, fetchDiscountRules } from "@shared/services/pricingService";
 import { requireAdminCtx } from "../../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT } from "../../../../lib/i18n";
+import { useT, getLang } from "../../../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -12,11 +13,12 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_PRICING)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const lang = getLang(Astro);
 const { id } = Astro.params;
 
 let error = "";
@@ -70,7 +72,7 @@ const discountRules = await fetchDiscountRules(supabase, partyId);
             <option value="">{t.admin.pricing.selectRule}</option>
             {discountRules.map((r) => (
               <option value={r.id} selected={r.id === coupon.discount_rule_id}>
-                {r.name} ({r.type === "percentage" ? `${r.value}%` : `${r.value} Kč`})
+                {r.name} ({r.type === "percentage" ? `${r.value}%` : formatPrice(r.value, lang)})
               </option>
             ))}
           </select>
@@ -78,7 +80,7 @@ const discountRules = await fetchDiscountRules(supabase, partyId);
         <div class="form-group">
           <label class="form-label">{t.admin.pricing.fieldMaxUses}</label>
           <input class="form-input" name="max_uses" type="number" min="1" value={coupon.max_uses ?? ""} placeholder={t.admin.pricing.maxUsesPlaceholder} />
-          <span class="form-hint">Current usage: {coupon.uses_count} / {coupon.max_uses ?? t.admin.pricing.unlimited}</span>
+          <span class="form-hint">{t.admin.pricing.currentUsage.replace("{{count}}", String(coupon.uses_count)).replace("{{limit}}", String(coupon.max_uses ?? t.admin.pricing.unlimited))}</span>
         </div>
         <div class="form-check">
           <input type="checkbox" name="is_active" id="is_active" checked={coupon.is_active} />
@@ -92,7 +94,7 @@ const discountRules = await fetchDiscountRules(supabase, partyId);
 
     <form method="POST" style="margin-top:24px">
       <input type="hidden" name="action" value="delete" />
-      <button type="submit" class="btn btn-danger" onclick="return confirm('{t.admin.pricing.deleteCouponConfirm}')">{t.admin.pricing.deleteCoupon}</button>
+      <button type="submit" class="btn btn-danger" onclick={`return confirm('${t.admin.pricing.deleteCouponConfirm}')`}>{t.admin.pricing.deleteCoupon}</button>
     </form>
   </div>
 </CmsLayout>

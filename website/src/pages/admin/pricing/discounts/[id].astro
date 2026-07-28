@@ -12,7 +12,7 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_PRICING)) return Astro.redirect("/admin");
@@ -118,7 +118,7 @@ function formatDateTime(date: string | null): string {
         <div class="form-group">
           <label class="form-label">{t.admin.pricing.fieldUsageLimit}</label>
           <input class="form-input" name="usage_limit" type="number" value={rule.usage_limit ?? ""} />
-          <span class="form-hint">Current usage: {rule.usage_count} / {rule.usage_limit ?? t.admin.pricing.unlimited}</span>
+          <span class="form-hint">{t.admin.pricing.currentUsage.replace("{{count}}", String(rule.usage_count)).replace("{{limit}}", String(rule.usage_limit ?? t.admin.pricing.unlimited))}</span>
         </div>
         <div class="form-check">
           <input type="checkbox" name="is_active" id="is_active" checked={rule.is_active} />
@@ -132,7 +132,7 @@ function formatDateTime(date: string | null): string {
 
     <form method="POST" style="margin-top:24px">
       <input type="hidden" name="action" value="delete" />
-      <button type="submit" class="btn btn-danger" onclick="return confirm('{t.admin.pricing.deleteDiscountConfirm}')">{t.admin.pricing.deleteDiscount}</button>
+      <button type="submit" class="btn btn-danger" onclick={`return confirm('${t.admin.pricing.deleteDiscountConfirm}')`}>{t.admin.pricing.deleteDiscount}</button>
     </form>
   </div>
 </CmsLayout>

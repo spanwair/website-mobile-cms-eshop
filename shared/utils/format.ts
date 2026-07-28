@@ -1,3 +1,21 @@
+import type { AppLanguage } from "../i18n/getT";
+import { DEFAULT_CURRENCY, currencySymbol } from "../constants/currency";
+
+const NUMBER_LOCALE: Record<AppLanguage, string> = {
+  cs: "cs-CZ",
+  en: "en-US",
+};
+
+// cs: "18 850,00 Kč"  en: "18,850.00 Kč" — number formatting follows UI language,
+// the currency itself follows the store/order/price-list, defaulting to CZK.
+export function formatPrice(amount: number, lang: AppLanguage, currency: string = DEFAULT_CURRENCY): string {
+  const number = new Intl.NumberFormat(NUMBER_LOCALE[lang] ?? NUMBER_LOCALE.cs, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  return `${number} ${currencySymbol(currency)}`;
+}
+
 export function formatDate(iso: string, locale = "en"): string {
   return new Date(iso).toLocaleDateString(locale, {
     year: "numeric",

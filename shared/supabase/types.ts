@@ -420,6 +420,7 @@ export type Database = {
           party_id: string
           seo_description: string | null
           seo_title: string | null
+          show_in_nav: boolean
           slug: string
           sort_order: number
           updated_at: string
@@ -435,6 +436,7 @@ export type Database = {
           party_id: string
           seo_description?: string | null
           seo_title?: string | null
+          show_in_nav?: boolean
           slug: string
           sort_order?: number
           updated_at?: string
@@ -450,6 +452,7 @@ export type Database = {
           party_id?: string
           seo_description?: string | null
           seo_title?: string | null
+          show_in_nav?: boolean
           slug?: string
           sort_order?: number
           updated_at?: string
@@ -1809,6 +1812,7 @@ export type Database = {
           author_email: string
           author_name: string
           body: string | null
+          cons: string[]
           created_at: string
           customer_id: string | null
           helpful_count: number
@@ -1818,15 +1822,16 @@ export type Database = {
           order_id: string | null
           party_id: string
           product_id: string
+          pros: string[]
           rating: number
           status: string
-          title: string | null
           updated_at: string
         }
         Insert: {
           author_email: string
           author_name: string
           body?: string | null
+          cons?: string[]
           created_at?: string
           customer_id?: string | null
           helpful_count?: number
@@ -1836,15 +1841,16 @@ export type Database = {
           order_id?: string | null
           party_id: string
           product_id: string
+          pros?: string[]
           rating: number
           status?: string
-          title?: string | null
           updated_at?: string
         }
         Update: {
           author_email?: string
           author_name?: string
           body?: string | null
+          cons?: string[]
           created_at?: string
           customer_id?: string | null
           helpful_count?: number
@@ -1854,9 +1860,9 @@ export type Database = {
           order_id?: string | null
           party_id?: string
           product_id?: string
+          pros?: string[]
           rating?: number
           status?: string
-          title?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1975,6 +1981,7 @@ export type Database = {
           barcode: string | null
           brand_id: string | null
           condition_id: string | null
+          cost_price: number
           created_at: string
           description: string | null
           description_rich: Json | null
@@ -2000,6 +2007,7 @@ export type Database = {
           barcode?: string | null
           brand_id?: string | null
           condition_id?: string | null
+          cost_price?: number
           created_at?: string
           description?: string | null
           description_rich?: Json | null
@@ -2025,6 +2033,7 @@ export type Database = {
           barcode?: string | null
           brand_id?: string | null
           condition_id?: string | null
+          cost_price?: number
           created_at?: string
           description?: string | null
           description_rich?: Json | null
@@ -2233,6 +2242,7 @@ export type Database = {
           notes: string | null
           order_id: string
           party_id: string
+          processed_by: string | null
           reason: string
           received_at: string | null
           refund_amount: number | null
@@ -2252,6 +2262,7 @@ export type Database = {
           notes?: string | null
           order_id: string
           party_id: string
+          processed_by?: string | null
           reason: string
           received_at?: string | null
           refund_amount?: number | null
@@ -2271,6 +2282,7 @@ export type Database = {
           notes?: string | null
           order_id?: string
           party_id?: string
+          processed_by?: string | null
           reason?: string
           received_at?: string | null
           refund_amount?: number | null
@@ -2918,6 +2930,28 @@ export type Database = {
       }
       can_access_admin: { Args: never; Returns: boolean }
       get_my_role: { Args: never; Returns: number }
+      get_product_activity_log: {
+        Args: { p_limit?: number; p_party_id: string }
+        Returns: {
+          actor_id: string
+          actor_name: string
+          entity_number: string
+          event_time: string
+          event_type: string
+          from_status: string
+          note: string
+          product_title: string
+          quantity: number
+          reason: string
+          refund_amount: number
+          refund_method: string
+          to_status: string
+        }[]
+      }
+      get_product_overview_stats: {
+        Args: { p_days?: number; p_party_id: string }
+        Returns: Json
+      }
       get_user_permissions: {
         Args: { p_party_id: string; p_user_id: string }
         Returns: number

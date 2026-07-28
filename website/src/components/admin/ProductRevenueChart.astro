@@ -1,0 +1,186 @@
+---
+import { getLang } from "../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
+
+interface Point {
+  date: string;
+  orders: number;
+  revenue: number;
+  refunds: number;
+  refund_amount: number;
+}
+
+interface Props {
+  series: Point[];
+  legendRevenue: string;
+  legendRefunds: string;
+  showTableLabel: string;
+  colDate: string;
+  colOrders: string;
+  colRevenue: string;
+  colRefunds: string;
+  colRefundAmount: string;
+  noDataLabel: string;
+}
+
+const {
+  series, legendRevenue, legendRefunds, showTableLabel,
+  colDate, colOrders, colRevenue, colRefunds, colRefundAmount, noDataLabel,
+} = Astro.props;
+
+const lang = getLang(Astro);
+
+const W = 640;
+const H = 220;
+const padTop = 16;
+const padBottom = 28;
+const padLeft = 46;
+const padRight = 12;
+const plotW = W - padLeft - padRight;
+const plotH = H - padTop - padBottom;
+
+const maxVal = Math.max(1, ...series.map((p) => p.revenue), ...series.map((p) => p.refund_amount));
+const n = Math.max(1, series.length - 1);
+
+function xAt(i: number) { return padLeft + (i / n) * plotW; }
+function yAt(v: number) { return padTop + plotH - (v / maxVal) * plotH; }
+
+const revenuePoints = series.map((p, i) => [xAt(i), yAt(p.revenue)] as const);
+const refundPoints  = series.map((p, i) => [xAt(i), yAt(p.refund_amount)] as const);
+
+const revenuePath = revenuePoints.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+const refundPath  = refundPoints.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+const areaPath = revenuePoints.length > 0
+  ? `${revenuePath} L${xAt(series.length - 1).toFixed(1)},${(padTop + plotH).toFixed(1)} L${xAt(0).toFixed(1)},${(padTop + plotH).toFixed(1)} Z`
+  : "";
+
+const ticks = [0, 0.5, 1].map((f) => ({ y: padTop + plotH * (1 - f), value: Math.round(maxVal * f) }));
+
+const pointsJson = JSON.stringify(
+  series.map((p, i) => ({
+    x: xAt(i),
+    date: p.date,
+    revenueFormatted: formatPrice(p.revenue, lang),
+    refundFormatted: formatPrice(p.refund_amount, lang),
+  }))
+);
+---
+
+<div class="revenue-chart">
+  <div class="legend">
+    <span class="legend-item"><span class="legend-line" style="background:var(--accent-primary)"></span>{legendRevenue}</span>
+    <span class="legend-item"><span class="legend-line" style="background:var(--error)"></span>{legendRefunds}</span>
+  </div>
+
+  {series.length === 0 ? (
+    <p class="empty">{noDataLabel}</p>
+  ) : (
+    <div class="chart-wrap">
+      <svg viewBox={`0 0 ${W} ${H}`} class="chart-svg" role="img" aria-label={`${legendRevenue} / ${legendRefunds}`}>
+        {ticks.map((t) => (
+          <g>
+            <line x1={padLeft} y1={t.y} x2={W - padRight} y2={t.y} class="gridline" />
+            <text x={padLeft - 8} y={t.y + 4} class="tick-label" text-anchor="end">{t.value}</text>
+          </g>
+        ))}
+        <path d={areaPath} class="area-fill" />
+        <path d={revenuePath} class="line-revenue" />
+        <path d={refundPath} class="line-refund" />
+        {revenuePoints.length > 0 && (
+          <circle cx={revenuePoints[revenuePoints.length - 1][0]} cy={revenuePoints[revenuePoints.length - 1][1]} r="4" class="end-dot end-dot-revenue" />
+        )}
+        {refundPoints.length > 0 && (
+          <circle cx={refundPoints[refundPoints.length - 1][0]} cy={refundPoints[refundPoints.length - 1][1]} r="4" class="end-dot end-dot-refund" />
+        )}
+        <line id="crosshair" x1="0" y1={padTop} x2="0" y2={padTop + plotH} class="crosshair" hidden />
+        <rect x={padLeft} y={padTop} width={plotW} height={plotH} fill="transparent" id="hover-target" />
+      </svg>
+      <div class="tooltip" id="revenue-tooltip" hidden></div>
+    </div>
+  )}
+
+  <details class="table-fallback">
+    <summary>{showTableLabel}</summary>
+    <table class="data-table">
+      <thead><tr><th>{colDate}</th><th>{colOrders}</th><th>{colRevenue}</th><th>{colRefunds}</th><th>{colRefundAmount}</th></tr></thead>
+      <tbody>
+        {series.map((p) => (
+          <tr><td>{p.date}</td><td>{p.orders}</td><td>{formatPrice(p.revenue, lang)}</td><td>{p.refunds}</td><td>{formatPrice(p.refund_amount, lang)}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </details>
+</div>
+
+<script define:vars={{ pointsJson, legendRevenue, legendRefunds }}>
+  const points = JSON.parse(pointsJson);
+  const svg = document.querySelector(".revenue-chart .chart-svg");
+  const target = document.getElementById("hover-target");
+  const crosshair = document.getElementById("crosshair");
+  const tooltip = document.getElementById("revenue-tooltip");
+
+  function nearestIndex(clientX) {
+    const rect = svg.getBoundingClientRect();
+    const scaleX = svg.viewBox.baseVal.width / rect.width;
+    const localX = (clientX - rect.left) * scaleX;
+    let best = 0, bestDist = Infinity;
+    points.forEach((p, i) => {
+      const d = Math.abs(p.x - localX);
+      if (d < bestDist) { bestDist = d; best = i; }
+    });
+    return best;
+  }
+
+  function onMove(e) {
+    if (points.length === 0) return;
+    const i = nearestIndex(e.clientX);
+    const p = points[i];
+    crosshair.setAttribute("x1", String(p.x));
+    crosshair.setAttribute("x2", String(p.x));
+    crosshair.hidden = false;
+    tooltip.hidden = false;
+    tooltip.innerHTML = "";
+    const date = document.createElement("div");
+    date.textContent = p.date;
+    date.style.fontWeight = "700";
+    const rev = document.createElement("div");
+    rev.textContent = legendRevenue + ": " + p.revenueFormatted;
+    const ref = document.createElement("div");
+    ref.textContent = legendRefunds + ": " + p.refundFormatted;
+    tooltip.append(date, rev, ref);
+    tooltip.style.left = e.clientX + 12 + "px";
+    tooltip.style.top = e.clientY - 8 + "px";
+  }
+  function onLeave() {
+    crosshair.hidden = true;
+    tooltip.hidden = true;
+  }
+
+  target?.addEventListener("pointermove", onMove);
+  target?.addEventListener("pointerleave", onLeave);
+</script>
+
+<style>
+  .revenue-chart { position: relative; }
+  .legend { display: flex; gap: 16px; margin-bottom: 8px; font-size: 12px; color: var(--text-muted); }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-line { width: 14px; height: 2px; border-radius: 1px; }
+  .chart-wrap { position: relative; }
+  .chart-svg { width: 100%; height: auto; }
+  .gridline { stroke: var(--border-default); stroke-width: 1; }
+  .tick-label { font-size: 10px; fill: var(--text-muted); }
+  .area-fill { fill: var(--accent-primary); opacity: 0.1; stroke: none; }
+  .line-revenue { fill: none; stroke: var(--accent-primary); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .line-refund { fill: none; stroke: var(--error); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .end-dot { stroke: var(--bg-surface); stroke-width: 2; }
+  .end-dot-revenue { fill: var(--accent-primary); }
+  .end-dot-refund { fill: var(--error); }
+  .crosshair { stroke: var(--text-muted); stroke-width: 1; }
+  .tooltip {
+    position: fixed; background: var(--text-primary); color: #fff; font-size: 12px;
+    padding: 8px 10px; border-radius: 6px; pointer-events: none; z-index: 50; line-height: 1.5;
+  }
+  .table-fallback { margin-top: 12px; }
+  .table-fallback summary { cursor: pointer; font-size: 13px; color: var(--accent-primary); }
+  .empty { color: var(--text-muted); font-size: 14px; padding: 24px 0; text-align: center; }
+</style>

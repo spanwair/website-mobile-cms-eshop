@@ -1,6 +1,7 @@
 ---
 import type { BenefitItem } from "@shared/types";
-import { useT } from "../../lib/i18n";
+import { useT, getLang } from "../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
 
 interface Condition { label: string; color_hex: string }
 interface Props {
@@ -21,13 +22,15 @@ interface Props {
   enableWishlists: boolean;
   inWishlist: boolean;
   trustBadges?: BenefitItem[];
+  currency?: string;
 }
 const {
   product, brand, condition = null, categories, variants, reviewTotal, averageRating,
   isOutOfStock, qtyAvailable, cartError, addedToCart, isLoggedIn, linkBase, productSlug,
-  enableWishlists, inWishlist, trustBadges = [],
+  enableWishlists, inWishlist, trustBadges = [], currency,
 } = Astro.props;
 const t = useT(Astro);
+const lang = getLang(Astro);
 ---
 
 <div class="info-col">
@@ -45,14 +48,14 @@ const t = useT(Astro);
   <div class="price-row">
     {product.discount_price ? (
       <>
-        <span class="price-old">{Number(product.price).toFixed(2)} Kč</span>
-        <span class="price-main sale">{Number(product.discount_price).toFixed(2)} Kč</span>
+        <span class="price-old">{formatPrice(Number(product.price), lang, currency)}</span>
+        <span class="price-main sale">{formatPrice(Number(product.discount_price), lang, currency)}</span>
         <span class="saving-badge">
           {t.shop.save} {Math.round((1 - Number(product.discount_price) / Number(product.price)) * 100)}%
         </span>
       </>
     ) : (
-      <span class="price-main">{Number(product.price).toFixed(2)} Kč</span>
+      <span class="price-main">{formatPrice(Number(product.price), lang, currency)}</span>
     )}
   </div>
 
@@ -73,7 +76,7 @@ const t = useT(Astro);
             <input type="radio" name="variant" value={v.id} />
             <span class="variant-label">
               <span class="variant-name">{v.name}</span>
-              {v.price && <strong>{Number(v.price).toFixed(2)} Kč</strong>}
+              {v.price && <strong>{formatPrice(Number(v.price), lang, currency)}</strong>}
               {v.condition && <span class="condition-badge condition-badge--sm" style={`background:${v.condition.color_hex}`}>{v.condition.label}</span>}
             </span>
           </label>

@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { BASE, ADMIN, USER, ESHOP, login, loginAs, screenshot } from "./helpers";
 
 test.describe("01 — Auth: Login, Logout, Access Control", () => {
-  test("01-01 admin login redirects to /dashboard", async ({ page }) => {
+  test("01-01 admin login redirects to /", async ({ page }) => {
     await page.goto(`${BASE}/login`);
     await page.waitForLoadState("networkidle");
     await screenshot(page, "01-01-login-page");
@@ -10,9 +10,9 @@ test.describe("01 — Auth: Login, Logout, Access Control", () => {
     await page.fill("#si-password", ADMIN.password);
     await screenshot(page, "01-01-login-filled");
     await page.click("#signin-btn");
-    await page.waitForURL(`${BASE}/dashboard`, { timeout: 20000 });
-    await screenshot(page, "01-01-dashboard");
-    await expect(page).toHaveURL(`${BASE}/dashboard`);
+    await page.waitForURL(`${BASE}/`, { timeout: 20000 });
+    await screenshot(page, "01-01-post-login");
+    await expect(page).toHaveURL(`${BASE}/`);
   });
 
   test("01-02 wrong password shows error message", async ({ page }) => {
@@ -60,7 +60,7 @@ test.describe("01 — Auth: Login, Logout, Access Control", () => {
     await expect(page).toHaveURL(`${BASE}/login`);
   });
 
-  test("01-07 USER role cannot access /admin (redirected to /dashboard)", async ({ page }) => {
+  test("01-07 USER role cannot access /admin (redirected away)", async ({ page }) => {
     await loginAs(page, USER.email, USER.password);
     await page.goto(`${BASE}/admin`);
     await page.waitForLoadState("networkidle");

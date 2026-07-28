@@ -29,6 +29,23 @@ export async function fetchCategoryTree(
   return buildTree(flat);
 }
 
+export async function fetchNavCategories(
+  client: Client,
+  partyId: string
+): Promise<(Category & { children: Category[] })[]> {
+  const { data, error } = await client
+    .from("categories")
+    .select("*")
+    .eq("party_id", partyId)
+    .eq("is_visible", true)
+    .eq("show_in_nav", true)
+    .order("sort_order", { ascending: true });
+  if (error) return [];
+  const flat = (data ?? []) as Category[];
+  const top = flat.filter((c) => !c.parent_id);
+  return top.map((c) => ({ ...c, children: flat.filter((ch) => ch.parent_id === c.id) }));
+}
+
 export async function fetchCategory(
   client: Client,
   categoryId: string

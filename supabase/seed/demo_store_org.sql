@@ -49,42 +49,25 @@ INSERT INTO product_conditions (party_id, code, label, color_hex, sort_order) VA
   ('a0000000-0000-0000-0000-000000000001', 'c',        'Stav C',   '#f97316', 5);
 
 -- Categories ------------------------------------------------------------------------------
-INSERT INTO categories (party_id, name, slug, sort_order) VALUES
-  ('a0000000-0000-0000-0000-000000000001', 'iPhone', 'iphone', 1),
-  ('a0000000-0000-0000-0000-000000000001', 'iPad', 'ipad', 2),
-  ('a0000000-0000-0000-0000-000000000001', 'Mac', 'mac', 3),
-  ('a0000000-0000-0000-0000-000000000001', 'Watch', 'watch', 4),
-  ('a0000000-0000-0000-0000-000000000001', 'Audio', 'audio', 5),
-  ('a0000000-0000-0000-0000-000000000001', 'Příslušenství', 'prislusenstvi', 6);
+-- show_in_nav drives the storefront mega-nav directly (see fetchStorefrontNavTree) —
+-- there is no separate curated nav_items row for these; sort_order 0 keeps Příslušenství
+-- first, matching the pre-existing mega-nav order.
+INSERT INTO categories (party_id, name, slug, sort_order, show_in_nav) VALUES
+  ('a0000000-0000-0000-0000-000000000001', 'Příslušenství', 'prislusenstvi', 0, true),
+  ('a0000000-0000-0000-0000-000000000001', 'iPhone', 'iphone', 1, true),
+  ('a0000000-0000-0000-0000-000000000001', 'iPad', 'ipad', 2, true),
+  ('a0000000-0000-0000-0000-000000000001', 'Mac', 'mac', 3, true),
+  ('a0000000-0000-0000-0000-000000000001', 'Watch', 'watch', 4, true),
+  ('a0000000-0000-0000-0000-000000000001', 'Audio', 'audio', 5, true);
 
-INSERT INTO categories (party_id, parent_id, name, slug, sort_order)
-SELECT 'a0000000-0000-0000-0000-000000000001', c.id, v.name, v.slug, v.sort_order
+INSERT INTO categories (party_id, parent_id, name, slug, sort_order, show_in_nav)
+SELECT 'a0000000-0000-0000-0000-000000000001', c.id, v.name, v.slug, v.sort_order, true
 FROM (VALUES ('Kryty a pouzdra', 'kryty-a-pouzdra', 1), ('Ochranná skla', 'ochranna-skla', 2)) AS v(name, slug, sort_order)
 JOIN categories c ON c.party_id = 'a0000000-0000-0000-0000-000000000001' AND c.slug = 'prislusenstvi';
 
 UPDATE categories SET image_url = '/demo-media/' || slug || '.svg'
 WHERE party_id = 'a0000000-0000-0000-0000-000000000001'
   AND slug IN ('iphone', 'ipad', 'mac', 'watch', 'audio', 'prislusenstvi');
-
--- Navigation (mega menu) ------------------------------------------------------------------
-INSERT INTO nav_items (party_id, label, url, is_mega, sort_order) VALUES
-  ('a0000000-0000-0000-0000-000000000001', 'iPhone', '/iphone', false, 2),
-  ('a0000000-0000-0000-0000-000000000001', 'iPad', '/ipad', false, 3),
-  ('a0000000-0000-0000-0000-000000000001', 'Mac', '/mac', false, 4),
-  ('a0000000-0000-0000-0000-000000000001', 'Watch', '/watch', false, 5),
-  ('a0000000-0000-0000-0000-000000000001', 'Audio', '/audio', false, 6);
-
-INSERT INTO nav_items (party_id, label, is_mega, sort_order)
-VALUES ('a0000000-0000-0000-0000-000000000001', 'Příslušenství', true, 1);
-
-INSERT INTO nav_items (party_id, parent_id, label, column_label, category_id, sort_order)
-SELECT 'a0000000-0000-0000-0000-000000000001', p.id, v.label, v.col, c.id, v.sort_order
-FROM (VALUES
-  ('Kryty a pouzdra', 'kryty-a-pouzdra', 'Pouzdra a kryty', 1),
-  ('Ochranná skla', 'ochranna-skla', 'Ochrana displeje', 2)
-) AS v(label, cat_slug, col, sort_order)
-JOIN nav_items p ON p.party_id = 'a0000000-0000-0000-0000-000000000001' AND p.label = 'Příslušenství' AND p.parent_id IS NULL
-JOIN categories c ON c.party_id = 'a0000000-0000-0000-0000-000000000001' AND c.slug = v.cat_slug;
 
 -- Footer link columns ---------------------------------------------------------------------
 INSERT INTO footer_links (party_id, column_key, label, url, sort_order)

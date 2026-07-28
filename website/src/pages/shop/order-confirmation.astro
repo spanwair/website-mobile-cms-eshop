@@ -1,6 +1,6 @@
 ---
 import Layout from "../../components/layout/Layout.astro";
-import { useT } from "../../lib/i18n";
+import { useT, getLang } from "../../lib/i18n";
 import { createAdminClient } from "../../lib/supabase";
 import { confirmStripeSession } from "../../lib/checkoutFlow";
 
@@ -10,7 +10,7 @@ const orderNumber = searchParams.get("order") ?? "";
 const sessionId = searchParams.get("session_id");
 
 if (sessionId && orderNumber) {
-  await confirmStripeSession(createAdminClient(), sessionId, orderNumber);
+  await confirmStripeSession(createAdminClient(), sessionId, orderNumber, getLang(Astro));
 }
 ---
 

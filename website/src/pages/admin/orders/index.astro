@@ -3,9 +3,10 @@ import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { fetchOrders } from "@shared/services/orderService";
 import { requireAdminCtx } from "../../../lib/admin";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import type { Order } from "@shared/types/index";
+import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -13,11 +14,12 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_ORDERS)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const url = new URL(Astro.request.url);
 const page = parseInt(url.searchParams.get("page") ?? "1", 10);
@@ -39,6 +41,13 @@ const STATUS_TABS: Array<{ value: string; label: string }> = [
   { value: "delivered", label: t.admin.orders.tabDelivered },
   { value: "cancelled", label: t.admin.orders.tabCancelled },
 ];
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: t.admin.orders.tabPending, confirmed: t.admin.orders.tabConfirmed, processing: t.admin.orders.tabProcessing,
+  shipped: t.admin.orders.tabShipped, delivered: t.admin.orders.tabDelivered, cancelled: t.admin.orders.tabCancelled,
+  refunded: t.admin.orders.statusRefunded,
+};
+const PAYMENT_LABELS: Record<string, string> = { paid: t.admin.orders.paymentPaid, unpaid: t.admin.orders.paymentUnpaid };
 
 function statusClass(s: string) {
   const map: Record<string, string> = {
@@ -70,10 +79,10 @@ function statusClass(s: string) {
         {orders.map((o) => (
           <tr>
             <td style="font-weight:600">{o.order_number}</td>
-            <td><span class={`badge ${statusClass(o.status)}`}>{o.status}</span></td>
-            <td><span class={`badge ${o.payment_status === "paid" ? "badge-active" : "badge-draft"}`}>{o.payment_status}</span></td>
-            <td>{o.total_amount.toFixed(2)} Kč</td>
-            <td style="color:var(--text-muted);font-size:13px">{new Date(o.created_at).toLocaleDateString()}</td>
+            <td><span class={`badge ${statusClass(o.status)}`}>{STATUS_LABELS[o.status] ?? o.status}</span></td>
+            <td><span class={`badge ${o.payment_status === "paid" ? "badge-active" : "badge-draft"}`}>{PAYMENT_LABELS[o.payment_status] ?? o.payment_status}</span></td>
+            <td>{formatPrice(o.total_amount, lang, o.currency)}</td>
+            <td style="color:var(--text-muted);font-size:13px">{new Date(o.created_at).toLocaleDateString(lang)}</td>
             <td><a href={`/admin/orders/${o.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.orders.detail}</a></td>
           </tr>
         ))}

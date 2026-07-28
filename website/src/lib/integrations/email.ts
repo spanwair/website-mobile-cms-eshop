@@ -4,10 +4,9 @@
 // Configure your sending domain at resend.com/domains (free tier: 100 emails/day)
 
 import { Resend } from "resend";
-import { getT } from "@shared/i18n/getT";
+import { getT, type AppLanguage } from "@shared/i18n/getT";
 import { PERMISSIONS, ROLE } from "@shared/constants/permissions";
-
-type Lang = 'cs' | 'en';
+import { formatPrice } from "@shared/utils/format";
 
 function getResend() {
   const key = import.meta.env.RESEND_API_KEY;
@@ -24,7 +23,7 @@ async function sendEmail(opts: { to: string; subject: string; html: string }): P
 
 const FROM = import.meta.env.EMAIL_FROM ?? "noreply@yourdomain.cz";
 
-function makeRoleNames(lang: Lang): Record<number, string> {
+function makeRoleNames(lang: AppLanguage): Record<number, string> {
   const t = getT(lang);
   return {
     [ROLE.ESHOP_ADMIN]: t.profile.role.eshop_admin,
@@ -33,7 +32,7 @@ function makeRoleNames(lang: Lang): Record<number, string> {
   };
 }
 
-function makePermLabels(lang: Lang): Record<number, string> {
+function makePermLabels(lang: AppLanguage): Record<number, string> {
   const t = getT(lang);
   return {
     [PERMISSIONS.VIEW_DASHBOARD]:    t.admin.roles.permDashboard,
@@ -50,7 +49,7 @@ function makePermLabels(lang: Lang): Record<number, string> {
   };
 }
 
-function activePermNames(lang: Lang, systemRole: number | null, rolePermissions: number): string[] {
+function activePermNames(lang: AppLanguage, systemRole: number | null, rolePermissions: number): string[] {
   if (systemRole !== ROLE.ESHOP_ADMIN || rolePermissions === 0) return [];
   const labels = makePermLabels(lang);
   return Object.entries(PERMISSIONS)
@@ -61,7 +60,7 @@ function activePermNames(lang: Lang, systemRole: number | null, rolePermissions:
 
 // Returns metadata to embed in inviteUserByEmail data for GoTrue template rendering (dev only).
 export function buildDevInviteMetadata(opts: {
-  lang: Lang;
+  lang: AppLanguage;
   partyName: string;
   roleName: string;
   systemRole: number | null;
@@ -81,7 +80,7 @@ export function buildDevInviteMetadata(opts: {
 
 export async function sendPartyInvitation(opts: {
   to: string;
-  lang: Lang;
+  lang: AppLanguage;
   partyName: string;
   roleName: string;
   systemRole: number | null;
@@ -193,9 +192,11 @@ export async function sendOrderConfirmation(opts: {
   orderTotal: number;
   items: Array<{ title: string; quantity: number; price: number }>;
   currency?: string;
+  lang?: AppLanguage;
 }): Promise<void> {
+  const lang = opts.lang ?? 'cs';
   const itemsHtml = opts.items
-    .map(i => `<tr><td>${i.title}</td><td>${i.quantity}×</td><td>${i.price.toFixed(2)} ${opts.currency ?? "Kč"}</td></tr>`)
+    .map(i => `<tr><td>${i.title}</td><td>${i.quantity}×</td><td>${formatPrice(i.price, lang, opts.currency)}</td></tr>`)
     .join("");
 
   await sendEmail({
@@ -207,7 +208,7 @@ export async function sendOrderConfirmation(opts: {
       <table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse;width:100%;max-width:500px">
         <thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead>
         <tbody>${itemsHtml}</tbody>
-        <tfoot><tr><td colspan="2"><strong>Total</strong></td><td><strong>${opts.orderTotal.toFixed(2)} ${opts.currency ?? "Kč"}</strong></td></tr></tfoot>
+        <tfoot><tr><td colspan="2"><strong>Total</strong></td><td><strong>${formatPrice(opts.orderTotal, lang, opts.currency)}</strong></td></tr></tfoot>
       </table>
       <p>We will notify you when your order ships.</p>
     `,
@@ -278,9 +279,12 @@ export async function sendAbandonedCartRecovery(opts: {
   items: Array<{ title: string; price: number }>;
   cartUrl: string;
   couponCode?: string;
+  currency?: string;
+  lang?: AppLanguage;
 }): Promise<void> {
+  const lang = opts.lang ?? 'cs';
   const itemsHtml = opts.items
-    .map(i => `<li>${i.title} — ${i.price.toFixed(2)} Kč</li>`)
+    .map(i => `<li>${i.title} — ${formatPrice(i.price, lang, opts.currency)}</li>`)
     .join("");
 
   await sendEmail({

@@ -1,0 +1,123 @@
+---
+import type { ProductActivityEvent } from "@shared/types";
+import { useT, getLang } from "../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
+
+interface Props {
+  events: ProductActivityEvent[];
+  locale: string;
+}
+
+const { events, locale } = Astro.props;
+const t = useT(Astro);
+const lang = getLang(Astro);
+const po = t.admin.productsOverview;
+
+function eventClass(type: string) {
+  if (type.startsWith("return")) return "badge-pending";
+  if (type === "stock_purchase") return "badge-active";
+  if (type === "stock_damage") return "badge-error";
+  if (type === "stock_sale") return "badge-draft";
+  return "badge-inactive";
+}
+
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  order_status: po.eventTypeOrderStatus,
+  return_completed: po.eventTypeReturnCompleted,
+  return_requested: po.eventTypeReturnRequested,
+  stock_purchase: po.eventTypeStockPurchase,
+  stock_damage: po.eventTypeStockDamage,
+  stock_sale: po.eventTypeStockSale,
+  stock_return: po.eventTypeStockReturn,
+  stock_adjustment: po.eventTypeStockAdjustment,
+  stock_transfer: po.eventTypeStockTransfer,
+};
+
+function eventLabel(type: string) {
+  return EVENT_TYPE_LABELS[type] ?? type.replace(/_/g, " ");
+}
+
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  pending: t.admin.orders.tabPending, confirmed: t.admin.orders.tabConfirmed, processing: t.admin.orders.tabProcessing,
+  shipped: t.admin.orders.tabShipped, delivered: t.admin.orders.tabDelivered, cancelled: t.admin.orders.tabCancelled,
+  refunded: t.admin.orders.statusRefunded,
+};
+const orderStatusLabel = (s: string | null) => (s ? ORDER_STATUS_LABELS[s] ?? s : "—");
+
+const RETURN_REASON_LABELS: Record<string, string> = {
+  wrong_item: t.admin.returns.reasonWrongItem, damaged: t.admin.returns.reasonDamaged, defective: t.admin.returns.reasonDefective,
+  not_as_described: t.admin.returns.reasonNotAsDescribed, changed_mind: t.admin.returns.reasonChangedMind,
+  quality_issue: t.admin.returns.reasonQualityIssue, size_issue: t.admin.returns.reasonSizeIssue, other: t.admin.returns.reasonOther,
+};
+
+const STOCK_ACTION_LABELS: Record<string, string> = {
+  purchase: po.actionPurchase, sale: po.actionSale, adjustment: po.actionAdjustment,
+  transfer: po.actionTransfer, return: po.actionReturn, damage: po.actionDamage,
+};
+
+function eventDescription(e: ProductActivityEvent): string {
+  switch (e.event_type) {
+    case "order_status": {
+      let desc = po.descOrderStatus
+        .replace("{{number}}", e.entity_number ?? "")
+        .replace("{{from}}", orderStatusLabel(e.from_status))
+        .replace("{{to}}", orderStatusLabel(e.to_status));
+      if (e.note) desc += po.descNoteParenSuffix.replace("{{note}}", e.note);
+      return desc;
+    }
+    case "return_completed": {
+      let desc = po.descReturnCompleted
+        .replace("{{number}}", e.entity_number ?? "")
+        .replace("{{amount}}", formatPrice(e.refund_amount ?? 0, lang));
+      if (e.refund_method) desc += po.descViaMethodSuffix.replace("{{method}}", e.refund_method);
+      return desc;
+    }
+    case "return_requested":
+      return po.descReturnRequested
+        .replace("{{number}}", e.entity_number ?? "")
+        .replace("{{reason}}", (e.reason && RETURN_REASON_LABELS[e.reason]) ?? e.reason ?? "");
+    default: {
+      const action = e.event_type.startsWith("stock_") ? e.event_type.slice("stock_".length) : e.event_type;
+      let desc = po.descStockMovement
+        .replace("{{action}}", STOCK_ACTION_LABELS[action] ?? action)
+        .replace("{{product}}", e.product_title ?? "")
+        .replace("{{qty}}", String(e.quantity ?? 0))
+        .replace("{{unit}}", po.unitsSuffix);
+      if (e.note) desc += po.descNoteDashSuffix.replace("{{note}}", e.note);
+      return desc;
+    }
+  }
+}
+
+function actorName(e: ProductActivityEvent): string {
+  return e.actor_name ?? (e.event_type === "return_requested" ? po.actorCustomer : po.actorSystem);
+}
+---
+
+<div class="card" data-section="product-activity">
+  <h2 class="section-title">{po.activityTitle}</h2>
+  {events.length === 0 ? (
+    <p class="empty">{po.activityEmpty}</p>
+  ) : (
+    <table class="data-table">
+      <thead>
+        <tr><th>{po.colTime}</th><th>{po.colEvent}</th><th>{po.colDescription}</th><th>{po.colActor}</th></tr>
+      </thead>
+      <tbody>
+        {events.map((e) => (
+          <tr>
+            <td style="white-space:nowrap;color:var(--text-muted)">{new Date(e.event_time).toLocaleString(locale)}</td>
+            <td><span class={`badge ${eventClass(e.event_type)}`}>{eventLabel(e.event_type)}</span></td>
+            <td>{eventDescription(e)}</td>
+            <td>{actorName(e)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
+
+<style>
+  .empty { color: var(--text-muted); font-size: 14px; padding: 16px 0; }
+  .section-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+</style>

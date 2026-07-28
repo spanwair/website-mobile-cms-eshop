@@ -13,7 +13,7 @@ export const POST: APIRoute = async (context) => {
   const redirectTo = (form.get("redirect") as string) || "/admin";
 
   const ctx = await requireAdminCtx(supabase, session.user.id);
-  if (!ctx) return redirect("/dashboard");
+  if (!ctx) return redirect("/");
 
   const validPartyId = ctx.parties.find((p) => p.id === partyId)?.id ?? null;
   if (validPartyId) {

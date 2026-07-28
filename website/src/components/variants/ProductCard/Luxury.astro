@@ -1,10 +1,12 @@
 ---
 import type { ProductCardData } from "../../../lib/variantRegistry";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
 
-interface Props { product: ProductCardData; linkBase?: string }
-const { product, linkBase = "/shop" } = Astro.props;
+interface Props { product: ProductCardData; linkBase?: string; currency?: string }
+const { product, linkBase = "/shop", currency } = Astro.props;
 const t = useT(Astro);
+const lang = getLang(Astro);
 ---
 
 <a href={`${linkBase}/${product.slug}`} class="product-card">
@@ -21,7 +23,7 @@ const t = useT(Astro);
     {product.condition && <span class="condition-badge" style={`background:${product.condition.color_hex}`}>{product.condition.label}</span>}
     <h3 class="product-title">{product.title}</h3>
     <span class="price">
-      {product.discount_price ? Number(product.discount_price).toFixed(2) : Number(product.price).toFixed(2)} Kč
+      {formatPrice(Number(product.discount_price ?? product.price), lang, currency)}
     </span>
   </div>
 </a>

@@ -150,7 +150,7 @@ if (Astro.request.method === "POST") {
 
     <div class="checkout-layout">
       <CheckoutAddressForm cancelHref={`${linkBase}/cart`} />
-      <CheckoutOrderSummary items={items} subtotal={subtotal} />
+      <CheckoutOrderSummary items={items} subtotal={subtotal} currency={storeParty.config?.currency_code} />
     </div>
   </div>
 </Layout>

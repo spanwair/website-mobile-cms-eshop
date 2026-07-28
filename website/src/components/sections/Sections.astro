@@ -35,7 +35,7 @@ const {
     case "hero": return <Hero storeConfig={storeConfig} media={media} slides={slides} />;
     case "subhero": return <Subhero storeConfig={storeConfig} media={media} />;
     case "categories": return <Categories categories={categories} linkBase={linkBase} />;
-    case "featured_products": return <FeaturedProducts products={featuredProducts} variant={cardVariant} linkBase={linkBase} />;
+    case "featured_products": return <FeaturedProducts products={featuredProducts} variant={cardVariant} linkBase={linkBase} currency={storeConfig?.currency_code} />;
     case "benefits": return <Benefits items={benefitItems} />;
     case "buyback_promo": return <BuybackPromo storeConfig={storeConfig} media={media} />;
     case "condition_explainer": return <ConditionExplainer conditions={conditions} linkBase={linkBase} />;

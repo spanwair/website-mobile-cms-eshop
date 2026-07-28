@@ -8,7 +8,7 @@
  *          → accept link → set-password → login → admin panel visible, DB role=2,
  *          user_party_roles entry present, /admin accessible
  *   17-03  Existing admin user (simulates Gmail OAuth: profile already exists, isNewUser=false)
- *          → magic link callback → /dashboard (never /auth/set-password)
+ *          → magic link callback → / (never /auth/set-password)
  *          → admin panel visible
  *   17-04  Regular user invited as ESHOP_ADMIN via admin party UI (existing user path)
  *          → no invite email, role updated immediately → login → admin panel visible
@@ -148,8 +148,8 @@ async function acceptInviteAndSetPassword(
   await page.fill("#sp-password", password);
   await page.fill("#sp-confirm", password);
   await page.click("#setpw-btn");
-  await page.waitForURL(`${BASE}/dashboard`, { timeout: 20000 });
-  await screenshot(page, `${testId}-dashboard-after-set-password`);
+  await page.waitForURL(`${BASE}/`, { timeout: 20000 });
+  await screenshot(page, `${testId}-home-after-set-password`);
 }
 
 // ── tests ─────────────────────────────────────────────────────────────────────
@@ -180,8 +180,9 @@ test.describe("17 — Invite → role → login verification", () => {
     // Accept invite → set-password page → fill and submit
     await acceptInviteAndSetPassword(page, callbackUrl, "Invited Admin", ADMIN_INVITE_PASSWORD, "17-01");
 
-    // After set-password, should be on dashboard and admin link visible
-    await expect(page.locator(".nav-links a[href='/admin']")).toBeVisible({ timeout: 5000 });
+    // After set-password, should be on the homepage and admin link visible in the dropdown
+    await page.locator("#profile-toggle").click();
+    await expect(page.locator(".dropdown-item[href='/admin']")).toBeVisible({ timeout: 5000 });
     await screenshot(page, "17-01-admin-link-visible");
 
     // DB assertion: profile.role must be 4
@@ -198,11 +199,12 @@ test.describe("17 — Invite → role → login verification", () => {
     await page.fill("#si-email", ADMIN_INVITE_EMAIL);
     await page.fill("#si-password", ADMIN_INVITE_PASSWORD);
     await page.click("#signin-btn");
-    await page.waitForURL(`${BASE}/dashboard`, { timeout: 20000 });
-    await screenshot(page, "17-01-relogin-dashboard");
+    await page.waitForURL(`${BASE}/`, { timeout: 20000 });
+    await screenshot(page, "17-01-relogin-home");
 
     // Admin panel still visible after re-login
-    await expect(page.locator(".nav-links a[href='/admin']")).toBeVisible({ timeout: 5000 });
+    await page.locator("#profile-toggle").click();
+    await expect(page.locator(".dropdown-item[href='/admin']")).toBeVisible({ timeout: 5000 });
     await screenshot(page, "17-01-relogin-admin-link");
   });
 
@@ -221,7 +223,8 @@ test.describe("17 — Invite → role → login verification", () => {
     await acceptInviteAndSetPassword(page, callbackUrl, "Invited Eshop", ESHOP_INVITE_PASSWORD, "17-02");
 
     // Admin link must be visible (role=2, has party membership)
-    await expect(page.locator(".nav-links a[href='/admin']")).toBeVisible({ timeout: 5000 });
+    await page.locator("#profile-toggle").click();
+    await expect(page.locator(".dropdown-item[href='/admin']")).toBeVisible({ timeout: 5000 });
     await screenshot(page, "17-02-admin-link-visible");
 
     // DB assertions
@@ -250,17 +253,18 @@ test.describe("17 — Invite → role → login verification", () => {
     await page.fill("#si-email", ESHOP_INVITE_EMAIL);
     await page.fill("#si-password", ESHOP_INVITE_PASSWORD);
     await page.click("#signin-btn");
-    await page.waitForURL(`${BASE}/dashboard`, { timeout: 20000 });
-    await screenshot(page, "17-02-relogin-dashboard");
-    await expect(page.locator(".nav-links a[href='/admin']")).toBeVisible({ timeout: 5000 });
+    await page.waitForURL(`${BASE}/`, { timeout: 20000 });
+    await screenshot(page, "17-02-relogin-home");
+    await page.locator("#profile-toggle").click();
+    await expect(page.locator(".dropdown-item[href='/admin']")).toBeVisible({ timeout: 5000 });
     await screenshot(page, "17-02-relogin-admin-link");
   });
 
   // ── 17-03 ──────────────────────────────────────────────────────────────────
 
-  test("17-03 existing user with profile (Gmail simulation) → magic link callback → /dashboard not /auth/set-password → admin panel visible", async ({ page }) => {
+  test("17-03 existing user with profile (Gmail simulation) → magic link callback → / not /auth/set-password → admin panel visible", async ({ page }) => {
     // Simulate Google OAuth behavior: an existing user with an admin profile logs in via a link.
-    // Since isNewUser=false and type=magiclink, callback.astro must redirect to /dashboard.
+    // Since isNewUser=false and type=magiclink, callback.astro must redirect to /.
     // The seeded ADMIN user (admin@test.com) has role=4 and a profile row.
 
     const magicLinkUrl = await generateMagicLinkCallbackUrl(ADMIN.email);
@@ -269,16 +273,17 @@ test.describe("17 — Invite → role → login verification", () => {
 
     // Navigate to magic link callback — must NOT go to /auth/set-password
     await page.goto(magicLinkUrl);
-    await page.waitForURL(`${BASE}/dashboard`, { timeout: 20000 });
-    await screenshot(page, "17-03-existing-user-dashboard");
+    await page.waitForURL(`${BASE}/`, { timeout: 20000 });
+    await screenshot(page, "17-03-existing-user-home");
 
     // Admin panel visible (ADMIN user has role=4)
-    await expect(page.locator(".nav-links a[href='/admin']")).toBeVisible({ timeout: 5000 });
+    await page.locator("#profile-toggle").click();
+    await expect(page.locator(".dropdown-item[href='/admin']")).toBeVisible({ timeout: 5000 });
     await screenshot(page, "17-03-admin-link-visible");
 
     // Explicitly assert NOT on set-password
     expect(page.url()).not.toContain("/auth/set-password");
-    expect(page.url()).toContain("/dashboard");
+    expect(page.url()).toBe(`${BASE}/`);
   });
 
   // ── 17-04 ──────────────────────────────────────────────────────────────────
@@ -334,11 +339,12 @@ test.describe("17 — Invite → role → login verification", () => {
     await page.fill("#si-email", EXISTING_INVITE_EMAIL);
     await page.fill("#si-password", EXISTING_INVITE_PASSWORD);
     await page.click("#signin-btn");
-    await page.waitForURL(`${BASE}/dashboard`, { timeout: 20000 });
-    await screenshot(page, "17-04-existing-user-dashboard");
+    await page.waitForURL(`${BASE}/`, { timeout: 20000 });
+    await screenshot(page, "17-04-existing-user-home");
 
     // Admin panel visible
-    await expect(page.locator(".nav-links a[href='/admin']")).toBeVisible({ timeout: 5000 });
+    await page.locator("#profile-toggle").click();
+    await expect(page.locator(".dropdown-item[href='/admin']")).toBeVisible({ timeout: 5000 });
     await screenshot(page, "17-04-admin-link-visible");
   });
 });

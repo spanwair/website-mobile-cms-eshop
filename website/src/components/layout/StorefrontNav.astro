@@ -62,6 +62,8 @@ const showWishlist = storeConfig?.enable_wishlists ?? true;
       id="nav-search-wrap"
       data-shop-href={shopHref}
       data-party-id={partyId ?? ""}
+      data-lang={lang}
+      data-currency={currency}
       data-t-no-image={t.shop.noImage}
       data-t-in-stock={t.shop.inStock}
       data-t-out-of-stock={t.shop.outOfStock}
@@ -122,6 +124,10 @@ const showWishlist = storeConfig?.enable_wishlists ?? true;
 <MegaNav navTree={navTree} shopHref={shopHref} />
 
 <script>
+  import { formatPrice } from "@shared/utils/format";
+  import type { AppLanguage } from "@shared/i18n/getT";
+  import type { SearchResultCategory, SearchResultProduct } from "@shared/types";
+
   const wrap = document.getElementById("nav-search-wrap");
   const input = document.getElementById("nav-search-input") as HTMLInputElement | null;
   const dropdown = document.getElementById("nav-search-dropdown");
@@ -132,6 +138,8 @@ const showWishlist = storeConfig?.enable_wishlists ?? true;
   if (wrap && input && dropdown && categoriesEl && productsEl && viewAllEl) {
     const shopHref = wrap.dataset.shopHref || "/shop";
     const partyId = wrap.dataset.partyId || "";
+    const navLang = (wrap.dataset.lang as AppLanguage) || "cs";
+    const navCurrency = wrap.dataset.currency;
     const tNoImage = wrap.dataset.tNoImage || "";
     const tInStock = wrap.dataset.tInStock || "";
     const tOutOfStock = wrap.dataset.tOutOfStock || "";
@@ -146,11 +154,11 @@ const showWishlist = storeConfig?.enable_wishlists ?? true;
       activeIndex = -1;
     }
 
-    function formatPrice(value: number | string) {
-      return `${Number(value).toFixed(2)} Kč`;
+    function navFormatPrice(value: number | string) {
+      return formatPrice(Number(value), navLang, navCurrency);
     }
 
-    function renderResults(query: string, categories: any[], products: any[]) {
+    function renderResults(query: string, categories: SearchResultCategory[], products: SearchResultProduct[]) {
       categoriesEl!.replaceChildren();
       productsEl!.replaceChildren();
 
@@ -209,11 +217,11 @@ const showWishlist = storeConfig?.enable_wishlists ?? true;
         if (p.discount_price) {
           const oldPrice = document.createElement("span");
           oldPrice.className = "search-price-old";
-          oldPrice.textContent = formatPrice(p.price);
+          oldPrice.textContent = navFormatPrice(p.price);
           price.appendChild(oldPrice);
-          price.appendChild(document.createTextNode(formatPrice(p.discount_price)));
+          price.appendChild(document.createTextNode(navFormatPrice(p.discount_price)));
         } else {
-          price.textContent = formatPrice(p.price);
+          price.textContent = navFormatPrice(p.price);
         }
         meta.appendChild(price);
 

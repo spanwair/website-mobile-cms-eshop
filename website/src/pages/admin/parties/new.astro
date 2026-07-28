@@ -12,7 +12,7 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 // Admins and owners can create new organizations.
 if (ctx.role < ROLE.ADMIN) return Astro.redirect("/admin/parties");
 const { permissions } = ctx;
@@ -45,26 +45,26 @@ if (Astro.request.method === "POST") {
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">{t.admin.parties.fieldName} *</label>
-          <input class="form-input" name="name" required placeholder="My Organisation" />
+          <input class="form-input" name="name" required placeholder={t.admin.parties.fieldNamePlaceholder} />
         </div>
         <div class="form-group">
           <label class="form-label">{t.admin.parties.fieldSlug} *</label>
-          <input class="form-input" name="slug" required placeholder="my-organisation" />
+          <input class="form-input" name="slug" required placeholder={t.admin.parties.fieldSlugPlaceholder} />
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">{t.admin.parties.fieldCompany}</label>
-          <input class="form-input" name="company_name" placeholder="Company s.r.o." />
+          <input class="form-input" name="company_name" placeholder={t.admin.parties.fieldCompanyPlaceholder} />
         </div>
         <div class="form-group">
           <label class="form-label">{t.admin.parties.fieldVat}</label>
-          <input class="form-input" name="vat_number" placeholder="CZ12345678" />
+          <input class="form-input" name="vat_number" placeholder={t.admin.parties.fieldVatPlaceholder} />
         </div>
       </div>
       <div class="form-group">
         <label class="form-label">{t.admin.parties.fieldBillingEmail}</label>
-        <input class="form-input" name="billing_email" type="email" placeholder="billing@company.com" />
+        <input class="form-input" name="billing_email" type="email" placeholder={t.admin.parties.fieldBillingEmailPlaceholder} />
       </div>
       <div class="form-actions">
         <a href="/admin/parties" class="btn btn-ghost">{t.common.cancel}</a>

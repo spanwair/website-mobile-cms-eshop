@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { createSupabase } from "../../lib/supabase";
-import { searchStorefront } from "../../lib/shopQueries";
+import { searchStorefront } from "@shared/services/searchService";
 
 export const GET: APIRoute = async (context) => {
   const query = (context.url.searchParams.get("q") ?? "").trim();

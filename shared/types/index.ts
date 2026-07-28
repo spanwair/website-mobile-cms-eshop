@@ -188,6 +188,7 @@ export interface Category {
   seo_description: string | null;
   sort_order: number;
   is_visible: boolean;
+  show_in_nav: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -209,6 +210,7 @@ export interface Product {
   seo_title: string | null;
   seo_description: string | null;
   price: number;
+  cost_price: number;
   discount_price: number | null;
   tax_rate: number;
   weight: number | null;
@@ -263,6 +265,19 @@ export interface ProductWithDetails extends Product {
   categories: string[];
   tags: string[];
   brand: Brand | null;
+}
+
+export interface SearchResultCategory extends Pick<Category, "id" | "name" | "slug" | "icon"> {}
+
+export interface SearchResultProduct extends Pick<Product, "id" | "title" | "slug" | "price" | "discount_price"> {
+  primaryImage: string | null;
+  isOutOfStock: boolean;
+  categoryName: string | null;
+}
+
+export interface StorefrontSearchResult {
+  categories: SearchResultCategory[];
+  products: SearchResultProduct[];
 }
 
 export interface Customer {
@@ -466,6 +481,55 @@ export interface AuditLog {
   old_value: unknown;
   new_value: unknown;
   created_at: string;
+}
+
+export interface ProductOverviewStats {
+  stage_counts: { draft: number; active: number; inactive: number; total: number };
+  lifecycle: {
+    purchased_qty: number;
+    sold_qty: number;
+    delivered_qty: number;
+    refunded_qty: number;
+    damaged_qty: number;
+  };
+  financials: {
+    gross_revenue: number;
+    cogs: number;
+    refunded_amount: number;
+    damaged_loss: number;
+    purchase_cost: number;
+    net_profit: number;
+  };
+  timeseries: Array<{
+    date: string;
+    orders: number;
+    revenue: number;
+    refunds: number;
+    refund_amount: number;
+  }>;
+  top_products: Array<{
+    id: string;
+    title: string;
+    qty_sold: number;
+    revenue: number;
+    profit: number;
+  }>;
+}
+
+export interface ProductActivityEvent {
+  event_time: string;
+  event_type: string;
+  entity_number: string | null;
+  from_status: string | null;
+  to_status: string | null;
+  note: string | null;
+  product_title: string | null;
+  quantity: number | null;
+  refund_amount: number | null;
+  refund_method: string | null;
+  reason: string | null;
+  actor_name: string | null;
+  actor_id: string | null;
 }
 
 export type NotificationType =

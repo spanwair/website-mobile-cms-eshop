@@ -4,7 +4,8 @@ import { createSupabase } from "../../../lib/supabase";
 import { fetchPriceLists, fetchDiscountRules, fetchCoupons } from "@shared/services/pricingService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -12,11 +13,12 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_PRICING)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const url = new URL(Astro.request.url);
 const tab = url.searchParams.get("tab") ?? "pricelists";
@@ -26,6 +28,16 @@ const [priceLists, discountRules, coupons] = await Promise.all([
   fetchDiscountRules(supabase, partyId),
   fetchCoupons(supabase, partyId),
 ]);
+
+function discountTypeLabel(type: string) {
+  const map: Record<string, string> = {
+    percentage: t.admin.pricing.typePercentage,
+    fixed: t.admin.pricing.typeFixed,
+    buy_x_get_y: t.admin.pricing.typeBuyXGetY,
+    free_shipping: t.admin.pricing.typeFreeShipping,
+  };
+  return map[type] ?? type;
+}
 ---
 
 <CmsLayout title={t.admin.pricing.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
@@ -51,8 +63,8 @@ const [priceLists, discountRules, coupons] = await Promise.all([
                 <td>{pl.currency}</td>
                 <td>{pl.is_default ? <span class="badge badge-active">{t.admin.pricing.defaultBadge}</span> : "—"}</td>
                 <td><span class={`badge ${pl.is_active ? "badge-active" : "badge-inactive"}`}>{pl.is_active ? t.common.active : t.common.inactive}</span></td>
-                <td style="font-size:13px;color:var(--text-muted)">{pl.valid_from ? new Date(pl.valid_from).toLocaleDateString() : "—"}</td>
-                <td style="font-size:13px;color:var(--text-muted)">{pl.valid_to ? new Date(pl.valid_to).toLocaleDateString() : "—"}</td>
+                <td style="font-size:13px;color:var(--text-muted)">{pl.valid_from ? new Date(pl.valid_from).toLocaleDateString(lang) : "—"}</td>
+                <td style="font-size:13px;color:var(--text-muted)">{pl.valid_to ? new Date(pl.valid_to).toLocaleDateString(lang) : "—"}</td>
                 <td><a href={`/admin/pricing/pricelists/${pl.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.pricing.edit}</a></td>
               </tr>
             ))}
@@ -76,11 +88,11 @@ const [priceLists, discountRules, coupons] = await Promise.all([
             {discountRules.map((r) => (
               <tr>
                 <td style="font-weight:600">{r.name}</td>
-                <td><span class="badge badge-pending">{r.type}</span></td>
-                <td>{r.type === "percentage" ? `${r.value}%` : `${r.value} Kč`}</td>
+                <td><span class="badge badge-pending">{discountTypeLabel(r.type)}</span></td>
+                <td>{r.type === "percentage" ? `${r.value}%` : formatPrice(r.value, lang)}</td>
                 <td><span class={`badge ${r.is_active ? "badge-active" : "badge-inactive"}`}>{r.is_active ? t.common.active : t.common.inactive}</span></td>
-                <td style="font-size:13px;color:var(--text-muted)">{r.starts_at ? new Date(r.starts_at).toLocaleDateString() : "—"}</td>
-                <td style="font-size:13px;color:var(--text-muted)">{r.ends_at ? new Date(r.ends_at).toLocaleDateString() : "—"}</td>
+                <td style="font-size:13px;color:var(--text-muted)">{r.starts_at ? new Date(r.starts_at).toLocaleDateString(lang) : "—"}</td>
+                <td style="font-size:13px;color:var(--text-muted)">{r.ends_at ? new Date(r.ends_at).toLocaleDateString(lang) : "—"}</td>
                 <td><a href={`/admin/pricing/discounts/${r.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.pricing.edit}</a></td>
               </tr>
             ))}
@@ -107,7 +119,7 @@ const [priceLists, discountRules, coupons] = await Promise.all([
                 <td><span class={`badge ${c.is_active ? "badge-active" : "badge-inactive"}`}>{c.is_active ? t.common.active : t.common.inactive}</span></td>
                 <td>{c.max_uses ?? t.admin.pricing.unlimited}</td>
                 <td>{c.uses_count}</td>
-                <td style="font-size:13px;color:var(--text-muted)">{new Date(c.created_at).toLocaleDateString()}</td>
+                <td style="font-size:13px;color:var(--text-muted)">{new Date(c.created_at).toLocaleDateString(lang)}</td>
                 <td><a href={`/admin/pricing/coupons/${c.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.pricing.edit}</a></td>
               </tr>
             ))}

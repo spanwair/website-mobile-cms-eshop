@@ -4,7 +4,7 @@ import { createSupabase } from "../../../lib/supabase";
 import { requireAdminCtx } from "../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { fetchReviews } from "@shared/services/reviewService";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -12,11 +12,12 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_PRODUCTS)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const url = new URL(Astro.request.url);
 const page = parseInt(url.searchParams.get("page") ?? "1", 10);
@@ -69,6 +70,15 @@ function statusClass(s: string) {
   };
   return map[s] ?? "badge-draft";
 }
+function statusLabel(s: string) {
+  const map: Record<string, string> = {
+    pending: t.admin.reviews.statusPending,
+    approved: t.admin.reviews.statusApproved,
+    rejected: t.admin.reviews.statusRejected,
+    hidden: t.admin.reviews.statusHidden,
+  };
+  return map[s] ?? s;
+}
 ---
 
 <CmsLayout title={t.admin.reviews.title} userPermissions={permissions} currentPath="/admin/reviews" parties={ctx.parties} partyId={ctx.partyId}>
@@ -102,12 +112,17 @@ function statusClass(s: string) {
               <strong class="review-author">{review.author_name}</strong>
               <span class="review-email">{review.author_email}</span>
               {review.is_verified && <span class="badge badge-active">{t.admin.reviews.verifiedPurchase}</span>}
-              <span class={`badge ${statusClass(review.status)}`}>{review.status}</span>
+              <span class={`badge ${statusClass(review.status)}`}>{statusLabel(review.status)}</span>
             </div>
-            <time class="review-date">{new Date(review.created_at).toLocaleDateString("cs-CZ")}</time>
+            <time class="review-date">{new Date(review.created_at).toLocaleDateString(lang === "en" ? "en-US" : "cs-CZ")}</time>
           </div>
 
-          {review.title && <h3 class="review-title">{review.title}</h3>}
+          {(review.pros.length > 0 || review.cons.length > 0) && (
+            <div class="review-points">
+              <ul class="point-col">{review.pros.map((p) => <li class="pro">{p}</li>)}</ul>
+              <ul class="point-col">{review.cons.map((c) => <li class="con">{c}</li>)}</ul>
+            </div>
+          )}
           {review.body && <p class="review-body">{review.body}</p>}
 
           <div class="review-actions">
@@ -170,7 +185,12 @@ function statusClass(s: string) {
   .review-author { font-weight:600; }
   .review-email { color:var(--text-muted); font-size:13px; }
   .review-date { color:var(--text-muted); font-size:13px; white-space:nowrap; }
-  .review-title { font-size:15px; font-weight:600; margin:8px 0 4px; }
+  .review-points { display:grid; grid-template-columns:1fr 1fr; gap:4px 24px; margin:8px 0; }
+  .point-col { list-style:none; padding:0; margin:0; font-size:13px; }
+  .point-col li { margin-bottom:2px; }
+  .point-col li::before { font-weight:700; margin-right:6px; }
+  .point-col li.pro::before { content:"+"; color:#16a34a; }
+  .point-col li.con::before { content:"−"; color:#dc2626; }
   .review-body { color:var(--text-secondary); font-size:14px; line-height:1.6; margin:0 0 12px; }
   .review-actions { display:flex; gap:8px; flex-wrap:wrap; }
   .btn-sm { padding:4px 12px; font-size:13px; }

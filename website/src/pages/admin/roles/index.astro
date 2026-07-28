@@ -12,7 +12,7 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_ROLES)) return Astro.redirect("/admin");
@@ -72,7 +72,7 @@ function activePerms(bits: number) {
       <tbody id="roles-body">
         {roles.map((r) => (
           <tr data-name={r.name.toLowerCase()} data-desc={(r.description ?? "").toLowerCase()} data-created-by={r.created_by ?? ""}>
-            <td style="font-weight:600">{r.name}{r.is_system ? <span class="badge badge-pending" style="margin-left:6px;font-size:10px;vertical-align:middle">System</span> : <span class="badge badge-inactive" style="margin-left:6px;font-size:10px;vertical-align:middle">Custom</span>}</td>
+            <td style="font-weight:600">{r.name}{r.is_system ? <span class="badge badge-pending" style="margin-left:6px;font-size:10px;vertical-align:middle">{t.common.system}</span> : <span class="badge badge-inactive" style="margin-left:6px;font-size:10px;vertical-align:middle">{t.common.custom}</span>}</td>
             <td style="color:var(--text-muted);font-size:13px">{r.description ?? "—"}</td>
             <td>
               <div class="perm-chips">

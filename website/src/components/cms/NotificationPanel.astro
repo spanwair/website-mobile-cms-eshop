@@ -1,6 +1,6 @@
 ---
 import type { NotificationWithMeta } from "@shared/types/index";
-import { useT } from "../../lib/i18n";
+import { useT, getLang } from "../../lib/i18n";
 
 interface Props {
   userId: string;
@@ -9,6 +9,7 @@ interface Props {
 
 const { userId, userNotifications } = Astro.props;
 const t = useT(Astro);
+const dateLocale = getLang(Astro) === "en" ? "en-US" : "cs-CZ";
 const unread = userNotifications.filter((n) => !n.read_at);
 ---
 
@@ -38,13 +39,13 @@ const unread = userNotifications.filter((n) => !n.read_at);
           <div class="notif-body">
             <p class="notif-title-text">{n.title ?? n.type}</p>
             {n.body && <p class="notif-body-text">{n.body}</p>}
-            <time class="notif-time">{new Date(n.created_at).toLocaleString()}</time>
+            <time class="notif-time">{new Date(n.created_at).toLocaleString(dateLocale)}</time>
           </div>
           {!n.read_at && (
             <form method="POST" action="/admin/notifications/mark-read" style="margin:0">
               <input type="hidden" name="user_id" value={userId} />
               <input type="hidden" name="notification_id" value={n.id} />
-              <button type="submit" class="read-btn" title="Mark as read">&#10003;</button>
+              <button type="submit" class="read-btn" title={t.admin.notifications.markAsRead}>&#10003;</button>
             </form>
           )}
         </div>

@@ -22,7 +22,7 @@ export interface AdminCtx {
 
 // Returns null when the user has no admin access at all (pure customers).
 // For eshop_admin with no party assigned, still returns ctx so /admin/setup can render.
-// Every admin page must call this and redirect to /dashboard on null.
+// Every admin page must call this and redirect to / on null.
 // Pages requiring a party (products, orders, etc.) must additionally check ctx.partyId.
 export async function requireAdminCtx(
   client: Client,
@@ -67,25 +67,4 @@ export async function requireAdminCtx(
       : 0;
 
   return { role, permissions, partyId, parties, isOwner, isGlobal };
-}
-
-// Lightweight check for "does this user have any admin panel access at all" —
-// used by nav components to decide whether to show a link to /admin, without
-// the party/permissions resolution that requireAdminCtx does for admin pages.
-export async function hasAdminAccess(client: Client, userId: string): Promise<boolean> {
-  const { data: profile } = await client
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .single();
-
-  const role = (profile?.role ?? 0) as number;
-  if (role < ROLE.ESHOP_ADMIN) return false;
-  if (role >= ROLE.ADMIN) return true;
-
-  const { count } = await client
-    .from("user_party_roles")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId);
-  return (count ?? 0) > 0;
 }

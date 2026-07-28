@@ -53,10 +53,10 @@ const s = t.admin.settings;
               )}
             </td>
             <td>{m.slug}</td>
-            <td>{m.media_type}</td>
+            <td>{m.media_type === "video" ? s.mediaTypeVideo : s.mediaTypeImage}</td>
             <td>
               <code class="token" data-token={`{{media:${m.slug}}}`}>{`{{media:${m.slug}}}`}</code>
-              <button type="button" class="copy-btn" data-copy={`{{media:${m.slug}}}`}>{s.copyToken}</button>
+              <button type="button" class="copy-btn" data-copy={`{{media:${m.slug}}}`} data-copied={s.copiedToken}>{s.copyToken}</button>
             </td>
             <td>
               <form method="POST">
@@ -78,7 +78,7 @@ const s = t.admin.settings;
       const token = btn.dataset.copy ?? "";
       await navigator.clipboard.writeText(token);
       const original = btn.textContent;
-      btn.textContent = btn.dataset.copied ?? "Copied!";
+      btn.textContent = btn.dataset.copied ?? "";
       setTimeout(() => { btn.textContent = original; }, 1500);
     });
   });

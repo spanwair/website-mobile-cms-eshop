@@ -5,7 +5,7 @@ import ProductPurchasePanel from "../../components/shop/ProductPurchasePanel.ast
 import ProductReviews from "../../components/shop/ProductReviews.astro";
 import RelatedProducts from "../../components/shop/RelatedProducts.astro";
 import { createSupabase } from "../../lib/supabase";
-import { fetchProductReviews, submitReview } from "@shared/services/reviewService";
+import { fetchProductReviews, submitReview, resolveReviewIdentity } from "@shared/services/reviewService";
 import { fetchInventoryByProduct } from "@shared/services/inventoryService";
 import { getOrCreateCart, addToCart } from "@shared/services/cartService";
 import { addToWishlist, removeFromWishlist, isInWishlist } from "@shared/services/wishlistService";
@@ -26,15 +26,19 @@ if (Astro.request.method === "POST") {
 
   if (action === "review") {
     const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return Astro.redirect(`/login?redirect=${linkBase}/${productSlug}`);
+    const productId = form.get("product_id") as string;
+    const identity = await resolveReviewIdentity(supabase, partyId, productId, session.user.id);
     await submitReview(supabase, {
       party_id: partyId,
-      product_id: form.get("product_id") as string,
+      product_id: productId,
       author_name: form.get("author_name") as string,
       author_email: form.get("author_email") as string,
       rating: parseInt(form.get("rating") as string, 10),
-      title: (form.get("title") as string) || undefined,
+      pros: form.getAll("pros").map(String).filter(Boolean),
+      cons: form.getAll("cons").map(String).filter(Boolean),
       body: (form.get("body") as string) || undefined,
-      customer_id: session?.user?.id ? undefined : null,
+      ...identity,
     });
     return Astro.redirect(`${linkBase}/${productSlug}?reviewed=1`);
   }
@@ -105,6 +109,15 @@ const qtyAvailable = inventoryItem ? inventoryItem.qty_on_hand - inventoryItem.q
 const isOutOfStock = qtyAvailable !== null && qtyAvailable <= 0;
 
 const { data: { session: pageSession } } = await supabase.auth.getSession();
+let reviewerName = "";
+if (pageSession) {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", pageSession.user.id)
+    .single();
+  reviewerName = profile?.display_name ?? pageSession.user.email?.split("@")[0] ?? "";
+}
 const enableWishlists = storeParty.config?.enable_wishlists ?? true;
 const inWishlist = enableWishlists && pageSession
   ? await isInWishlist(supabase, partyId, pageSession.user.id, product.id)
@@ -158,11 +171,21 @@ const trustBadges = (await fetchVisibleBenefitItems(supabase, partyId)).slice(0,
       enableWishlists={enableWishlists}
       inWishlist={inWishlist}
       trustBadges={trustBadges}
+      currency={storeParty.config?.currency_code}
     />
   </div>
 
-  <ProductReviews reviews={reviews} reviewTotal={reviewTotal} averageRating={averageRating} reviewed={reviewed} productId={product.id} />
-  <RelatedProducts products={relatedProducts} linkBase={linkBase} />
+  <ProductReviews
+    reviews={reviews}
+    reviewTotal={reviewTotal}
+    averageRating={averageRating}
+    reviewed={reviewed}
+    productId={product.id}
+    reviewerName={reviewerName}
+    reviewerEmail={pageSession?.user.email ?? ""}
+    isLoggedIn={!!pageSession}
+  />
+  <RelatedProducts products={relatedProducts} linkBase={linkBase} currency={storeParty.config?.currency_code} />
 </Layout>
 
 <style>

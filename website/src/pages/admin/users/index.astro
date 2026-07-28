@@ -4,7 +4,7 @@ import { createSupabase } from "../../../lib/supabase";
 import { fetchUsersForAdmin, fetchUserParties } from "@shared/services/profileService";
 import { fetchRoles } from "@shared/services/permissionsService";
 import { requireAdminCtx } from "../../../lib/admin";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
 import { ROLE, ROLE_LABEL, assignableRoles, canAssignRole, PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
@@ -13,10 +13,11 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 const { permissions, role: myRole } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_USERS)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 let error = "";
 
@@ -154,7 +155,7 @@ function roleClass(r: number) {
               <td style="color:var(--text-muted);font-size:13px">{u.email}</td>
               <td><span class={`badge ${roleClass(u.role)}`}>{ROLE_LABEL[u.role as keyof typeof ROLE_LABEL] ?? u.role}</span></td>
               <td style="color:var(--text-muted);font-size:13px">{orgNames || t.admin.users.noOrgs}</td>
-              <td style="color:var(--text-muted);font-size:13px">{new Date(u.created_at).toLocaleDateString()}</td>
+              <td style="color:var(--text-muted);font-size:13px">{new Date(u.created_at).toLocaleDateString(lang)}</td>
               <td>
                 {u.id === session.user.id
                   ? <span style="font-size:12px;color:var(--text-muted)">{t.admin.users.you}</span>

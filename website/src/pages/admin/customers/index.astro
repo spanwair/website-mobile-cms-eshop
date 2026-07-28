@@ -3,7 +3,7 @@ import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { fetchCustomers } from "@shared/services/customerService";
 import { requireAdminCtx } from "../../../lib/admin";
-import { useT } from "../../../lib/i18n";
+import { useT, getLang } from "../../../lib/i18n";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
@@ -12,11 +12,12 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_CUSTOMERS)) return Astro.redirect("/admin");
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const url = new URL(Astro.request.url);
 const page = parseInt(url.searchParams.get("page") ?? "1", 10);
@@ -51,7 +52,7 @@ const totalPages = Math.ceil(total / pageSize);
             <td style="color:var(--text-muted)">{c.email}</td>
             <td style="color:var(--text-muted)">{c.phone ?? "—"}</td>
             <td><span class={`badge ${c.is_active ? "badge-active" : "badge-inactive"}`}>{c.is_active ? t.admin.customers.statusActive : t.admin.customers.statusInactive}</span></td>
-            <td style="color:var(--text-muted);font-size:13px">{new Date(c.created_at).toLocaleDateString()}</td>
+            <td style="color:var(--text-muted);font-size:13px">{new Date(c.created_at).toLocaleDateString(lang)}</td>
             <td><a href={`/admin/customers/${c.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.customers.view}</a></td>
           </tr>
         ))}

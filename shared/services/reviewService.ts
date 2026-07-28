@@ -11,7 +11,8 @@ export type Review = {
   author_name: string;
   author_email: string;
   rating: number;
-  title: string | null;
+  pros: string[];
+  cons: string[];
   body: string | null;
   status: string;
   is_verified: boolean;
@@ -76,20 +77,51 @@ export async function submitReview(
     party_id: string;
     product_id: string;
     customer_id?: string | null;
-    order_id?: string | null;
     author_name: string;
     author_email: string;
     rating: number;
-    title?: string;
+    pros?: string[];
+    cons?: string[];
     body?: string;
+    is_verified?: boolean;
   }
 ): Promise<{ error: Error | null }> {
   const { error } = await client.from("product_reviews").insert({
     ...input,
+    pros: input.pros ?? [],
+    cons: input.cons ?? [],
     status: "pending",
-    is_verified: !!input.order_id,
+    is_verified: input.is_verified ?? false,
   });
   return { error: error ? new Error(error.message) : null };
+}
+
+// Resolves the reviewer's customer_id (per party) and whether they've purchased
+// this product, so is_verified reflects a real order instead of always being false.
+export async function resolveReviewIdentity(
+  client: Client,
+  partyId: string,
+  productId: string,
+  userId: string
+): Promise<{ customer_id: string | null; is_verified: boolean }> {
+  const { data: customer } = await client
+    .from("customers")
+    .select("id")
+    .eq("party_id", partyId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!customer) return { customer_id: null, is_verified: false };
+
+  const { data: purchase } = await client
+    .from("order_items")
+    .select("id, orders!inner(customer_id)")
+    .eq("product_id", productId)
+    .eq("orders.customer_id", customer.id)
+    .limit(1)
+    .maybeSingle();
+
+  return { customer_id: customer.id, is_verified: !!purchase };
 }
 
 export async function updateReviewStatus(

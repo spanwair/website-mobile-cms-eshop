@@ -9,11 +9,12 @@ interface Props {
   product: ProductCardData;
   variant?: ProductCardVariant;
   linkBase?: string;
+  currency?: string;
 }
-const { product, variant = "classic", linkBase = "/shop" } = Astro.props;
+const { product, variant = "classic", linkBase = "/shop", currency } = Astro.props;
 
 const VARIANTS = { classic: Classic, minimal: Minimal, luxury: Luxury };
 const Card = VARIANTS[variant] ?? Classic;
 ---
 
-<Card product={product} linkBase={linkBase} />
+<Card product={product} linkBase={linkBase} currency={currency} />
