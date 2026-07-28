@@ -1,7 +1,14 @@
 [server]
 base_url = "http://192.168.0.108:8080/v1"
 model_alias = "qwen3.6-35b-a3b"
-request_timeout_s = 600
+request_timeout_s = 3600  # match [limits].max_wall_clock_s — a single slow
+                          # prefill on constrained hardware can legitimately
+                          # take minutes; this must not be shorter than that
+# llama-server's --api-key token. Prefer setting the LLAMA_SERVER_API_KEY env
+# var instead of this field — it's a changeable password, not a repo secret,
+# and the env var keeps it out of config.toml entirely. This field is only a
+# fallback if you'd rather keep it in your (gitignored) config.toml.
+# api_key = ""
 
 [repo]
 root = "/home/jan/PROJECTS/react-native/website-mobile-template"

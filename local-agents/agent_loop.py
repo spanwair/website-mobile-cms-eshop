@@ -9,6 +9,7 @@ import time
 
 import httpx
 
+import server_auth
 from tools import Tools, TOOL_SCHEMAS, ReadBeforeWriteError
 
 
@@ -31,6 +32,7 @@ def run_task(cfg, base_url, model_alias, system_prompt, user_task, workspace_pat
     max_calls = cfg["limits"]["max_tool_calls_per_task"]
     deadline = time.time() + cfg["limits"]["max_wall_clock_s"]
     transcript = []
+    headers = server_auth.headers(cfg)
 
     for i in range(max_calls):
         if time.time() > deadline:
@@ -44,6 +46,7 @@ def run_task(cfg, base_url, model_alias, system_prompt, user_task, workspace_pat
                 "tools": TOOL_SCHEMAS,
                 "temperature": 0.2,
             },
+            headers=headers,
             timeout=cfg["server"]["request_timeout_s"],
         )
         resp.raise_for_status()

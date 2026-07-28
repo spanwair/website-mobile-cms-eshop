@@ -10,6 +10,8 @@ import re
 
 import httpx
 
+import server_auth
+
 ROLE_TRIGGERS = {
     "admin-permissions": {
         "paths": [
@@ -26,8 +28,14 @@ ROLE_TRIGGERS = {
 }
 
 
-def count_tokens(base_url, text):
-    r = httpx.post(f"{base_url}/tokenize", json={"content": text}, timeout=30)
+def count_tokens(base_url, text, cfg):
+    # /tokenize is llama.cpp's native endpoint, not part of the OpenAI-compatible
+    # surface — it lives at server root, not under the /v1 prefix base_url uses
+    # for /chat/completions.
+    root_url = re.sub(r"/v1/?$", "", base_url)
+    r = httpx.post(
+        f"{root_url}/tokenize", json={"content": text}, headers=server_auth.headers(cfg), timeout=30,
+    )
     r.raise_for_status()
     return len(r.json()["tokens"])
 
@@ -107,7 +115,7 @@ def build_context(cfg, base_url, task_description, role_name, repo_map_entries):
         except OSError:
             continue
         block = f"### {entry['path']}\n```\n{content}\n```\n"
-        tok = count_tokens(base_url, block)
+        tok = count_tokens(base_url, block, cfg)
         if used + tok > budget["retrieved_files_max"]:
             break
         file_blocks.append(block)

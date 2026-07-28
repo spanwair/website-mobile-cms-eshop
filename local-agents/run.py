@@ -46,6 +46,23 @@ def slugify(text):
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:40]
 
 
+def parse_planner_summary(summary):
+    """Planner's output contract (roles/planner.md) always has SURFACE: and
+    PERMISSION_SENSITIVE: lines — parsed here to pick the rest of the chain."""
+    surface_match = re.search(r"SURFACE:\s*([a-z, ]+)", summary, re.IGNORECASE)
+    perm_match = re.search(r"PERMISSION_SENSITIVE:\s*(yes|no)", summary, re.IGNORECASE)
+    surfaces = [s.strip().lower() for s in surface_match.group(1).split(",")] if surface_match else ["shared"]
+    permission_sensitive = bool(perm_match) and perm_match.group(1).lower() == "yes"
+    return surfaces, permission_sensitive
+
+
+def pick_domain(surfaces):
+    for s in surfaces:
+        if s in ROLE_ORDER:
+            return s
+    return "shared"
+
+
 def run_one_task(cfg, description, forced_role=None):
     base_url = cfg["server"]["base_url"]
     slug = slugify(description)
@@ -56,21 +73,49 @@ def run_one_task(cfg, description, forced_role=None):
     repo_map_payload = repo_map.build_cached(cfg["repo"]["root"], cfg["repo"]["exclude"], ".cache")
     entries = repo_map_payload["entries"]
 
+    # forced_role: single-role debug mode, unchanged. Otherwise: planner runs
+    # first, then its SURFACE/PERMISSION_SENSITIVE verdict expands the queue
+    # to the rest of ROLE_ORDER for that domain, all in this one workspace —
+    # closing the "no auto-chaining" gap noted in GUIDE.md "Known limitations".
     roles = [forced_role] if forced_role else ["planner"]
+    history = []
     last_result = None
-    for role in roles:
-        ctx = context_builder.build_context(cfg, base_url, description, role, entries)
+    idx = 0
+    while idx < len(roles):
+        role = roles[idx]
+        idx += 1
+        task_for_role = description
+        if history:
+            prior = "\n\n".join(f"### {r} output\n{s}" for r, s in history)
+            task_for_role = f"{description}\n\n## Work so far (prior roles in this chain)\n{prior}"
+
+        ctx = context_builder.build_context(cfg, base_url, task_for_role, role, entries)
         full_prompt = ctx["system_prompt"] + "\n\n## Repo map\n" + ctx["repo_map_text"] + "\n\n## Relevant files\n" + ctx["file_context"]
-        last_result = run_task(cfg, base_url, cfg["server"]["model_alias"], full_prompt, description, ws.path)
+        last_result = run_task(cfg, base_url, cfg["server"]["model_alias"], full_prompt, task_for_role, ws.path)
         print(f"[{role}] {last_result['status']}", file=sys.stderr)
+
         if last_result["status"] in ("ABORTED", "TIMEOUT", "MAX_CALLS_EXCEEDED"):
             break
 
+        summary = last_result.get("summary", "")
+        history.append((role, summary))
+
+        if role == "planner" and not forced_role:
+            surfaces, permission_sensitive = parse_planner_summary(summary)
+            domain = pick_domain(surfaces)
+            chain = list(ROLE_ORDER[domain][1:])  # drop leading "planner", already ran
+            if permission_sensitive and "disclaimer" not in chain:
+                pos = chain.index("code-reviewer") + 1 if "code-reviewer" in chain else len(chain)
+                chain.insert(pos, "disclaimer")
+            roles = roles + chain
+
     touched = ws.touched_files()
     gate_result = gate_mod.run_gate(ws.path, cfg, touched) if touched else {"verdict": "PASS", "checks": []}
+    combined_summary = "\n\n".join(f"[{r}] {s}" for r, s in history) or (
+        last_result.get("reason", last_result["status"]) if last_result else "no result"
+    )
     log_path = memory.log_session(
-        slug, forced_role or "planner", description, ws.path, gate_result,
-        last_result.get("summary", last_result.get("reason", last_result["status"])) if last_result else "no result",
+        slug, forced_role or "auto-chain", description, ws.path, gate_result, combined_summary,
     )
     print(f"session log: {log_path}", file=sys.stderr)
     print(f"gate: {gate_result['verdict']}", file=sys.stderr)
