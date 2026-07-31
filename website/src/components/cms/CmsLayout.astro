@@ -8,15 +8,17 @@ interface Props {
   title: string;
   userPermissions: number;
   currentPath: string;
-  parties?: Array<{ id: string; name: string }>;
+  parties?: Array<{ id: string; name: string; slug: string }>;
   partyId?: string | null;
 }
 const { title, userPermissions, currentPath, parties = [], partyId = null } = Astro.props;
+const activeParty = parties.find((p) => p.id === partyId);
+const storeHref = activeParty ? `/eshop-${activeParty.slug}` : null;
 ---
 
 <Layout title={title}>
   <div class="cms-shell">
-    <Sidebar currentPath={currentPath} userPermissions={userPermissions} />
+    <Sidebar currentPath={currentPath} userPermissions={userPermissions} storeHref={storeHref} />
     <div class="cms-main">
       <header class="cms-header">
         <h1 class="cms-title">{title}</h1>

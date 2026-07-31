@@ -1,0 +1,28 @@
+---
+import { useT } from "../../../lib/i18n";
+const t = useT(Astro);
+const c = t.landing.finalCta;
+---
+
+<section class="landing landing--dark" id="final-cta">
+  <div class="container-lg final-cta-inner">
+    <p class="section-eyebrow section-eyebrow--center">{c.eyebrow}</p>
+    <h2 class="section-title section-title--center" style="max-width:640px">{c.title}</h2>
+    <p class="section-sub section-sub--center" style="margin-bottom:32px">{c.sub}</p>
+
+    <div class="final-cta-buttons">
+      <a href="#hero" class="btn btn-primary btn-lg">{c.primaryCta}</a>
+      <a href="/pricing" class="btn btn-outline-light btn-lg">{c.secondaryCta}</a>
+    </div>
+
+    <div class="final-cta-badges">
+      {c.badges.map((badge) => <span>{badge}</span>)}
+    </div>
+  </div>
+</section>
+
+<style>
+  .final-cta-inner { text-align: center; }
+  .final-cta-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px; }
+  .final-cta-badges { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; font-size: 13px; color: var(--landing-dark-text-muted); }
+</style>

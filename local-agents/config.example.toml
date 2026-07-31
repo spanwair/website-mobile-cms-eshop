@@ -23,19 +23,57 @@ exclude = [
 ]
 
 [budget]
+# context_window/reserve_output/reserve_tool_overhead/system_prompt_max/repo_map_max
+# are documentation of the intended split, not enforced anywhere in code today —
+# only retrieved_files_max (below) is actually read. Don't rely on the others.
 context_window = 100000
 reserve_output = 8000
 reserve_tool_overhead = 10000
 system_prompt_max = 6000
 repo_map_max = 3000
-retrieved_files_max = 60000
-# whatever's left after the above is the tool-call/history buffer
+# Fallback for any role not listed in retrieved_files_by_role.
+retrieved_files_max = 20000
+
+# Per-role file-content budget (tokens). Roles that only classify/scope/review
+# don't need anywhere near what the implementing specialist needs — a flat 60000
+# for every role was the single biggest source of wasted prefill (planner and
+# tester were paying for the same file dump as the specialist doing the actual
+# edit). Tune these against the token/timing table each session log now prints
+# (memory.log_session) rather than guessing further.
+[budget.retrieved_files_by_role]
+planner = 4000
+architect = 15000
+website-specialist = 45000
+mobile-specialist = 45000
+supabase-specialist = 45000
+tester = 20000
+code-reviewer = 25000
+disclaimer = 20000
 
 [limits]
+# Fallback for any role not listed in max_tool_calls_by_role.
 max_tool_calls_per_task = 40
 max_wall_clock_s = 3600
 max_files_touched = 12
 max_lines_per_file = 200
+
+# Per-role cap. Every /chat/completions call in agent_loop.run_task's loop resends
+# the FULL accumulated messages history — more tool calls means a larger prompt on
+# every subsequent round trip, not just more calls. Roles whose files are already
+# pinned by context_builder (planner, tester, code-reviewer, disclaimer) rarely need
+# more than a couple of read_file calls beyond what's already inlined; keeping their
+# ceiling low bounds the worst case instead of letting a confused role loop its way
+# into an ever-growing prompt (agent_loop._prune_old_tool_output is the other half
+# of this guard — see GUIDE.md "Bounding tool-loop growth").
+[limits.max_tool_calls_by_role]
+planner = 6
+architect = 15
+website-specialist = 40
+mobile-specialist = 40
+supabase-specialist = 40
+tester = 25
+code-reviewer = 15
+disclaimer = 15
 
 [workspace]
 lease_holder_prefix = "local-agent"

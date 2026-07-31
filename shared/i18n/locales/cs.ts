@@ -213,16 +213,7 @@ export const cs: Translations = {
     labelEn: "Angličtina",
   },
   home: {
-    pageTitle: "Template — Domů",
-    heroTitle: "Název vaší aplikace",
     heroSub: "Výkonná CMS šablona s mobilní aplikací a webem — připravena k přizpůsobení.",
-    getStarted: "Začít →",
-    feature1Title: "Mobilní aplikace",
-    feature1Desc: "React Native aplikace s APK buildem pro Android, přihlašováním, profily a admin panelem.",
-    feature2Title: "Web",
-    feature2Desc: "Astro SSR web sdílející stejný Supabase backend a designové tokeny.",
-    feature3Title: "CMS backend",
-    feature3Desc: "Supabase s RLS politikami, Edge Functions a typovanými migracemi.",
     welcome: "Vítejte, {{name}}!",
     welcomeGeneric: "Vítejte!",
     subtitle: "Toto je vaše šablonová aplikace. Nahraďte tuto obrazovku svým obsahem.",
@@ -1074,6 +1065,7 @@ export const cs: Translations = {
     },
     sidebar: {
       overview: "Přehled",
+      store: "Zobrazit obchod",
       eshop: "E-shop",
       products: "Produkty",
       categories: "Kategorie",
@@ -1325,5 +1317,202 @@ export const cs: Translations = {
   },
   faq: {
     title: "Časté dotazy",
+  },
+  landing: {
+    meta: {
+      defaultTitle: "mamtodoma.cz — Spusťte si e-shop zdarma",
+      defaultDescription:
+        "Začněte prodávat online ještě dnes. Bez měsíčních poplatků, bez vstupních nákladů — bereme si 10 % jen z uskutečněného prodeje. 90 % zůstává vám.",
+    },
+    nav: {
+      features: "Funkce",
+      pricing: "Ceník",
+      templates: "Šablony",
+      about: "O nás",
+      contact: "Kontakt",
+      cta: "Začít zdarma",
+    },
+    hero: {
+      eyebrow: "Pro každého, kdo má co prodávat",
+      titleLine1: "Váš e-shop",
+      titleHighlight: "bez vstupních nákladů",
+      titleLine2: "vyděláváme, jen když vyděláte vy",
+      sub:
+        "Spusťte si plnohodnotný e-shop ještě dnes. Žádný poplatek za založení, žádná měsíční platba — nikdy. Bereme si 10 % pouze z uskutečněného prodeje, 90 % z každé objednávky zůstává vám.",
+      formPlaceholder: "vas@email.cz",
+      formCta: "Začít prodávat zdarma",
+      formNote: "Bez platební karty. Bez měsíčního poplatku. Není co rušit.",
+      trustLine: "0 Kč na start · 0 Kč měsíčně · 10 % jen z prodeje",
+    },
+    foundingSellers: {
+      eyebrow: "Zakládající prodejci",
+      title: "Jsme úplně noví. Přesně proto je teď ten nejlepší čas začít.",
+      sub:
+        "mamtodoma.cz právě spustilo provoz. Nebudeme předstírat, že už máme tisíce e-shopů — místo toho vám dáme přesná čísla toho, co jako zakládající prodejce získáte.",
+      cards: [
+        {
+          title: "0 % za založení, 0 Kč měsíčně",
+          desc: "Žádná zkušební verze s háčkem. E-shop je zdarma po celou dobu, kdy ho používáte.",
+        },
+        {
+          title: "90 % z každého prodeje zůstává vám",
+          desc: "Vyděláváme jen tehdy, když vyděláte vy — 10 % z uskutečněné objednávky, nic víc, nic skrytě.",
+        },
+        {
+          title: "Spuštěno za pár minut, ne měsíců",
+          desc: "Bez agentury, bez programátora, bez čekací listiny. První produkt nahrajete a prodáváte ještě dnes.",
+        },
+      ],
+      cta: "Zarezervujte si název e-shopu",
+    },
+    features: {
+      eyebrow: "Vše v ceně",
+      title: "Skutečná e-commerce platforma, ne hračka na tvorbu stránek",
+      sub: "Každá funkce níže je už dnes součástí platformy, na které právě stojíte.",
+      items: [
+        { title: "Kompletní e-shop a CMS", desc: "Vlastní stránky, blog, tým, FAQ, navigace i patička — vše editovatelné bez zásahu do kódu." },
+        { title: "Vlastní doména", desc: "Provozujte e-shop na vlastní doméně, nebo zdarma na subdoméně — vaše značka, ne naše." },
+        { title: "Týmový přístup s reálnými oprávněními", desc: "Přizvěte kolegy a dejte jim přesně takový přístup, jaký potřebují — ne plná admin práva automaticky." },
+        { title: "Objednávky, sklad a reklamace", desc: "Skladové zásoby, stavy objednávek i vyřizování reklamací už od prvního dne." },
+        { title: "Platby přes Stripe", desc: "Bezpečný a důvěryhodný způsob platby, který vaši zákazníci už znají." },
+        { title: "Volitelný design", desc: "Vyberte rozvržení a styl produktových karet, který sedí vaší značce — bez grafika." },
+      ],
+    },
+    howItWorks: {
+      eyebrow: "Jak začít",
+      title: "Tři kroky. Žádný tarif nevybíráte, protože existuje jen jeden.",
+      sub: "Na rozdíl od platforem se šesti tarify na porovnání existuje jen jeden způsob, jak mamtodoma.cz používat.",
+      steps: [
+        { step: "1", title: "Založte si e-shop", desc: "Zadejte e-mail, pojmenujte e-shop a jste v administraci." },
+        { step: "2", title: "Nahrajte produkty", desc: "Fotky, ceny, sklad — přidejte jeden produkt nebo celý katalog." },
+        { step: "3", title: "Sdílejte odkaz a prodávejte", desc: "Váš e-shop je ihned online. My vyděláváme, až vyděláte vy." },
+      ],
+    },
+    templatesShowcase: {
+      eyebrow: "Design",
+      title: "Vypadá jako vaše značka, ne jako šablona",
+      sub: "Vyberte rozvržení a způsob prezentace produktů podle toho, jak prodáváte — kdykoli ho můžete změnit.",
+      items: [
+        { title: "Přednastavená rozvržení", desc: "Několik variant úvodní i produktové stránky pro různé typy katalogů." },
+        { title: "Styly produktových karet", desc: "Zvolte prezentaci produktů — kompaktní mřížka, editoriální styl, nebo galerie." },
+        { title: "Plná kontrola nad obsahem", desc: "Hero bannery, sloupce v patičce i obsahové stránky jsou plně ve vašich rukou." },
+      ],
+      cta: "Podívejte se, jak to vypadá",
+    },
+    aiCapabilities: {
+      eyebrow: "Chytřejší každý měsíc",
+      title: "Postaveno pro prodej s pomocí AI",
+      sub: "Aktivně zabudováváme AI nástroje do platformy — tady je, co už funguje, a co se chystá.",
+      roadmapNote: "Označené položky jsou na blízkém plánu vývoje, zatím nejsou v provozu — raději vám to řekneme, než abychom slibovali víc, než umíme.",
+      items: [
+        { title: "AI popisky produktů", desc: "Z názvu produktu a pár odrážek vznikne hotový, čtivý popisek." },
+        { title: "Chytré návrhy cen", desc: "Plán vývoje — návrh ceny podle kategorie a cílové marže." },
+        { title: "E-shop připravený na AI vyhledávání", desc: "Plán vývoje — strukturovaná data produktů, aby se e-shop dobře zobrazoval v AI nákupních asistentech." },
+      ],
+    },
+    commissionCalculator: {
+      eyebrow: "Ceník ve zkratce",
+      title: "Jedno číslo: 10 %",
+      sub: "Nastavte prodejní cenu. Uvidíte přesně, kolik vám zůstane. Žádné tarify, žádné skryté transakční poplatky navrch.",
+      sliderLabel: "Prodejní cena",
+      youKeepLabel: "Zůstává vám",
+      weTakeLabel: "Naše provize (10 %)",
+      monthlyLabel: "Měsíční náklad na provoz e-shopu",
+      exampleNote: "Toto je celý ceník. Žádné druhé číslo neexistuje.",
+      comparisonTitle: "Proč je to lepší než měsíční tarif",
+      comparisonNote:
+        "Tarif za 500 Kč měsíčně vás stojí peníze dřív, než prodáte jediný kus. Při 10% provizi platíte 0 Kč, pokud nic neprodáte — zájem platformy je od prvního dne stejný jako váš.",
+    },
+    exampleScenarios: {
+      eyebrow: "Ilustrační příklady",
+      title: "Jak vypadá matematika v praxi",
+      sub: "Jsme nová platforma a zatím nemáme reálné příběhy prodejců, které bychom mohli sdílet — místo toho tu jsou poctivé modelové příklady, ne vymyšlené citace.",
+      disclaimer: "Jde o ilustrační modelové scénáře, ne o reálné zákazníky ani ověřené výsledky.",
+      badgeLabel: "Příklad",
+      scenarios: [
+        { persona: "Příklad: výrobkyně svíček", monthly: "20 000 Kč měsíčního obratu", keep: "18 000 Kč zůstane", desc: "Deset objednávek týdně po ~500 Kč — 2 000 Kč jde na provizi, nic dalšího." },
+        { persona: "Příklad: výrobce kožených doplňků", monthly: "60 000 Kč měsíčního obratu", keep: "54 000 Kč zůstane", desc: "Vyšší hodnota objednávky, stejných rovných 10 % — žádná změna tarifu, žádné vyjednávání." },
+        { persona: "Příklad: prodejce doplňků stravy", monthly: "150 000 Kč měsíčního obratu", keep: "135 000 Kč zůstane", desc: "I ve větším objemu zůstává provize stejná a předvídatelná — spočítáte si ji jednou." },
+      ],
+    },
+    finalCta: {
+      eyebrow: "Až budete připraveni",
+      title: "Založte si e-shop ještě dnes — zjistit, jestli to funguje, nic nestojí",
+      sub: "Založte e-shop, přidejte produkt a sledujte první objednávku. Pokud se nic neprodá, nezaplatíte nic.",
+      primaryCta: "Založit e-shop zdarma",
+      secondaryCta: "Zobrazit ceník",
+      badges: ["0 Kč na start", "10 % jen z prodeje", "Spuštěno za pár minut"],
+    },
+    footer: {
+      tagline: "E-shop je zdarma. Vyděláváme, jen když vyděláte vy.",
+      columns: {
+        product: {
+          title: "Produkt",
+          links: [
+            { label: "Funkce", href: "/features" },
+            { label: "Ceník", href: "/pricing" },
+            { label: "Šablony", href: "/templates" },
+          ],
+        },
+        company: {
+          title: "Společnost",
+          links: [
+            { label: "O nás", href: "/about" },
+            { label: "Kontakt", href: "/contact" },
+          ],
+        },
+        legal: {
+          title: "Právní informace",
+          links: [
+            { label: "Obchodní podmínky", href: "/terms" },
+            { label: "Soukromí a cookies", href: "/privacy" },
+          ],
+        },
+      },
+      newsletterTitle: "Občasné tipy z e-commerce",
+      newsletterSub: "Žádný spam — nejvýše pár e-mailů měsíčně.",
+      newsletterPlaceholder: "vas@email.cz",
+      newsletterSubmit: "Odebírat",
+      copyright: "mamtodoma.cz. Všechna práva vyhrazena.",
+    },
+    pricingPage: {
+      title: "Ceník",
+      sub: "Žádné měsíční poplatky. Žádné skryté náklady. Jen 10 % z prodeje.",
+      faq: [
+        { q: "Opravdu neplatím nic měsíčně?", a: "Přesně tak — neexistuje předplatné, poplatek za založení ani platba za neaktivní e-shop." },
+        { q: "Co přesně se počítá do těch 10 %?", a: "Provize 10 % se počítá pouze z dokončených prodejů zpracovaných přes pokladnu e-shopu." },
+        { q: "Existují ještě nějaké další poplatky?", a: "Platí standardní poplatky Stripe za zpracování platby kartou, stejně jako u jakékoli platformy využívající Stripe — mamtodoma.cz si navrch neúčtuje žádný vlastní transakční poplatek." },
+        { q: "Můžu kdykoli odejít?", a: "Ano — není potřeba vypovídat žádnou smlouvu, protože žádné předplatné nikdy neexistovalo." },
+        { q: "Jak a kdy dostanu peníze?", a: "Výplaty se řídí standardním výplatním cyklem vašeho propojeného Stripe účtu." },
+      ],
+    },
+    featuresPage: {
+      title: "Funkce platformy",
+      sub: "Vše v ceně, bez příplatku, pro každý e-shop.",
+    },
+    templatesPage: {
+      title: "Šablony a design",
+      sub: "Rozvržení a styly produktových karet, které můžete kdykoli změnit.",
+      comingSoonNote: "Kompletní galerie šablon se rozrůstá — tato stránka ukazuje, co je dostupné už dnes.",
+    },
+    about: {
+      title: "Proč 10 %, a ne měsíční paušál",
+      sub: "Zdůvodnění tohoto modelu.",
+      paragraphs: [
+        "Většina e-commerce platforem si účtuje peníze dřív, než uskutečníte jediný prodej. To je reálná bariéra pro každého, kdo si teprve ověřuje nápad.",
+        "mamtodoma.cz to obrací: postavili jsme plnohodnotnou platformu a bereme si 10% provizi jen tehdy, když vy prodáte. Pokud se v e-shopu nic neprodá, nestálo vás to nic.",
+        "Jsme nová platforma, spuštěná v roce 2026. Raději jsme upřímní ohledně toho, že jsme na začátku, než abychom si vymýšleli historii, kterou zatím nemáme.",
+      ],
+    },
+    contact: {
+      title: "Ozvěte se nám",
+      sub: "Máte otázky, než začnete? Čteme každou zprávu.",
+      formName: "Jméno",
+      formEmail: "E-mail",
+      formMessage: "Zpráva",
+      formSubmit: "Odeslat zprávu",
+      successMsg: "Děkujeme — ozveme se do jednoho pracovního dne.",
+      errorMsg: "Něco se pokazilo. Zkuste to prosím znovu, nebo nám napište přímo.",
+    },
   },
 };

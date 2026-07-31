@@ -12,6 +12,7 @@ import { fetchVisibleFooterLinks } from "@shared/services/footerLinkService";
 import { fetchVisibleFooterBadges } from "@shared/services/footerBadgeService";
 import Footer from "./Footer.astro";
 import StorefrontNav from "./StorefrontNav.astro";
+import ProfileMenu from "./ProfileMenu.astro";
 
 interface Props {
   title?: string;
@@ -115,22 +116,7 @@ const currentPath = Astro.url.pathname + Astro.url.search;
           )}
           <div class="nav-right">
             {session ? (
-              <div class="profile-menu">
-                <button class="profile-btn" id="profile-toggle" type="button">
-                  <span class="nav-avatar">{navInitial}</span>
-                  <span class="nav-name">{displayName}</span>
-                  <span class="nav-chevron">▾</span>
-                </button>
-                <div class="dropdown" id="profile-dropdown">
-                  <a href="/profile" class="dropdown-item">{t.nav.profile}</a>
-                  <a href="/settings" class="dropdown-item">{t.nav.settings}</a>
-                  {isAdmin && <a href="/admin" class="dropdown-item">{t.nav.admin}</a>}
-                  <div class="dropdown-divider"></div>
-                  <form action="/auth/signout" method="POST">
-                    <button type="submit" class="dropdown-item dropdown-danger">{t.nav.signOut}</button>
-                  </form>
-                </div>
-              </div>
+              <ProfileMenu displayName={displayName} navInitial={navInitial} isAdmin={isAdmin} />
             ) : (
               <a href="/login" class="btn btn-primary nav-cta">{t.nav.signIn}</a>
             )}
@@ -147,24 +133,16 @@ const currentPath = Astro.url.pathname + Astro.url.search;
   </body>
 </html>
 
-<script>
-  const toggle = document.getElementById("profile-toggle");
-  const dropdown = document.getElementById("profile-dropdown");
-  if (toggle && dropdown) {
-    toggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      dropdown.classList.toggle("open");
-    });
-    document.addEventListener("click", () => dropdown.classList.remove("open"));
-  }
-</script>
-
 <style>
-  .nav-inner { display: flex; align-items: center; gap: 32px; height: 64px; }
-  .nav-brand { font-size: 20px; font-weight: 900; color: var(--accent-primary); letter-spacing: -0.5px; flex-shrink: 0; text-decoration: none; }
+  /* Scoped to this component only (Astro's per-file style attribute), so it overrides the
+     shared global .nav rule here without touching StorefrontNav's own .nav — that one must
+     keep tracking the per-store --bg-page theme color instead of a fixed translucent white. */
+  .nav { background: rgba(255,255,255,0.85); backdrop-filter: blur(8px); box-shadow: none; }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 32px; padding-block: 16px; }
+  .nav-brand { font-weight: 800; font-size: 18px; color: var(--text-primary); letter-spacing: -0.5px; flex-shrink: 0; text-decoration: none; }
   .nav-links { display: flex; gap: 24px; flex: 1; }
-  .nav-links a { font-size: 14px; font-weight: 600; color: #6C757D; text-decoration: none; }
-  .nav-links a:hover { color: #212529; }
+  .nav-links a { font-size: 14px; font-weight: 600; color: var(--text-muted); text-decoration: none; }
+  .nav-links a:hover { color: var(--accent-primary); }
   .nav-right { margin-left: auto; }
   .nav-cta { padding: 8px 20px; font-size: 14px; }
 
@@ -174,39 +152,5 @@ const currentPath = Astro.url.pathname + Astro.url.search;
      point where links+name no longer fit, rather than letting the page scroll horizontally. */
   @media (max-width: 640px) {
     .nav-links { display: none; }
-    .nav-name, .nav-chevron { display: none; }
   }
-
-  .profile-menu { position: relative; }
-  .profile-btn {
-    display: flex; align-items: center; gap: 8px;
-    background: #F8F9FA; border: 1px solid #E9ECEF;
-    border-radius: 9999px; padding: 6px 14px 6px 6px; cursor: pointer;
-    transition: background 0.15s;
-  }
-  .profile-btn:hover { background: #F1F3F5; opacity: 1; }
-  .nav-avatar {
-    width: 28px; height: 28px; border-radius: 50%; background: #4F46E5;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
-  }
-  .nav-name { font-size: 13px; font-weight: 600; color: #212529; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .nav-chevron { font-size: 11px; color: #6C757D; }
-
-  .dropdown {
-    display: none; position: absolute; right: 0; top: calc(100% + 8px);
-    background: #FFFFFF; border: 1px solid #E9ECEF;
-    border-radius: 12px; padding: 6px; min-width: 160px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-  }
-  .dropdown.open { display: flex; flex-direction: column; }
-  .dropdown-divider { height: 1px; background: #E9ECEF; margin: 4px 0; }
-  .dropdown-item {
-    display: block; padding: 10px 14px; font-size: 14px; font-weight: 500;
-    color: #212529; border-radius: 8px; text-align: left; background: none;
-    border: none; cursor: pointer; width: 100%; font-family: inherit; text-decoration: none;
-  }
-  .dropdown-item:hover { background: #F1F3F5; color: #212529; text-decoration: none; opacity: 1; }
-  .dropdown-danger { color: #EF4444; }
-  .dropdown-danger:hover { background: rgba(239,68,68,0.08); color: #EF4444; }
 </style>

@@ -1,0 +1,37 @@
+---
+import LandingLayout from "../components/landing/LandingLayout.astro";
+import CommissionCalculator from "../components/landing/sections/CommissionCalculator.astro";
+import FinalCta from "../components/landing/sections/FinalCta.astro";
+import { useT } from "../lib/i18n";
+
+const t = useT(Astro);
+const p = t.landing.pricingPage;
+---
+
+<LandingLayout title={`${p.title} — mamtodoma.cz`} description={p.sub}>
+  <section class="landing" style="padding-bottom:0">
+    <div class="container-lg">
+      <h1 class="section-title section-title--center">{p.title}</h1>
+      <p class="section-sub section-sub--center">{p.sub}</p>
+    </div>
+  </section>
+  <CommissionCalculator />
+  <section class="landing" id="faq">
+    <div class="container-lg faq-list">
+      {p.faq.map((item) => (
+        <details class="faq-item">
+          <summary>{item.q}</summary>
+          <p>{item.a}</p>
+        </details>
+      ))}
+    </div>
+  </section>
+  <FinalCta />
+</LandingLayout>
+
+<style>
+  .faq-list { max-width: 720px; margin-inline: auto; display: flex; flex-direction: column; gap: 12px; }
+  .faq-item { border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 16px 20px; }
+  .faq-item summary { cursor: pointer; font-weight: 700; }
+  .faq-item p { margin-top: 12px; color: var(--text-muted); line-height: 1.6; }
+</style>

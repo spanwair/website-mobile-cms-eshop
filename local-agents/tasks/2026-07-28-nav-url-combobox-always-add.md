@@ -88,7 +88,7 @@ next unused number is `27` (last existing is `26-search-autocomplete.spec.ts`) â
 
 ## Gate
 
-Because this touches `website/src/pages/admin/`, `gate.py` will automatically run
+Because this touches `website/src/pages/admin/` will automatically run
 `website:typecheck`, `website:lint`, `website:build`, and the admin-permission Playwright
 specs. All of those plus the new `27-*` spec must pass before this is reported mergeable.
 Nothing gets committed or pushed automatically â€” a human reviews the treehouse workspace

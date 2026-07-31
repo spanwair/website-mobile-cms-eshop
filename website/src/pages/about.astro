@@ -1,0 +1,24 @@
+---
+import LandingLayout from "../components/landing/LandingLayout.astro";
+import FinalCta from "../components/landing/sections/FinalCta.astro";
+import { useT } from "../lib/i18n";
+
+const t = useT(Astro);
+const a = t.landing.about;
+---
+
+<LandingLayout title={`${a.title} — mamtodoma.cz`} description={a.sub}>
+  <section class="landing">
+    <div class="container-lg about-content">
+      <h1 class="section-title section-title--center">{a.title}</h1>
+      <p class="section-sub section-sub--center" style="margin-bottom:40px">{a.sub}</p>
+      {a.paragraphs.map((p) => <p class="about-paragraph">{p}</p>)}
+    </div>
+  </section>
+  <FinalCta />
+</LandingLayout>
+
+<style>
+  .about-content { max-width: 680px; margin-inline: auto; }
+  .about-paragraph { color: var(--text-muted); line-height: 1.7; margin-bottom: 20px; font-size: 16px; }
+</style>

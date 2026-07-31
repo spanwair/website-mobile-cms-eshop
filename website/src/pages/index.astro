@@ -1,46 +1,27 @@
 ---
-import Layout from "../components/layout/Layout.astro";
+import LandingLayout from "../components/landing/LandingLayout.astro";
+import Hero from "../components/landing/sections/Hero.astro";
+import FoundingSellers from "../components/landing/sections/FoundingSellers.astro";
+import Features from "../components/landing/sections/Features.astro";
+import HowItWorks from "../components/landing/sections/HowItWorks.astro";
+import TemplatesShowcase from "../components/landing/sections/TemplatesShowcase.astro";
+import AICapabilities from "../components/landing/sections/AICapabilities.astro";
+import CommissionCalculator from "../components/landing/sections/CommissionCalculator.astro";
+import ExampleScenarios from "../components/landing/sections/ExampleScenarios.astro";
+import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
 
 const t = useT(Astro);
 ---
 
-<Layout title={t.home.pageTitle}>
-  <div class="hero">
-    <div class="container">
-      <h1 class="hero-title">{t.home.heroTitle}</h1>
-      <p class="hero-sub">{t.home.heroSub}</p>
-      <div class="hero-btns">
-        <a href="/login" class="btn btn-primary">{t.home.getStarted}</a>
-      </div>
-    </div>
-  </div>
-
-  <section class="features container">
-    <div class="grid grid-3">
-      {[
-        { icon: "📱", title: t.home.feature1Title, desc: t.home.feature1Desc },
-        { icon: "🌐", title: t.home.feature2Title, desc: t.home.feature2Desc },
-        { icon: "🗄️", title: t.home.feature3Title, desc: t.home.feature3Desc },
-      ].map(({ icon, title, desc }) => (
-        <div class="card feature-card">
-          <span class="feature-icon">{icon}</span>
-          <h3 class="feature-title">{title}</h3>
-          <p class="feature-desc">{desc}</p>
-        </div>
-      ))}
-    </div>
-  </section>
-</Layout>
-
-<style>
-  .hero { background: linear-gradient(180deg, var(--bg-subtle) 0%, var(--bg-page) 100%); padding: 100px 0 80px; text-align: center; }
-  .hero-title { font-size: 56px; font-weight: 900; color: var(--text-primary); letter-spacing: -1.5px; margin-bottom: 16px; }
-  .hero-sub { font-size: 18px; color: var(--text-muted); max-width: 520px; margin: 0 auto 40px; line-height: 1.6; }
-  .hero-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
-  .features { padding: 80px 0; }
-  .feature-card { display: flex; flex-direction: column; gap: 12px; }
-  .feature-icon { font-size: 36px; }
-  .feature-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
-  .feature-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
-</style>
+<LandingLayout title={t.landing.meta.defaultTitle} description={t.landing.meta.defaultDescription}>
+  <Hero />
+  <FoundingSellers />
+  <Features />
+  <HowItWorks />
+  <TemplatesShowcase />
+  <AICapabilities />
+  <CommissionCalculator />
+  <ExampleScenarios />
+  <FinalCta />
+</LandingLayout>

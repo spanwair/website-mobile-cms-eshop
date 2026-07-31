@@ -220,9 +220,10 @@ const t = useT(Astro);
   .pv-stars { color:#f59e0b; font-size:15px; }
   .pv-pct { font-size:13px; font-weight:700; color:var(--primary); }
   .pv-list { list-style:none; padding:0; margin:0 0 6px; font-size:13px; }
-  .pv-list li::before { font-weight:700; margin-right:6px; }
-  .pv-list li.pv-pro::before { content:"+"; color:#16a34a; }
-  .pv-list li.pv-con::before { content:"−"; color:#dc2626; }
-  .pv-empty { color:var(--text-muted); font-style:italic; }
+  /* :global — <li> rows are appended client-side via JS and never receive Astro's scope attribute */
+  :global(.pv-list li::before) { font-weight:700; margin-right:6px; }
+  :global(.pv-list li.pv-pro::before) { content:"+"; color:#16a34a; }
+  :global(.pv-list li.pv-con::before) { content:"−"; color:#dc2626; }
+  :global(.pv-empty) { color:var(--text-muted); font-style:italic; }
   .pv-desc { font-size:13px; color:var(--text-secondary); margin:6px 0 0; white-space:pre-wrap; }
 </style>

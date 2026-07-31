@@ -41,3 +41,4 @@ sessions/*.md
 __pycache__/
 *.pyc
 
+.aider*

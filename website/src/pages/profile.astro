@@ -1,5 +1,5 @@
 ---
-import Layout from "../components/layout/Layout.astro";
+import LandingLayout from "../components/landing/LandingLayout.astro";
 import { createSupabase, createAdminClient } from "../lib/supabase";
 import { fetchProfile, updateProfile } from "@shared/services/profileService";
 import { useT } from "../lib/i18n";
@@ -43,54 +43,56 @@ function roleLabel(role: number | null) {
 }
 ---
 
-<Layout title={t.profile.title}>
-  <div class="page container">
-    <h1 class="page-title">{t.profile.title}</h1>
+<LandingLayout title={`${t.profile.title} — mamtodoma.cz`} description={t.landing.meta.defaultDescription}>
+  <section class="landing">
+    <div class="container-lg profile-content">
+      <h1 class="section-title">{t.profile.title}</h1>
 
-    <div class="card profile-card">
-      <div class="avatar">
-        {profile?.avatar_url
-          ? <img src={profile.avatar_url} alt="Avatar" class="avatar-img" />
-          : <span class="avatar-initial">{(profile?.display_name ?? session.user.email ?? "?")[0].toUpperCase()}</span>
-        }
-      </div>
-      <div class="profile-info">
-        <span class="profile-name">{profile?.display_name ?? t.common.unnamed}</span>
-        <span class="profile-email">{session.user.email}</span>
-        <span class="profile-role">{roleLabel(profile?.role ?? null)}</span>
-      </div>
-    </div>
-
-    <div class="card edit-card">
-      <h2 class="section-title">{t.profile.editProfile}</h2>
-      {saved && <p class="success-msg">{t.settings.saved}</p>}
-      {saveError && <p class="error-msg">{saveError}</p>}
-      <form method="POST" class="edit-form">
-        <div class="field">
-          <label for="display_name">{t.profile.displayName}</label>
-          <input id="display_name" name="display_name" type="text" value={profile?.display_name ?? ""} placeholder={t.settings.displayNamePlaceholder} />
+      <div class="card profile-card">
+        <div class="avatar">
+          {profile?.avatar_url
+            ? <img src={profile.avatar_url} alt="Avatar" class="avatar-img" />
+            : <span class="avatar-initial">{(profile?.display_name ?? session.user.email ?? "?")[0].toUpperCase()}</span>
+          }
         </div>
-        <button type="submit" class="btn btn-primary">{t.common.saveChanges}</button>
-      </form>
-    </div>
+        <div class="profile-info">
+          <span class="profile-name">{profile?.display_name ?? t.common.unnamed}</span>
+          <span class="profile-email">{session.user.email}</span>
+          <span class="profile-role">{roleLabel(profile?.role ?? null)}</span>
+        </div>
+      </div>
 
-    <div class="bottom-actions">
-      <form method="POST" action="/auth/signout">
-        <button type="submit" class="btn btn-ghost">{t.profile.signOut} →</button>
-      </form>
+      <div class="card edit-card">
+        <h2 class="card-title">{t.profile.editProfile}</h2>
+        {saved && <p class="success-msg">{t.settings.saved}</p>}
+        {saveError && <p class="error-msg">{saveError}</p>}
+        <form method="POST" class="edit-form">
+          <div class="form-group">
+            <label class="form-label" for="display_name">{t.profile.displayName}</label>
+            <input id="display_name" name="display_name" type="text" class="form-input" value={profile?.display_name ?? ""} placeholder={t.settings.displayNamePlaceholder} />
+          </div>
+          <button type="submit" class="btn btn-primary">{t.common.saveChanges}</button>
+        </form>
+      </div>
 
-      <form method="POST" id="delete-form">
-        <input type="hidden" name="_action" value="delete_account" />
-        <button
-          type="button"
-          class="btn btn-danger"
-          data-confirm={t.profile.deleteConfirm}
-          id="delete-btn"
-        >{t.profile.deleteAccount}</button>
-      </form>
+      <div class="bottom-actions">
+        <form method="POST" action="/auth/signout">
+          <button type="submit" class="btn btn-ghost">{t.profile.signOut} →</button>
+        </form>
+
+        <form method="POST" id="delete-form">
+          <input type="hidden" name="_action" value="delete_account" />
+          <button
+            type="button"
+            class="btn btn-danger"
+            data-confirm={t.profile.deleteConfirm}
+            id="delete-btn"
+          >{t.profile.deleteAccount}</button>
+        </form>
+      </div>
     </div>
-  </div>
-</Layout>
+  </section>
+</LandingLayout>
 
 <script>
   document.getElementById("delete-btn")?.addEventListener("click", () => {
@@ -102,7 +104,7 @@ function roleLabel(role: number | null) {
 </script>
 
 <style>
-  .page-title { font-size: 36px; font-weight: 900; color: var(--text-primary); margin-bottom: 32px; }
+  .profile-content { max-width: 680px; margin-inline: auto; }
   .profile-card { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
   .avatar { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: var(--accent-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .avatar-img { width: 100%; height: 100%; object-fit: cover; }
@@ -112,12 +114,9 @@ function roleLabel(role: number | null) {
   .profile-email { font-size: 13px; color: var(--text-muted); }
   .profile-role { font-size: 11px; font-weight: 700; color: var(--accent-primary); text-transform: uppercase; letter-spacing: 0.6px; }
   .edit-card { margin-bottom: 24px; }
-  .section-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 20px; }
+  .card-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 20px; }
   .edit-form { display: flex; flex-direction: column; gap: 16px; }
-  .field label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
   .success-msg { color: var(--success); font-size: 14px; margin-bottom: 12px; }
   .error-msg { color: var(--error); font-size: 14px; margin-bottom: 12px; }
   .bottom-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
-  .btn-danger { background: transparent; color: #ef4444; border: 1.5px solid #ef4444; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
-  .btn-danger:hover { background: #ef444415; }
 </style>

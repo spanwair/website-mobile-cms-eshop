@@ -60,6 +60,10 @@ const inputId = id ?? name;
     background: rgba(79,70,229,0.08); margin-bottom: 4px;
   }
   .combobox-create:hover, .combobox-create.active { background: rgba(79,70,229,0.16); }
+  .combobox-create-disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
 </style>
 
 <script>
@@ -74,13 +78,22 @@ const inputId = id ?? name;
     const urlOnly = root.dataset.urlOnly === "true";
     let activeIndex = -1;
 
-    const URL_PREFIXES = ["https://", "http://", "www."];
-    const isCustomAllowed = (v: string) => {
+    function normalizeUrl(v: string): string {
       const trimmed = v.trim();
-      if (trimmed.length === 0) return false;
-      if (!urlOnly) return true;
+      if (!trimmed) return "";
       const lower = trimmed.toLowerCase();
-      return URL_PREFIXES.some((p) => p.startsWith(lower) || lower.startsWith(p));
+      if (lower.startsWith("http://") || lower.startsWith("https://") || lower.startsWith("www.")) {
+        return trimmed;
+      }
+      if (trimmed.startsWith("/")) {
+        return trimmed;
+      }
+      return "/" + trimmed;
+    }
+
+    const isCustomAllowed = (v: string) => {
+      if (!urlOnly) return v.trim().length > 0;
+      return true;
     };
 
     function items(): HTMLLIElement[] {
@@ -101,7 +114,7 @@ const inputId = id ?? name;
         ? options.filter((o) => o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q))
         : options;
       const exact = options.some((o) => o.value.toLowerCase() === q);
-      const showCreate = q.length > 0 && !exact && isCustomAllowed(raw);
+      const showCreate = !exact && isCustomAllowed(raw);
 
       list!.innerHTML = "";
       activeIndex = -1;
@@ -116,9 +129,14 @@ const inputId = id ?? name;
         const li = document.createElement("li");
         li.className = "combobox-option combobox-create";
         li.setAttribute("role", "option");
-        li.dataset.value = raw.trim();
+        const normalized = normalizeUrl(raw);
+        li.dataset.value = normalized;
+        if (!normalized) {
+          li.classList.add("combobox-create-disabled");
+          li.setAttribute("aria-disabled", "true");
+        }
         const labelSpan = document.createElement("span");
-        labelSpan.textContent = `${createLabel} "${raw.trim()}"`;
+        labelSpan.textContent = normalized ? `${createLabel} "${normalized}"` : createLabel;
         li.appendChild(labelSpan);
         list!.appendChild(li);
       }
@@ -157,6 +175,10 @@ const inputId = id ?? name;
     list.addEventListener("mousedown", (e) => {
       const li = (e.target as HTMLElement).closest<HTMLLIElement>(".combobox-option");
       if (!li) return;
+      if (li.dataset.value === "") {
+        e.preventDefault();
+        return;
+      }
       e.preventDefault();
       select(li.dataset.value ?? "");
       input!.focus();
