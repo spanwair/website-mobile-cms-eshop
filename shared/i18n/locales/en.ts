@@ -1491,7 +1491,12 @@ export const en = {
     templatesPage: {
       title: "Templates & design",
       sub: "Layouts and product-card styles you can switch anytime.",
-      comingSoonNote: "The full template gallery is growing — this page shows what's live today.",
+      demosTitle: "Live demos",
+      demosSub: "Same content, same products, same pages — the only difference is the look, set in the admin.",
+      demos: [
+        { title: "Repasado — light theme", desc: "The default light storefront look.", href: "/eshop-repasado", image: "/demo-media/preview-repasado.png" },
+        { title: "Repasado Dark — dark theme", desc: "The same storefront, dark palette set via Settings → Branding.", href: "/eshop-repasado-dark", image: "/demo-media/preview-repasado-dark.png" },
+      ],
     },
     about: {
       title: "Why 10%, not a monthly bill",

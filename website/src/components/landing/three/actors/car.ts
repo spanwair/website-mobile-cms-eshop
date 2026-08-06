@@ -5,6 +5,8 @@ const CAR_COLORS = [0xef4444, 0xf8fafc, 0x6366f1, 0xfacc15, 0x22d3ee, 0xf97316];
 export interface Car {
   group: THREE.Group;
   wheels: THREE.Mesh[];
+  headlights: THREE.Mesh[];
+  taillights: THREE.Mesh[];
   speed: number;
   phase: number;
 }
@@ -34,17 +36,23 @@ export function buildCar(speed: number, phase: number): Car {
   windows.position.set(0, 0.3, -0.02);
   group.add(windows);
 
-  const headlightMat = new THREE.MeshStandardMaterial({ color: 0xfffbeb, emissive: 0xfff3b0, emissiveIntensity: 1.6 });
-  const taillightMat = new THREE.MeshStandardMaterial({ color: 0xff6b6b, emissive: 0xff1f3d, emissiveIntensity: 1.4 });
+  const headlightMat = new THREE.MeshStandardMaterial({ color: 0xfffbeb, emissive: 0xfff3b0, emissiveIntensity: 0 });
+  const taillightMat = new THREE.MeshStandardMaterial({ color: 0xff6b6b, emissive: 0xff1f3d, emissiveIntensity: 0 });
   const lightGeom = new THREE.BoxGeometry(0.045, 0.04, 0.02);
+  
+  const headlights: THREE.Mesh[] = [];
+  const taillights: THREE.Mesh[] = [];
+
   for (const x of [-0.075, 0.075]) {
     const headlight = new THREE.Mesh(lightGeom, headlightMat);
     headlight.position.set(x, 0.15, -0.21);
     group.add(headlight);
+    headlights.push(headlight);
 
     const taillight = new THREE.Mesh(lightGeom, taillightMat);
     taillight.position.set(x, 0.15, 0.21);
     group.add(taillight);
+    taillights.push(taillight);
   }
 
   const wheelGeom = new THREE.CylinderGeometry(0.06, 0.06, 0.05, 14);
@@ -60,7 +68,7 @@ export function buildCar(speed: number, phase: number): Car {
     wheels.push(wheel);
   }
 
-  return { group, wheels, speed, phase };
+  return { group, wheels, headlights, taillights, speed, phase };
 }
 
 const CAB_COLORS = [0xef4444, 0x2563eb, 0xf8fafc, 0x475569];
@@ -91,17 +99,23 @@ export function buildTruck(speed: number, phase: number): Car {
   cargo.receiveShadow = true;
   group.add(cargo);
 
-  const headlightMat = new THREE.MeshStandardMaterial({ color: 0xfffbeb, emissive: 0xfff3b0, emissiveIntensity: 1.6 });
-  const taillightMat = new THREE.MeshStandardMaterial({ color: 0xff6b6b, emissive: 0xff1f3d, emissiveIntensity: 1.4 });
+  const headlightMat = new THREE.MeshStandardMaterial({ color: 0xfffbeb, emissive: 0xfff3b0, emissiveIntensity: 0 });
+  const taillightMat = new THREE.MeshStandardMaterial({ color: 0xff6b6b, emissive: 0xff1f3d, emissiveIntensity: 0 });
   const lightGeom = new THREE.BoxGeometry(0.05, 0.045, 0.02);
+  
+  const headlights: THREE.Mesh[] = [];
+  const taillights: THREE.Mesh[] = [];
+
   for (const x of [-0.09, 0.09]) {
     const headlight = new THREE.Mesh(lightGeom, headlightMat);
     headlight.position.set(x, 0.14, -0.43);
     group.add(headlight);
+    headlights.push(headlight);
 
     const taillight = new THREE.Mesh(lightGeom, taillightMat);
     taillight.position.set(x, 0.16, 0.325);
     group.add(taillight);
+    taillights.push(taillight);
   }
 
   const wheelGeom = new THREE.CylinderGeometry(0.065, 0.065, 0.055, 14);
@@ -117,5 +131,5 @@ export function buildTruck(speed: number, phase: number): Car {
     wheels.push(wheel);
   }
 
-  return { group, wheels, speed, phase };
+  return { group, wheels, headlights, taillights, speed, phase };
 }

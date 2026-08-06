@@ -41,18 +41,20 @@ export function laneSample(lane: Lane, traveled: number): { position: THREE.Vect
   return { position, dir };
 }
 
-// One-way travel along a straight lane: always start→end, wrapping back to
-// the start instead of reversing. Real one-way traffic never drives the
-// return leg of its own lane — a ping-ponging car would spend half its time
-// moving backward while still sitting on the offset reserved for the
-// opposite direction, which is exactly the "driving on the left" bug this
-// avoids. The wrap point sits at each lane's far end (`roadSpan`, well past
-// the visible frame), so it's never seen.
+// One-way travel along a straight lane using ACCUMULATED distance.
+// Unlike the previous modulo-based approach, this preserves absolute position
+// across frames so braking actually reduces displacement instead of just
+// changing the sample point on a cyclic curve. When the vehicle exceeds the
+// lane length, it wraps to the next cycle seamlessly.
 export function wrapLaneSample(lane: Lane, traveled: number): { position: THREE.Vector3; dir: THREE.Vector3 } {
   const pts = lane.points;
   const segLens = pts.slice(1).map((p, i) => p.distanceTo(pts[i]) || 0.0001);
   const total = segLens.reduce((a, b) => a + b, 0) || 1;
+  
+  // Use true accumulated distance modulo total length
+  // This ensures that if brake=0, traveled stops increasing and position freezes
   let d = ((traveled % total) + total) % total;
+  
   let i = 0;
   while (i < segLens.length - 1 && d > segLens[i]) {
     d -= segLens[i];

@@ -7,8 +7,61 @@ const s = t.landing.aiCapabilities;
 <section class="landing" id="ai-capabilities">
   <div class="container-lg showcase-grid showcase-grid--reverse">
     <div class="showcase-visual">
-      <canvas id="ai-scene" class="showcase-canvas" aria-hidden="true"></canvas>
+      <div class="admin-frame" id="ai-admin">
+        <div class="device-bar">
+          <span class="device-dot"></span><span class="device-dot"></span><span class="device-dot"></span>
+          <span class="device-url">app.vaseznacka.cz/admin/products</span>
+        </div>
+
+        <div class="admin-body">
+          <aside class="admin-rail">
+            <span class="admin-rail-icon">📊</span>
+            <span class="admin-rail-icon is-active">🛍️</span>
+            <span class="admin-rail-icon">📋</span>
+            <span class="admin-rail-icon">👥</span>
+            <span class="admin-rail-icon">💰</span>
+          </aside>
+
+          <div class="admin-main">
+            <div class="admin-field">
+              <span class="admin-field-label">Název produktu</span>
+              <div class="admin-field-value" id="ai-name">Pánská bunda Alpine 2.0</div>
+            </div>
+
+            <div class="admin-bullets" id="ai-bullets">
+              <span class="admin-chip">voděodolná</span>
+              <span class="admin-chip">lehká</span>
+              <span class="admin-chip">kapuce</span>
+            </div>
+
+            <div class="ai-panel">
+              <div class="ai-panel-head">
+                <span class="ai-badge">✨ AI popis produktu</span>
+                <span class="ai-status" id="ai-status">generuji…</span>
+              </div>
+              <p class="ai-output"><span id="ai-output-text"></span><span class="ai-caret" id="ai-caret"></span></p>
+            </div>
+
+            <div class="ai-recent">
+              <div class="ai-recent-row"><span>✓ Dámské šaty Riviera</span><span class="ai-recent-time">před 2 min</span></div>
+              <div class="ai-recent-row"><span>✓ Sportovní láhev 750 ml</span><span class="ai-recent-time">před 6 min</span></div>
+            </div>
+
+            <div class="ai-roadmap-row">
+              <div class="ai-roadmap-chip">
+                <span>Návrh ceny</span>
+                <span class="badge badge-pending">Plán vývoje</span>
+              </div>
+              <div class="ai-roadmap-chip">
+                <span>AI vyhledávání</span>
+                <span class="badge badge-pending">Plán vývoje</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
     <div>
       <p class="section-eyebrow">{s.eyebrow}</p>
       <h2 class="section-title">{s.title}</h2>
@@ -27,9 +80,101 @@ const s = t.landing.aiCapabilities;
 </section>
 
 <script>
-  import { mountAccentScene } from "../three/aiScene";
-  const canvas = document.getElementById("ai-scene") as HTMLCanvasElement | null;
-  if (canvas) mountAccentScene(canvas, { accent: 0x10b981 });
+  const root = document.getElementById("ai-admin");
+  const nameEl = document.getElementById("ai-name");
+  const bulletsEl = document.getElementById("ai-bullets");
+  const statusEl = document.getElementById("ai-status");
+  const outputEl = document.getElementById("ai-output-text");
+
+  const samples = [
+    {
+      name: "Pánská bunda Alpine 2.0",
+      bullets: ["voděodolná", "lehká", "kapuce"],
+      desc: "Lehká outdoorová bunda s voděodolnou membránou a skrytou kapucí — ideální na podzimní túry i běžné nošení ve městě.",
+    },
+    {
+      name: "Keramický hrnek Nordic",
+      bullets: ["350 ml", "do myčky", "ruční výroba"],
+      desc: "Ručně vyráběný keramický hrnek s objemem 350 ml, bezpečný do myčky i mikrovlnky — každý kus je originál.",
+    },
+    {
+      name: "Běžecké boty TrailFlex",
+      bullets: ["tlumení paty", "prodyšné", "230 g"],
+      desc: "Odlehčené běžecké boty s výrazným tlumením paty a prodyšným svrškem — pro dlouhé kilometry bez zbytečné zátěže.",
+    },
+  ];
+
+  if (root && nameEl && bulletsEl && statusEl && outputEl) {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (reducedMotion) {
+      outputEl.textContent = samples[0].desc;
+      statusEl.textContent = "hotovo ✓";
+      statusEl.classList.add("is-done");
+    } else {
+      let visible = true;
+      new IntersectionObserver(
+        (entries) => entries.forEach((entry) => (visible = entry.isIntersecting)),
+        { threshold: 0.2 },
+      ).observe(root);
+
+      let sampleIndex = 0;
+      const TYPE_MS = 26;
+      const DELETE_MS = 12;
+      const HOLD_MS = 2400;
+      const GAP_MS = 500;
+
+      const wait = (ms: number) =>
+        new Promise<void>((resolve) => {
+          const tick = () => {
+            if (!visible) {
+              setTimeout(tick, 150);
+              return;
+            }
+            setTimeout(resolve, ms);
+          };
+          tick();
+        });
+
+      async function typeText(text: string) {
+        for (let i = 1; i <= text.length; i++) {
+          outputEl!.textContent = text.slice(0, i);
+          await wait(TYPE_MS);
+        }
+      }
+
+      async function deleteText(text: string) {
+        for (let i = text.length; i >= 0; i--) {
+          outputEl!.textContent = text.slice(0, i);
+          await wait(DELETE_MS);
+        }
+      }
+
+      async function loop() {
+        for (;;) {
+          const sample = samples[sampleIndex % samples.length];
+          nameEl!.textContent = sample.name;
+          bulletsEl!.innerHTML = sample.bullets
+            .map((b) => `<span class="admin-chip">${b}</span>`)
+            .join("");
+          statusEl!.textContent = "generuji…";
+          statusEl!.classList.remove("is-done");
+
+          await wait(GAP_MS);
+          await typeText(sample.desc);
+
+          statusEl!.textContent = "hotovo ✓";
+          statusEl!.classList.add("is-done");
+          await wait(HOLD_MS);
+          await deleteText(sample.desc);
+
+          sampleIndex++;
+        }
+      }
+
+      loop();
+    }
+  }
 </script>
 
 <style>
@@ -38,11 +183,102 @@ const s = t.landing.aiCapabilities;
   .showcase-list li { display: flex; flex-direction: column; gap: 2px; }
   .showcase-list strong { font-size: 15px; }
   .showcase-list span { color: var(--text-muted); font-size: 14px; }
-  .showcase-visual { position: relative; aspect-ratio: 1; border-radius: var(--radius-xl); overflow: hidden; background: var(--bg-subtle); }
-  .showcase-canvas { width: 100%; height: 100%; display: block; }
+  .showcase-visual { position: relative; }
   .showcase-grid--reverse { direction: rtl; }
   .showcase-grid--reverse > * { direction: ltr; }
   .roadmap-note { font-size: 13px; color: var(--text-placeholder); font-style: italic; }
+
+  .device-bar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 12px 16px;
+    background: var(--bg-subtle);
+    border-bottom: 1px solid var(--border-default);
+  }
+  .device-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }
+  .device-url {
+    margin-left: 10px; padding: 3px 12px; border-radius: var(--radius-full);
+    background: var(--bg-page); color: var(--text-placeholder);
+    font-size: 11px; font-family: monospace;
+  }
+
+  .admin-frame {
+    background: var(--bg-page);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .admin-body { display: flex; }
+  .admin-rail {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    padding: 18px 10px; background: var(--bg-subtle); border-right: 1px solid var(--border-default);
+  }
+  .admin-rail-icon { font-size: 15px; opacity: 0.4; }
+  .admin-rail-icon.is-active {
+    opacity: 1; background: var(--bg-page); border-radius: 8px; padding: 6px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .admin-main { flex: 1; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .admin-field { display: flex; flex-direction: column; gap: 4px; }
+  .admin-field-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-placeholder); }
+  .admin-field-value {
+    font-size: 13px; font-weight: 600; color: var(--text-primary);
+    background: var(--bg-surface); border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm); padding: 8px 12px;
+  }
+
+  .admin-bullets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .admin-chip {
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    background: var(--bg-surface); border: 1px solid var(--border-default);
+    border-radius: var(--radius-full); padding: 4px 10px;
+  }
+
+  .ai-panel {
+    background: linear-gradient(180deg, rgba(16,185,129,0.06), rgba(16,185,129,0.02));
+    border: 1px solid rgba(16,185,129,0.25);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    min-height: 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ai-panel-head { display: flex; align-items: center; justify-content: space-between; }
+  .ai-badge { font-size: 11px; font-weight: 700; color: var(--success); }
+  .ai-status { font-size: 10px; font-weight: 600; color: var(--text-placeholder); }
+  .ai-status.is-done { color: var(--success); }
+  .ai-output {
+    font-size: 12px; line-height: 1.6; color: var(--text-primary);
+    overflow: hidden;
+  }
+  .ai-caret {
+    display: inline-block; width: 2px; height: 12px; background: var(--success);
+    margin-left: 2px; vertical-align: middle;
+    animation: ai-blink 1s step-end infinite;
+  }
+
+  .ai-recent { display: flex; flex-direction: column; gap: 6px; }
+  .ai-recent-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; color: var(--text-muted);
+  }
+  .ai-recent-time { color: var(--text-placeholder); }
+
+  .ai-roadmap-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ai-roadmap-chip {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    background: var(--bg-surface); border: 1px solid var(--border-default);
+    border-radius: var(--radius-full); padding: 5px 6px 5px 12px;
+  }
+
+  @keyframes ai-blink {
+    50% { opacity: 0; }
+  }
 
   @media (max-width: 900px) {
     .showcase-grid { grid-template-columns: 1fr; }

@@ -1493,7 +1493,12 @@ export const cs: Translations = {
     templatesPage: {
       title: "Šablony a design",
       sub: "Rozvržení a styly produktových karet, které můžete kdykoli změnit.",
-      comingSoonNote: "Kompletní galerie šablon se rozrůstá — tato stránka ukazuje, co je dostupné už dnes.",
+      demosTitle: "Živé ukázky",
+      demosSub: "Stejný obsah, stejné produkty, stejné stránky — jediný rozdíl je vzhled nastavený v administraci.",
+      demos: [
+        { title: "Repasado — světlý styl", desc: "Výchozí světlý vzhled obchodu.", href: "/eshop-repasado", image: "/demo-media/preview-repasado.png" },
+        { title: "Repasado Dark — tmavý styl", desc: "Stejný e-shop, tmavá paleta nastavená přes Nastavení → Vzhled.", href: "/eshop-repasado-dark", image: "/demo-media/preview-repasado-dark.png" },
+      ],
     },
     about: {
       title: "Proč 10 %, a ne měsíční paušál",

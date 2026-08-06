@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { buildTree, buildGround } from "./actors/props";
 import { buildWarehouse, buildOffice, buildStore } from "./actors/buildings";
 import { buildMountain, buildCabin, buildLake, buildBoat, MOUNTAIN_FOOTPRINT } from "./actors/nature";
-import type { CityGrid, InteriorCell } from "./cityGrid";
+import type { CityGrid, InteriorCell, CellBounds } from "./cityGrid";
 
 // A boat orbiting the lake on its own fixed-radius ellipse. Different boats
 // get different radii (concentric rings) so their paths can never cross,
@@ -34,30 +34,55 @@ function safeBounds(cell: { x0: number; x1: number; z0: number; z1: number }, ha
 // Builds the campus (warehouse/store/offices in the merged block) plus the
 // background landmarks (mountain+cabin, lake+boats, trees) in the outer
 // cells, and returns the block so the caller can add traffic/pedestrians.
-export function placeCampusAndNature(scene: THREE.Scene, grid: CityGrid, half: number, groundSize: number, isMobile: boolean): { block: InteriorCell; boats: BoatOrbit[] } {
+// Returns null for block if no interior cells exist (e.g. sparse grid).
+export function placeCampusAndNature(scene: THREE.Scene, grid: CityGrid, half: number, groundSize: number, isMobile: boolean): { block: InteriorCell | null; boats: BoatOrbit[] } {
   scene.add(buildGround(groundSize, 0x8fbf8a));
 
-  const [block] = grid.interiorCells;
+  // Gracefully handle grids with no interior cells (e.g. only 2 offsets per axis)
+  const block = grid.interiorCells.length > 0 ? grid.interiorCells[0] : null;
 
-  const warehouse = buildWarehouse();
-  warehouse.scale.setScalar(0.75);
-  warehouse.position.set(block.cx - 2.2, 0, block.cz + 0.6);
-  scene.add(warehouse);
+  if (block) {
+    const warehouse = buildWarehouse();
+    warehouse.scale.setScalar(0.75);
+    warehouse.position.set(block.cx - 2.2, 0, block.cz + 0.6);
+    scene.add(warehouse);
 
-  const store = buildStore();
-  store.scale.setScalar(1.1);
-  store.position.set(block.cx - 0.8, 0, block.cz - 1.7);
-  scene.add(store);
+    const store = buildStore();
+    store.scale.setScalar(1.1);
+    store.position.set(block.cx - 0.8, 0, block.cz - 1.7);
+    scene.add(store);
 
-  const office = buildOffice();
-  office.scale.setScalar(1.35);
-  office.position.set(block.cx + 2.0, 0, block.cz - 0.4);
-  scene.add(office);
+    const office = buildOffice();
+    office.scale.setScalar(1.35);
+    office.position.set(block.cx + 2.0, 0, block.cz - 0.4);
+    scene.add(office);
 
-  const office2 = buildOffice();
-  office2.scale.setScalar(0.9);
-  office2.position.set(block.cx + 3.2, 0, block.cz + 1.4);
-  scene.add(office2);
+    const office2 = buildOffice();
+    office2.scale.setScalar(0.9);
+    office2.position.set(block.cx + 3.2, 0, block.cz + 1.4);
+    scene.add(office2);
+  } else {
+    // Fallback: place buildings in the largest outer cell if no interior exists
+    const fallbackCell = grid.outerCells.reduce((best, c) => 
+      ((c.x1 - c.x0) * (c.z1 - c.z0)) > ((best.x1 - best.x0) * (best.z1 - best.z0)) ? c : best
+    , grid.outerCells[0]);
+    
+    if (fallbackCell) {
+      const sb = safeBounds(fallbackCell, half);
+      const cx = (sb.x0 + sb.x1) / 2;
+      const cz = (sb.z0 + sb.z1) / 2;
+      
+      const warehouse = buildWarehouse();
+      warehouse.scale.setScalar(0.65);
+      warehouse.position.set(cx - 1.5, 0, cz + 0.5);
+      scene.add(warehouse);
+
+      const store = buildStore();
+      store.scale.setScalar(0.9);
+      store.position.set(cx + 1.2, 0, cz - 0.8);
+      scene.add(store);
+    }
+  }
 
   // Outer (non-interior) cells: give the lake+boats and the mountains+cabin
   // the most screen-visible outer cells (highest x-z), the rest get trees.

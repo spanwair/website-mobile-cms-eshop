@@ -13,9 +13,44 @@ const p = t.landing.templatesPage;
     <div class="container-lg">
       <h1 class="section-title section-title--center">{p.title}</h1>
       <p class="section-sub section-sub--center">{p.sub}</p>
-      <p class="section-sub section-sub--center" style="font-style:italic;font-size:13px">{p.comingSoonNote}</p>
+    </div>
+  </section>
+  <section class="landing">
+    <div class="container-lg">
+      <h2 class="section-title section-title--center">{p.demosTitle}</h2>
+      <p class="section-sub section-sub--center">{p.demosSub}</p>
+      <div class="demo-grid">
+        {p.demos.map((demo) => (
+          <a href={demo.href} class="demo-card" target="_blank" rel="noopener">
+            <img class="demo-card-preview" src={demo.image} alt={demo.title} loading="lazy" />
+            <div class="demo-card-body">
+              <strong>{demo.title}</strong>
+              <span>{demo.desc}</span>
+            </div>
+          </a>
+        ))}
+      </div>
     </div>
   </section>
   <TemplatesShowcase />
   <FinalCta />
 </LandingLayout>
+
+<style>
+  .demo-grid { display: grid; gap: 20px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 32px; }
+  .demo-card {
+    display: flex; flex-direction: column; overflow: hidden;
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    background: var(--bg-surface); text-decoration: none; color: inherit;
+    transition: border-color 0.15s ease;
+  }
+  .demo-card:hover { border-color: var(--accent-primary); }
+  .demo-card-preview { width: 100%; aspect-ratio: 16/10; object-fit: cover; object-position: top; display: block; background: var(--bg-subtle); }
+  .demo-card-body { display: flex; flex-direction: column; gap: 6px; padding: 20px 24px; }
+  .demo-card strong { font-size: 16px; }
+  .demo-card span { color: var(--text-muted); font-size: 14px; }
+
+  @media (max-width: 700px) {
+    .demo-grid { grid-template-columns: 1fr; }
+  }
+</style>
