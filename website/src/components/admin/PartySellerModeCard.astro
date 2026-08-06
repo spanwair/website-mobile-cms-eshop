@@ -1,0 +1,107 @@
+---
+import type { Party, CommissionaireAgreement } from "@shared/types";
+
+interface Props {
+  party: Party;
+  agreement: CommissionaireAgreement | null;
+  lang: string;
+  t: any;
+}
+const { party, agreement, lang, t } = Astro.props;
+const s = t.admin.parties.sellerMode;
+const isCommission = party.seller_mode === "smalljobs_commission";
+---
+
+<div class="card seller-mode-card">
+  <h2 class="section-title">{s.section}</h2>
+  <p class="mode-current">
+    <span class="mode-badge" class:list={[isCommission ? "mode-badge--commission" : "mode-badge--own"]}>
+      {isCommission ? s.commissionLabel : s.ownCompanyLabel}
+    </span>
+  </p>
+  <p class="mode-desc">{isCommission ? s.commissionDesc : s.ownCompanyDesc}</p>
+
+  {isCommission && agreement && (
+    <div class="agreement-summary">
+      <div class="agreement-row"><span>{s.agreementActiveSince}</span><strong>{new Date(agreement.accepted_at).toLocaleDateString(lang)}</strong></div>
+      <div class="agreement-row"><span>{s.agreementAcceptedTermsVersion}</span><strong>{agreement.terms_version}</strong></div>
+      <a href={`/admin/payouts?party=${party.id}`} class="payout-link">{s.payoutLedgerLink}</a>
+      <form method="POST" onsubmit={`return confirm('${s.revertConfirm}')`}>
+        <input type="hidden" name="action" value="revoke_commission_agreement" />
+        <button type="submit" class="btn btn-danger" style="margin-top:12px">{s.revertBtn}</button>
+      </form>
+    </div>
+  )}
+
+  {!isCommission && (
+    <details class="switch-form">
+      <summary class="btn btn-secondary">{s.switchBtn}</summary>
+      <p class="switch-intro">{s.switchIntro}</p>
+
+      <details class="terms-box">
+        <summary>{s.termsToggle}</summary>
+        <h3>{s.agreementTitle}</h3>
+        {s.agreementTerms.map((p: string) => <p class="terms-paragraph">{p}</p>)}
+      </details>
+
+      <form method="POST" class="edit-form">
+        <input type="hidden" name="action" value="accept_commission_agreement" />
+        <div class="form-group">
+          <label class="form-label">{s.fieldLegalFullName}</label>
+          <input class="form-input" name="legal_full_name" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldAddressLine1}</label>
+          <input class="form-input" name="address_line1" required />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">{s.fieldAddressCity}</label>
+            <input class="form-input" name="address_city" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{s.fieldAddressPostalCode}</label>
+            <input class="form-input" name="address_postal_code" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldBankAccount}</label>
+          <input class="form-input" name="bank_account" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">{s.fieldPersonalIdNote}</label>
+          <input class="form-input" name="personal_id_note" />
+        </div>
+        <label class="form-check">
+          <input type="checkbox" name="terms_accepted" required />
+          {s.termsCheckboxLabel}
+        </label>
+        <button type="submit" class="btn btn-primary" style="margin-top:4px">{s.acceptBtn}</button>
+      </form>
+    </details>
+  )}
+</div>
+
+<style>
+  .seller-mode-card { margin-top: 16px; }
+  .mode-current { margin-bottom: 4px; }
+  .mode-badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+  .mode-badge--own { background: var(--bg-subtle); color: var(--text-primary); }
+  .mode-badge--commission { background: rgba(124,179,66,0.12); color: #558b2f; }
+  .mode-desc { font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:12px; }
+  .agreement-summary { font-size:13px; }
+  .agreement-row { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border-default); }
+  .payout-link { display:inline-block; margin-top:12px; color:var(--primary); font-weight:600; font-size:13px; }
+  .switch-form summary { cursor:pointer; list-style:none; }
+  .switch-form summary::-webkit-details-marker { display:none; }
+  .switch-intro { font-size:13px; color:var(--text-muted); line-height:1.6; margin:12px 0; }
+  .terms-box { font-size:13px; background:var(--bg-subtle); border-radius:8px; padding:12px 14px; margin-bottom:14px; }
+  .terms-box summary { cursor:pointer; font-weight:600; }
+  .terms-box h3 { font-size:13px; margin:10px 0 6px; }
+  .terms-paragraph { color:var(--text-muted); line-height:1.6; margin:0 0 8px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .form-group { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
+  .form-label { font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:8px; }
+  .form-check input { width:auto; }
+</style>

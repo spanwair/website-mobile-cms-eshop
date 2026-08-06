@@ -31,7 +31,7 @@ const parties = await fetchParties(supabase);
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>
-        <tr><th>{t.admin.parties.colName}</th><th>{t.admin.parties.colSlug}</th><th>{t.admin.parties.colCompany}</th><th>{t.admin.parties.colStatus}</th><th>{t.admin.parties.colCreated}</th><th>{t.admin.parties.colActions}</th></tr>
+        <tr><th>{t.admin.parties.colName}</th><th>{t.admin.parties.colSlug}</th><th>{t.admin.parties.colCompany}</th><th>{t.admin.parties.sellerMode.section}</th><th>{t.admin.parties.colStatus}</th><th>{t.admin.parties.colCreated}</th><th>{t.admin.parties.colActions}</th></tr>
       </thead>
       <tbody>
         {parties.map((p) => (
@@ -39,13 +39,18 @@ const parties = await fetchParties(supabase);
             <td style="font-weight:600">{p.name}</td>
             <td style="font-family:monospace;font-size:13px;color:var(--text-muted)">{p.slug}</td>
             <td style="color:var(--text-muted)">{p.company_name ?? "—"}</td>
+            <td>
+              <span class={`badge ${p.seller_mode === 'smalljobs_commission' ? 'mode-badge--commission' : 'mode-badge--own'}`}>
+                {p.seller_mode === 'smalljobs_commission' ? t.admin.parties.sellerMode.commissionLabel : t.admin.parties.sellerMode.ownCompanyLabel}
+              </span>
+            </td>
             <td><span class={`badge badge-${p.status}`}>{t.admin.parties[p.status === 'active' ? 'statusActive' : p.status === 'closed' ? 'statusClosed' : 'statusInactive']}</span></td>
             <td style="font-size:13px;color:var(--text-muted)">{new Date(p.created_at).toLocaleDateString(lang)}</td>
             <td><a href={`/admin/parties/${p.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.parties.view}</a></td>
           </tr>
         ))}
         {parties.length === 0 && (
-          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.parties.noParties}</td></tr>
+          <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.parties.noParties}</td></tr>
         )}
       </tbody>
     </table>
@@ -55,4 +60,6 @@ const parties = await fetchParties(supabase);
 <style>
   .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
   .total-label { font-size:14px; color:var(--text-muted); }
+  .mode-badge--own { background: var(--bg-subtle); color: var(--text-primary); padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+  .mode-badge--commission { background: rgba(124,179,66,0.12); color: #558b2f; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
 </style>

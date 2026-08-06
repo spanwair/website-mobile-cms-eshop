@@ -193,11 +193,20 @@ export async function sendOrderConfirmation(opts: {
   items: Array<{ title: string; quantity: number; price: number }>;
   currency?: string;
   lang?: AppLanguage;
+  // Present only for smalljobs_commission orders — Smalljobs is the contracting seller
+  // toward the consumer (§2455 ObčZ), so it must be named as such on this document.
+  sellerOfRecord?: { name: string; ico: string; address: string; vatNote: string };
 }): Promise<void> {
   const lang = opts.lang ?? 'cs';
   const itemsHtml = opts.items
     .map(i => `<tr><td>${i.title}</td><td>${i.quantity}×</td><td>${formatPrice(i.price, lang, opts.currency)}</td></tr>`)
     .join("");
+  const sellerHtml = opts.sellerOfRecord
+    ? `<p style="color:#555;font-size:13px">
+        ${lang === 'cs' ? 'Prodávající' : 'Seller'}: <strong>${opts.sellerOfRecord.name}</strong>, IČO ${opts.sellerOfRecord.ico}<br/>
+        ${opts.sellerOfRecord.address}<br/>${opts.sellerOfRecord.vatNote}
+      </p>`
+    : "";
 
   await sendEmail({
     to: opts.to,
@@ -210,6 +219,7 @@ export async function sendOrderConfirmation(opts: {
         <tbody>${itemsHtml}</tbody>
         <tfoot><tr><td colspan="2"><strong>Total</strong></td><td><strong>${formatPrice(opts.orderTotal, lang, opts.currency)}</strong></td></tr></tfoot>
       </table>
+      ${sellerHtml}
       <p>We will notify you when your order ships.</p>
     `,
   });

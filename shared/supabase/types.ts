@@ -1415,6 +1415,7 @@ export type Database = {
           internal_notes: string | null
           notes: string | null
           order_number: string
+          paid_at: string | null
           party_id: string
           payment_status: string
           shipped_at: string | null
@@ -1438,6 +1439,7 @@ export type Database = {
           internal_notes?: string | null
           notes?: string | null
           order_number: string
+          paid_at?: string | null
           party_id: string
           payment_status?: string
           shipped_at?: string | null
@@ -1461,6 +1463,7 @@ export type Database = {
           internal_notes?: string | null
           notes?: string | null
           order_number?: string
+          paid_at?: string | null
           party_id?: string
           payment_status?: string
           shipped_at?: string | null
@@ -1504,6 +1507,87 @@ export type Database = {
           },
         ]
       }
+      order_commission_ledger: {
+        Row: {
+          commission_amount: number
+          commission_rate: number
+          created_at: string
+          currency: string
+          gross_amount: number
+          hold_until: string
+          id: string
+          net_payable: number
+          order_id: string
+          paid_at: string | null
+          paid_by: string | null
+          party_id: string
+          payout_reference: string | null
+          reversed_at: string | null
+          reversed_reason: string | null
+          status: string
+          tax_amount: number
+          tax_rate: number
+          updated_at: string
+        }
+        Insert: {
+          commission_amount: number
+          commission_rate?: number
+          created_at?: string
+          currency?: string
+          gross_amount: number
+          hold_until: string
+          id?: string
+          net_payable: number
+          order_id: string
+          paid_at?: string | null
+          paid_by?: string | null
+          party_id: string
+          payout_reference?: string | null
+          reversed_at?: string | null
+          reversed_reason?: string | null
+          status?: string
+          tax_amount?: number
+          tax_rate?: number
+          updated_at?: string
+        }
+        Update: {
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          currency?: string
+          gross_amount?: number
+          hold_until?: string
+          id?: string
+          net_payable?: number
+          order_id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          party_id?: string
+          payout_reference?: string | null
+          reversed_at?: string | null
+          reversed_reason?: string | null
+          status?: string
+          tax_amount?: number
+          tax_rate?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_commission_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_commission_ledger_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parties: {
         Row: {
           billing_email: string | null
@@ -1512,6 +1596,7 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          seller_mode: string
           settings: Json
           slug: string
           status: string
@@ -1525,6 +1610,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          seller_mode?: string
           settings?: Json
           slug: string
           status?: string
@@ -1538,6 +1624,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          seller_mode?: string
           settings?: Json
           slug?: string
           status?: string
@@ -1545,6 +1632,71 @@ export type Database = {
           vat_number?: string | null
         }
         Relationships: []
+      }
+      commissionaire_agreements: {
+        Row: {
+          accepted_at: string
+          accepted_by: string
+          address_city: string
+          address_country_code: string
+          address_line1: string
+          address_postal_code: string
+          bank_account: string
+          created_at: string
+          id: string
+          legal_full_name: string
+          party_id: string
+          personal_id_note: string | null
+          revoked_at: string | null
+          status: string
+          terms_version: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string
+          accepted_by: string
+          address_city: string
+          address_country_code?: string
+          address_line1: string
+          address_postal_code: string
+          bank_account: string
+          created_at?: string
+          id?: string
+          legal_full_name: string
+          party_id: string
+          personal_id_note?: string | null
+          revoked_at?: string | null
+          status?: string
+          terms_version: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string
+          accepted_by?: string
+          address_city?: string
+          address_country_code?: string
+          address_line1?: string
+          address_postal_code?: string
+          bank_account?: string
+          created_at?: string
+          id?: string
+          legal_full_name?: string
+          party_id?: string
+          personal_id_note?: string | null
+          revoked_at?: string | null
+          status?: string
+          terms_version?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissionaire_agreements_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: true
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       party_color_presets: {
         Row: {

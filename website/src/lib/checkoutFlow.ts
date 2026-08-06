@@ -3,6 +3,9 @@ import type { Database } from "@shared/supabase/types";
 import type { AppLanguage } from "@shared/i18n/getT";
 import { createCheckoutSession, retrieveCheckoutSession } from "./integrations/stripe";
 import { sendOrderConfirmation } from "./integrations/email";
+import { recordCommissionForOrder } from "@shared/services/commissionLedgerService";
+import { SELLER_MODE } from "@shared/constants/sellerMode";
+import { sellerOfRecordInfo } from "@shared/constants/company";
 
 type AdminClient = SupabaseClient<Database>;
 
@@ -52,7 +55,7 @@ export async function confirmStripeSession(
 
     const { data: order } = await adminClient
       .from("orders")
-      .select("id, order_number, total_amount, currency, customer_id")
+      .select("id, order_number, total_amount, currency, customer_id, party_id")
       .eq("order_number", orderNumber)
       .maybeSingle();
     if (!order) return;
@@ -67,6 +70,8 @@ export async function confirmStripeSession(
       .maybeSingle();
     if (!updated) return;
 
+    await recordCommissionForOrder(adminClient, order.id);
+
     const { data: customer } = await adminClient
       .from("customers")
       .select("email, first_name, last_name")
@@ -78,6 +83,8 @@ export async function confirmStripeSession(
       .eq("order_id", order.id);
     if (!customer || !items) return;
 
+    const { data: sellingParty } = await adminClient.from("parties").select("seller_mode").eq("id", order.party_id).single();
+
     await sendOrderConfirmation({
       to: customer.email,
       customerName: `${customer.first_name} ${customer.last_name}`,
@@ -86,6 +93,7 @@ export async function confirmStripeSession(
       items: items.map((i) => ({ title: i.title, quantity: i.quantity, price: i.unit_price })),
       currency: order.currency,
       lang,
+      sellerOfRecord: sellingParty?.seller_mode === SELLER_MODE.SMALLJOBS_COMMISSION ? sellerOfRecordInfo(lang) : undefined,
     });
   } catch (err) {
     console.error("confirmStripeSession failed:", (err as Error).message);

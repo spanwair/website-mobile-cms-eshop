@@ -1,7 +1,9 @@
 ---
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import PartySellerModeCard from "../../../components/admin/PartySellerModeCard.astro";
 import { createSupabase, createAdminClient } from "../../../lib/supabase";
 import { fetchParty, updateParty, fetchPartyMembers, inviteUserToParty, removeUserFromParty } from "@shared/services/partyService";
+import { fetchCommissionaireAgreement, acceptCommissionaireAgreement, revokeCommissionaireAgreement } from "@shared/services/commissionaireService";
 import { fetchRoles } from "@shared/services/permissionsService";
 import { findUserByEmail } from "@shared/services/profileService";
 import { requireAdminCtx } from "../../../lib/admin";
@@ -144,6 +146,32 @@ if (Astro.request.method === "POST") {
         }
       }
     }
+  } else if (action === "accept_commission_agreement") {
+    if (!canManageSettings) {
+      error = t.admin.parties.errorInsufficientPermissions;
+    } else if (!form.get("terms_accepted")) {
+      error = t.admin.parties.errorInsufficientPermissions;
+    } else {
+      const result = await acceptCommissionaireAgreement(supabase, id!, {
+        legal_full_name: form.get("legal_full_name") as string,
+        address_line1: form.get("address_line1") as string,
+        address_city: form.get("address_city") as string,
+        address_postal_code: form.get("address_postal_code") as string,
+        bank_account: form.get("bank_account") as string,
+        personal_id_note: (form.get("personal_id_note") as string) || undefined,
+        accepted_by: session.user.id,
+      });
+      if (result.error) { error = result.error.message; }
+      else { success = t.admin.parties.updatedSuccess; }
+    }
+  } else if (action === "revoke_commission_agreement") {
+    if (!canManageSettings) {
+      error = t.admin.parties.errorInsufficientPermissions;
+    } else {
+      const result = await revokeCommissionaireAgreement(supabase, id!);
+      if (result.error) { error = result.error.message; }
+      else { success = t.admin.parties.updatedSuccess; }
+    }
   } else if (action === "remove") {
     if (!canManageUsers) {
       error = t.admin.parties.errorInsufficientPermissions;
@@ -158,9 +186,10 @@ if (Astro.request.method === "POST") {
 const party = await fetchParty(supabase, id!);
 if (!party) return Astro.redirect("/admin/parties");
 
-const [members, allRoles] = await Promise.all([
+const [members, allRoles, commissionAgreement] = await Promise.all([
   fetchPartyMembers(supabase, id!),
   fetchRoles(supabase),
+  canManageSettings ? fetchCommissionaireAgreement(supabase, id!) : Promise.resolve(null),
 ]);
 const roles = allRoles.filter(r => !r.is_system);
 
@@ -221,6 +250,7 @@ function roleName(roleId: string) {
             <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.common.saveChanges}</button>
           </form>
         </div>
+        <PartySellerModeCard party={party} agreement={commissionAgreement} lang={lang} t={t} />
       )}
 
       {canManageUsers && (

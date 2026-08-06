@@ -32,6 +32,8 @@ export interface ApiError {
 
 export type { AppRole } from "../constants/permissions";
 
+export type SellerMode = 'own_company' | 'smalljobs_commission';
+
 export interface Party {
   id: string;
   name: string;
@@ -42,6 +44,51 @@ export interface Party {
   logo_url: string | null;
   settings: Record<string, unknown>;
   status: 'active' | 'inactive' | 'closed';
+  seller_mode: SellerMode;
+  created_at: string;
+  updated_at: string;
+}
+
+// One accepted komisionářská smlouva per party — required before seller_mode can be
+// switched to 'smalljobs_commission'. See shared/constants/sellerMode.ts.
+export interface CommissionaireAgreement {
+  id: string;
+  party_id: string;
+  legal_full_name: string;
+  address_line1: string;
+  address_city: string;
+  address_postal_code: string;
+  address_country_code: string;
+  bank_account: string;
+  personal_id_note: string | null;
+  terms_version: string;
+  accepted_at: string;
+  accepted_by: string;
+  status: 'active' | 'revoked';
+  revoked_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Per-order commission split, recorded once at payment time for smalljobs_commission parties.
+export interface OrderCommissionLedgerEntry {
+  id: string;
+  order_id: string;
+  party_id: string;
+  gross_amount: number;
+  tax_rate: number;
+  tax_amount: number;
+  commission_rate: number;
+  commission_amount: number;
+  net_payable: number;
+  currency: string;
+  hold_until: string;
+  status: 'held' | 'paid' | 'reversed';
+  paid_at: string | null;
+  paid_by: string | null;
+  payout_reference: string | null;
+  reversed_at: string | null;
+  reversed_reason: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -330,6 +377,7 @@ export interface Order {
   tracking_number: string | null;
   shipped_at: string | null;
   delivered_at: string | null;
+  paid_at: string | null;
   created_at: string;
   updated_at: string;
 }

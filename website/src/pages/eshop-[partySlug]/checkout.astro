@@ -5,6 +5,7 @@ import CheckoutOrderSummary from "../../components/shop/CheckoutOrderSummary.ast
 import { createSupabase, createAdminClient } from "../../lib/supabase";
 import { clearCart, calcCartTotal } from "@shared/services/cartService";
 import { createOrder, addOrderItem } from "@shared/services/orderService";
+import { computeItemTax, computeOrderTax } from "@shared/utils/tax";
 import { startOrderCheckout } from "../../lib/checkoutFlow";
 import { useT } from "../../lib/i18n";
 
@@ -22,7 +23,7 @@ if (!session) return Astro.redirect(`/login?redirect=${linkBase}/checkout`);
 
 const { data: cartRaw } = await supabase
   .from("carts")
-  .select("*, cart_items(*, product:products(id, title, slug, price, discount_price, sku))")
+  .select("*, cart_items(*, product:products(id, title, slug, price, discount_price, sku, tax_rate))")
   .eq("user_id", session.user.id)
   .eq("party_id", partyId)
   .order("updated_at", { ascending: false })
@@ -34,6 +35,9 @@ if (!cart || !(cart.cart_items?.length > 0)) return Astro.redirect(`${linkBase}/
 
 const items = cart.cart_items ?? [];
 const { subtotal } = calcCartTotal(items.map((i: any) => ({ ...i, unit_price: Number(i.unit_price) })));
+
+const { data: sellingParty } = await supabase.from("parties").select("seller_mode").eq("id", partyId).single();
+const sellerMode = (sellingParty?.seller_mode ?? "own_company") as "own_company" | "smalljobs_commission";
 
 let checkoutError = "";
 
@@ -95,6 +99,7 @@ if (Astro.request.method === "POST") {
 
     const orderNumber = "ORD-" + String(Math.floor(Math.random() * 1_000_000)).padStart(8, "0");
 
+    const taxItems = items.map((i: any) => ({ unit_price: Number(i.unit_price), quantity: i.quantity, tax_rate: i.product?.tax_rate ? Number(i.product.tax_rate) : null }));
     const { data: order, error: orderErr } = await createOrder(adminClient, {
       party_id: partyId,
       customer_id: customer.id,
@@ -103,6 +108,7 @@ if (Astro.request.method === "POST") {
       status: "pending",
       payment_status: "unpaid",
       subtotal,
+      tax_amount: computeOrderTax(taxItems, sellerMode),
       total_amount: subtotal,
       currency: "CZK",
     });
@@ -118,7 +124,7 @@ if (Astro.request.method === "POST") {
         quantity: item.quantity,
         unit_price: Number(item.unit_price),
         discount_amount: 0,
-        tax_amount: 0,
+        tax_amount: computeItemTax({ unit_price: Number(item.unit_price), quantity: item.quantity, tax_rate: item.product?.tax_rate ? Number(item.product.tax_rate) : null }, sellerMode),
         total_price: Number(item.unit_price) * item.quantity,
       });
       if (itemErr) throw new Error(itemErr.message);

@@ -2,6 +2,9 @@ import type { APIRoute } from "astro";
 import { constructWebhookEvent, handleWebhookEvent } from "../../../lib/integrations/stripe";
 import { sendOrderConfirmation } from "../../../lib/integrations/email";
 import { createAdminClient } from "../../../lib/supabase";
+import { recordCommissionForOrder, reverseCommissionForOrder } from "@shared/services/commissionLedgerService";
+import { SELLER_MODE } from "@shared/constants/sellerMode";
+import { sellerOfRecordInfo } from "@shared/constants/company";
 
 export const POST: APIRoute = async ({ request }) => {
   const signature = request.headers.get("stripe-signature");
@@ -19,11 +22,18 @@ export const POST: APIRoute = async ({ request }) => {
 
   await handleWebhookEvent(event, async (orderId, status) => {
     await adminClient.from("orders").update({ payment_status: status }).eq("id", orderId);
+
+    if (status === "refunded") {
+      await reverseCommissionForOrder(adminClient, orderId, "Stripe charge.refunded");
+      return;
+    }
     if (status !== "paid") return;
+
+    await recordCommissionForOrder(adminClient, orderId);
 
     const { data: order } = await adminClient
       .from("orders")
-      .select("order_number, total_amount, currency, customer_id")
+      .select("order_number, total_amount, currency, customer_id, party_id")
       .eq("id", orderId)
       .single();
     if (!order) return;
@@ -39,6 +49,8 @@ export const POST: APIRoute = async ({ request }) => {
       .eq("order_id", orderId);
     if (!customer || !items) return;
 
+    const { data: sellingParty } = await adminClient.from("parties").select("seller_mode").eq("id", order.party_id).single();
+
     await sendOrderConfirmation({
       to: customer.email,
       customerName: `${customer.first_name} ${customer.last_name}`,
@@ -46,6 +58,7 @@ export const POST: APIRoute = async ({ request }) => {
       orderTotal: order.total_amount,
       items: items.map((i) => ({ title: i.title, quantity: i.quantity, price: i.unit_price })),
       currency: order.currency,
+      sellerOfRecord: sellingParty?.seller_mode === SELLER_MODE.SMALLJOBS_COMMISSION ? sellerOfRecordInfo() : undefined,
     });
   });
 

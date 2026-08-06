@@ -1,0 +1,45 @@
+---
+import { useT } from "../../../lib/i18n";
+const t = useT(Astro);
+const n = t.landing.noCompanySelling;
+---
+
+<section class="landing" id="no-company" style="background:var(--bg-surface)">
+  <div class="container-lg">
+    <p class="section-eyebrow section-eyebrow--center">{n.eyebrow}</p>
+    <h2 class="section-title section-title--center">{n.title}</h2>
+    <p class="section-sub section-sub--center" style="margin-bottom:48px">{n.sub}</p>
+
+    <div class="compare-row" data-reveal-group>
+      <div class="compare-card" data-reveal>
+        <h3 class="compare-title">{n.ownCompanyTitle}</h3>
+        <ul class="compare-list">
+          {n.ownCompanyBullets.map((b) => <li>{b}</li>)}
+        </ul>
+      </div>
+      <div class="compare-card compare-card--highlight" data-reveal>
+        <h3 class="compare-title">{n.noCompanyTitle}</h3>
+        <ul class="compare-list">
+          {n.noCompanyBullets.map((b) => <li>{b}</li>)}
+        </ul>
+      </div>
+    </div>
+
+    <div class="compare-footer">
+      <a href="/pricing#faq" class="btn btn-secondary">{n.ctaLabel}</a>
+      <p class="compare-disclaimer">{n.disclaimer}</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .compare-row { display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .compare-card { padding: var(--space-6); border-radius: var(--radius-lg); background: var(--bg-page); border: 1px solid var(--border-default); }
+  .compare-card--highlight { border-color: var(--accent-primary); background: rgba(79,70,229,0.04); }
+  .compare-title { font-size: 17px; font-weight: 700; margin-bottom: 14px; }
+  .compare-list { display: flex; flex-direction: column; gap: 10px; padding: 0; margin: 0; list-style: none; }
+  .compare-list li { font-size: 14px; color: var(--text-muted); line-height: 1.5; padding-left: 22px; position: relative; }
+  .compare-list li::before { content: "✓"; position: absolute; left: 0; color: var(--accent-primary); font-weight: 700; }
+  .compare-footer { text-align: center; margin-top: 36px; }
+  .compare-disclaimer { margin-top: 10px; font-size: 12px; color: var(--text-placeholder); }
+</style>
