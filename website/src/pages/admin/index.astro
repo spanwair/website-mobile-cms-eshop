@@ -31,6 +31,14 @@ const canUsers    = hasPermission(permissions, PERMISSIONS.MANAGE_USERS);
 const canProducts = hasPermission(permissions, PERMISSIONS.MANAGE_PRODUCTS);
 const canOrders   = hasPermission(permissions, PERMISSIONS.MANAGE_ORDERS);
 const canReports  = hasPermission(permissions, PERMISSIONS.MANAGE_REPORTS);
+
+// Show the guided setup checklist until this party has at least one category and product.
+let showOnboardingChecklist = false;
+if (partyId && canProducts) {
+  const { count: catCount } = await supabase.from("categories").select("id", { count: "exact", head: true }).eq("party_id", partyId);
+  const { count: prodCount } = await supabase.from("products").select("id", { count: "exact", head: true }).eq("party_id", partyId);
+  showOnboardingChecklist = (catCount ?? 0) === 0 || (prodCount ?? 0) === 0;
+}
 const canAudit    = hasPermission(permissions, PERMISSIONS.MANAGE_AUDIT);
 
 const { role: myRole } = ctx;
@@ -117,6 +125,12 @@ const dateLocale = lang === "en" ? "en-US" : "cs-CZ";
   {tablesReady && !partyId && !ctx.isOwner && (
     <div class="info-banner">
       ⚠️ {t.admin.infoBannerNoParty} <a href="/admin/parties" class="banner-link">{t.admin.infoBannerPartiesLink}</a>.
+    </div>
+  )}
+  {showOnboardingChecklist && (
+    <div class="info-banner onboarding-banner">
+      🚀 {t.admin.onboardingWizard.tutorialIntro}
+      <a href="/admin/onboarding/tutorial" class="banner-link">{t.admin.onboardingWizard.tutorialTitle}</a>
     </div>
   )}
 

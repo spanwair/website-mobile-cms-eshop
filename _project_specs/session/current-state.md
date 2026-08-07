@@ -4,6 +4,9 @@
 Stage 1 scaffold complete. Multi-tenant storefront platform built out (Repasado demo org +
 CMS/theme engine). 2026-08-06: added a second storefront org "Kytka z Beskyd" (modeled on
 kytkazbeskyd.cz) plus a new 11-agent storefront-onboarding team to repeat this on request.
+2026-08-07: built self-serve organization onboarding (see decisions.md) — organic signups
+become ADMIN and can create their own org through a legal-status-aware version of the
+existing party-creation form. Built in worktree `worktree-user-onboarding`.
 
 ## What's built
 - shared/ — supabase client, services (auth, profile, items), types, utils, i18n (en/cs), theme tokens

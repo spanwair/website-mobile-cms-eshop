@@ -1,0 +1,144 @@
+---
+// IČO toggle + both conditional field panels (own-company vs Smalljobs commission) + the
+// platform Privacy Policy / Terms checkboxes. Shared by /admin/parties/new.astro for both the
+// onboarding flow and staff creating additional orgs — an org without IČO needs the same
+// commission-mode + approval treatment regardless of who creates it.
+interface Props {
+  t: any;
+  hasIcoValue: string;
+}
+const { t, hasIcoValue } = Astro.props;
+const p = t.admin.parties;
+---
+
+<div class="form-group ico-toggle">
+  <label class="form-label">{p.onboarding.fieldHasIco}</label>
+  <div class="radio-row">
+    <label class="form-check">
+      <input type="radio" name="has_ico" value="yes" checked={hasIcoValue === "yes"} data-ico-radio />
+      {p.onboarding.hasIcoYes}
+    </label>
+    <label class="form-check">
+      <input type="radio" name="has_ico" value="no" checked={hasIcoValue === "no"} data-ico-radio />
+      {p.onboarding.hasIcoNo}
+    </label>
+  </div>
+</div>
+
+<div id="ico-fields" data-ico-panel="yes">
+  <p class="mode-hint">{p.onboarding.icoHint}</p>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">{p.fieldCompany}</label>
+      <input class="form-input" name="company_name" placeholder={p.fieldCompanyPlaceholder} />
+    </div>
+    <div class="form-group">
+      <label class="form-label">{p.onboarding.fieldIco}</label>
+      <input class="form-input" name="company_ico" placeholder={p.onboarding.fieldIcoPlaceholder} data-required-in-panel="yes" />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">{p.fieldVat}</label>
+      <input class="form-input" name="vat_number" placeholder={p.fieldVatPlaceholder} />
+    </div>
+    <div class="form-group">
+      <label class="form-label">{p.fieldBillingEmail}</label>
+      <input class="form-input" name="billing_email" type="email" placeholder={p.fieldBillingEmailPlaceholder} />
+    </div>
+  </div>
+</div>
+
+<div id="no-ico-fields" data-ico-panel="no" class="hidden">
+  <p class="mode-hint">{p.onboarding.noIcoHint}</p>
+  <div class="form-group">
+    <label class="form-label">{t.admin.parties.sellerMode.fieldLegalFullName}</label>
+    <input class="form-input" name="legal_full_name" placeholder={p.fieldCompanyPlaceholder} data-required-in-panel="no" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">{t.admin.parties.sellerMode.fieldAddressLine1}</label>
+    <input class="form-input" name="address_line1" data-required-in-panel="no" />
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">{t.admin.parties.sellerMode.fieldAddressCity}</label>
+      <input class="form-input" name="address_city" data-required-in-panel="no" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">{t.admin.parties.sellerMode.fieldAddressPostalCode}</label>
+      <input class="form-input" name="address_postal_code" data-required-in-panel="no" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">{t.admin.parties.sellerMode.fieldBankAccount}</label>
+    <input class="form-input" name="bank_account" data-required-in-panel="no" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">{t.admin.parties.sellerMode.fieldPersonalIdNote}</label>
+    <input class="form-input" name="personal_id_note" />
+  </div>
+  <details class="terms-box">
+    <summary>{p.onboarding.commissionTermsToggle}</summary>
+    <h3>{t.admin.parties.sellerMode.agreementTitle}</h3>
+    {t.admin.parties.sellerMode.agreementTerms.map((para: string) => <p class="terms-paragraph">{para}</p>)}
+  </details>
+  <label class="form-check">
+    <input type="checkbox" name="commission_terms_accepted" data-required-in-panel="no" />
+    {t.admin.parties.sellerMode.termsCheckboxLabel}
+  </label>
+</div>
+
+<div class="legal-section">
+  <details class="terms-box">
+    <summary>{p.onboarding.privacyToggle}</summary>
+    <h3>{p.onboarding.privacyTitle}</h3>
+    {p.onboarding.privacyParagraphs.map((para: string) => <p class="terms-paragraph">{para}</p>)}
+  </details>
+  <label class="form-check">
+    <input type="checkbox" name="privacy_accepted" required />
+    {p.onboarding.privacyCheckboxLabel}
+  </label>
+
+  <details class="terms-box">
+    <summary>{p.onboarding.platformTermsToggle}</summary>
+    <h3>{p.onboarding.platformTermsTitle}</h3>
+    {p.onboarding.platformTermsParagraphs.map((para: string) => <p class="terms-paragraph">{para}</p>)}
+  </details>
+  <label class="form-check">
+    <input type="checkbox" name="terms_accepted" required />
+    {p.onboarding.platformTermsCheckboxLabel}
+  </label>
+</div>
+
+<script>
+  const radios = document.querySelectorAll<HTMLInputElement>("[data-ico-radio]");
+  const yesPanel = document.getElementById("ico-fields")!;
+  const noPanel = document.getElementById("no-ico-fields")!;
+  const conditionallyRequired = document.querySelectorAll<HTMLInputElement>("[data-required-in-panel]");
+  function sync() {
+    const checked = document.querySelector<HTMLInputElement>("[data-ico-radio]:checked")?.value ?? "yes";
+    yesPanel.classList.toggle("hidden", checked !== "yes");
+    noPanel.classList.toggle("hidden", checked !== "no");
+    // A field's `required` must track which panel is actually visible — a required field
+    // left over from a hidden panel can abort submission in some browsers instead of being
+    // silently exempted, since it can't be focused to report the validation failure.
+    conditionallyRequired.forEach((el) => {
+      el.required = el.dataset.requiredInPanel === checked;
+    });
+  }
+  radios.forEach((r) => r.addEventListener("change", sync));
+  sync();
+</script>
+
+<style>
+  .radio-row { display:flex; gap:20px; margin-top:4px; }
+  .form-check { display:flex; align-items:center; gap:8px; font-size:13px; }
+  .form-check input { width:auto; }
+  .mode-hint { font-size:13px; color:var(--text-muted); line-height:1.6; margin:0 0 12px; }
+  .hidden { display:none; }
+  .legal-section { display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--border-default); padding-top:16px; }
+  .terms-box { font-size:13px; background:var(--bg-subtle); border-radius:8px; padding:12px 14px; }
+  .terms-box summary { cursor:pointer; font-weight:600; }
+  .terms-box h3 { font-size:13px; margin:10px 0 6px; }
+  .terms-paragraph { color:var(--text-muted); line-height:1.6; margin:0 0 8px; }
+</style>

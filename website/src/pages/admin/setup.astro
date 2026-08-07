@@ -3,6 +3,7 @@ import CmsLayout from "../../components/cms/CmsLayout.astro";
 import { createSupabase } from "../../lib/supabase";
 import { requireAdminCtx } from "../../lib/admin";
 import { useT } from "../../lib/i18n";
+import { ROLE } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -16,6 +17,10 @@ if (!ctx) return Astro.redirect("/");
 if (ctx.partyId) return Astro.redirect("/admin");
 // Owner without a party needs to create one first.
 if (ctx.isOwner) return Astro.redirect("/admin/parties/new");
+// A self-registered admin (role=ADMIN, no invite, no party yet) walks the onboarding
+// wizard instead of dead-ending here. Eshop_admin with no party genuinely has to wait
+// for an invite — that's the only role that reaches the card below.
+if (ctx.role === ROLE.ADMIN) return Astro.redirect("/admin/onboarding");
 
 const t = useT(Astro);
 ---

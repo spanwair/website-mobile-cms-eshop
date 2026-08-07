@@ -119,6 +119,57 @@ Corrected to `track_inventory=false` for made-to-order variants and their produc
 rollup row — a made-to-order item is never genuinely "out of stock." Documented as a
 non-negotiable rule in `agents/storefront-database.md` (rule 8) for future orgs.
 
+## 2026-08-07 — Self-serve organization onboarding
+
+**Decision:** An organic signup (no invite metadata at all — not `pending_system_role` /
+`pending_party_id`) now becomes `ROLE.ADMIN` (4) instead of `ROLE.USER` (1) at
+`handle_new_user()`. This is the *only* self-registration path in the app (grepped: no other
+`auth.signUp`/`admin.createUser` call site exists in mobile/ or website/, and checkout is
+guest-only with no account creation) so this doesn't collide with a separate "customer signs
+up to shop" flow.
+
+A fresh ADMIN with no party is routed `/admin/setup` → `/admin/onboarding` (welcome) →
+`/admin/parties/new?onboarding=1` — the *same* org-creation form staff already use for
+additional orgs, extended with a "do you have IČO?" branch rather than duplicated:
+- **Has IČO:** `company_ico` required, `seller_mode=own_company`, `status=active` —
+  storefront goes live immediately after accepting the platform Privacy Policy + Terms.
+- **No IČO:** reuses the existing commissionaire-agreement fields/service
+  (`acceptCommissionaireAgreement`, from the 2026-08-06 smalljobs_commission_mode work) —
+  `seller_mode=smalljobs_commission`, `status='pending_approval'` (new 4th `parties.status`
+  value). All public storefront/content RLS already gates on `status='active'` explicitly, so
+  a pending org is automatically invisible with zero other RLS changes needed.
+- Both branches record `parties.terms_accepted_at`/`terms_version` (new columns).
+
+**Why `pending_approval` needs its own owner-only transition guard:** an ADMIN gets
+`ALL_PERMISSIONS` (including `MANAGE_AUDIT`) on their own party via the existing
+`assign_admin_to_new_party()` trigger, so the ordinary `update_party` permission check alone
+cannot stop a creator from self-approving. Added `enforce_party_approval_transition()` — a
+`BEFORE UPDATE` trigger that blocks `pending_approval → active` unless `is_owner()` — plus a
+matching app-layer check in `[id].astro` (mirrors the existing closed-org pattern) and a
+dedicated `approve_party` action for the owner's UI.
+
+**Bug found and fixed in the same migration set:** `commissionaire_agreements` /
+`order_commission_ledger` RLS policies checked `user_has_permission()` only, with no
+`is_owner()` bypass — unlike every other party-scoped policy in the schema. That silently
+breaks the "no permission check can block an owner" invariant whenever an owner isn't also a
+`user_party_roles` member of the party (normally true — owner needs no such row anywhere
+else). Fixed by adding the bypass to both policies.
+
+**Product tutorial:** no hard gate. A dismissable-by-completion checklist (category → product
+→ branding) lives at `/admin/onboarding/tutorial` and as a dashboard banner while a party has
+zero categories or products — deliberately not a blocking wizard, to avoid fighting the
+existing canonical party-redirect invariants (admin-permissions skill).
+
+**Rule:** never duplicate the org-creation form — the ICO branch belongs in
+`/admin/parties/new.astro` itself, used by both the onboarding flow and staff creating
+additional orgs, since an org without IČO needs the same commission-mode + approval treatment
+regardless of who creates it.
+
+**Tests:** `website/tests/e2e/30-onboarding.spec.ts` — full signup→create-org→approve loop for
+both branches, plus the self-approval security boundary. Updated `02-parties.spec.ts` for the
+new required legal checkboxes/company_ico field and the changed post-create redirect target
+(now the party detail page, not the list).
+
 ## 2026-07-15 — Audit log write pattern
 
 **Decision:** Audit logs are written inside DB triggers where possible (DDL changes) and via `auditService.log()` in application layer for user-driven actions.

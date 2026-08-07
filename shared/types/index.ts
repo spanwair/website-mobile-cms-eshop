@@ -34,17 +34,22 @@ export type { AppRole } from "../constants/permissions";
 
 export type SellerMode = 'own_company' | 'smalljobs_commission';
 
+export type PartyStatus = 'active' | 'inactive' | 'closed' | 'pending_approval';
+
 export interface Party {
   id: string;
   name: string;
   slug: string;
   company_name: string | null;
+  company_ico: string | null;
   vat_number: string | null;
   billing_email: string | null;
   logo_url: string | null;
   settings: Record<string, unknown>;
-  status: 'active' | 'inactive' | 'closed';
+  status: PartyStatus;
   seller_mode: SellerMode;
+  terms_accepted_at: string | null;
+  terms_version: string | null;
   created_at: string;
   updated_at: string;
 }

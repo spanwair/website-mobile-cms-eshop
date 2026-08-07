@@ -36,16 +36,21 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
     await page.fill("input[name='name']", "E2E Test Org");
     await page.fill("input[name='slug']", "e2e-party");
     await page.fill("input[name='company_name']", "E2E Company s.r.o.");
+    await page.fill("input[name='company_ico']", "12345678");
     await page.fill("input[name='vat_number']", "CZ99999999");
     await page.fill("input[name='billing_email']", "billing@e2e.test");
+    await page.check("input[name='privacy_accepted']");
+    await page.check("input[name='terms_accepted']");
     await screenshot(page, "02-03-new-party-filled");
     await page.locator("form.party-form button[type='submit']").click();
-    await page.waitForURL(`${BASE}/admin/parties`, { timeout: 10000 });
+    await page.waitForURL(/\/admin\/parties\/[0-9a-f-]+$/, { timeout: 10000 });
     await screenshot(page, "02-03-after-create-party");
-    await expect(page.locator("table.data-table td").filter({ hasText: "E2E Test Org" }).first()).toBeVisible();
+    await expect(page.locator("h1, .card").filter({ hasText: "E2E Test Org" }).first()).toBeVisible();
   });
 
   test("02-04 new party appears in list with active badge", async () => {
+    await page.goto(`${BASE}/admin/parties`);
+    await page.waitForLoadState("networkidle");
     await expect(page.locator("table.data-table td").filter({ hasText: "E2E Test Org" }).first()).toBeVisible();
     const row = page.locator("tr").filter({ hasText: "E2E Test Org" });
     await expect(row.locator(".badge-active")).toBeVisible();
@@ -57,6 +62,9 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
     await page.waitForLoadState("networkidle");
     await page.fill("input[name='name']", "Duplicate Org");
     await page.fill("input[name='slug']", "e2e-party");
+    await page.fill("input[name='company_ico']", "87654321");
+    await page.check("input[name='privacy_accepted']");
+    await page.check("input[name='terms_accepted']");
     await page.locator("form.party-form button[type='submit']").click();
     await page.waitForLoadState("networkidle");
     await screenshot(page, "02-05-duplicate-slug-error");

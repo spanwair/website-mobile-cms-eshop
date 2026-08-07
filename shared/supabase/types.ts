@@ -1656,6 +1656,7 @@ export type Database = {
       parties: {
         Row: {
           billing_email: string | null
+          company_ico: string | null
           company_name: string | null
           created_at: string
           id: string
@@ -1665,11 +1666,14 @@ export type Database = {
           settings: Json
           slug: string
           status: string
+          terms_accepted_at: string | null
+          terms_version: string | null
           updated_at: string
           vat_number: string | null
         }
         Insert: {
           billing_email?: string | null
+          company_ico?: string | null
           company_name?: string | null
           created_at?: string
           id?: string
@@ -1679,11 +1683,14 @@ export type Database = {
           settings?: Json
           slug: string
           status?: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           updated_at?: string
           vat_number?: string | null
         }
         Update: {
           billing_email?: string | null
+          company_ico?: string | null
           company_name?: string | null
           created_at?: string
           id?: string
@@ -1693,6 +1700,8 @@ export type Database = {
           settings?: Json
           slug?: string
           status?: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           updated_at?: string
           vat_number?: string | null
         }

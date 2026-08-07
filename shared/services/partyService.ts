@@ -29,9 +29,14 @@ export async function createParty(
     name: string;
     slug: string;
     company_name?: string;
+    company_ico?: string;
     vat_number?: string;
     billing_email?: string;
     logo_url?: string;
+    seller_mode?: "own_company" | "smalljobs_commission";
+    status?: "active" | "pending_approval";
+    terms_accepted_at?: string;
+    terms_version?: string;
   }
 ): Promise<{ data: Party | null; error: Error | null }> {
   const { error: insertError } = await client
@@ -55,7 +60,7 @@ export async function createParty(
 export async function updateParty(
   client: Client,
   partyId: string,
-  updates: Partial<Pick<Party, "name" | "slug" | "company_name" | "vat_number" | "billing_email" | "logo_url" | "settings" | "status">>
+  updates: Partial<Pick<Party, "name" | "slug" | "company_name" | "company_ico" | "vat_number" | "billing_email" | "logo_url" | "settings" | "status">>
 ): Promise<{ error: Error | null }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await client.from("parties").update(updates as any).eq("id", partyId);
