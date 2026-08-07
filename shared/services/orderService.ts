@@ -133,3 +133,30 @@ export async function removeOrderItem(
   const { error } = await client.from("order_items").delete().eq("id", itemId);
   return { error: error ? new Error(error.message) : null };
 }
+
+// Adds order items one at a time; if any insert is rejected (e.g. the DB's atomic stock
+// guard raises INSUFFICIENT_STOCK), cancels the order instead of leaving it half-populated.
+// Cancelling reuses the existing return_stock_on_order_cancel trigger to restore stock for
+// whichever items did get inserted before the failure — no separate stock-math needed here.
+export async function addOrderItemsOrRollback(
+  client: Client,
+  orderId: string,
+  items: Database["public"]["Tables"]["order_items"]["Insert"][],
+  changedBy: string
+): Promise<{ error: Error | null; insufficientStock: boolean }> {
+  for (const item of items) {
+    const { error } = await addOrderItem(client, item);
+    if (error) {
+      const insufficientStock = error.message.includes("INSUFFICIENT_STOCK");
+      await updateOrderStatus(
+        client,
+        orderId,
+        "cancelled",
+        changedBy,
+        insufficientStock ? "Stock unavailable during checkout" : "Order item failed during checkout"
+      );
+      return { error, insufficientStock };
+    }
+  }
+  return { error: null, insufficientStock: false };
+}

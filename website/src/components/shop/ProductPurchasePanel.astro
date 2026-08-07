@@ -4,12 +4,17 @@ import { useT, getLang } from "../../lib/i18n";
 import { formatPrice } from "@shared/utils/format";
 
 interface Condition { label: string; color_hex: string }
+interface VariantOption {
+  id: string; name: string; price: number | null; condition?: Condition | null;
+  qtyAvailable: number | null; isOutOfStock: boolean;
+}
 interface Props {
   product: any;
   brand: { name: string; slug: string } | null;
   condition?: Condition | null;
   categories: { id: string; name: string; slug: string }[];
-  variants: { id: string; name: string; price: number | null; condition?: Condition | null }[];
+  variants: VariantOption[];
+  defaultVariantId?: string | null;
   reviewTotal: number;
   averageRating: number;
   isOutOfStock: boolean;
@@ -25,12 +30,15 @@ interface Props {
   currency?: string;
 }
 const {
-  product, brand, condition = null, categories, variants, reviewTotal, averageRating,
+  product, brand, condition = null, categories, variants, defaultVariantId = null, reviewTotal, averageRating,
   isOutOfStock, qtyAvailable, cartError, addedToCart, isLoggedIn, linkBase, productSlug,
   enableWishlists, inWishlist, trustBadges = [], currency,
 } = Astro.props;
 const t = useT(Astro);
 const lang = getLang(Astro);
+const variantStockJson = JSON.stringify(
+  Object.fromEntries(variants.map((v) => [v.id, { qtyAvailable: v.qtyAvailable, isOutOfStock: v.isOutOfStock }]))
+);
 ---
 
 <div class="info-col">
@@ -69,15 +77,16 @@ const lang = getLang(Astro);
 
   {variants.length > 0 && (
     <div class="variants-section">
-      <p class="variants-label">{t.shop.variants}</p>
+      <p class="variants-label">{t.shop.selectVariant}</p>
       <div class="variants-grid">
         {variants.map((v) => (
           <label class="variant-option">
-            <input type="radio" name="variant" value={v.id} />
+            <input type="radio" name="variant" value={v.id} checked={v.id === defaultVariantId} />
             <span class="variant-label">
               <span class="variant-name">{v.name}</span>
               {v.price && <strong>{formatPrice(Number(v.price), lang, currency)}</strong>}
               {v.condition && <span class="condition-badge condition-badge--sm" style={`background:${v.condition.color_hex}`}>{v.condition.label}</span>}
+              {v.isOutOfStock && <span class="variant-oos-tag">{t.shop.outOfStock}</span>}
             </span>
           </label>
         ))}
@@ -88,28 +97,26 @@ const lang = getLang(Astro);
   {addedToCart && <div class="cart-success">✓ {t.shop.addedToCartMessage} <a href={`${linkBase}/cart`}>{t.shop.viewCart}</a></div>}
   {cartError && <div class="cart-error">{cartError}</div>}
 
-  <div class="add-to-cart-section">
-    {isOutOfStock ? (
-      <div class="out-of-stock-badge">{t.shop.outOfStock}</div>
-    ) : (
-      <form method="POST" class="cart-form">
-        <input type="hidden" name="_action" value="add_to_cart" />
-        <input type="hidden" name="product_id" value={product.id} />
-        <input type="hidden" name="unit_price" value={String(product.discount_price ?? product.price)} />
-        <div class="qty-row">
-          <label>{t.shop.qty}</label>
-          <input type="number" name="quantity" value="1" min="1" max={qtyAvailable ?? 99} class="qty-input" />
-        </div>
-        {qtyAvailable !== null && qtyAvailable <= 10 && qtyAvailable > 0 && (
-          <p class="low-stock-hint">{t.shop.stockRemaining.replace("{{n}}", String(qtyAvailable))}</p>
-        )}
-        {!isLoggedIn ? (
-          <a href={`/login?redirect=${linkBase}/${productSlug}`} class="btn btn-primary btn-large">{t.shop.loginToCheckout}</a>
-        ) : (
-          <button type="submit" class="btn btn-primary btn-large">{t.shop.addToCart}</button>
-        )}
-      </form>
-    )}
+  <div class="add-to-cart-section" data-variant-stock={variants.length > 0 ? variantStockJson : null}>
+    <div class="out-of-stock-badge" id="oos-badge" style={isOutOfStock ? "" : "display:none"}>{t.shop.outOfStock}</div>
+    <form method="POST" class="cart-form" id="cart-form" style={isOutOfStock ? "display:none" : ""}>
+      <input type="hidden" name="_action" value="add_to_cart" />
+      <input type="hidden" name="product_id" value={product.id} />
+      <input type="hidden" name="unit_price" value={String(product.discount_price ?? product.price)} />
+      <input type="hidden" name="variant_id" id="variant-id-input" value={defaultVariantId ?? ""} />
+      <div class="qty-row">
+        <label>{t.shop.qty}</label>
+        <input type="number" name="quantity" id="qty-input" value="1" min="1" max={qtyAvailable && qtyAvailable > 0 ? qtyAvailable : 99} class="qty-input" />
+      </div>
+      <p class="low-stock-hint" id="low-stock-hint" style={qtyAvailable !== null && qtyAvailable <= 10 && qtyAvailable > 0 ? "" : "display:none"}>
+        {t.shop.stockRemaining.replace("{{n}}", String(qtyAvailable ?? 0))}
+      </p>
+      {!isLoggedIn ? (
+        <a href={`/login?redirect=${linkBase}/${productSlug}`} class="btn btn-primary btn-large">{t.shop.loginToCheckout}</a>
+      ) : (
+        <button type="submit" class="btn btn-primary btn-large">{t.shop.addToCart}</button>
+      )}
+    </form>
     {enableWishlists && (
       <form method="POST">
         <input type="hidden" name="_action" value="toggle_wishlist" />
@@ -143,6 +150,52 @@ const lang = getLang(Astro);
   )}
 </div>
 
+<script>
+  // Switching the selected variant re-points the whole purchase panel at it — stock text,
+  // qty cap, and the out-of-stock state — without a page reload. No-op when there are no
+  // variant radios (simple products keep the server-rendered state as-is).
+  const section = document.querySelector<HTMLElement>(".add-to-cart-section");
+  const stockJson = section?.dataset.variantStock;
+  const stockByVariant: Record<string, { qtyAvailable: number | null; isOutOfStock: boolean }> = stockJson
+    ? JSON.parse(stockJson)
+    : {};
+
+  const radios = document.querySelectorAll<HTMLInputElement>('input[name="variant"]');
+  const variantIdInput = document.getElementById("variant-id-input") as HTMLInputElement | null;
+  const qtyInput = document.getElementById("qty-input") as HTMLInputElement | null;
+  const lowStockHint = document.getElementById("low-stock-hint");
+  const oosBadge = document.getElementById("oos-badge");
+  const cartForm = document.getElementById("cart-form");
+
+  function applyVariant(variantId: string) {
+    const info = stockByVariant[variantId];
+    if (!info || !variantIdInput || !qtyInput || !lowStockHint || !oosBadge || !cartForm) return;
+
+    variantIdInput.value = variantId;
+
+    if (info.isOutOfStock) {
+      oosBadge.style.display = "";
+      cartForm.style.display = "none";
+      return;
+    }
+    oosBadge.style.display = "none";
+    cartForm.style.display = "";
+
+    qtyInput.max = String(info.qtyAvailable && info.qtyAvailable > 0 ? info.qtyAvailable : 99);
+    if (info.qtyAvailable !== null && Number(qtyInput.value) > info.qtyAvailable) {
+      qtyInput.value = String(Math.max(1, info.qtyAvailable));
+    }
+
+    const showLowStock = info.qtyAvailable !== null && info.qtyAvailable <= 10 && info.qtyAvailable > 0;
+    lowStockHint.style.display = showLowStock ? "" : "none";
+    if (showLowStock) {
+      lowStockHint.textContent = lowStockHint.textContent?.replace(/\d+/, String(info.qtyAvailable)) ?? "";
+    }
+  }
+
+  radios.forEach((radio) => radio.addEventListener("change", () => applyVariant(radio.value)));
+</script>
+
 <style>
   .brand-name { font-size:13px; color:var(--text-muted); margin:0 0 4px; } .brand-name a { color:var(--primary); text-decoration:none; }
   .condition-badge { display:inline-block; color:#fff; font-size:12px; font-weight:700; padding:3px 12px; border-radius:9999px; margin-bottom:8px; }
@@ -164,6 +217,7 @@ const lang = getLang(Astro);
   .variant-option input[type="radio"] { width:auto; flex-shrink:0; margin-top:3px; }
   .variant-label { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; }
   .variant-name { color:var(--text-secondary); }
+  .variant-oos-tag { font-size:10px; font-weight:700; color:#dc2626; background:#fee2e2; padding:1px 8px; border-radius:9999px; }
   .add-to-cart-section { display:flex; align-items:flex-start; gap:12px; margin-bottom:24px; flex-direction:column; }
   .cart-form { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .qty-row { display:flex; align-items:center; gap:8px; font-size:14px; }

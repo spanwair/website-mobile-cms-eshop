@@ -106,13 +106,17 @@ JOIN products p ON p.party_id = 'a0000000-0000-0000-0000-000000000001' AND p.slu
 JOIN product_conditions pc ON pc.party_id = 'a0000000-0000-0000-0000-000000000001' AND pc.code = v.condition_code;
 
 -- Inventory: stock every variant just created in the main warehouse -----------------------------
+-- ON CONFLICT DO UPDATE, not a plain INSERT: a variant insert above already auto-creates its
+-- own zero-qty row (ensure_variant_inventory_item trigger), so this just sets real stock on it.
 INSERT INTO inventory_items (party_id, product_id, variant_id, warehouse_id, qty_on_hand, low_stock_threshold, track_inventory)
 SELECT 'a0000000-0000-0000-0000-000000000001', pv.product_id, pv.id, w.id,
        5 + (('x' || substr(md5(pv.id::text), 1, 6))::bit(24)::int % 30), 5, true
 FROM product_variants pv
 JOIN products p ON p.id = pv.product_id AND p.party_id = 'a0000000-0000-0000-0000-000000000001'
 CROSS JOIN warehouses w
-WHERE w.party_id = 'a0000000-0000-0000-0000-000000000001' AND w.code = 'main';
+WHERE w.party_id = 'a0000000-0000-0000-0000-000000000001' AND w.code = 'main'
+ON CONFLICT (product_id, variant_id, warehouse_id) DO UPDATE
+  SET qty_on_hand = EXCLUDED.qty_on_hand, low_stock_threshold = EXCLUDED.low_stock_threshold, track_inventory = EXCLUDED.track_inventory;
 
 \echo 'Demo catalog seeded: 18 products, variants, images, inventory.'
 \else

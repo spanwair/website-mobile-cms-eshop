@@ -106,7 +106,9 @@ const addedToCart = new URL(Astro.request.url).searchParams.has("added");
 
 const inventoryItem = await fetchInventoryByProduct(supabase, product.id);
 const qtyAvailable = inventoryItem ? inventoryItem.qty_on_hand - inventoryItem.qty_reserved : null;
-const isOutOfStock = qtyAvailable !== null && qtyAvailable <= 0;
+// A made-to-order product/variant has track_inventory=false on its rollup row — it must
+// never show "sold out" purely because the default trigger-created row sits at qty 0.
+const isOutOfStock = inventoryItem?.track_inventory === true && qtyAvailable !== null && qtyAvailable <= 0;
 
 const { data: { session: pageSession } } = await supabase.auth.getSession();
 let reviewerName = "";

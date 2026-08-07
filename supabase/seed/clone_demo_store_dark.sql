@@ -157,14 +157,19 @@ ins AS (
 INSERT INTO map_variants SELECT src.id, ins.id
 FROM src JOIN ins ON ins.product_id = src.new_product_id AND ins.sku IS NOT DISTINCT FROM src.sku;
 
--- Inventory — exact quantities cloned, not re-derived ---------------------------------------------
+-- Inventory — exact quantities cloned, not re-derived. ON CONFLICT DO UPDATE, not a plain
+-- INSERT: cloning a variant above already auto-creates its own zero-qty row
+-- (ensure_variant_inventory_item trigger), so this just sets the cloned real quantities on it.
 INSERT INTO inventory_items (party_id, product_id, variant_id, warehouse_id, qty_on_hand, qty_reserved, qty_incoming, low_stock_threshold, track_inventory, max_threshold)
 SELECT :'new_party', mp.new_id, mv.new_id, mw.new_id, ii.qty_on_hand, ii.qty_reserved, ii.qty_incoming, ii.low_stock_threshold, ii.track_inventory, ii.max_threshold
 FROM inventory_items ii
 JOIN map_products mp ON mp.old_id = ii.product_id
 LEFT JOIN map_variants mv ON mv.old_id = ii.variant_id
 JOIN map_warehouses mw ON mw.old_id = ii.warehouse_id
-WHERE ii.party_id = :'old_party';
+WHERE ii.party_id = :'old_party'
+ON CONFLICT (product_id, variant_id, warehouse_id) DO UPDATE
+  SET qty_on_hand = EXCLUDED.qty_on_hand, qty_reserved = EXCLUDED.qty_reserved, qty_incoming = EXCLUDED.qty_incoming,
+      low_stock_threshold = EXCLUDED.low_stock_threshold, track_inventory = EXCLUDED.track_inventory, max_threshold = EXCLUDED.max_threshold;
 
 -- Store media — hero_slides.image_url stores a {{media:slug}} token, resolved at render time by
 -- looking up store_media for the current party by slug, so the token only works once a same-slug

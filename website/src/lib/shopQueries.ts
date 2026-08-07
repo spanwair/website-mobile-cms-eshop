@@ -30,7 +30,7 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
   if (isHomepageView) {
     let featuredQuery = supabase
       .from("products")
-      .select(`id, title, slug, price, discount_price, is_featured, review_count, rating_avg, product_images(url, is_primary), product_conditions(label, color_hex)`)
+      .select(`id, title, slug, price, discount_price, is_featured, review_count, rating_avg, product_images(url, is_primary), product_conditions(label, color_hex), product_variants(id, name, is_active)`)
       .eq("status", "active")
       .eq("is_visible", true)
       .eq("is_featured", true)
@@ -47,6 +47,7 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
         ...p, primaryImage: primary?.url ?? null,
         isOutOfStock: qtyAvailable !== null && qtyAvailable <= 0,
         condition: p.product_conditions ?? null,
+        variants: activeVariants(p.product_variants),
       };
     });
   }
@@ -57,10 +58,10 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
   const matchedCategory = categorySlug ? categories?.find((c) => c.slug === categorySlug) : undefined;
   const productCols = matchedCategory
     ? `id, party_id, title, slug, price, discount_price, is_featured, review_count, rating_avg,
-       product_images(url, is_primary), product_conditions(label, color_hex),
+       product_images(url, is_primary), product_conditions(label, color_hex), product_variants(id, name, is_active),
        product_categories!inner(category_id)`
     : `id, party_id, title, slug, price, discount_price, is_featured, review_count, rating_avg,
-       product_images(url, is_primary), product_conditions(label, color_hex)`;
+       product_images(url, is_primary), product_conditions(label, color_hex), product_variants(id, name, is_active)`;
 
   let productQuery = supabase
     .from("products")
@@ -120,8 +121,15 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
       ...p, primaryImage: primary?.url ?? null,
       isOutOfStock: qtyAvailable !== null && qtyAvailable <= 0,
       condition: p.product_conditions ?? null,
+      variants: activeVariants(p.product_variants),
     };
   });
 
   return { categories: categories ?? [], featuredProducts, products, count: count ?? 0, totalPages };
+}
+
+function activeVariants(rows: unknown): { id: string; name: string }[] {
+  return ((rows as { id: string; name: string; is_active: boolean }[]) ?? [])
+    .filter((v) => v.is_active)
+    .map((v) => ({ id: v.id, name: v.name }));
 }

@@ -502,6 +502,10 @@ export interface InventoryItem {
   updated_at: string;
 }
 
+export interface InventoryItemWithVariant extends InventoryItem {
+  variant_name: string | null;
+}
+
 export type StockMovementType = "purchase" | "sale" | "adjustment" | "transfer" | "return" | "damage";
 
 export interface StockMovement {

@@ -191,6 +191,18 @@ export async function updateStock(
   return { error: error ? new Error(error.message) : null };
 }
 
+export async function setTrackInventory(
+  client: Client,
+  inventoryItemId: string,
+  trackInventory: boolean
+): Promise<{ error: Error | null }> {
+  const { error } = await client
+    .from("inventory_items")
+    .update({ track_inventory: trackInventory })
+    .eq("id", inventoryItemId);
+  return { error: error ? new Error(error.message) : null };
+}
+
 export async function fetchStockMovements(
   client: Client,
   opts: {

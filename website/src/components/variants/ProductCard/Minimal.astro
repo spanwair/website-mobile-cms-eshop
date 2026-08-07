@@ -24,6 +24,11 @@ const lang = getLang(Astro);
     <h3 class="product-title">{product.title}</h3>
     <span class="price">{formatPrice(Number(product.discount_price ?? product.price), lang, currency)}</span>
   </div>
+  {product.variants && product.variants.length > 1 && (
+    <div class="variant-chips">
+      {product.variants.map((v) => <span class="variant-chip">{v.name}</span>)}
+    </div>
+  )}
 </a>
 
 <style>
@@ -38,4 +43,6 @@ const lang = getLang(Astro);
   .product-info { padding:10px 2px; display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
   .product-title { font-size:13px; font-weight:500; color:var(--text-primary); margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .price { font-size:13px; font-weight:600; color:var(--text-primary); white-space:nowrap; }
+  .variant-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+  .variant-chip { font-size:10px; font-weight:500; color:var(--text-muted); background:var(--bg-subtle); border:1px solid var(--border); border-radius:9999px; padding:2px 8px; }
 </style>

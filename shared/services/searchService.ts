@@ -4,18 +4,24 @@ import type { SearchResultCategory, SearchResultProduct, StorefrontSearchResult 
 
 type Client = SupabaseClient<Database>;
 
+// Sums every tracked inventory row per product — not just the product-level (variant_id IS
+// NULL) row. That row is auto-created at qty 0 by create_default_inventory_item() the moment
+// a product is inserted, before any variants exist; a product stocked only at variant level
+// (the common case once variants are added) would otherwise always read as 0 available and
+// show a false "out of stock" badge regardless of real variant stock.
 export async function fetchOutOfStockMap(client: Client, productIds: string[]): Promise<Map<string, number>> {
   const { data: inventoryRows } = productIds.length > 0
     ? await client
         .from("inventory_items")
         .select("product_id, qty_on_hand, qty_reserved")
         .in("product_id", productIds)
-        .is("variant_id", null)
         .eq("track_inventory", true)
     : { data: [] };
-  return new Map(
-    (inventoryRows ?? []).map((r: any) => [r.product_id, r.qty_on_hand - r.qty_reserved])
-  );
+  const map = new Map<string, number>();
+  for (const r of (inventoryRows ?? []) as any[]) {
+    map.set(r.product_id, (map.get(r.product_id) ?? 0) + (r.qty_on_hand - r.qty_reserved));
+  }
+  return map;
 }
 
 interface SearchStorefrontParams {

@@ -54,13 +54,14 @@ async function getAvailableStock(
 ): Promise<number | null> {
   let query = client
     .from("inventory_items")
-    .select("qty_on_hand, qty_reserved")
+    .select("qty_on_hand, qty_reserved, track_inventory")
     .eq("product_id", productId);
 
   query = variantId ? query.eq("variant_id", variantId) : query.is("variant_id", null);
 
   const { data } = await query.maybeSingle();
   if (!data) return null;
+  if (!data.track_inventory) return null;
   return data.qty_on_hand - data.qty_reserved;
 }
 

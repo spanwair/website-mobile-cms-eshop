@@ -4,7 +4,7 @@ import CheckoutAddressForm from "../../components/shop/CheckoutAddressForm.astro
 import CheckoutOrderSummary from "../../components/shop/CheckoutOrderSummary.astro";
 import { createSupabase, createAdminClient } from "../../lib/supabase";
 import { clearCart, calcCartTotal } from "@shared/services/cartService";
-import { createOrder, addOrderItem } from "@shared/services/orderService";
+import { createOrder, addOrderItemsOrRollback } from "@shared/services/orderService";
 import { computeItemTax, computeOrderTax } from "@shared/utils/tax";
 import { startOrderCheckout } from "../../lib/checkoutFlow";
 import { useT } from "../../lib/i18n";
@@ -114,21 +114,28 @@ if (Astro.request.method === "POST") {
     });
     if (orderErr || !order) throw new Error(orderErr?.message ?? "Order creation failed");
 
-    for (const item of items) {
-      const { error: itemErr } = await addOrderItem(adminClient, {
-        order_id: order.id,
-        product_id: item.product_id,
-        variant_id: item.variant_id ?? null,
-        title: item.product?.title ?? "Product",
-        sku: item.product?.sku ?? null,
-        quantity: item.quantity,
-        unit_price: Number(item.unit_price),
-        discount_amount: 0,
-        tax_amount: computeItemTax({ unit_price: Number(item.unit_price), quantity: item.quantity, tax_rate: item.product?.tax_rate ? Number(item.product.tax_rate) : null }, sellerMode),
-        total_price: Number(item.unit_price) * item.quantity,
-      });
-      if (itemErr) throw new Error(itemErr.message);
-    }
+    // Add items — triggers deduct_stock_on_order_item, which atomically guards against
+    // overselling. On failure the order is cancelled (not left half-populated) and any
+    // stock already deducted for earlier items is restored via return_stock_on_order_cancel.
+    const orderItemInputs = items.map((item: any) => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      variant_id: item.variant_id ?? null,
+      title: item.product?.title ?? "Product",
+      sku: item.product?.sku ?? null,
+      quantity: item.quantity,
+      unit_price: Number(item.unit_price),
+      discount_amount: 0,
+      tax_amount: computeItemTax({ unit_price: Number(item.unit_price), quantity: item.quantity, tax_rate: item.product?.tax_rate ? Number(item.product.tax_rate) : null }, sellerMode),
+      total_price: Number(item.unit_price) * item.quantity,
+    }));
+    const { error: itemsErr, insufficientStock } = await addOrderItemsOrRollback(
+      adminClient,
+      order.id,
+      orderItemInputs,
+      session.user.id
+    );
+    if (itemsErr) throw new Error(insufficientStock ? t.shop.itemNoLongerAvailable : itemsErr.message);
 
     await clearCart(supabase, cart.id);
 

@@ -1,11 +1,13 @@
 ---
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
 import ProductImages from "../../../components/cms/ProductImages.astro";
+import ProductVariants from "../../../components/admin/ProductVariants.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { fetchProduct, updateProduct, deleteProduct, setProductCategories } from "@shared/services/productService";
-import { addProductImage, deleteProductImage, setPrimaryImage } from "@shared/services/productImageService";
+import { addProductImage, deleteProductImage, setPrimaryImage, addProductVariant, updateProductVariant, deleteProductVariant } from "@shared/services/productImageService";
 import { fetchCategories } from "@shared/services/categoryService";
-import { fetchInventoryByProduct, updateStock, fetchStockMovements, updateThresholds } from "@shared/services/inventoryService";
+import { fetchProductConditions } from "@shared/services/productConditionService";
+import { fetchInventoryByProduct, updateStock, fetchStockMovements, updateThresholds, setTrackInventory } from "@shared/services/inventoryService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT, getLang } from "../../../lib/i18n";
@@ -99,6 +101,38 @@ if (Astro.request.method === "POST") {
     return Astro.redirect(`/admin/products/${id}`);
   }
 
+  if (action === "add_variant" || action === "update_variant") {
+    const price = form.get("price") as string;
+    const input = {
+      product_id: id!,
+      name: form.get("name") as string,
+      sku: (form.get("sku") as string) || null,
+      price: price ? parseFloat(price) : null,
+      condition_id: (form.get("condition_id") as string) || null,
+      is_active: form.get("is_active") === "on",
+    };
+    const result = action === "update_variant"
+      ? await updateProductVariant(supabase, form.get("variant_id") as string, input)
+      : await addProductVariant(supabase, input);
+    if (result.error) { error = result.error.message; } else { return Astro.redirect(`/admin/products/${id}`); }
+  }
+
+  if (action === "delete_variant") {
+    await deleteProductVariant(supabase, form.get("variant_id") as string);
+    return Astro.redirect(`/admin/products/${id}`);
+  }
+
+  if (action === "set_on_demand" && hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY)) {
+    const inventoryItemId = form.get("inventory_item_id") as string;
+    const onDemand = form.get("on_demand") === "on";
+    const result = await setTrackInventory(supabase, inventoryItemId, !onDemand);
+    if (result.error) {
+      error = result.error.message;
+    } else {
+      return Astro.redirect(`/admin/products/${id}`);
+    }
+  }
+
   if (action === "update_thresholds" && hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY)) {
     const inventoryItemId = form.get("inventory_item_id") as string;
     const lowStockValue = form.get("low_stock_threshold") as string;
@@ -142,6 +176,8 @@ if (!product) return Astro.redirect("/admin/products");
 
 const categories = await fetchCategories(supabase, partyId);
 const selectedCats = new Set(product.categories);
+const conditions = await fetchProductConditions(supabase, partyId);
+const editingVariantId = Astro.url.searchParams.get("edit_variant");
 
 const inventoryItem = await fetchInventoryByProduct(supabase, id!);
 const canManageInventory = hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY);
@@ -243,6 +279,8 @@ const recentMovements = inventoryItem
 
   <ProductImages images={product.images} productId={id!} />
 
+  <ProductVariants variants={product.variants} conditions={conditions} productId={id!} editingId={editingVariantId} />
+
   <div class="inv-card" style="max-width:720px">
       <h2 class="inv-title">{t.admin.inventory.title}</h2>
       {inventoryItem ? (
@@ -276,6 +314,18 @@ const recentMovements = inventoryItem
 
           {canManageInventory && (
             <>
+              <div class="inv-form-section">
+                <form method="POST" class="on-demand-form">
+                  <input type="hidden" name="action" value="set_on_demand" />
+                  <input type="hidden" name="inventory_item_id" value={inventoryItem.id} />
+                  <label class="form-check">
+                    <input type="checkbox" name="on_demand" checked={!inventoryItem.track_inventory} onchange="this.form.requestSubmit()" />
+                    {t.admin.inventory.onDemandLabel}
+                  </label>
+                  <p class="on-demand-hint">{t.admin.inventory.onDemandHint}</p>
+                </form>
+              </div>
+
               <div class="inv-form-section">
                 <h3 class="form-section-title">{t.admin.inventory.adjustStock}</h3>
                 <form method="POST" class="inv-adjust-form">
@@ -374,6 +424,7 @@ const recentMovements = inventoryItem
   .movements-section { margin-top:16px; margin-bottom:24px; }
   .movements-title { font-size:14px; font-weight:700; margin:0 0 10px; }
   .inv-form-section { margin-top:20px; padding-top:20px; border-top:1px solid var(--border-color); }
+  .on-demand-hint { font-size:12px; color:var(--text-muted); margin:6px 0 0; }
   .form-section-title { font-size:14px; font-weight:700; margin:0 0 12px; }
   .inv-adjust-form { display:flex; flex-direction:column; gap:16px; }
   .threshold-form { display:flex; flex-direction:column; gap:16px; }

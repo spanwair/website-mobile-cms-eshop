@@ -3,7 +3,13 @@
 -- original (not copied from any third-party site); product photos are locally generated
 -- placeholder SVGs (see website/public/demo-media/), not scraped images.
 --
+-- Category icons are uploaded to Supabase Storage (store-media bucket) via
+-- scripts/upload-repasado-media.sh and registered in store_media below, so they are
+-- admin-editable through the CMS media library rather than a hardcoded static file path.
+-- Requires migration 20260103000059 (adds image/svg+xml to store-media's allowed mime types).
+--
 -- Idempotent: safe to re-run. Apply with:
+--   ./scripts/upload-repasado-media.sh                  # once, to populate storage
 --   psql "$DATABASE_URL" -f supabase/seed/demo_store_org.sql
 --   psql "$DATABASE_URL" -f supabase/seed/demo_store_catalog.sql
 
@@ -65,9 +71,32 @@ SELECT 'a0000000-0000-0000-0000-000000000001', c.id, v.name, v.slug, v.sort_orde
 FROM (VALUES ('Kryty a pouzdra', 'kryty-a-pouzdra', 1), ('Ochranná skla', 'ochranna-skla', 2)) AS v(name, slug, sort_order)
 JOIN categories c ON c.party_id = 'a0000000-0000-0000-0000-000000000001' AND c.slug = 'prislusenstvi';
 
-UPDATE categories SET image_url = '/demo-media/' || slug || '.svg'
-WHERE party_id = 'a0000000-0000-0000-0000-000000000001'
-  AND slug IN ('iphone', 'ipad', 'mac', 'watch', 'audio', 'prislusenstvi');
+-- Category icons are also uploaded to Storage and registered in store_media (via
+-- scripts/upload-repasado-media.sh) so they show up in the admin's "choose from library"
+-- picker, not just as a hardcoded website/public/demo-media file path.
+INSERT INTO store_media (party_id, slug, media_type, url, alt)
+SELECT 'a0000000-0000-0000-0000-000000000001', v.slug, 'image', v.url, v.alt
+FROM (VALUES
+  ('category-prislusenstvi', 'http://127.0.0.1:54321/storage/v1/object/public/store-media/a0000000-0000-0000-0000-000000000001/category-prislusenstvi.svg', 'Příslušenství'),
+  ('category-iphone', 'http://127.0.0.1:54321/storage/v1/object/public/store-media/a0000000-0000-0000-0000-000000000001/category-iphone.svg', 'iPhone'),
+  ('category-ipad', 'http://127.0.0.1:54321/storage/v1/object/public/store-media/a0000000-0000-0000-0000-000000000001/category-ipad.svg', 'iPad'),
+  ('category-mac', 'http://127.0.0.1:54321/storage/v1/object/public/store-media/a0000000-0000-0000-0000-000000000001/category-mac.svg', 'Mac'),
+  ('category-watch', 'http://127.0.0.1:54321/storage/v1/object/public/store-media/a0000000-0000-0000-0000-000000000001/category-watch.svg', 'Watch'),
+  ('category-audio', 'http://127.0.0.1:54321/storage/v1/object/public/store-media/a0000000-0000-0000-0000-000000000001/category-audio.svg', 'Audio')
+) AS v(slug, url, alt)
+ON CONFLICT (party_id, slug) DO NOTHING;
+
+UPDATE categories SET image_url = v.url
+FROM (VALUES
+  ('prislusenstvi', 'http://127.0.0.1:54321/storage/v1/object/public/store-media/a0000000-0000-0000-0000-000000000001/category-prislusenstvi.svg'),
+  ('iphone', 'http://127.0.0.1:54321/storage/v1/object/public/store-media/a0000000-0000-0000-0000-000000000001/category-iphone.svg'),
+  ('ipad', 'http://127.0.0.1:54321/storage/v1/object/public/store-media/a0000000-0000-0000-0000-000000000001/category-ipad.svg'),
+  ('mac', 'http://127.0.0.1:54321/storage/v1/object/public/store-media/a0000000-0000-0000-0000-000000000001/category-mac.svg'),
+  ('watch', 'http://127.0.0.1:54321/storage/v1/object/public/store-media/a0000000-0000-0000-0000-000000000001/category-watch.svg'),
+  ('audio', 'http://127.0.0.1:54321/storage/v1/object/public/store-media/a0000000-0000-0000-0000-000000000001/category-audio.svg')
+) AS v(slug, url)
+WHERE categories.party_id = 'a0000000-0000-0000-0000-000000000001'
+  AND categories.slug = v.slug;
 
 -- Footer link columns ---------------------------------------------------------------------
 INSERT INTO footer_links (party_id, column_key, label, url, sort_order)

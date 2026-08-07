@@ -20,4 +20,5 @@ export interface ProductCardData {
   orgName?: string;
   orgHref?: string;
   condition?: { label: string; color_hex: string } | null;
+  variants?: { id: string; name: string }[];
 }

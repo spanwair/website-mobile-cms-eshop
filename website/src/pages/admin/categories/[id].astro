@@ -1,7 +1,9 @@
 ---
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import ImagePicker from "../../../components/cms/ImagePicker.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { fetchCategory, fetchCategories, updateCategory, deleteCategory } from "@shared/services/categoryService";
+import { fetchStoreMedia } from "@shared/services/storeMediaService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT } from "../../../lib/i18n";
@@ -34,6 +36,7 @@ if (Astro.request.method === "POST") {
     slug: form.get("slug") as string,
     parent_id: (form.get("parent_id") as string) || null,
     icon: (form.get("icon") as string) || null,
+    image_url: (form.get("image_url") as string) || null,
     sort_order: parseInt(form.get("sort_order") as string, 10) || 0,
     is_visible: form.get("is_visible") === "on",
     show_in_nav: form.get("show_in_nav") === "on",
@@ -48,6 +51,7 @@ if (Astro.request.method === "POST") {
 const category = await fetchCategory(supabase, id!);
 if (!category) return Astro.redirect("/admin/categories");
 const categories = (await fetchCategories(supabase, partyId)).filter((c) => c.id !== id);
+const media = await fetchStoreMedia(supabase, partyId);
 ---
 
 <CmsLayout title={t.admin.categories.editTitle} userPermissions={permissions} currentPath="/admin/categories" parties={ctx.parties} partyId={ctx.partyId}>
@@ -82,6 +86,7 @@ const categories = (await fetchCategories(supabase, partyId)).filter((c) => c.id
           <input class="form-input" name="sort_order" type="number" value={category.sort_order} min="0" />
         </div>
       </div>
+      <ImagePicker name="image_url" label={t.admin.categories.fieldImage} value={category.image_url} media={media} />
       <div class="form-check">
         <input type="checkbox" name="is_visible" id="is_visible" checked={category.is_visible} />
         <label for="is_visible">{t.admin.categories.fieldVisible}</label>

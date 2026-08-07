@@ -89,6 +89,28 @@ After any schema change: `supabase gen types > shared/supabase/types.ts`
 | Code Reviewer | `agents/code-reviewer.md` | Final review gate |
 | Disclaimer | `agents/disclaimer.md` | Legal/copyright/license checks |
 
+### Storefront onboarding team
+
+Builds a brand-new storefront org (party) from a source business website — say "Product
+Agent, do the same as Kytka z Beskyd for `<url>`" to run the whole pipeline. Reference
+implementation: `supabase/seed/kytka_store_*.sql`. See `agents/product-agent.md` for the
+full pipeline order and hard rules (never skip the disclaimer gate, never push to production
+without being asked, never rehost scraped photos).
+
+| Agent | File | Purpose |
+|-------|------|---------|
+| Product Agent | `agents/product-agent.md` | Orchestrates the full pipeline below, in order |
+| Storefront Scraper | `agents/storefront-scraper.md` | Extracts facts/copy/prices/images from the source site |
+| Storefront Adviser | `agents/storefront-adviser.md` | Business fit: seller_mode, pricing sanity, platform fit |
+| Storefront Planner | `agents/storefront-planner.md` | Org identity, homepage layout, page/legal inventory |
+| Storefront Categorizer | `agents/storefront-categorizer.md` | Category tree + product→category mapping |
+| Storefront Styles | `agents/storefront-styles.md` | Theme colors/fonts + original placeholder media |
+| Storefront Org-Info | `agents/storefront-org-info.md` | Original CMS copy (about/contact/FAQ/blog/team) |
+| Storefront Database | `agents/storefront-database.md` | Writes the idempotent org/catalog/legal seed SQL |
+| Storefront Disclaimer | `agents/storefront-disclaimer.md` | Compliance gate for real-source-website onboarding |
+| Storefront Publisher | `agents/storefront-publisher.md` | Applies seeds to local dev DB |
+| Storefront Tester | `agents/storefront-tester.md` | Verifies rendering, DB counts, admin visibility |
+
 ## Session state
 
 Maintain state in `_project_specs/session/`:

@@ -24,6 +24,11 @@ const lang = getLang(Astro);
     {product.orgName && <span class="org-badge">{product.orgName}</span>}
     {product.condition && <span class="condition-badge" style={`background:${product.condition.color_hex}`}>{product.condition.label}</span>}
     <h3 class="product-title">{product.title}</h3>
+    {product.variants && product.variants.length > 1 && (
+      <div class="variant-chips">
+        {product.variants.map((v) => <span class="variant-chip">{v.name}</span>)}
+      </div>
+    )}
     <div class="product-pricing">
       {product.discount_price ? (
         <>
@@ -56,6 +61,8 @@ const lang = getLang(Astro);
   .org-badge { font-size:11px; font-weight:600; color:var(--accent-primary); text-transform:uppercase; letter-spacing:.04em; }
   .condition-badge { align-self:flex-start; font-size:10px; font-weight:700; color:#fff; padding:2px 8px; border-radius:9999px; }
   .product-title { font-size:14px; font-weight:600; line-height:1.4; margin:0; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .variant-chips { display:flex; flex-wrap:wrap; gap:4px; }
+  .variant-chip { font-size:10px; font-weight:500; color:var(--text-muted); background:var(--bg-subtle); border:1px solid var(--border); border-radius:9999px; padding:2px 8px; }
   .product-pricing { display:flex; align-items:center; gap:8px; }
   .price { font-size:16px; font-weight:700; color:var(--primary); }
   .price-old { font-size:13px; color:var(--text-muted); text-decoration:line-through; }

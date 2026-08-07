@@ -42,7 +42,9 @@ export async function fetchProducts(
 
   if (error) throw new Error(error.message);
 
-  // Fetch stock for all products in one query
+  // Fetch stock for all products in one query — summed across every tracked row per product,
+  // since a product with variants has one inventory_items row per variant, not a single
+  // product-level row (see fetchOutOfStockMap in searchService.ts for the same rollup).
   const productIds = (data ?? []).map((p) => p.id);
   let stockMap = new Map<string, number>();
   if (productIds.length > 0) {
@@ -50,12 +52,11 @@ export async function fetchProducts(
       .from("inventory_items")
       .select("product_id, qty_on_hand, qty_reserved")
       .in("product_id", productIds)
-      .is("variant_id", null)
       .eq("track_inventory", true);
 
-    stockMap = new Map(
-      (inventoryRows ?? []).map((r) => [r.product_id, r.qty_on_hand - r.qty_reserved])
-    );
+    for (const r of inventoryRows ?? []) {
+      stockMap.set(r.product_id, (stockMap.get(r.product_id) ?? 0) + (r.qty_on_hand - r.qty_reserved));
+    }
   }
 
   const products = (data ?? []).map((p) => ({

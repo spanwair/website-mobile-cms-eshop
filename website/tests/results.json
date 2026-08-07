@@ -1,0 +1,281 @@
+{
+  "config": {
+    "argv": [
+      "/home/jan/.nvm/versions/node/v22.21.0/bin/node",
+      "/home/jan/PROJECTS/react-native/website-mobile-template/website/node_modules/.pnpm/@playwright+test@1.61.1/node_modules/@playwright/test/cli.js",
+      "test",
+      "tests/e2e/28-smalljobs-commission.spec.ts",
+      "--project=chromium"
+    ],
+    "configFile": "/home/jan/PROJECTS/react-native/website-mobile-template/website/playwright.config.ts",
+    "rootDir": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "tests/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.61.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "28-smalljobs-commission.spec.ts",
+      "file": "28-smalljobs-commission.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "28 — Smalljobs commission mode",
+          "file": "28-smalljobs-commission.spec.ts",
+          "line": 7,
+          "column": 6,
+          "specs": [
+            {
+              "title": "28-01 party starts in own_company mode",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 842,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/001-login-fill-admin.png\n"
+                        },
+                        {
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/002-after-login.png\n"
+                        },
+                        {
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/003-28-01-own-company.png\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-06T12:57:35.507Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/28-smalljobs-commission-28-63003--starts-in-own-company-mode-chromium/test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "613136cee0603d896ef0-e95b9c52ebe2f26409b9",
+              "file": "28-smalljobs-commission.spec.ts",
+              "line": 22,
+              "column": 3
+            },
+            {
+              "title": "28-02 switch to Smalljobs commission mode",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1045,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/004-28-02-form-filled.png\n"
+                        },
+                        {
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/005-28-02-after-submit.png\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-06T12:57:38.708Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/28-smalljobs-commission-28-e2402-o-Smalljobs-commission-mode-chromium/test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "613136cee0603d896ef0-5229d049625fe13c9d1c",
+              "file": "28-smalljobs-commission.spec.ts",
+              "line": 29,
+              "column": 3
+            },
+            {
+              "title": "28-03 payout ledger page loads for commission-mode party",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 745,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/006-28-03-payouts-page.png\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-06T12:57:39.762Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/28-smalljobs-commission-28-e54d7-s-for-commission-mode-party-chromium/test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "613136cee0603d896ef0-5ec51497309b8496437b",
+              "file": "28-smalljobs-commission.spec.ts",
+              "line": 45,
+              "column": 3
+            },
+            {
+              "title": "28-04 revert to own_company mode",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1421,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/007-28-04-after-revert.png\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-06T12:57:40.513Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/28-smalljobs-commission-28-55659--revert-to-own-company-mode-chromium/test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "613136cee0603d896ef0-d5a48c9bd50dd6dfe332",
+              "file": "28-smalljobs-commission.spec.ts",
+              "line": 53,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-06T12:57:33.613Z",
+    "duration": 8425.269999999999,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
