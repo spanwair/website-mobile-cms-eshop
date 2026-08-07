@@ -6,8 +6,9 @@ interface Props {
   currentPath: string;
   userPermissions: number;
   storeHref?: string | null;
+  hasParty?: boolean;
 }
-const { currentPath, userPermissions, storeHref = null } = Astro.props;
+const { currentPath, userPermissions, storeHref = null, hasParty = true } = Astro.props;
 const t = useT(Astro);
 const s = t.admin.sidebar;
 
@@ -74,6 +75,12 @@ const groups = [
     ],
   },
 ];
+
+// Before an organization exists, every other page is a dead end (redirects back to
+// onboarding/setup) — show only the entry that lets an admin create or pick one.
+const renderGroups = hasParty
+  ? groups
+  : [{ label: s.people, items: groups.flatMap((g) => g.items).filter((i) => i.href === "/admin/parties") }];
 ---
 
 <aside class="sidebar">
@@ -88,7 +95,7 @@ const groups = [
     </a>
   )}
   <nav class="sidebar-nav">
-    {groups.map((group) => {
+    {renderGroups.map((group) => {
       const visibleItems = group.items.filter(item => item.perm === 0 || can(item.perm));
       if (visibleItems.length === 0) return null;
       return (
