@@ -12,9 +12,18 @@ const lang = getLang(Astro);
 <a href={`${linkBase}/${product.slug}`} class="product-card">
   <div class="product-img-wrap">
     {product.primaryImage ? (
-      <img src={product.primaryImage} alt={product.title} class="product-img" loading="lazy" />
+      product.primaryMediaType === "video" ? (
+        <video src={`${product.primaryImage}#t=0.5`} class="product-img" muted playsinline preload="metadata" />
+      ) : (
+        <img src={product.primaryImage} alt={product.title} class="product-img" loading="lazy" />
+      )
     ) : (
       <div class="product-img-placeholder">{t.shop.noImage}</div>
+    )}
+    {product.hasVideo && (
+      <span class="video-badge" title={t.shop.hasVideo} aria-label={t.shop.hasVideo}>
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+      </span>
     )}
     {product.isOutOfStock && <span class="oos-badge">{t.shop.outOfStock}</span>}
   </div>
@@ -35,8 +44,10 @@ const lang = getLang(Astro);
   .product-card { display:flex; flex-direction:column; text-decoration:none; color:inherit; }
   .product-img-wrap { position:relative; aspect-ratio:1; background:var(--bg-subtle); overflow:hidden; border-radius:var(--radius-sm); }
   .product-img { width:100%; height:100%; object-fit:cover; transition:opacity .2s; }
+  video.product-img { background:#000; }
   .product-card:hover .product-img { opacity:0.85; }
   .product-img-placeholder { display:flex; align-items:center; justify-content:center; height:100%; font-size:13px; color:var(--text-muted); }
+  .video-badge { position:absolute; bottom:8px; right:8px; width:22px; height:22px; border-radius:50%; background:rgba(0,0,0,.6); color:#fff; display:flex; align-items:center; justify-content:center; }
   .oos-badge { position:absolute; inset:0; background:rgba(0,0,0,.4); color:#fff; font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center; }
   .org-badge { margin-top:8px; font-size:10px; font-weight:600; color:var(--accent-primary); text-transform:uppercase; letter-spacing:.04em; }
   .condition-badge { display:inline-block; margin-top:6px; font-size:9px; font-weight:700; color:#fff; padding:2px 7px; border-radius:9999px; width:fit-content; }

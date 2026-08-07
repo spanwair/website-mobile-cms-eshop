@@ -6,7 +6,7 @@ import ProductReviews from "../../components/shop/ProductReviews.astro";
 import RelatedProducts from "../../components/shop/RelatedProducts.astro";
 import { createSupabase } from "../../lib/supabase";
 import { fetchProductReviews, submitReview, resolveReviewIdentity } from "@shared/services/reviewService";
-import { fetchInventoryByProduct } from "@shared/services/inventoryService";
+import { fetchInventoryRowsByProduct } from "@shared/services/inventoryService";
 import { getOrCreateCart, addToCart } from "@shared/services/cartService";
 import { addToWishlist, removeFromWishlist, isInWishlist } from "@shared/services/wishlistService";
 import { fetchStoreConfig } from "@shared/services/storeConfigService";
@@ -72,13 +72,14 @@ if (Astro.request.method === "POST") {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return Astro.redirect(`/login?redirect=/shop/${slug}`);
     const productId = form.get("product_id") as string;
+    const variantId = (form.get("variant_id") as string) || null;
     const partyId = await resolvePartyId(productId);
     const unitPrice = parseFloat(form.get("unit_price") as string);
     const qty = Math.max(1, parseInt(form.get("quantity") as string, 10) || 1);
     if (partyId) {
       try {
         const cart = await getOrCreateCart(supabase, partyId, session.user.id);
-        const result = await addToCart(supabase, cart.id, productId, qty, unitPrice);
+        const result = await addToCart(supabase, cart.id, productId, qty, unitPrice, variantId);
         if (result.error) cartError = result.error.message;
         else return Astro.redirect(`/shop/${slug}?added=1`);
       } catch (e: any) {
@@ -92,9 +93,9 @@ const { data: product } = await supabase
   .from("products")
   .select(`
     *,
-    product_images(id, url, alt, is_primary, sort_order),
+    product_images(id, url, alt, is_primary, sort_order, media_type),
     product_categories(category:categories(id, name, slug)),
-    product_variants(id, name, price, attributes, is_active, product_conditions(label, color_hex)),
+    product_variants(id, name, price, attributes, is_active),
     product_conditions(label, color_hex),
     brands(name, slug)
   `)
@@ -106,13 +107,14 @@ const { data: product } = await supabase
 if (!product) return Astro.redirect("/shop");
 
 const partyId = product.party_id;
-const images = ((product as any).product_images ?? []).sort(
-  (a: any, b: any) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0)
-);
+const images = ((product as any).product_images ?? []).sort((a: any, b: any) => {
+  if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
+  const aVideo = a.media_type === "video";
+  const bVideo = b.media_type === "video";
+  if (aVideo !== bVideo) return aVideo ? 1 : -1;
+  return 0;
+});
 const categories = ((product as any).product_categories ?? []).map((pc: any) => pc.category).filter(Boolean);
-const variants = ((product as any).product_variants ?? [])
-  .filter((v: any) => v.is_active)
-  .map((v: any) => ({ ...v, condition: v.product_conditions ?? null }));
 const condition = (product as any).product_conditions ?? null;
 const brand = (product as any).brands;
 
@@ -120,11 +122,32 @@ const { data: reviews, total: reviewTotal, averageRating } = await fetchProductR
 const reviewed = new URL(Astro.request.url).searchParams.has("reviewed");
 const addedToCart = new URL(Astro.request.url).searchParams.has("added");
 
-const inventoryItem = await fetchInventoryByProduct(supabase, product.id);
-const qtyAvailable = inventoryItem ? inventoryItem.qty_on_hand - inventoryItem.qty_reserved : null;
+// A product is always "a group of variants" for stock purposes — with real variants, each
+// carries its own row and one is always selected (default: the first); with none, the single
+// product-level row plays that same role (unchanged from before variants existed).
+const inventoryRows = await fetchInventoryRowsByProduct(supabase, product.id);
+const variantStockById = new Map(inventoryRows.filter((r) => r.variant_id).map((r) => [r.variant_id as string, r]));
+const variants = ((product as any).product_variants ?? [])
+  .filter((v: any) => v.is_active)
+  .map((v: any) => {
+    const stock = variantStockById.get(v.id) ?? null;
+    const vQtyAvailable = stock ? stock.qty_on_hand - stock.qty_reserved : null;
+    return {
+      ...v,
+      qtyAvailable: vQtyAvailable,
+      isOutOfStock: stock?.track_inventory === true && vQtyAvailable !== null && vQtyAvailable <= 0,
+    };
+  });
+
+const defaultVariant = variants[0] ?? null;
+const productLevelRow = inventoryRows.find((r) => r.variant_id === null) ?? null;
+const activeRow = defaultVariant
+  ? variantStockById.get(defaultVariant.id) ?? null
+  : productLevelRow;
+const qtyAvailable = activeRow ? activeRow.qty_on_hand - activeRow.qty_reserved : null;
 // A made-to-order product/variant has track_inventory=false on its rollup row — it must
 // never show "sold out" purely because the default trigger-created row sits at qty 0.
-const isOutOfStock = inventoryItem?.track_inventory === true && qtyAvailable !== null && qtyAvailable <= 0;
+const isOutOfStock = activeRow?.track_inventory === true && qtyAvailable !== null && qtyAvailable <= 0;
 
 const { data: { session: pageSession } } = await supabase.auth.getSession();
 let reviewerName = "";
@@ -146,7 +169,7 @@ let relatedProducts: any[] = [];
 if (categories.length > 0) {
   const { data: related } = await supabase
     .from("products")
-    .select("id, title, slug, price, discount_price, product_images(url, is_primary), product_categories!inner(category_id)")
+    .select("id, title, slug, price, discount_price, product_images(url, is_primary, media_type), product_categories!inner(category_id)")
     .eq("party_id", partyId)
     .eq("status", "active")
     .eq("is_visible", true)
@@ -154,7 +177,7 @@ if (categories.length > 0) {
     .in("product_categories.category_id", categories.map((c: any) => c.id))
     .limit(4);
   relatedProducts = (related ?? []).map((p) => {
-    const imgs = (p as any).product_images ?? [];
+    const imgs = ((p as any).product_images ?? []).filter((i: any) => i.media_type !== "video");
     return { ...p, primaryImage: (imgs.find((i: any) => i.is_primary) ?? imgs[0])?.url };
   });
 }
@@ -178,6 +201,7 @@ const trustBadges = (await fetchVisibleBenefitItems(supabase, partyId)).slice(0,
       condition={condition}
       categories={categories}
       variants={variants}
+      defaultVariantId={defaultVariant?.id ?? null}
       reviewTotal={reviewTotal}
       averageRating={averageRating}
       isOutOfStock={isOutOfStock}

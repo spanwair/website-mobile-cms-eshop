@@ -1,42 +1,50 @@
 ---
-import type { ProductVariant, ProductCondition } from "@shared/types";
+import type { ProductVariant } from "@shared/types";
 import { useT } from "../../lib/i18n";
 
 interface Props {
   variants: ProductVariant[];
-  conditions: ProductCondition[];
   productId: string;
   editingId: string | null;
+  selectedVariantId?: string | null;
 }
 
-const { variants, conditions, productId, editingId } = Astro.props;
+const { variants, productId, editingId, selectedVariantId = null } = Astro.props;
 const t = useT(Astro);
 const s = t.admin.products;
-const editing = editingId ? variants.find((v) => v.id === editingId) ?? null : null;
-
-function conditionLabel(conditionId: string | null) {
-  return conditions.find((c) => c.id === conditionId)?.label ?? null;
-}
+// A product with variants always has one "in focus" (selected row, green dot) — the form below
+// mirrors that by default so it's never a blank add-form next to data that already exists.
+// editingId === "new" is the explicit escape hatch back to a blank form.
+const editing = editingId === "new"
+  ? null
+  : editingId
+    ? variants.find((v) => v.id === editingId) ?? null
+    : selectedVariantId
+      ? variants.find((v) => v.id === selectedVariantId) ?? null
+      : null;
 ---
 
-<div class="card variants-card" style="max-width:720px;margin-top:16px">
+<div class="card variants-card" style="max-width:720px">
   <h3 class="variants-title">{s.variantsTitle}</h3>
   <p class="variants-desc">{s.variantsDesc}</p>
 
   {variants.length > 0 && (
     <table class="data-table" style="margin-bottom:20px">
       <thead>
-        <tr><th>{s.variantName}</th><th>{s.variantPrice}</th><th>{s.variantCondition}</th><th>{s.variantActive}</th><th>{t.admin.products.colActions}</th></tr>
+        <tr><th>{s.variantName}</th><th>{s.variantPrice}</th><th>{s.variantActive}</th><th>{t.admin.products.colActions}</th></tr>
       </thead>
       <tbody>
         {variants.map((v) => (
-          <tr>
-            <td style="font-weight:600">{v.name}</td>
+          <tr class={v.id === selectedVariantId ? "selected-row" : ""}>
+            <td style="font-weight:600">
+              <a href={`/admin/products/${productId}?variant=${v.id}`} class="variant-select-link">
+                {v.id === selectedVariantId && <span class="selected-marker">●</span>} {v.name}
+              </a>
+            </td>
             <td>{v.price != null ? v.price : "—"}</td>
-            <td>{conditionLabel(v.condition_id) ?? "—"}</td>
             <td><span class={`badge ${v.is_active ? "badge-active" : "badge-inactive"}`}>{v.is_active ? t.admin.conditions.active : t.admin.conditions.inactive}</span></td>
             <td class="action-cell">
-              <a href={`/admin/products/${productId}?edit_variant=${v.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{s.editVariant}</a>
+              <a href={`/admin/products/${productId}?variant=${v.id}&edit_variant=${v.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{s.editVariant}</a>
               <form method="POST" onsubmit={`return confirm('${s.deleteVariantConfirm}')`} style="display:inline">
                 <input type="hidden" name="action" value="delete_variant" />
                 <input type="hidden" name="variant_id" value={v.id} />
@@ -63,27 +71,21 @@ function conditionLabel(conditionId: string | null) {
         <input class="form-input" name="price" type="number" step="0.01" min="0" value={editing?.price ?? ""} />
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">{s.variantSku}</label>
-        <input class="form-input" name="sku" value={editing?.sku ?? ""} />
-      </div>
-      <div class="form-group">
-        <label class="form-label">{s.variantCondition}</label>
-        <select class="form-input" name="condition_id">
-          <option value="">{s.variantNoCondition}</option>
-          {conditions.map((c) => (
-            <option value={c.id} selected={editing?.condition_id === c.id}>{c.label}</option>
-          ))}
-        </select>
-      </div>
+    <div class="form-group">
+      <label class="form-label">{s.variantSku}</label>
+      <input class="form-input" name="sku" value={editing?.sku ?? ""} />
     </div>
     <div class="form-check">
       <input type="checkbox" name="is_active" id="variant_active" checked={editing ? editing.is_active : true} />
       <label for="variant_active">{s.variantActive}</label>
     </div>
     <div class="form-actions">
-      {editing && <a href={`/admin/products/${productId}`} class="btn btn-ghost">{s.cancelEdit}</a>}
+      {editingId && (
+        <a href={`/admin/products/${productId}${selectedVariantId ? `?variant=${selectedVariantId}` : ""}`} class="btn btn-ghost">{s.cancelEdit}</a>
+      )}
+      {editing && (
+        <a href={`/admin/products/${productId}?variant=${selectedVariantId ?? ""}&edit_variant=new`} class="btn btn-ghost">{s.addVariant}</a>
+      )}
       <button type="submit" class="btn btn-primary">{editing ? s.saveVariant : s.addVariant}</button>
     </div>
   </form>
@@ -101,5 +103,9 @@ function conditionLabel(conditionId: string | null) {
   .form-check input { width:auto; }
   .form-actions { display:flex; gap:12px; justify-content:flex-end; }
   .action-cell { display:flex; gap:8px; align-items:center; }
+  .selected-row { background:var(--bg-subtle); }
+  .variant-select-link { color:inherit; text-decoration:none; }
+  .variant-select-link:hover { text-decoration:underline; }
+  .selected-marker { color:var(--accent-primary); font-size:10px; }
   @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
 </style>

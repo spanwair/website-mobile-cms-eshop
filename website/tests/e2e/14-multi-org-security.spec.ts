@@ -170,10 +170,13 @@ test.describe("14 — Multi-Org Security", () => {
     await loginAs(page, ADMIN.email, ADMIN.password);
     await page.goto(`${BASE}/admin/users`);
     await page.waitForLoadState("networkidle");
-    // Override select value and submit
-    const firstRow = page.locator("tbody tr").first();
+    // Override select value and submit — target the first row that actually has an
+    // editable role form (the viewer's own row is skipped by the app, so it never has one).
+    const editableRows = page.locator("tbody tr").filter({ has: page.locator("input[name='user_id']") });
+    if (await editableRows.count() === 0) return; // no editable users visible — skip
+    const firstRow = editableRows.first();
     const userId = await firstRow.locator("input[name='user_id']").getAttribute("value");
-    if (!userId) return; // no users visible — skip
+    if (!userId) return;
     await page.evaluate(() => {
       const sel = document.querySelector("select[name='role']") as HTMLSelectElement | null;
       if (sel) {

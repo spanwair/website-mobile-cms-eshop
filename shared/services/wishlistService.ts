@@ -9,7 +9,7 @@ export type WishlistItem = {
   product_id: string;
   variant_id: string | null;
   added_at: string;
-  product?: { title: string; slug: string; price: number; discount_price: number | null; product_images: { url: string; is_primary: boolean }[] };
+  product?: { title: string; slug: string; price: number; discount_price: number | null; product_images: { url: string; is_primary: boolean; media_type?: string }[] };
 };
 
 export async function getOrCreateWishlist(client: Client, partyId: string, userId: string): Promise<string> {
@@ -43,7 +43,7 @@ export async function fetchWishlistItems(client: Client, partyId: string, userId
 
   const { data } = await client
     .from("wishlist_items")
-    .select("*, product:products(title, slug, price, discount_price, product_images(url, is_primary))")
+    .select("*, product:products(title, slug, price, discount_price, product_images(url, is_primary, media_type))")
     .eq("wishlist_id", wishlist.id)
     .order("added_at", { ascending: false });
 

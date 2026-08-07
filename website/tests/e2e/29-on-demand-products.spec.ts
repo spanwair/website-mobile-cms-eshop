@@ -55,7 +55,10 @@ test.describe("29 — On-Demand Products (track_inventory=false)", () => {
     await expect(page.locator(".cart-success")).toBeVisible();
   });
 
-  test("29-03 checkout completes and qty_on_hand is left untouched (not decremented, not negative)", async () => {
+  test("29-03 order + order_items are created and qty_on_hand is left untouched (not decremented, not negative)", async () => {
+    // checkout.astro creates the order/order_items (where the stock trigger fires) and
+    // only then redirects to Stripe's hosted payment page — so the assertions below don't
+    // require completing a real Stripe payment, just the redirect away from /shop/checkout.
     await page.goto(`${BASE}/shop/checkout`);
     await page.waitForLoadState("networkidle");
     await page.fill("input[name='first_name']", "On");
@@ -64,14 +67,15 @@ test.describe("29 — On-Demand Products (track_inventory=false)", () => {
     await page.fill("input[name='city']", "Brno");
     await page.fill("input[name='postal_code']", "60200");
     await page.locator("form.address-form button[type='submit']").click();
-    await page.waitForURL(`${BASE}/shop/order-confirmation**`, { timeout: 15000 });
+    await page.waitForURL((url) => !url.toString().includes("/shop/checkout"), { timeout: 15000 });
 
     const stock = psql(`SELECT qty_on_hand FROM public.inventory_items WHERE id = '${INV}';`);
-    expect(stock).toContain("0");
-    expect(stock).not.toContain("-");
+    const stockValue = Number(stock.trim().split("\n")[2]?.trim());
+    expect(stockValue).toBe(0);
 
     const orderCount = psql(`SELECT count(*) FROM public.order_items WHERE product_id = '${PROD.id}';`);
-    expect(orderCount).not.toContain(" 0");
+    const orderCountValue = Number(orderCount.trim().split("\n")[2]?.trim());
+    expect(orderCountValue).toBeGreaterThan(0);
   });
 
   test("29-04 product page still shows no out-of-stock badge after the sale", async () => {

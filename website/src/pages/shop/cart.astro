@@ -44,7 +44,7 @@ if (Astro.request.method === "POST") {
 
 const { data: cart } = await supabase
   .from("carts")
-  .select("*, cart_items(*, product:products(id, title, slug, price, discount_price, product_images(url, is_primary)))")
+  .select("*, cart_items(*, product:products(id, title, slug, price, discount_price, product_images(url, is_primary, media_type)), variant:product_variants(name))")
   .eq("user_id", session.user.id)
   .order("updated_at", { ascending: false })
   .limit(1)
@@ -70,7 +70,7 @@ const { subtotal, itemCount } = calcCartTotal(
         <div class="cart-items">
           {items.map((item: any) => {
             const prod = item.product;
-            const images = (prod?.product_images ?? []);
+            const images = (prod?.product_images ?? []).filter((i: any) => i.media_type !== "video");
             const img = (images.find((i: any) => i.is_primary) ?? images[0])?.url;
             const price = Number(item.unit_price);
             return (
@@ -78,6 +78,7 @@ const { subtotal, itemCount } = calcCartTotal(
                 {img && <img src={img} alt={prod?.title} class="item-img" />}
                 <div class="item-info">
                   <a href={`/shop/${prod?.slug}`} class="item-title">{prod?.title}</a>
+                  {item.variant?.name && <p class="item-variant">{item.variant.name}</p>}
                   <p class="item-price">{formatPrice(price, lang)}</p>
                 </div>
                 <form method="POST" class="qty-form">
@@ -144,6 +145,7 @@ const { subtotal, itemCount } = calcCartTotal(
   .item-info { display:flex; flex-direction:column; gap:4px; }
   .item-title { font-size:15px; font-weight:600; text-decoration:none; color:inherit; }
   .item-title:hover { color:var(--primary); }
+  .item-variant { font-size:13px; color:var(--text-muted); margin:0; }
   .item-price { font-size:14px; color:var(--text-muted); margin:0; }
   .qty-form { display:flex; }
   .qty-input { width:60px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; text-align:center; font-size:15px; }

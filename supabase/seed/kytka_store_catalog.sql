@@ -117,6 +117,8 @@ JOIN product_conditions pc ON pc.party_id = 'a0000000-0000-0000-0000-00000000000
 -- Inventory: only 'in_stock' variants carry a real countable quantity. 'made_to_order'
 -- variants get track_inventory=false — a craft business can always take the order, so a
 -- random/depleting quantity would eventually (and wrongly) show them as sold out.
+-- ON CONFLICT DO UPDATE, not a plain INSERT: a variant insert above already auto-creates its
+-- own zero-qty row (ensure_variant_inventory_item trigger), so this just sets real stock on it.
 INSERT INTO inventory_items (party_id, product_id, variant_id, warehouse_id, qty_on_hand, low_stock_threshold, track_inventory)
 SELECT 'a0000000-0000-0000-0000-000000000003', pv.product_id, pv.id, w.id,
        CASE WHEN pc.code = 'in_stock' THEN 2 + (('x' || substr(md5(pv.id::text), 1, 6))::bit(24)::int % 8) ELSE 0 END,
@@ -125,7 +127,9 @@ FROM product_variants pv
 JOIN products p ON p.id = pv.product_id AND p.party_id = 'a0000000-0000-0000-0000-000000000003'
 JOIN product_conditions pc ON pc.id = pv.condition_id
 CROSS JOIN warehouses w
-WHERE w.party_id = 'a0000000-0000-0000-0000-000000000003' AND w.code = 'main';
+WHERE w.party_id = 'a0000000-0000-0000-0000-000000000003' AND w.code = 'main'
+ON CONFLICT (product_id, variant_id, warehouse_id) DO UPDATE
+  SET qty_on_hand = EXCLUDED.qty_on_hand, low_stock_threshold = EXCLUDED.low_stock_threshold, track_inventory = EXCLUDED.track_inventory;
 
 -- The create_default_inventory_item() trigger already added a product-level (variant_id IS
 -- NULL) rollup row at track_inventory=true/qty=0 when each product was INSERTed above — turn

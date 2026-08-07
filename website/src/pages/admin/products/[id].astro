@@ -7,7 +7,7 @@ import { fetchProduct, updateProduct, deleteProduct, setProductCategories } from
 import { addProductImage, deleteProductImage, setPrimaryImage, addProductVariant, updateProductVariant, deleteProductVariant } from "@shared/services/productImageService";
 import { fetchCategories } from "@shared/services/categoryService";
 import { fetchProductConditions } from "@shared/services/productConditionService";
-import { fetchInventoryByProduct, updateStock, fetchStockMovements, updateThresholds, setTrackInventory } from "@shared/services/inventoryService";
+import { fetchInventoryRowsByProduct, updateStock, fetchStockMovements, updateThresholds, setTrackInventory } from "@shared/services/inventoryService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT, getLang } from "../../../lib/i18n";
@@ -108,7 +108,6 @@ if (Astro.request.method === "POST") {
       name: form.get("name") as string,
       sku: (form.get("sku") as string) || null,
       price: price ? parseFloat(price) : null,
-      condition_id: (form.get("condition_id") as string) || null,
       is_active: form.get("is_active") === "on",
     };
     const result = action === "update_variant"
@@ -162,6 +161,7 @@ if (Astro.request.method === "POST") {
     status: (form.get("status") as "draft" | "active" | "inactive") ?? "draft",
     description: (form.get("description") as string) || null,
     is_featured: form.get("is_featured") === "on",
+    condition_id: (form.get("condition_id") as string) || null,
   });
   if (result.error) {
     error = result.error.message;
@@ -179,8 +179,26 @@ const selectedCats = new Set(product.categories);
 const conditions = await fetchProductConditions(supabase, partyId);
 const editingVariantId = Astro.url.searchParams.get("edit_variant");
 
-const inventoryItem = await fetchInventoryByProduct(supabase, id!);
+// With any variant present the storefront shows that variant's price (never product.price
+// directly — see ProductPurchasePanel), so the main price field is a dead input that only
+// misleads admins once there's at least one variant to carry the real price.
+const hasVariants = product.variants.length > 0;
 const canManageInventory = hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY);
+// A product is always "a group of variants" for inventory purposes — with real variants,
+// one is always selected (default: the first); with none, the single product-level row plays
+// that same role. Either way exactly one inventory row is ever in focus at a time, and every
+// section below (stock panel, on-demand toggle, thresholds, movements) targets that one row —
+// unchanged from the single-panel design, just re-pointed at whichever row is selected.
+const requestedVariantId = Astro.url.searchParams.get("variant");
+const selectedVariantId = product.variants.length > 0
+  ? (product.variants.find((v) => v.id === requestedVariantId)?.id ?? product.variants[0].id)
+  : null;
+
+const inventoryRows = await fetchInventoryRowsByProduct(supabase, id!);
+const inventoryItem = selectedVariantId
+  ? (inventoryRows.find((r) => r.variant_id === selectedVariantId) ?? null)
+  : (inventoryRows[0] ?? null);
+
 function movementTypeLabel(type: string) {
   const map: Record<string, string> = {
     adjustment: t.admin.inventory.typeAdjustment,
@@ -197,9 +215,17 @@ const recentMovements = inventoryItem
 ---
 
 <CmsLayout title={t.admin.products.editTitle} userPermissions={permissions} currentPath="/admin/products" parties={ctx.parties} partyId={ctx.partyId}>
-  <div class="card" style="max-width:720px">
-    <a href="/admin/products" class="back-link">{t.admin.products.back}</a>
-    {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
+  <a href="/admin/products" class="back-link">{t.admin.products.back}</a>
+  {error && <div class="form-error" style="margin-bottom:16px;max-width:720px">{error}</div>}
+
+  <ProductVariants
+    variants={product.variants}
+    productId={id!}
+    editingId={editingVariantId}
+    selectedVariantId={selectedVariantId}
+  />
+
+  <div class="card" style="max-width:720px;margin-top:16px">
     <form method="POST" class="product-form">
       <div class="form-row">
         <div class="form-group">
@@ -221,16 +247,24 @@ const recentMovements = inventoryItem
           <input class="form-input" name="barcode" value={product.barcode ?? ""} />
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">{t.admin.products.fieldPrice}</label>
-          <input class="form-input" name="price" type="number" step="0.01" min="0" required value={product.price} />
+      {hasVariants ? (
+        <>
+          <p class="price-by-variants-note">{t.admin.products.priceSetByVariants}</p>
+          <input type="hidden" name="price" value={product.price} />
+          <input type="hidden" name="discount_price" value={product.discount_price ?? ""} />
+        </>
+      ) : (
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">{t.admin.products.fieldPrice}</label>
+            <input class="form-input" name="price" type="number" step="0.01" min="0" required value={product.price} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{t.admin.products.fieldDiscountPrice}</label>
+            <input class="form-input" name="discount_price" type="number" step="0.01" min="0" value={product.discount_price ?? ""} />
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">{t.admin.products.fieldDiscountPrice}</label>
-          <input class="form-input" name="discount_price" type="number" step="0.01" min="0" value={product.discount_price ?? ""} />
-        </div>
-      </div>
+      )}
       <div class="form-group">
         <label class="form-label">{t.admin.products.fieldCostPrice}</label>
         <input class="form-input" name="cost_price" type="number" step="0.01" min="0" value={product.cost_price} />
@@ -241,6 +275,15 @@ const recentMovements = inventoryItem
           <option value="draft" selected={product.status === "draft"}>{t.common.draft}</option>
           <option value="active" selected={product.status === "active"}>{t.common.active}</option>
           <option value="inactive" selected={product.status === "inactive"}>{t.common.inactive}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{t.admin.products.fieldCondition}</label>
+        <select class="form-input" name="condition_id">
+          <option value="">{t.admin.products.fieldNoCondition}</option>
+          {conditions.map((c) => (
+            <option value={c.id} selected={product.condition_id === c.id}>{c.label}</option>
+          ))}
         </select>
       </div>
       <div class="form-group">
@@ -279,10 +322,13 @@ const recentMovements = inventoryItem
 
   <ProductImages images={product.images} productId={id!} />
 
-  <ProductVariants variants={product.variants} conditions={conditions} productId={id!} editingId={editingVariantId} />
-
   <div class="inv-card" style="max-width:720px">
-      <h2 class="inv-title">{t.admin.inventory.title}</h2>
+      <h2 class="inv-title">
+        {t.admin.inventory.title}
+        {selectedVariantId && (
+          <span class="inv-title-variant">— {product.variants.find((v) => v.id === selectedVariantId)?.name}</span>
+        )}
+      </h2>
       {inventoryItem ? (
         <>
           <div class="inv-stats">
@@ -404,6 +450,7 @@ const recentMovements = inventoryItem
   .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
   .back-link:hover { color:var(--text-primary); }
   .product-form { display:flex; flex-direction:column; gap:16px; }
+  .price-by-variants-note { font-size:13px; color:var(--text-muted); margin:0; padding:10px 12px; background:var(--bg-subtle); border-radius:8px; }
   .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
   .form-check input { width:auto; }
@@ -414,6 +461,7 @@ const recentMovements = inventoryItem
   @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
   .inv-card { margin-top:24px; }
   .inv-title { font-size:16px; font-weight:700; margin:0 0 16px; }
+  .inv-title-variant { color:var(--text-muted); font-weight:500; }
   .inv-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:12px; }
   .inv-stat { background:var(--bg-subtle); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:4px; }
   .inv-label { font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.04em; }

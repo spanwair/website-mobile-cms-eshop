@@ -16,6 +16,8 @@ export interface ProductCardData {
   review_count: number;
   rating_avg: number;
   primaryImage: string | null;
+  primaryMediaType?: "image" | "video";
+  hasVideo?: boolean;
   isOutOfStock: boolean;
   orgName?: string;
   orgHref?: string;

@@ -43,8 +43,12 @@ const cardVariant = storeParty.config?.product_card_variant ?? "classic";
         {items.map((item) => {
           const p = item.product;
           if (!p) return null;
-          const images = p.product_images ?? [];
-          const primaryImage = (images.find((i) => i.is_primary) ?? images[0])?.url ?? null;
+          const allMedia = p.product_images ?? [];
+          const images = allMedia.filter((i) => i.media_type !== "video");
+          const videos = allMedia.filter((i) => i.media_type === "video");
+          const primary = images.find((i) => i.is_primary) ?? images[0] ?? videos.find((i) => i.is_primary) ?? videos[0];
+          const primaryImage = primary?.url ?? null;
+          const primaryMediaType = primary && videos.includes(primary) ? "video" : "image";
           return (
             <div class="wishlist-tile">
               <ProductCard
@@ -52,7 +56,7 @@ const cardVariant = storeParty.config?.product_card_variant ?? "classic";
                   id: item.product_id, title: p.title, slug: p.slug,
                   price: p.price, discount_price: p.discount_price,
                   is_featured: false, review_count: 0, rating_avg: 0,
-                  primaryImage, isOutOfStock: false,
+                  primaryImage, primaryMediaType, hasVideo: videos.length > 0, isOutOfStock: false,
                 }}
                 variant={cardVariant}
                 linkBase={linkBase}

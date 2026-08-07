@@ -4,8 +4,7 @@
       "/home/jan/.nvm/versions/node/v22.21.0/bin/node",
       "/home/jan/PROJECTS/react-native/website-mobile-template/website/node_modules/.pnpm/@playwright+test@1.61.1/node_modules/@playwright/test/cli.js",
       "test",
-      "tests/e2e/28-smalljobs-commission.spec.ts",
-      "--project=chromium"
+      "tests/e2e/29-on-demand-products.spec.ts"
     ],
     "configFile": "/home/jan/PROJECTS/react-native/website-mobile-template/website/playwright.config.ts",
     "rootDir": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e",
@@ -67,20 +66,20 @@
   },
   "suites": [
     {
-      "title": "28-smalljobs-commission.spec.ts",
-      "file": "28-smalljobs-commission.spec.ts",
+      "title": "29-on-demand-products.spec.ts",
+      "file": "29-on-demand-products.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "28 — Smalljobs commission mode",
-          "file": "28-smalljobs-commission.spec.ts",
-          "line": 7,
+          "title": "29 — On-Demand Products (track_inventory=false)",
+          "file": "29-on-demand-products.spec.ts",
+          "line": 27,
           "column": 6,
           "specs": [
             {
-              "title": "28-01 party starts in own_company mode",
+              "title": "29-01 on-demand product with zero stock never shows out-of-stock and offers the cart form",
               "ok": true,
               "tags": [],
               "tests": [
@@ -95,28 +94,28 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 842,
+                      "duration": 838,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/001-login-fill-admin.png\n"
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/001-login-fill-user.png\n"
                         },
                         {
                           "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/002-after-login.png\n"
                         },
                         {
-                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/003-28-01-own-company.png\n"
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/003-29-01-on-demand-purchasable.png\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-08-06T12:57:35.507Z",
+                      "startTime": "2026-08-07T06:47:41.731Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/28-smalljobs-commission-28-63003--starts-in-own-company-mode-chromium/test-finished-1.png"
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/29-on-demand-products-29-—-83672-ck-and-offers-the-cart-form-chromium/test-finished-1.png"
                         }
                       ]
                     }
@@ -124,13 +123,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "613136cee0603d896ef0-e95b9c52ebe2f26409b9",
-              "file": "28-smalljobs-commission.spec.ts",
-              "line": 22,
+              "id": "0bf7ce75b8a48cf59b04-2821f141b1d083dda0ea",
+              "file": "29-on-demand-products.spec.ts",
+              "line": 43,
               "column": 3
             },
             {
-              "title": "28-02 switch to Smalljobs commission mode",
+              "title": "29-02 adding more than qty_on_hand to the cart succeeds",
               "ok": true,
               "tags": [],
               "tests": [
@@ -145,25 +144,18 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1045,
+                      "duration": 697,
                       "errors": [],
-                      "stdout": [
-                        {
-                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/004-28-02-form-filled.png\n"
-                        },
-                        {
-                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/005-28-02-after-submit.png\n"
-                        }
-                      ],
+                      "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-08-06T12:57:38.708Z",
+                      "startTime": "2026-08-07T06:47:45.140Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/28-smalljobs-commission-28-e2402-o-Smalljobs-commission-mode-chromium/test-finished-1.png"
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/29-on-demand-products-29-—-2330f-n-hand-to-the-cart-succeeds-chromium/test-finished-1.png"
                         }
                       ]
                     }
@@ -171,13 +163,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "613136cee0603d896ef0-5229d049625fe13c9d1c",
-              "file": "28-smalljobs-commission.spec.ts",
-              "line": 29,
+              "id": "0bf7ce75b8a48cf59b04-9183d0d51a9398332dce",
+              "file": "29-on-demand-products.spec.ts",
+              "line": 51,
               "column": 3
             },
             {
-              "title": "28-03 payout ledger page loads for commission-mode party",
+              "title": "29-03 order + order_items are created and qty_on_hand is left untouched (not decremented, not negative)",
               "ok": true,
               "tags": [],
               "tests": [
@@ -192,22 +184,18 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 745,
+                      "duration": 2679,
                       "errors": [],
-                      "stdout": [
-                        {
-                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/006-28-03-payouts-page.png\n"
-                        }
-                      ],
+                      "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-08-06T12:57:39.762Z",
+                      "startTime": "2026-08-07T06:47:45.847Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/28-smalljobs-commission-28-e54d7-s-for-commission-mode-party-chromium/test-finished-1.png"
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/29-on-demand-products-29-—-ad4ae-t-decremented-not-negative--chromium/test-finished-1.png"
                         }
                       ]
                     }
@@ -215,13 +203,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "613136cee0603d896ef0-5ec51497309b8496437b",
-              "file": "28-smalljobs-commission.spec.ts",
-              "line": 45,
+              "id": "0bf7ce75b8a48cf59b04-9c0fe260809a9d8a056e",
+              "file": "29-on-demand-products.spec.ts",
+              "line": 58,
               "column": 3
             },
             {
-              "title": "28-04 revert to own_company mode",
+              "title": "29-04 product page still shows no out-of-stock badge after the sale",
               "ok": true,
               "tags": [],
               "tests": [
@@ -236,22 +224,18 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1421,
+                      "duration": 720,
                       "errors": [],
-                      "stdout": [
-                        {
-                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/007-28-04-after-revert.png\n"
-                        }
-                      ],
+                      "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-08-06T12:57:40.513Z",
+                      "startTime": "2026-08-07T06:47:48.535Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/28-smalljobs-commission-28-55659--revert-to-own-company-mode-chromium/test-finished-1.png"
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/29-on-demand-products-29-—-cec80--stock-badge-after-the-sale-chromium/test-finished-1.png"
                         }
                       ]
                     }
@@ -259,9 +243,9 @@
                   "status": "expected"
                 }
               ],
-              "id": "613136cee0603d896ef0-d5a48c9bd50dd6dfe332",
-              "file": "28-smalljobs-commission.spec.ts",
-              "line": 53,
+              "id": "0bf7ce75b8a48cf59b04-5a41ac22c874a89de3ce",
+              "file": "29-on-demand-products.spec.ts",
+              "line": 81,
               "column": 3
             }
           ]
@@ -271,8 +255,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-08-06T12:57:33.613Z",
-    "duration": 8425.269999999999,
+    "startTime": "2026-08-07T06:47:39.441Z",
+    "duration": 9949.018,
     "expected": 4,
     "skipped": 0,
     "unexpected": 0,

@@ -105,7 +105,11 @@ function canChangeUser(u: { id: string; role: number; admin_assigned_by: string 
   return canAssign.length > 0;
 }
 function rolesForUser(u: { role: number }): typeof canAssign {
-  return u.role === ROLE.ADMIN ? canAssign.filter(r => r < ROLE.ADMIN) : canAssign;
+  // A peer admin (not owner) editing another admin can only demote, never re-assign admin/owner.
+  // Owner is exempt — owner can assign any role, including admin/owner, to anyone.
+  return u.role === ROLE.ADMIN && myRole < ROLE.OWNER
+    ? canAssign.filter(r => r < ROLE.ADMIN)
+    : canAssign;
 }
 function roleClass(r: number) {
   if (r >= ROLE.OWNER) return "badge-error";

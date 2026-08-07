@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
-import type { InventoryItem, Warehouse, StockMovement, PaginatedResult, StockMovementType } from "../types";
+import type { InventoryItem, InventoryItemWithVariant, Warehouse, StockMovement, PaginatedResult, StockMovementType } from "../types";
 
 type Client = SupabaseClient<Database>;
 
@@ -8,14 +8,14 @@ export async function fetchInventory(
   client: Client,
   partyId: string,
   opts: { page?: number; pageSize?: number; lowStockOnly?: boolean } = {}
-): Promise<PaginatedResult<InventoryItem>> {
+): Promise<PaginatedResult<InventoryItemWithVariant>> {
   const { page = 1, pageSize = 20, lowStockOnly } = opts;
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
   let query = client
     .from("inventory_items")
-    .select("*", { count: "exact" })
+    .select("*, product_variants(name)", { count: "exact" })
     .eq("party_id", partyId);
 
   if (lowStockOnly) {
@@ -28,11 +28,29 @@ export async function fetchInventory(
 
   if (error) throw new Error(error.message);
 
-  const items = ((data ?? []) as Database["public"]["Tables"]["inventory_items"]["Row"][]).map(
+  const rows = (data ?? []) as Array<
+    Database["public"]["Tables"]["inventory_items"]["Row"] & { product_variants: { name: string } | null }
+  >;
+
+  // Once a product has variant-level rows, its product-level (variant_id IS NULL) row is inert
+  // (see ensure_variant_inventory_item) — drop it from this list so it's not shown as a
+  // confusing always-zero line alongside the real variant rows.
+  const productIdsWithVariants = new Set(
+    (
+      await client
+        .from("product_variants")
+        .select("product_id")
+        .in("product_id", [...new Set(rows.map((r) => r.product_id))])
+    ).data?.map((r) => r.product_id) ?? []
+  );
+  const visible = rows.filter((r) => !(r.variant_id === null && productIdsWithVariants.has(r.product_id)));
+
+  const items = visible.map(
     (row) => ({
       ...row,
       qty_available: row.qty_on_hand - row.qty_reserved,
-    }) as InventoryItem
+      variant_name: row.product_variants?.name ?? null,
+    }) as InventoryItemWithVariant
   );
 
   return { data: items, total: count ?? 0, page, pageSize };
@@ -169,6 +187,33 @@ export async function fetchInventoryByProduct(
   return { ...row, qty_available: row.qty_on_hand - row.qty_reserved } as InventoryItem;
 }
 
+// Returns every inventory row for a product: one per variant when it has variants (the
+// variant_id IS NULL row is inert in that case and excluded), or the single product-level row
+// when it has none. This is the "one mode at a time" rule the whole feature is built on.
+export async function fetchInventoryRowsByProduct(
+  client: Client,
+  productId: string
+): Promise<InventoryItemWithVariant[]> {
+  const { data } = await client
+    .from("inventory_items")
+    .select("*, product_variants(name)")
+    .eq("product_id", productId)
+    .order("created_at", { ascending: true });
+
+  const rows = (data ?? []) as Array<
+    Database["public"]["Tables"]["inventory_items"]["Row"] & { product_variants: { name: string } | null }
+  >;
+
+  const variantRows = rows.filter((r) => r.variant_id !== null);
+  const active = variantRows.length > 0 ? variantRows : rows.filter((r) => r.variant_id === null);
+
+  return active.map((r) => ({
+    ...r,
+    qty_available: r.qty_on_hand - r.qty_reserved,
+    variant_name: r.product_variants?.name ?? null,
+  })) as InventoryItemWithVariant[];
+}
+
 export async function updateStock(
   client: Client,
   input: {
@@ -207,12 +252,13 @@ export async function fetchStockMovements(
   client: Client,
   opts: {
     inventory_item_id?: string;
+    inventory_item_ids?: string[];
     party_id?: string;
     page?: number;
     pageSize?: number;
   }
 ): Promise<PaginatedResult<StockMovement>> {
-  const { inventory_item_id, party_id, page = 1, pageSize = 20 } = opts;
+  const { inventory_item_id, inventory_item_ids, party_id, page = 1, pageSize = 20 } = opts;
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
@@ -221,6 +267,7 @@ export async function fetchStockMovements(
     .select("*", { count: "exact" });
 
   if (inventory_item_id) query = query.eq("inventory_item_id", inventory_item_id);
+  if (inventory_item_ids) query = query.in("inventory_item_id", inventory_item_ids);
   if (party_id) query = query.eq("party_id", party_id);
 
   const { data, error, count } = await query

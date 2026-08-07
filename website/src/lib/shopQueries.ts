@@ -30,7 +30,7 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
   if (isHomepageView) {
     let featuredQuery = supabase
       .from("products")
-      .select(`id, title, slug, price, discount_price, is_featured, review_count, rating_avg, product_images(url, is_primary), product_conditions(label, color_hex), product_variants(id, name, is_active)`)
+      .select(`id, title, slug, price, discount_price, is_featured, review_count, rating_avg, product_images(url, is_primary, media_type), product_conditions(label, color_hex), product_variants(id, name, is_active)`)
       .eq("status", "active")
       .eq("is_visible", true)
       .eq("is_featured", true)
@@ -40,11 +40,10 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
     const { data: featuredRaw } = await featuredQuery;
     const featuredOutOfStockMap = await fetchOutOfStockMap(supabase, (featuredRaw ?? []).map((p: any) => p.id));
     featuredProducts = (featuredRaw ?? []).map((p: any) => {
-      const images = p.product_images ?? [];
-      const primary = images.find((i: any) => i.is_primary) ?? images[0];
+      const { primaryImage, primaryMediaType, hasVideo } = pickPrimaryMedia(p.product_images);
       const qtyAvailable = featuredOutOfStockMap.has(p.id) ? featuredOutOfStockMap.get(p.id)! : null;
       return {
-        ...p, primaryImage: primary?.url ?? null,
+        ...p, primaryImage, primaryMediaType, hasVideo,
         isOutOfStock: qtyAvailable !== null && qtyAvailable <= 0,
         condition: p.product_conditions ?? null,
         variants: activeVariants(p.product_variants),
@@ -58,10 +57,10 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
   const matchedCategory = categorySlug ? categories?.find((c) => c.slug === categorySlug) : undefined;
   const productCols = matchedCategory
     ? `id, party_id, title, slug, price, discount_price, is_featured, review_count, rating_avg,
-       product_images(url, is_primary), product_conditions(label, color_hex), product_variants(id, name, is_active),
+       product_images(url, is_primary, media_type), product_conditions(label, color_hex), product_variants(id, name, is_active),
        product_categories!inner(category_id)`
     : `id, party_id, title, slug, price, discount_price, is_featured, review_count, rating_avg,
-       product_images(url, is_primary), product_conditions(label, color_hex), product_variants(id, name, is_active)`;
+       product_images(url, is_primary, media_type), product_conditions(label, color_hex), product_variants(id, name, is_active)`;
 
   let productQuery = supabase
     .from("products")
@@ -114,11 +113,10 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
   const inventoryMap = await fetchOutOfStockMap(supabase, productIds);
 
   const products = ((rawProducts ?? []) as any[]).map((p) => {
-    const images = p.product_images ?? [];
-    const primary = images.find((i: any) => i.is_primary) ?? images[0];
+    const { primaryImage, primaryMediaType, hasVideo } = pickPrimaryMedia(p.product_images);
     const qtyAvailable = inventoryMap.has(p.id) ? inventoryMap.get(p.id)! : null;
     return {
-      ...p, primaryImage: primary?.url ?? null,
+      ...p, primaryImage, primaryMediaType, hasVideo,
       isOutOfStock: qtyAvailable !== null && qtyAvailable <= 0,
       condition: p.product_conditions ?? null,
       variants: activeVariants(p.product_variants),
@@ -126,6 +124,24 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
   });
 
   return { categories: categories ?? [], featuredProducts, products, count: count ?? 0, totalPages };
+}
+
+// Card thumbnails prefer an image, but fall back to the product's video (a still frame is
+// rendered client-side) rather than showing nothing when no image was uploaded.
+function pickPrimaryMedia(rows: unknown): {
+  primaryImage: string | null;
+  primaryMediaType: "image" | "video";
+  hasVideo: boolean;
+} {
+  const media = (rows as { url: string; is_primary: boolean; media_type?: string }[]) ?? [];
+  const images = media.filter((m) => m.media_type !== "video");
+  const videos = media.filter((m) => m.media_type === "video");
+  const primary = images.find((m) => m.is_primary) ?? images[0] ?? videos.find((m) => m.is_primary) ?? videos[0];
+  return {
+    primaryImage: primary?.url ?? null,
+    primaryMediaType: primary && videos.includes(primary) ? "video" : "image",
+    hasVideo: videos.length > 0,
+  };
 }
 
 function activeVariants(rows: unknown): { id: string; name: string }[] {

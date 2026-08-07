@@ -5,7 +5,7 @@ import { formatPrice } from "@shared/utils/format";
 
 interface Condition { label: string; color_hex: string }
 interface VariantOption {
-  id: string; name: string; price: number | null; condition?: Condition | null;
+  id: string; name: string; price: number | null;
   qtyAvailable: number | null; isOutOfStock: boolean;
 }
 interface Props {
@@ -36,8 +36,17 @@ const {
 } = Astro.props;
 const t = useT(Astro);
 const lang = getLang(Astro);
-const variantStockJson = JSON.stringify(
-  Object.fromEntries(variants.map((v) => [v.id, { qtyAvailable: v.qtyAvailable, isOutOfStock: v.isOutOfStock }]))
+// Any variant carries the real price (admin's main price field is hidden once a product has
+// one — see admin/products/[id].astro), so it's authoritative here too, even for a single variant.
+const hasVariants = variants.length > 0;
+const fallbackPrice = Number(product.discount_price ?? product.price);
+const activeVariant = hasVariants ? variants[0] : null;
+const activePrice = activeVariant ? Number(activeVariant.price ?? fallbackPrice) : null;
+const variantDataJson = JSON.stringify(
+  Object.fromEntries(variants.map((v) => [
+    v.id,
+    { price: Number(v.price ?? fallbackPrice), qtyAvailable: v.qtyAvailable, isOutOfStock: v.isOutOfStock },
+  ]))
 );
 ---
 
@@ -54,7 +63,9 @@ const variantStockJson = JSON.stringify(
   )}
 
   <div class="price-row">
-    {product.discount_price ? (
+    {hasVariants ? (
+      <span class="price-main" id="price-main">{formatPrice(activePrice!, lang, currency)}</span>
+    ) : product.discount_price ? (
       <>
         <span class="price-old">{formatPrice(Number(product.price), lang, currency)}</span>
         <span class="price-main sale">{formatPrice(Number(product.discount_price), lang, currency)}</span>
@@ -84,8 +95,6 @@ const variantStockJson = JSON.stringify(
             <input type="radio" name="variant" value={v.id} checked={v.id === defaultVariantId} />
             <span class="variant-label">
               <span class="variant-name">{v.name}</span>
-              {v.price && <strong>{formatPrice(Number(v.price), lang, currency)}</strong>}
-              {v.condition && <span class="condition-badge condition-badge--sm" style={`background:${v.condition.color_hex}`}>{v.condition.label}</span>}
               {v.isOutOfStock && <span class="variant-oos-tag">{t.shop.outOfStock}</span>}
             </span>
           </label>
@@ -97,12 +106,17 @@ const variantStockJson = JSON.stringify(
   {addedToCart && <div class="cart-success">✓ {t.shop.addedToCartMessage} <a href={`${linkBase}/cart`}>{t.shop.viewCart}</a></div>}
   {cartError && <div class="cart-error">{cartError}</div>}
 
-  <div class="add-to-cart-section" data-variant-stock={variants.length > 0 ? variantStockJson : null}>
+  <div
+    class="add-to-cart-section"
+    data-variant-info={variants.length > 0 ? variantDataJson : null}
+    data-currency={currency}
+    data-lang={lang}
+  >
     <div class="out-of-stock-badge" id="oos-badge" style={isOutOfStock ? "" : "display:none"}>{t.shop.outOfStock}</div>
     <form method="POST" class="cart-form" id="cart-form" style={isOutOfStock ? "display:none" : ""}>
       <input type="hidden" name="_action" value="add_to_cart" />
       <input type="hidden" name="product_id" value={product.id} />
-      <input type="hidden" name="unit_price" value={String(product.discount_price ?? product.price)} />
+      <input type="hidden" name="unit_price" id="unit-price-input" value={String(hasVariants ? activePrice : (product.discount_price ?? product.price))} />
       <input type="hidden" name="variant_id" id="variant-id-input" value={defaultVariantId ?? ""} />
       <div class="qty-row">
         <label>{t.shop.qty}</label>
@@ -151,27 +165,37 @@ const variantStockJson = JSON.stringify(
 </div>
 
 <script>
-  // Switching the selected variant re-points the whole purchase panel at it — stock text,
-  // qty cap, and the out-of-stock state — without a page reload. No-op when there are no
-  // variant radios (simple products keep the server-rendered state as-is).
+  // Switching the selected variant re-points the whole purchase panel at it — stock text, qty
+  // cap, price (a variant's own price is always authoritative once the product has any), and
+  // the out-of-stock state — without a page reload. No-op when there are no variant radios
+  // (simple products keep the server-rendered state as-is).
+  import { formatPrice } from "@shared/utils/format";
+  import type { AppLanguage } from "@shared/i18n/getT";
+
   const section = document.querySelector<HTMLElement>(".add-to-cart-section");
-  const stockJson = section?.dataset.variantStock;
-  const stockByVariant: Record<string, { qtyAvailable: number | null; isOutOfStock: boolean }> = stockJson
-    ? JSON.parse(stockJson)
+  const infoJson = section?.dataset.variantInfo;
+  const variantInfo: Record<string, { price: number; qtyAvailable: number | null; isOutOfStock: boolean }> = infoJson
+    ? JSON.parse(infoJson)
     : {};
+  const currency = section?.dataset.currency;
+  const lang = (section?.dataset.lang as AppLanguage) || "cs";
 
   const radios = document.querySelectorAll<HTMLInputElement>('input[name="variant"]');
   const variantIdInput = document.getElementById("variant-id-input") as HTMLInputElement | null;
+  const unitPriceInput = document.getElementById("unit-price-input") as HTMLInputElement | null;
+  const priceMain = document.getElementById("price-main");
   const qtyInput = document.getElementById("qty-input") as HTMLInputElement | null;
   const lowStockHint = document.getElementById("low-stock-hint");
   const oosBadge = document.getElementById("oos-badge");
   const cartForm = document.getElementById("cart-form");
 
   function applyVariant(variantId: string) {
-    const info = stockByVariant[variantId];
+    const info = variantInfo[variantId];
     if (!info || !variantIdInput || !qtyInput || !lowStockHint || !oosBadge || !cartForm) return;
 
     variantIdInput.value = variantId;
+    if (unitPriceInput) unitPriceInput.value = String(info.price);
+    if (priceMain) priceMain.textContent = formatPrice(info.price, lang, currency);
 
     if (info.isOutOfStock) {
       oosBadge.style.display = "";
@@ -199,7 +223,6 @@ const variantStockJson = JSON.stringify(
 <style>
   .brand-name { font-size:13px; color:var(--text-muted); margin:0 0 4px; } .brand-name a { color:var(--primary); text-decoration:none; }
   .condition-badge { display:inline-block; color:#fff; font-size:12px; font-weight:700; padding:3px 12px; border-radius:9999px; margin-bottom:8px; }
-  .condition-badge--sm { font-size:10px; padding:1px 8px; margin-bottom:0; }
   .product-title { font-size:28px; font-weight:800; margin:0 0 12px; line-height:1.2; }
   .rating-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
   .stars { color:#f59e0b; font-size:20px; }
