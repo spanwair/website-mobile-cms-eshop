@@ -1,0 +1,85 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { fetchParty } from "@shared/services/partyService";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+
+const t = useT(Astro);
+const w = t.admin.onboardingWizard;
+
+const party = await fetchParty(supabase, ctx.partyId);
+const { count: categoryCount } = await supabase
+  .from("categories").select("id", { count: "exact", head: true }).eq("party_id", ctx.partyId);
+const { count: productCount } = await supabase
+  .from("products").select("id", { count: "exact", head: true }).eq("party_id", ctx.partyId);
+
+const hasCategory = (categoryCount ?? 0) > 0;
+const hasProduct = (productCount ?? 0) > 0;
+---
+
+<CmsLayout title={w.tutorialTitle} userPermissions={0xffff} currentPath="/admin/onboarding" parties={ctx.parties} partyId={ctx.partyId}>
+  <div class="card tutorial-card">
+    <h1 class="tutorial-title">{w.tutorialTitle}</h1>
+    <p class="tutorial-intro">{w.tutorialIntro}</p>
+
+    {party?.status === "pending_approval" && <p class="pending-note">{w.pendingNote}</p>}
+
+    <ol class="checklist">
+      <li class:list={["checklist-item", { done: hasCategory }]}>
+        <div class="check-icon">{hasCategory ? "✓" : "1"}</div>
+        <div class="check-body">
+          <h3>{w.stepCategoryTitle}</h3>
+          <p>{w.stepCategoryBody}</p>
+          {hasCategory
+            ? <span class="done-label">{w.stepCategoryDone}</span>
+            : <a href="/admin/categories/new" class="btn btn-secondary">{w.stepCategoryCta}</a>}
+        </div>
+      </li>
+      <li class:list={["checklist-item", { done: hasProduct }]}>
+        <div class="check-icon">{hasProduct ? "✓" : "2"}</div>
+        <div class="check-body">
+          <h3>{w.stepProductTitle}</h3>
+          <p>{w.stepProductBody}</p>
+          {hasProduct
+            ? <span class="done-label">{w.stepProductDone}</span>
+            : <a href="/admin/products/new" class="btn btn-secondary">{w.stepProductCta}</a>}
+        </div>
+      </li>
+      <li class="checklist-item">
+        <div class="check-icon">3</div>
+        <div class="check-body">
+          <h3>{w.stepBrandingTitle}</h3>
+          <p>{w.stepBrandingBody}</p>
+          <a href="/admin/settings/branding" class="btn btn-secondary">{w.stepBrandingCta}</a>
+        </div>
+      </li>
+    </ol>
+
+    <a href="/admin" class="btn btn-primary">{w.finishBtn}</a>
+  </div>
+</CmsLayout>
+
+<style>
+  .tutorial-card { max-width: 640px; margin: 40px auto; padding: 40px; }
+  .tutorial-title { font-size: 24px; font-weight: 800; margin: 0 0 6px; }
+  .tutorial-intro { color: var(--text-muted); margin: 0 0 20px; line-height: 1.6; }
+  .pending-note { font-size: 13px; background: var(--bg-subtle); border-left: 3px solid var(--accent-primary); border-radius: 6px; padding: 10px 14px; margin-bottom: 20px; color: var(--text-muted); line-height: 1.6; }
+  .checklist { list-style: none; margin: 0 0 28px; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+  .checklist-item { display: flex; gap: 14px; background: var(--bg-subtle); border-radius: 10px; padding: 16px 18px; align-items: flex-start; }
+  .checklist-item.done { opacity: 0.7; }
+  .check-icon { flex: 0 0 28px; height: 28px; border-radius: 50%; background: var(--accent-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+  .checklist-item.done .check-icon { background: var(--success); }
+  .check-body h3 { margin: 0 0 4px; font-size: 15px; }
+  .check-body p { margin: 0 0 10px; font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .done-label { font-size: 13px; font-weight: 600; color: var(--success); }
+</style>

@@ -44,7 +44,12 @@ const parties = await fetchParties(supabase);
                 {p.seller_mode === 'smalljobs_commission' ? t.admin.parties.sellerMode.commissionLabel : t.admin.parties.sellerMode.ownCompanyLabel}
               </span>
             </td>
-            <td><span class={`badge badge-${p.status}`}>{t.admin.parties[p.status === 'active' ? 'statusActive' : p.status === 'closed' ? 'statusClosed' : 'statusInactive']}</span></td>
+            <td><span class={`badge badge-${p.status}`}>{t.admin.parties[
+              p.status === 'active' ? 'statusActive'
+              : p.status === 'closed' ? 'statusClosed'
+              : p.status === 'pending_approval' ? 'statusPendingApproval'
+              : 'statusInactive'
+            ]}</span></td>
             <td style="font-size:13px;color:var(--text-muted)">{new Date(p.created_at).toLocaleDateString(lang)}</td>
             <td><a href={`/admin/parties/${p.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.parties.view}</a></td>
           </tr>
@@ -62,4 +67,5 @@ const parties = await fetchParties(supabase);
   .total-label { font-size:14px; color:var(--text-muted); }
   .mode-badge--own { background: var(--bg-subtle); color: var(--text-primary); padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
   .mode-badge--commission { background: rgba(124,179,66,0.12); color: #558b2f; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+  .badge-pending_approval { background: rgba(234,179,8,0.14); color: #a16207; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
 </style>

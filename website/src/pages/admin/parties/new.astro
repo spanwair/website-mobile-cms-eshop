@@ -1,10 +1,14 @@
 ---
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import OrgLegalStatusFields from "../../../components/admin/OrgLegalStatusFields.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { createParty } from "@shared/services/partyService";
+import { acceptCommissionaireAgreement } from "@shared/services/commissionaireService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { useT } from "../../../lib/i18n";
 import { ROLE } from "@shared/constants/permissions";
+
+const CURRENT_PLATFORM_TERMS_VERSION = "2026-08-07";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -17,58 +21,106 @@ if (!ctx) return Astro.redirect("/");
 if (ctx.role < ROLE.ADMIN) return Astro.redirect("/admin/parties");
 const { permissions } = ctx;
 const t = useT(Astro);
+const p = t.admin.parties;
+
+const onboarding = Astro.url.searchParams.get("onboarding") === "1";
 
 let error = "";
+let hasIcoValue = "yes";
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
-  const result = await createParty(supabase, {
-    name: form.get("name") as string,
-    slug: form.get("slug") as string,
-    company_name: (form.get("company_name") as string) || undefined,
-    vat_number: (form.get("vat_number") as string) || undefined,
-    billing_email: (form.get("billing_email") as string) || undefined,
-  });
-  if (result.error) {
-    error = result.error.message;
+  hasIcoValue = (form.get("has_ico") as string) === "no" ? "no" : "yes";
+  const hasIco = hasIcoValue === "yes";
+  const name = (form.get("name") as string)?.trim();
+  const slug = (form.get("slug") as string)?.trim();
+  const privacyAccepted = form.get("privacy_accepted") === "on";
+  const termsAccepted = form.get("terms_accepted") === "on";
+
+  if (!name || !slug) {
+    error = p.errorInsufficientPermissions;
+  } else if (!privacyAccepted || !termsAccepted) {
+    error = p.onboarding.errorLegalRequired;
+  } else if (hasIco && !(form.get("company_ico") as string)?.trim()) {
+    error = p.onboarding.errorIcoRequired;
+  } else if (!hasIco && (
+    !(form.get("legal_full_name") as string)?.trim() ||
+    !(form.get("address_line1") as string)?.trim() ||
+    !(form.get("address_city") as string)?.trim() ||
+    !(form.get("address_postal_code") as string)?.trim() ||
+    !(form.get("bank_account") as string)?.trim() ||
+    form.get("commission_terms_accepted") !== "on"
+  )) {
+    error = p.onboarding.errorNoIcoFieldsRequired;
   } else {
-    return Astro.redirect("/admin/parties");
+    const nowIso = new Date().toISOString();
+    const result = await createParty(supabase, {
+      name,
+      slug,
+      company_name: (form.get("company_name") as string) || undefined,
+      company_ico: hasIco ? (form.get("company_ico") as string) : undefined,
+      vat_number: (form.get("vat_number") as string) || undefined,
+      billing_email: (form.get("billing_email") as string) || undefined,
+      seller_mode: hasIco ? "own_company" : "smalljobs_commission",
+      status: hasIco ? "active" : "pending_approval",
+      terms_accepted_at: nowIso,
+      terms_version: CURRENT_PLATFORM_TERMS_VERSION,
+    });
+
+    if (result.error || !result.data) {
+      error = result.error?.message ?? p.errorInsufficientPermissions;
+    } else {
+      if (!hasIco) {
+        const agreementResult = await acceptCommissionaireAgreement(supabase, result.data.id, {
+          legal_full_name: form.get("legal_full_name") as string,
+          address_line1: form.get("address_line1") as string,
+          address_city: form.get("address_city") as string,
+          address_postal_code: form.get("address_postal_code") as string,
+          bank_account: form.get("bank_account") as string,
+          personal_id_note: (form.get("personal_id_note") as string) || undefined,
+          accepted_by: session.user.id,
+        });
+        if (agreementResult.error) {
+          error = agreementResult.error.message;
+        }
+      }
+      if (!error) {
+        Astro.cookies.set("activePartyId", result.data.id, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 30,
+          httpOnly: true,
+          sameSite: "lax",
+        });
+        const dest = `/admin/parties/${result.data.id}`;
+        return Astro.redirect(onboarding ? `${dest}?onboarding=1` : dest);
+      }
+    }
   }
 }
 ---
 
-<CmsLayout title={t.admin.parties.newTitle} userPermissions={permissions} currentPath="/admin/parties" parties={ctx.parties} partyId={ctx.partyId}>
-  <div class="card" style="max-width:640px">
-    <a href="/admin/parties" class="back-link">{t.admin.parties.back}</a>
+<CmsLayout title={p.newTitle} userPermissions={permissions} currentPath="/admin/parties" parties={ctx.parties} partyId={ctx.partyId}>
+  <div class="card" style="max-width:680px">
+    <a href="/admin/parties" class="back-link">{p.back}</a>
+    {onboarding && <p class="onboarding-banner">{p.onboarding.formIntro}</p>}
     {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
     <form method="POST" class="party-form">
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{t.admin.parties.fieldName} *</label>
-          <input class="form-input" name="name" required placeholder={t.admin.parties.fieldNamePlaceholder} />
+          <label class="form-label">{p.fieldName} *</label>
+          <input class="form-input" name="name" required placeholder={p.fieldNamePlaceholder} />
         </div>
         <div class="form-group">
-          <label class="form-label">{t.admin.parties.fieldSlug} *</label>
-          <input class="form-input" name="slug" required placeholder={t.admin.parties.fieldSlugPlaceholder} />
+          <label class="form-label">{p.fieldSlug} *</label>
+          <input class="form-input" name="slug" required placeholder={p.fieldSlugPlaceholder} />
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">{t.admin.parties.fieldCompany}</label>
-          <input class="form-input" name="company_name" placeholder={t.admin.parties.fieldCompanyPlaceholder} />
-        </div>
-        <div class="form-group">
-          <label class="form-label">{t.admin.parties.fieldVat}</label>
-          <input class="form-input" name="vat_number" placeholder={t.admin.parties.fieldVatPlaceholder} />
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">{t.admin.parties.fieldBillingEmail}</label>
-        <input class="form-input" name="billing_email" type="email" placeholder={t.admin.parties.fieldBillingEmailPlaceholder} />
-      </div>
+
+      <OrgLegalStatusFields t={t} hasIcoValue={hasIcoValue} />
+
       <div class="form-actions">
         <a href="/admin/parties" class="btn btn-ghost">{t.common.cancel}</a>
-        <button type="submit" class="btn btn-primary">{t.admin.parties.createBtn}</button>
+        <button type="submit" class="btn btn-primary">{p.createBtn}</button>
       </div>
     </form>
   </div>
@@ -77,6 +129,7 @@ if (Astro.request.method === "POST") {
 <style>
   .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
   .back-link:hover { color:var(--text-primary); }
+  .onboarding-banner { font-size:13px; background:var(--bg-subtle); border-radius:8px; padding:10px 14px; margin-bottom:16px; color:var(--text-muted); }
   .party-form { display:flex; flex-direction:column; gap:16px; }
   .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .form-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:8px; }

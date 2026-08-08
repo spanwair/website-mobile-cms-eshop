@@ -48,15 +48,19 @@ if (Astro.request.method === "POST") {
       error = t.admin.parties.errorInsufficientPermissions;
     } else {
       const { data: current } = await supabase.from("parties").select("status").eq("id", id!).single();
+      const submittedStatus = form.get("status") as string;
       if (!isOwner && current?.status === "closed") {
         error = t.admin.parties.errorClosedOrg;
+      } else if (!isOwner && current?.status === "pending_approval" && submittedStatus === "active") {
+        error = t.admin.parties.errorPendingApprovalOrg;
       } else {
         const result = await updateParty(supabase, id!, {
           name: form.get("name") as string,
           company_name: (form.get("company_name") as string) || undefined,
+          company_ico: (form.get("company_ico") as string) || undefined,
           vat_number: (form.get("vat_number") as string) || undefined,
           billing_email: (form.get("billing_email") as string) || undefined,
-          status: form.get("status") as string,
+          status: submittedStatus,
         });
         if (result.error) { error = result.error.message; }
         else { success = t.admin.parties.updatedSuccess; }
@@ -172,6 +176,14 @@ if (Astro.request.method === "POST") {
       if (result.error) { error = result.error.message; }
       else { success = t.admin.parties.updatedSuccess; }
     }
+  } else if (action === "approve_party") {
+    if (!isOwner) {
+      error = t.admin.parties.errorPendingApprovalOrg;
+    } else {
+      const result = await updateParty(supabase, id!, { status: "active" });
+      if (result.error) { error = result.error.message; }
+      else { success = t.admin.parties.approvedSuccess; }
+    }
   } else if (action === "remove") {
     if (!canManageUsers) {
       error = t.admin.parties.errorInsufficientPermissions;
@@ -203,6 +215,30 @@ function roleName(roleId: string) {
   {error && <div class="alert-error">{error}</div>}
   {success && <div class="alert-success">{success}</div>}
 
+  {Astro.url.searchParams.get("onboarding") === "1" && party.status !== "pending_approval" && (
+    <div class="alert-success onboarding-cta">
+      🎉 <a href="/admin/onboarding/tutorial">{t.admin.onboardingWizard.tutorialTitle}</a>
+    </div>
+  )}
+
+  {party.status === "pending_approval" && isOwner && (
+    <div class="pending-banner">
+      <p>{t.admin.parties.pendingApprovalOwnerBanner}</p>
+      <form method="POST" onsubmit={`return confirm('${t.admin.parties.approveConfirm}')`}>
+        <input type="hidden" name="action" value="approve_party" />
+        <button type="submit" class="btn btn-primary">{t.admin.parties.approveBtn}</button>
+      </form>
+    </div>
+  )}
+  {party.status === "pending_approval" && !isOwner && (
+    <div class="pending-banner">
+      <p>{t.admin.parties.pendingApprovalCreatorBanner}</p>
+      {Astro.url.searchParams.get("onboarding") === "1" && (
+        <a href="/admin/onboarding/tutorial" class="btn btn-secondary">{t.admin.onboardingWizard.tutorialTitle}</a>
+      )}
+    </div>
+  )}
+
   <div class="party-grid">
     <div>
       {canManageSettings && (
@@ -219,6 +255,10 @@ function roleName(roleId: string) {
               <input class="form-input" name="company_name" value={party.company_name ?? ""} />
             </div>
             <div class="form-group">
+              <label class="form-label">{t.admin.parties.onboarding.fieldIco}</label>
+              <input class="form-input" name="company_ico" value={party.company_ico ?? ""} />
+            </div>
+            <div class="form-group">
               <label class="form-label">{t.admin.parties.fieldVat}</label>
               <input class="form-input" name="vat_number" value={party.vat_number ?? ""} />
             </div>
@@ -232,16 +272,26 @@ function roleName(roleId: string) {
             </div>
             <div class="form-group">
               <label class="form-label" for="status">{t.admin.parties.fieldStatus}</label>
-              {!isOwner && party.status === 'closed'
-                ? <p class="status-locked">{t.admin.parties.statusClosedReadonly}</p>
-                : (
-                  <select class="form-input" name="status" id="status">
-                    <option value="active" selected={party.status === 'active'}>{t.admin.parties.statusActive}</option>
-                    <option value="inactive" selected={party.status === 'inactive'}>{t.admin.parties.statusInactive}</option>
-                    {isOwner && <option value="closed" selected={party.status === 'closed'}>{t.admin.parties.statusClosed}</option>}
-                  </select>
-                )
-              }
+              {!isOwner && party.status === 'closed' && (
+                <>
+                  <p class="status-locked">{t.admin.parties.statusClosedReadonly}</p>
+                  <input type="hidden" name="status" value={party.status} />
+                </>
+              )}
+              {!isOwner && party.status === 'pending_approval' && (
+                <>
+                  <p class="status-locked">{t.admin.parties.pendingApprovalReadonly}</p>
+                  <input type="hidden" name="status" value={party.status} />
+                </>
+              )}
+              {(isOwner || (party.status !== 'closed' && party.status !== 'pending_approval')) && (
+                <select class="form-input" name="status" id="status">
+                  <option value="active" selected={party.status === 'active'}>{t.admin.parties.statusActive}</option>
+                  <option value="inactive" selected={party.status === 'inactive'}>{t.admin.parties.statusInactive}</option>
+                  {isOwner && <option value="closed" selected={party.status === 'closed'}>{t.admin.parties.statusClosed}</option>}
+                  {party.status === 'pending_approval' && <option value="pending_approval" selected>{t.admin.parties.statusPendingApproval}</option>}
+                </select>
+              )}
             </div>
             <div class="form-meta">
               <span class="meta-label">{t.admin.parties.fieldCreated}</span>
@@ -354,6 +404,9 @@ document.querySelectorAll('.system-role-select').forEach(sel => {
   .back-link:hover { color:var(--text-primary); }
   .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
   .alert-success { background:rgba(34,197,94,0.08); border:1px solid #22c55e; border-radius:8px; padding:12px 16px; color:#16a34a; margin-bottom:16px; font-size:14px; }
+  .onboarding-cta a { color:inherit; font-weight:700; text-decoration:underline; }
+  .pending-banner { background:var(--bg-subtle); border-left:3px solid var(--accent-primary); border-radius:8px; padding:14px 16px; margin-bottom:16px; display:flex; flex-direction:column; gap:10px; align-items:flex-start; }
+  .pending-banner p { margin:0; font-size:13px; color:var(--text-muted); line-height:1.6; }
   .party-grid { display:grid; grid-template-columns:1fr 2fr; gap:24px; }
   .section-title { font-size:15px; font-weight:700; margin-bottom:16px; }
   .edit-form { display:flex; flex-direction:column; gap:12px; }

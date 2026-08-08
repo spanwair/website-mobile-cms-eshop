@@ -18,7 +18,7 @@ const storeHref = activeParty ? `/eshop-${activeParty.slug}` : null;
 
 <Layout title={title}>
   <div class="cms-shell">
-    <Sidebar currentPath={currentPath} userPermissions={userPermissions} storeHref={storeHref} />
+    <Sidebar currentPath={currentPath} userPermissions={userPermissions} storeHref={storeHref} hasParty={!!partyId} />
     <div class="cms-main">
       <header class="cms-header">
         <h1 class="cms-title">{title}</h1>

@@ -1,5 +1,16 @@
 # Active Todos
 
+## ✅ Completed (2026-08-07 — Self-serve organization onboarding)
+- [x] Organic (non-invited) signups now become ADMIN(4) and can create exactly one org through a legal-status-aware onboarding wizard
+- [x] `/admin/parties/new.astro` extended with an IČO branch: with IČO → live immediately (own_company); without IČO → Smalljobs commission mode + `pending_approval` until owner approval
+- [x] New `parties.status = 'pending_approval'` — automatically invisible on the public storefront (no RLS changes needed, everything already gates on `status='active'`)
+- [x] Owner-only approval gate for `pending_approval → active`, enforced at both DB trigger and app layer (an admin has ALL_PERMISSIONS on their own party, so permission-bit checks alone weren't enough)
+- [x] Fixed pre-existing gap: `commissionaire_agreements`/`order_commission_ledger` RLS had no `is_owner()` bypass, unlike every other party-scoped policy
+- [x] Guided (non-blocking) setup checklist: category → product → branding, at `/admin/onboarding/tutorial` and as a dashboard banner
+- [x] Real Czech/English Privacy Policy + Terms and Conditions copy for platform sellers
+- [x] `website/tests/e2e/30-onboarding.spec.ts` — full E2E coverage of both branches + the self-approval security boundary
+- [x] Built in isolated worktree (`worktree-user-onboarding`), merged to master after full regression pass
+
 ## ✅ Completed (Nightly Evolution Test Run)
 - [x] All 299 E2E tests passing
 - [x] Website typecheck passing

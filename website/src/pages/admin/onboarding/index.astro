@@ -1,0 +1,59 @@
+---
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { requireAdminCtx } from "../../../lib/admin";
+import { useT } from "../../../lib/i18n";
+import { ROLE } from "@shared/constants/permissions";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/");
+// Already has a party — nothing to onboard.
+if (ctx.partyId) return Astro.redirect("/admin");
+// Only self-registered admins land here; owner and eshop_admin have their own paths.
+if (ctx.role !== ROLE.ADMIN) return Astro.redirect("/admin/setup");
+
+const t = useT(Astro);
+const w = t.admin.onboardingWizard;
+---
+
+<CmsLayout title={w.welcomeTitle} userPermissions={0} currentPath="/admin/onboarding" parties={ctx.parties} partyId={ctx.partyId}>
+  <div class="card welcome-card">
+    <div class="welcome-icon">🚀</div>
+    <h1 class="welcome-title">{w.welcomeTitle}</h1>
+    <p class="welcome-intro">{w.welcomeIntro}</p>
+
+    <div class="steps">
+      <div class="step">
+        <h3>{w.welcomeStep1Title}</h3>
+        <p>{w.welcomeStep1Body}</p>
+      </div>
+      <div class="step">
+        <h3>{w.welcomeStep2Title}</h3>
+        <p>{w.welcomeStep2Body}</p>
+      </div>
+      <div class="step">
+        <h3>{w.welcomeStep3Title}</h3>
+        <p>{w.welcomeStep3Body}</p>
+      </div>
+    </div>
+
+    <a href="/admin/parties/new?onboarding=1" class="btn btn-primary btn-lg">{w.ctaCreateOrg}</a>
+  </div>
+</CmsLayout>
+
+<style>
+  .welcome-card { max-width: 640px; margin: 40px auto; padding: 48px; text-align: center; }
+  .welcome-icon { font-size: 48px; margin-bottom: 16px; }
+  .welcome-title { font-size: 26px; font-weight: 800; margin: 0 0 8px; }
+  .welcome-intro { color: var(--text-muted); margin: 0 0 32px; line-height: 1.6; }
+  .steps { display: flex; flex-direction: column; gap: 16px; text-align: left; margin-bottom: 32px; }
+  .step { background: var(--bg-subtle); border-radius: 10px; padding: 16px 18px; }
+  .step h3 { margin: 0 0 4px; font-size: 15px; }
+  .step p { margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .btn-lg { padding: 12px 28px; font-size: 15px; }
+</style>
