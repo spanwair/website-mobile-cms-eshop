@@ -1,0 +1,16 @@
+# Cloudflare Workers config (the current unified platform — what "Create a Worker" in the
+# dashboard sets up, superseding the older separate Pages product). "name" must match the
+# Worker project name you create in the dashboard.
+name = "mamtodoma-website"
+main = "./dist/_worker.js"
+compatibility_date = "2026-08-08"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+# Runtime secrets/vars (PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, STRIPE_SECRET_KEY, etc.)
+# are NOT set here. With a GitHub-connected build, .env.production on your laptop never
+# reaches Cloudflare's build machine — set every var this project reads under the Worker's
+# Settings → Variables and Secrets in the dashboard instead, then redeploy.

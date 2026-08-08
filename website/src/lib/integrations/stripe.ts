@@ -5,10 +5,14 @@
 import Stripe from "stripe";
 
 // Instantiated lazily so the server doesn't crash when keys are not yet configured.
+// Fetch-based HTTP client — Cloudflare Workers has no Node `https` module.
 function getStripe() {
   const key = import.meta.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("STRIPE_SECRET_KEY is not set — add it to .env.production");
-  return new Stripe(key, { apiVersion: "2026-06-24.dahlia" });
+  return new Stripe(key, {
+    apiVersion: "2026-06-24.dahlia",
+    httpClient: Stripe.createFetchHttpClient(),
+  });
 }
 
 export async function createCheckoutSession(opts: {
@@ -50,12 +54,19 @@ export async function retrieveCheckoutSession(sessionId: string): Promise<Stripe
   return stripe.checkout.sessions.retrieve(sessionId);
 }
 
-// Call from /api/stripe/webhook endpoint (POST handler in Astro)
-export function constructWebhookEvent(payload: string, signature: string) {
+// Call from /api/stripe/webhook endpoint (POST handler in Astro).
+// Async + SubtleCrypto provider: Workers only has WebCrypto, not Node's sync `crypto`.
+export async function constructWebhookEvent(payload: string, signature: string) {
   const webhookSecret = import.meta.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) throw new Error("STRIPE_WEBHOOK_SECRET is not set");
   const stripe = getStripe();
-  return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+  return stripe.webhooks.constructEventAsync(
+    payload,
+    signature,
+    webhookSecret,
+    undefined,
+    Stripe.createSubtleCryptoProvider()
+  );
 }
 
 // Webhook handler — update order payment_status on payment completion

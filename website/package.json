@@ -5,13 +5,14 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview",
+    "preview": "astro build && wrangler dev",
+    "deploy": "astro build && wrangler deploy",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.astro",
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@astrojs/node": "^8.3.4",
+    "@astrojs/cloudflare": "^12.6.13",
     "@supabase/ssr": "^0.12.1",
     "@supabase/supabase-js": "^2.45.0",
     "astro": "^5.0.0",
@@ -29,7 +30,8 @@
     "@types/three": "^0.185.1",
     "@typescript-eslint/eslint-plugin": "^8.58.2",
     "@typescript-eslint/parser": "^8.58.2",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "wrangler": "^4.59.2"
   },
   "packageManager": "pnpm@11.1.3"
 }

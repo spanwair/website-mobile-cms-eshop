@@ -10,8 +10,8 @@ fi
 
 if [[ "$ENV" == "production" ]]; then
   BRANCH=$(git rev-parse --abbrev-ref HEAD)
-  if [[ "$BRANCH" != "main" ]]; then
-    echo "Production push requires main branch (you are on '$BRANCH')" >&2
+  if [[ "$BRANCH" != "master" ]]; then
+    echo "Production push requires master branch (you are on '$BRANCH')" >&2
     exit 1
   fi
   # Read only SUPABASE_DB_URL from env file (avoids sourcing issues with spaces/special chars)

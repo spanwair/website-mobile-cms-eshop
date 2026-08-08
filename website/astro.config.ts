@@ -1,17 +1,19 @@
-import { defineConfig, passthroughImageService } from "astro/config";
-import node from "@astrojs/node";
+import { defineConfig } from "astro/config";
+import cloudflare from "@astrojs/cloudflare";
 import path from "path";
 
 export default defineConfig({
   output: "server",
-  adapter: node({ mode: "standalone" }),
-  // No astro:assets/<Image> usage anywhere in this project — all image handling goes through
-  // the custom ImagePicker + Supabase Storage — so sharp (unsupported by the node adapter here
-  // and not even installed) is dead weight; the passthrough service silences the warning.
-  image: { service: passthroughImageService() },
+  adapter: cloudflare({
+    // No astro:assets/<Image> usage anywhere in this project — all image handling goes through
+    // the custom ImagePicker + Supabase Storage — so sharp (unsupported on Workers anyway)
+    // is dead weight; the passthrough service silences the warning.
+    imageService: "passthrough",
+    platformProxy: { enabled: true },
+  }),
   // Multi-tenant storefronts are resolved by Host header (custom domains / subdomains).
   // Vite's dev server otherwise 403s unrecognized hostnames (DNS-rebinding protection);
-  // production runs on the Node adapter's own server, not Vite, so this only affects `astro dev`.
+  // production runs on Cloudflare's own edge runtime, not Vite, so this only affects `astro dev`.
   server: { allowedHosts: true },
   vite: {
     envDir: "..",

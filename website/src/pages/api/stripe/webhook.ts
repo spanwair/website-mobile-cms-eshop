@@ -13,7 +13,7 @@ export const POST: APIRoute = async ({ request }) => {
   const payload = await request.text();
   let event;
   try {
-    event = constructWebhookEvent(payload, signature);
+    event = await constructWebhookEvent(payload, signature);
   } catch (err) {
     return new Response(`Webhook signature verification failed: ${(err as Error).message}`, { status: 400 });
   }

@@ -5,8 +5,8 @@ ENV="${1:-development}"
 
 if [[ "$ENV" == "production" ]]; then
   BRANCH=$(git rev-parse --abbrev-ref HEAD)
-  if [[ "$BRANCH" != "main" ]]; then
-    echo "Production deploy requires main branch" >&2
+  if [[ "$BRANCH" != "master" ]]; then
+    echo "Production deploy requires master branch (you are on '$BRANCH')" >&2
     exit 1
   fi
 fi
