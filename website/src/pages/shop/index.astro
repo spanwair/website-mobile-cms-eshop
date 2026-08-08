@@ -65,84 +65,91 @@ function buildUrl(params: Record<string, string>) {
 ---
 
 <Layout title={`Shop${search ? ` — ${search}` : ""}${categorySlug ? ` — ${categorySlug}` : ""}`}>
-  {isHomepageView && (
-    <Sections
-      layout={sanitizeLayout(storeConfig?.homepage_layout)}
-      storeConfig={storeConfig}
-      categories={categories.filter((c) => !c.parent_id)}
-      featuredProducts={featuredProducts}
-      cardVariant={cardVariant}
-      media={sectionsMedia}
-      slides={heroSlides}
-      benefitItems={benefitItems}
-      conditions={conditions}
-      blogPosts={blogPosts}
-      linkBase="/shop"
-    />
-  )}
+  <div id="shop-app">
+    {isHomepageView && (
+      <Sections
+        layout={sanitizeLayout(storeConfig?.homepage_layout)}
+        storeConfig={storeConfig}
+        categories={categories.filter((c) => !c.parent_id)}
+        featuredProducts={featuredProducts}
+        cardVariant={cardVariant}
+        media={sectionsMedia}
+        slides={heroSlides}
+        benefitItems={benefitItems}
+        conditions={conditions}
+        blogPosts={blogPosts}
+        linkBase="/shop"
+      />
+    )}
 
-  <StoresDirectory stores={stores} />
+    <StoresDirectory stores={stores} />
 
-  <div class="shop-layout">
-    <CategorySidebar categories={categories} categorySlug={categorySlug} homeHref="/shop" buildUrl={buildUrl} conditions={conditions} activeCondition={conditionCode} />
+    <div class="shop-layout">
+      <CategorySidebar categories={categories} categorySlug={categorySlug} homeHref="/shop" buildUrl={buildUrl} conditions={conditions} activeCondition={conditionCode} />
 
-    <!-- Main content -->
-    <main class="shop-main">
-      {search && (
-        <div class="active-search">
-          <span>{t.shop.searchResultsFor} “{search}”</span>
-          <a href={buildUrl({ category: categorySlug, sort })} class="btn btn-ghost">{t.shop.clear}</a>
+      <!-- Main content -->
+      <main class="shop-main">
+        {search && (
+          <div class="active-search">
+            <span>{t.shop.searchResultsFor} “{search}”</span>
+            <a href={buildUrl({ category: categorySlug, sort })} class="btn btn-ghost" data-filter-link>{t.shop.clear}</a>
+          </div>
+        )}
+
+        <!-- Toolbar -->
+        <div class="shop-toolbar">
+          <div class="sort-wrap">
+            <label for="sort-select" class="sort-label">{t.shop.sort}</label>
+            <select
+              id="sort-select"
+              data-sort-url={buildUrl({ category: categorySlug, q: search, sort: "__SORT__" })}
+              class="sort-select"
+            >
+              <option value="newest" selected={sort === "newest"}>{t.shop.sortNewest}</option>
+              <option value="price_asc" selected={sort === "price_asc"}>{t.shop.sortPriceAsc}</option>
+              <option value="price_desc" selected={sort === "price_desc"}>{t.shop.sortPriceDesc}</option>
+              <option value="rating" selected={sort === "rating"}>{t.shop.sortTopRated}</option>
+            </select>
+          </div>
+
+          <span class="result-count">{count} {t.shop.products}</span>
         </div>
-      )}
 
-      <!-- Toolbar -->
-      <div class="shop-toolbar">
-        <div class="sort-wrap">
-          <label for="sort-select" class="sort-label">{t.shop.sort}</label>
-          <select
-            id="sort-select"
-            onchange={`window.location.href='${buildUrl({ category: categorySlug, q: search, sort: "__SORT__" })}'.replace('__SORT__', this.value)`}
-            class="sort-select"
-          >
-            <option value="newest" selected={sort === "newest"}>{t.shop.sortNewest}</option>
-            <option value="price_asc" selected={sort === "price_asc"}>{t.shop.sortPriceAsc}</option>
-            <option value="price_desc" selected={sort === "price_desc"}>{t.shop.sortPriceDesc}</option>
-            <option value="rating" selected={sort === "rating"}>{t.shop.sortTopRated}</option>
-          </select>
-        </div>
+        <!-- Product grid -->
+        {productsWithOrg.length === 0 ? (
+          <div class="empty-state">
+            <p>{t.shop.noProducts}</p>
+            <a href="/shop" class="btn btn-ghost" data-filter-link>{t.shop.viewAll}</a>
+          </div>
+        ) : (
+          <div class="product-grid">
+            {productsWithOrg.map(product => (
+              <ProductCard product={product as any} variant={cardVariant} currency={storeConfig?.currency_code} />
+            ))}
+          </div>
+        )}
 
-        <span class="result-count">{count} {t.shop.products}</span>
-      </div>
-
-      <!-- Product grid -->
-      {productsWithOrg.length === 0 ? (
-        <div class="empty-state">
-          <p>{t.shop.noProducts}</p>
-          <a href="/shop" class="btn btn-ghost">{t.shop.viewAll}</a>
-        </div>
-      ) : (
-        <div class="product-grid">
-          {productsWithOrg.map(product => (
-            <ProductCard product={product as any} variant={cardVariant} currency={storeConfig?.currency_code} />
-          ))}
-        </div>
-      )}
-
-      <!-- Pagination -->
-      {totalPages > 1 && (
-        <div class="pagination">
-          {page > 1 && (
-            <a href={buildUrl({ category: categorySlug, q: search, sort }) + `&page=${page - 1}`} class="btn btn-ghost">← {t.common.previous}</a>
-          )}
-          <span class="page-info">{t.common.page} {page} / {totalPages}</span>
-          {page < totalPages && (
-            <a href={buildUrl({ category: categorySlug, q: search, sort }) + `&page=${page + 1}`} class="btn btn-ghost">{t.common.next} →</a>
-          )}
-        </div>
-      )}
-    </main>
+        <!-- Pagination -->
+        {totalPages > 1 && (
+          <div class="pagination">
+            {page > 1 && (
+              <a href={buildUrl({ category: categorySlug, q: search, sort }) + `&page=${page - 1}`} class="btn btn-ghost" data-filter-link>← {t.common.previous}</a>
+            )}
+            <span class="page-info">{t.common.page} {page} / {totalPages}</span>
+            {page < totalPages && (
+              <a href={buildUrl({ category: categorySlug, q: search, sort }) + `&page=${page + 1}`} class="btn btn-ghost" data-filter-link>{t.common.next} →</a>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
   </div>
 </Layout>
+
+<script>
+  import { initFilterSwap } from "../../lib/client/softSwap";
+  initFilterSwap("shop-app");
+</script>
 
 <style>
   .shop-layout { display:grid; grid-template-columns:220px 1fr; gap:32px; max-width:1280px; margin:0 auto; padding:32px 24px; }

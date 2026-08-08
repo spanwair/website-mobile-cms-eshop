@@ -280,6 +280,7 @@ export interface ProductVariant {
   attributes: Record<string, string>;
   condition_id: string | null;
   is_active: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -299,6 +300,7 @@ export interface ProductCondition {
 export interface ProductImage {
   id: string;
   product_id: string;
+  variant_id: string | null;
   url: string;
   alt: string | null;
   sort_order: number;

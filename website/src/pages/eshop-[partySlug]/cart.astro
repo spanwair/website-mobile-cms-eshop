@@ -21,6 +21,24 @@ if (!session) return Astro.redirect(`/login?redirect=${linkBase}/cart`);
 let couponMessage = "";
 let couponError = "";
 let qtyError = "";
+// The cart forms submit via fetch (see lib/client/cartPage.ts) so qty/remove/coupon actions
+// never trigger a full-page navigation — this flag lets the same handler respond with JSON to
+// those requests instead of redirecting/re-rendering the whole page.
+const wantsJson = Astro.request.headers.get("accept")?.includes("application/json") ?? false;
+
+async function loadCartSummary() {
+  const { data: cartRow } = await supabase
+    .from("carts")
+    .select("*, cart_items(*)")
+    .eq("user_id", session.user.id)
+    .eq("party_id", storeParty.id)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const cartItems = (cartRow as any)?.cart_items ?? [];
+  const totals = calcCartTotal(cartItems.map((i: any) => ({ ...i, unit_price: Number(i.unit_price) })));
+  return { cartItems, ...totals };
+}
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
@@ -28,14 +46,26 @@ if (Astro.request.method === "POST") {
 
   if (action === "remove_item") {
     await removeFromCart(supabase, form.get("item_id") as string);
+    if (wantsJson) {
+      const { subtotal, itemCount } = await loadCartSummary();
+      return Response.json({ ok: true, subtotal, itemCount });
+    }
     return Astro.redirect(`${linkBase}/cart`);
   }
 
   if (action === "update_qty") {
+    const itemId = form.get("item_id") as string;
     const qty = parseInt(form.get("quantity") as string, 10);
-    const result = await updateCartItemQty(supabase, form.get("item_id") as string, qty);
-    if (result.error) qtyError = result.error.message;
-    else return Astro.redirect(`${linkBase}/cart`);
+    const result = await updateCartItemQty(supabase, itemId, qty);
+    if (result.error) {
+      qtyError = result.error.message;
+      if (wantsJson) return Response.json({ ok: false, error: qtyError });
+    } else if (wantsJson) {
+      const { cartItems, subtotal, itemCount } = await loadCartSummary();
+      const item = cartItems.find((i: any) => i.id === itemId);
+      const itemTotal = item ? Number(item.unit_price) * item.quantity : 0;
+      return Response.json({ ok: true, itemTotal, subtotal, itemCount });
+    } else return Astro.redirect(`${linkBase}/cart`);
   }
 
   if (action === "apply_coupon") {
@@ -44,6 +74,7 @@ if (Astro.request.method === "POST") {
     const result = await applyCoupon(supabase, cartId, storeParty.id, code);
     if (result.error) { couponError = result.error; }
     else { couponMessage = t.shop.couponApplied; }
+    if (wantsJson) return Response.json({ ok: !result.error, message: couponMessage, error: couponError });
   }
 }
 
@@ -63,7 +94,7 @@ const { subtotal, itemCount } = calcCartTotal(
 ---
 
 <Layout title={t.shop.cartTitle}>
-  <div class="cart-page">
+  <div class="cart-page" id="cart-page" data-lang={lang} data-currency={currency}>
     <h1 class="page-title">{t.shop.cartTitle}</h1>
 
     {items.length === 0 ? (
@@ -76,12 +107,20 @@ const { subtotal, itemCount } = calcCartTotal(
         <div class="cart-items">
           {items.map((item: any) => {
             const prod = item.product;
-            const images = (prod?.product_images ?? []).filter((i: any) => i.media_type !== "video");
-            const img = (images.find((i: any) => i.is_primary) ?? images[0])?.url;
+            const media = prod?.product_images ?? [];
+            const primary = media.find((i: any) => i.is_primary) ?? media[0];
             const price = Number(item.unit_price);
             return (
-              <div class="cart-item">
-                {img && <img src={img} alt={prod?.title} class="item-img" />}
+              <div class="cart-item" data-item-id={item.id}>
+                {primary ? (
+                  primary.media_type === "video" ? (
+                    <video src={`${primary.url}#t=0.5`} class="item-img" muted playsinline preload="metadata" />
+                  ) : (
+                    <img src={primary.url} alt={prod?.title} class="item-img" />
+                  )
+                ) : (
+                  <div class="item-img item-img-placeholder">{t.shop.noImage}</div>
+                )}
                 <div class="item-info">
                   <a href={`${linkBase}/${prod?.slug}`} class="item-title">{prod?.title}</a>
                   {item.variant?.name && <p class="item-variant">{item.variant.name}</p>}
@@ -91,7 +130,7 @@ const { subtotal, itemCount } = calcCartTotal(
                   <input type="hidden" name="_action" value="update_qty" />
                   <input type="hidden" name="item_id" value={item.id} />
                   <input type="number" name="quantity" value={item.quantity} min="1" max="99" class="qty-input"
-                    onchange="this.form.submit()" />
+                    onchange="this.form.requestSubmit()" />
                 </form>
                 <p class="item-total">{formatPrice(price * item.quantity, lang, currency)}</p>
                 <form method="POST">
@@ -108,9 +147,9 @@ const { subtotal, itemCount } = calcCartTotal(
           <div class="summary-card">
             <h2 class="summary-title">{t.shop.orderSummary}</h2>
 
-            {qtyError && <p class="coupon-err">{qtyError}</p>}
-            {couponMessage && <p class="coupon-ok">{couponMessage}</p>}
-            {couponError && <p class="coupon-err">{couponError}</p>}
+            <p class="coupon-err" id="cart-qty-error" style={qtyError ? "" : "display:none"}>{qtyError}</p>
+            <p class="coupon-ok" id="coupon-ok-msg" style={couponMessage ? "" : "display:none"}>{couponMessage}</p>
+            <p class="coupon-err" id="coupon-err-msg" style={couponError ? "" : "display:none"}>{couponError}</p>
 
             {cart && (
               <form method="POST" class="coupon-form">
@@ -125,8 +164,8 @@ const { subtotal, itemCount } = calcCartTotal(
             )}
 
             <div class="total-row">
-              <span>Subtotal ({itemCount} items)</span>
-              <span class="total-price">{formatPrice(subtotal, lang, currency)}</span>
+              <span>Subtotal (<span id="cart-item-count">{itemCount}</span> items)</span>
+              <span class="total-price" id="cart-subtotal">{formatPrice(subtotal, lang, currency)}</span>
             </div>
 
             <a href={`${linkBase}/checkout`} class="btn btn-primary checkout-btn">{t.shop.proceedToCheckout}</a>
@@ -138,6 +177,11 @@ const { subtotal, itemCount } = calcCartTotal(
   </div>
 </Layout>
 
+<script>
+  import { initCartPage } from "../../lib/client/cartPage";
+  initCartPage();
+</script>
+
 <style>
   .cart-page { max-width:1100px; margin:0 auto; padding:32px 24px; }
   .page-title { font-size:28px; font-weight:800; margin-bottom:24px; }
@@ -147,6 +191,8 @@ const { subtotal, itemCount } = calcCartTotal(
   .cart-item { display:grid; grid-template-columns:80px 1fr auto auto auto; align-items:center; gap:16px; padding:16px; border-bottom:1px solid var(--border); }
   .cart-item:last-child { border-bottom:none; }
   .item-img { width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid var(--border); }
+  video.item-img { background:#000; }
+  .item-img-placeholder { display:flex; align-items:center; justify-content:center; background:var(--bg-subtle); font-size:11px; color:var(--text-muted); text-align:center; padding:4px; }
   .item-info { display:flex; flex-direction:column; gap:4px; }
   .item-title { font-size:15px; font-weight:600; text-decoration:none; color:inherit; }
   .item-title:hover { color:var(--primary); }

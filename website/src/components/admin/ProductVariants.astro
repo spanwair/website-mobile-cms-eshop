@@ -31,11 +31,25 @@ const editing = editingId === "new"
   {variants.length > 0 && (
     <table class="data-table" style="margin-bottom:20px">
       <thead>
-        <tr><th>{s.variantName}</th><th>{s.variantPrice}</th><th>{s.variantActive}</th><th>{t.admin.products.colActions}</th></tr>
+        <tr><th></th><th>{s.variantName}</th><th>{s.variantPrice}</th><th>{s.variantActive}</th><th>{t.admin.products.colActions}</th></tr>
       </thead>
       <tbody>
-        {variants.map((v) => (
+        {variants.map((v, i) => (
           <tr class={v.id === selectedVariantId ? "selected-row" : ""}>
+            <td class="order-cell">
+              <form method="POST" style={i === 0 ? "visibility:hidden" : ""}>
+                <input type="hidden" name="action" value="move_variant" />
+                <input type="hidden" name="variant_id" value={v.id} />
+                <input type="hidden" name="direction" value="up" />
+                <button type="submit" class="btn-order" aria-label={s.variantMoveUp} title={s.variantMoveUp}>▲</button>
+              </form>
+              <form method="POST" style={i === variants.length - 1 ? "visibility:hidden" : ""}>
+                <input type="hidden" name="action" value="move_variant" />
+                <input type="hidden" name="variant_id" value={v.id} />
+                <input type="hidden" name="direction" value="down" />
+                <button type="submit" class="btn-order" aria-label={s.variantMoveDown} title={s.variantMoveDown}>▼</button>
+              </form>
+            </td>
             <td style="font-weight:600">
               <a href={`/admin/products/${productId}?variant=${v.id}`} class="variant-select-link">
                 {v.id === selectedVariantId && <span class="selected-marker">●</span>} {v.name}
@@ -103,6 +117,9 @@ const editing = editingId === "new"
   .form-check input { width:auto; }
   .form-actions { display:flex; gap:12px; justify-content:flex-end; }
   .action-cell { display:flex; gap:8px; align-items:center; }
+  .order-cell { display:flex; flex-direction:column; gap:2px; width:24px; }
+  .btn-order { background:none; border:1px solid var(--border); border-radius:4px; cursor:pointer; font-size:9px; line-height:1; padding:2px 4px; color:var(--text-secondary); }
+  .btn-order:hover { border-color:var(--primary); color:var(--primary); }
   .selected-row { background:var(--bg-subtle); }
   .variant-select-link { color:inherit; text-decoration:none; }
   .variant-select-link:hover { text-decoration:underline; }

@@ -1,17 +1,20 @@
 ---
 import { useT } from "../../lib/i18n";
 
+interface GalleryImage { url: string; alt: string | null; media_type?: "image" | "video" }
 interface Props {
-  images: { url: string; alt: string | null; media_type?: "image" | "video" }[];
+  images: GalleryImage[];
   title: string;
+  variantImages?: Record<string, GalleryImage[]>;
 }
-const { images, title } = Astro.props;
+const { images, title, variantImages = {} } = Astro.props;
 const primaryImage = images[0];
 const t = useT(Astro);
+const variantImagesJson = Object.keys(variantImages).length > 0 ? JSON.stringify(variantImages) : null;
 ---
 
-<div class="images-col">
-  <div class="main-image-wrap">
+<div class="images-col" id="product-gallery" data-variant-images={variantImagesJson} data-no-image-text={t.shop.noImage}>
+  <div class="main-image-wrap" id="main-image-wrap">
     {primaryImage ? (
       primaryImage.media_type === "video" ? (
         <video id="main-img" src={primaryImage.url} class="main-image" controls preload="metadata" />
@@ -22,61 +25,111 @@ const t = useT(Astro);
       <div class="no-image">{t.shop.noImage}</div>
     )}
   </div>
-  {images.length > 1 && (
-    <div class="thumb-row">
-      {images.map((img) => (
-        <button
-          class="thumb-btn"
-          data-url={img.url}
-          data-alt={img.alt ?? ""}
-          data-type={img.media_type === "video" ? "video" : "image"}
-        >
-          {img.media_type === "video" ? (
-            <video src={img.url} class="thumb-img" preload="metadata" muted />
-          ) : (
-            <img src={img.url} alt={img.alt ?? ""} class="thumb-img" loading="lazy" />
-          )}
-        </button>
-      ))}
-    </div>
-  )}
+  <div class="thumb-row" id="thumb-row">
+    {images.length > 1 && images.map((img) => (
+      <button
+        class="thumb-btn"
+        data-url={img.url}
+        data-alt={img.alt ?? ""}
+        data-type={img.media_type === "video" ? "video" : "image"}
+      >
+        {img.media_type === "video" ? (
+          <video src={img.url} class="thumb-img" preload="metadata" muted />
+        ) : (
+          <img src={img.url} alt={img.alt ?? ""} class="thumb-img" loading="lazy" />
+        )}
+      </button>
+    ))}
+  </div>
 </div>
 
 <style>
   .images-col { display:flex; flex-direction:column; gap:12px; }
   .main-image-wrap { aspect-ratio:1; border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--bg-subtle); }
-  .main-image { width:100%; height:100%; object-fit:cover; cursor:zoom-in; }
-  video.main-image { background:#000; cursor:default; }
-  .no-image { display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); }
+  /* :global — the gallery script creates these elements client-side on variant change, so they
+     never get Astro's scoped data-astro-cid attribute and would otherwise render unstyled. */
+  :global(.main-image) { width:100%; height:100%; object-fit:cover; cursor:zoom-in; }
+  :global(video.main-image) { background:#000; cursor:default; }
+  :global(.no-image) { display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); }
   .thumb-row { display:flex; gap:8px; flex-wrap:wrap; }
-  .thumb-btn { border:2px solid transparent; border-radius:8px; overflow:hidden; cursor:pointer; padding:0; background:none; width:64px; height:64px; }
-  .thumb-btn:hover { border-color:var(--primary); }
-  .thumb-img { width:100%; height:100%; object-fit:cover; }
-  video.thumb-img { background:#000; }
+  :global(.thumb-btn) { border:2px solid transparent; border-radius:8px; overflow:hidden; cursor:pointer; padding:0; background:none; width:64px; height:64px; }
+  :global(.thumb-btn:hover) { border-color:var(--primary); }
+  :global(.thumb-img) { width:100%; height:100%; object-fit:cover; }
+  :global(video.thumb-img) { background:#000; }
 </style>
 
 <script>
-  document.querySelectorAll(".thumb-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const wrap = document.querySelector(".main-image-wrap");
-      if (!wrap) return;
-      const url = btn.getAttribute("data-url") ?? "";
-      const alt = btn.getAttribute("data-alt") ?? "";
-      const isVideo = btn.getAttribute("data-type") === "video";
-      let el;
-      if (isVideo) {
-        el = document.createElement("video");
-        el.src = url;
-        el.controls = true;
-        el.preload = "metadata";
-      } else {
-        el = document.createElement("img");
-        el.src = url;
-        el.alt = alt;
-      }
-      el.id = "main-img";
-      el.className = "main-image";
-      wrap.replaceChildren(el);
+  interface GalleryImage { url: string; alt: string | null; media_type?: "image" | "video" }
+
+  const root = document.getElementById("product-gallery");
+  const mainWrap = document.getElementById("main-image-wrap");
+  const thumbRow = document.getElementById("thumb-row");
+  const noImageText = root?.dataset.noImageText ?? "";
+  const variantImagesJson = root?.dataset.variantImages;
+  const variantImages: Record<string, GalleryImage[]> = variantImagesJson ? JSON.parse(variantImagesJson) : {};
+
+  function setMainImage(img: GalleryImage) {
+    if (!mainWrap) return;
+    const el = img.media_type === "video" ? document.createElement("video") : document.createElement("img");
+    if (el instanceof HTMLVideoElement) {
+      el.src = img.url;
+      el.controls = true;
+      el.preload = "metadata";
+    } else {
+      el.src = img.url;
+      el.alt = img.alt ?? "";
+    }
+    el.id = "main-img";
+    el.className = "main-image";
+    mainWrap.replaceChildren(el);
+  }
+
+  function bindThumbClicks() {
+    thumbRow?.querySelectorAll<HTMLButtonElement>(".thumb-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        setMainImage({
+          url: btn.dataset.url ?? "",
+          alt: btn.dataset.alt ?? "",
+          media_type: btn.dataset.type === "video" ? "video" : "image",
+        });
+      });
     });
-  });
+  }
+
+  function renderGallery(images: GalleryImage[]) {
+    if (!mainWrap || !thumbRow) return;
+    if (images.length === 0) {
+      mainWrap.innerHTML = `<div class="no-image">${noImageText}</div>`;
+      thumbRow.replaceChildren();
+      return;
+    }
+    setMainImage(images[0]);
+    thumbRow.replaceChildren();
+    if (images.length > 1) {
+      for (const img of images) {
+        const btn = document.createElement("button");
+        btn.className = "thumb-btn";
+        btn.dataset.url = img.url;
+        btn.dataset.alt = img.alt ?? "";
+        btn.dataset.type = img.media_type === "video" ? "video" : "image";
+        const media = img.media_type === "video" ? document.createElement("video") : document.createElement("img");
+        media.className = "thumb-img";
+        (media as HTMLImageElement | HTMLVideoElement).src = img.url;
+        if (media instanceof HTMLImageElement) { media.alt = img.alt ?? ""; media.loading = "lazy"; }
+        if (media instanceof HTMLVideoElement) { media.preload = "metadata"; media.muted = true; }
+        btn.appendChild(media);
+        thumbRow.appendChild(btn);
+      }
+      bindThumbClicks();
+    }
+  }
+
+  bindThumbClicks();
+
+  // Switching the selected variant swaps the whole gallery to that variant's own images —
+  // dispatched by ProductPurchasePanel alongside its price/stock update.
+  document.addEventListener("variantchange", ((e: CustomEvent<{ variantId: string }>) => {
+    const images = variantImages[e.detail.variantId];
+    if (images) renderGallery(images);
+  }) as EventListener);
 </script>

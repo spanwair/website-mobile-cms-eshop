@@ -12,6 +12,8 @@ export interface ProductCardData {
   slug: string;
   price: number;
   discount_price: number | null;
+  displayPrice: number;
+  hasVariants: boolean;
   is_featured: boolean;
   review_count: number;
   rating_avg: number;

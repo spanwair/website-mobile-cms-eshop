@@ -56,11 +56,11 @@ UPDATE store_configs SET
   subhero_format = 'markdown'
 WHERE party_id = 'a0000000-0000-0000-0000-000000000003';
 
--- Fulfilment labels repurpose the "condition" concept for a made-to-order handmade shop —
--- there is no refurbishment grading here, just stock vs. custom-order timing.
+-- Fulfilment label repurposes the "condition" concept for a made-to-order handmade shop —
+-- there is no refurbishment grading here, just a custom-order timing note. Being in stock is
+-- never a manual label — it's derived entirely from inventory, so it has no row here.
 INSERT INTO product_conditions (party_id, code, label, color_hex, sort_order) VALUES
-  ('a0000000-0000-0000-0000-000000000003', 'in_stock',      'Skladem',     '#5B9A3B', 1),
-  ('a0000000-0000-0000-0000-000000000003', 'made_to_order', 'Na zakázku',  '#C97B4A', 2);
+  ('a0000000-0000-0000-0000-000000000003', 'made_to_order', 'Na zakázku',  '#C97B4A', 1);
 
 -- Categories ------------------------------------------------------------------------------
 INSERT INTO categories (party_id, name, slug, sort_order, show_in_nav) VALUES
@@ -103,10 +103,11 @@ INSERT INTO footer_links (party_id, column_key, label, url, sort_order)
 SELECT 'a0000000-0000-0000-0000-000000000003', 'information', v.label, v.url, v.sort_order
 FROM (VALUES
   ('O mě', '/stranka/o-me', 1),
-  ('Jak probíhá výroba na zakázku', '/stranka/vyroba-na-zakazku', 2),
-  ('Průvodce velikostmi věnců', '/stranka/velikosti-vencu', 3),
-  ('Blog', '/blog', 4),
-  ('Kontakt', '/stranka/kontakt', 5)
+  ('Náš tým', '/stranka/nas-tym', 2),
+  ('Jak probíhá výroba na zakázku', '/stranka/vyroba-na-zakazku', 3),
+  ('Průvodce velikostmi věnců', '/stranka/velikosti-vencu', 4),
+  ('Blog', '/blog', 5),
+  ('Kontakt', '/stranka/kontakt', 6)
 ) AS v(label, url, sort_order);
 
 INSERT INTO footer_links (party_id, column_key, label, url, sort_order)
@@ -157,17 +158,22 @@ INSERT INTO content_pages (party_id, slug, title, template, body, is_visible, so
   true, 1
 ),
 (
+  'a0000000-0000-0000-0000-000000000003', 'nas-tym', 'Náš tým', 'about',
+  'Poznejte lidi, kteří stojí za každým ručně vázaným věncem a kyticí.',
+  true, 2
+),
+(
   'a0000000-0000-0000-0000-000000000003', 'kontakt', 'Kontakt', 'contact',
   'Máte zájem o věnec, kytici nebo dekoraci na míru? Nejrychlejší je zavolat — ráda s vámi ' ||
   'proberu velikost, barvy i termín dodání.' || E'\n\n' ||
   '**Telefon:** [605 157 739](tel:+420605157739)' || E'\n\n' ||
   '**Sídlo tvorby:** Hrádek, okres Frýdek-Místek, Beskydy',
-  true, 2
+  true, 3
 ),
 (
   'a0000000-0000-0000-0000-000000000003', 'faq', 'Časté dotazy', 'faq',
   'Odpovědi na nejčastější otázky ohledně objednávek, výroby na zakázku a dodání.',
-  true, 3
+  true, 4
 ),
 (
   'a0000000-0000-0000-0000-000000000003', 'vyroba-na-zakazku', 'Jak probíhá výroba na zakázku', 'default',
@@ -178,7 +184,7 @@ INSERT INTO content_pages (party_id, slug, title, template, body, is_visible, so
   'Protože každý kus je ruční práce ze skutečných sušených květin, může se konečný odstín ' ||
   'nebo skladba mírně lišit od fotografie v galerii — to je součástí originality přírodních ' ||
   'materiálů, ne chyba.',
-  true, 4
+  true, 5
 ),
 (
   'a0000000-0000-0000-0000-000000000003', 'velikosti-vencu', 'Průvodce velikostmi věnců', 'default',
@@ -189,7 +195,7 @@ INSERT INTO content_pages (party_id, slug, title, template, body, is_visible, so
   '**Nad 55 cm** — od 1 100 Kč' || E'\n\n' ||
   'Přesná cena se odvíjí od zvolených materiálů a náročnosti vazby — u objednávky na míru ji ' ||
   'vždy potvrdíme předem.',
-  true, 5
+  true, 6
 );
 
 -- FAQ ---------------------------------------------------------------------------------------

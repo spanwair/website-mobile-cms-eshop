@@ -17,10 +17,18 @@ const t = useT(Astro);
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect(`/login?redirect=${linkBase}/wishlist`);
 
+// The remove form submits via fetch (see script below) so removing an item never triggers a
+// full-page navigation — this flag lets the handler respond with JSON instead of redirecting.
+const wantsJson = Astro.request.headers.get("accept")?.includes("application/json") ?? false;
+
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   if (form.get("_action") === "remove_item") {
     await removeFromWishlist(supabase, storeParty.id, session.user.id, form.get("product_id") as string);
+    if (wantsJson) {
+      const remaining = await fetchWishlistItems(supabase, storeParty.id, session.user.id);
+      return Response.json({ ok: true, itemCount: remaining.length });
+    }
     return Astro.redirect(`${linkBase}/wishlist`);
   }
 }
@@ -74,6 +82,27 @@ const cardVariant = storeParty.config?.product_card_variant ?? "classic";
     )}
   </div>
 </Layout>
+
+<script>
+  import { submitAjax } from "../../lib/client/ajaxForm";
+
+  // Removing a wishlist item submits via fetch so the page never reloads/jumps to the top.
+  document.querySelectorAll<HTMLFormElement>(".remove-form").forEach((form) => {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        const result = await submitAjax<{ ok: boolean; itemCount: number }>(form);
+        if (result.ok && result.itemCount === 0) {
+          window.location.reload();
+          return;
+        }
+        if (result.ok) form.closest(".wishlist-tile")?.remove();
+      } catch {
+        form.submit();
+      }
+    });
+  });
+</script>
 
 <style>
   .wishlist-page { max-width:1280px; margin:0 auto; padding:32px 24px; }

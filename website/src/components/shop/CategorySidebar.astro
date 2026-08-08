@@ -20,15 +20,15 @@ const topLevel = categories.filter((c) => !c.parent_id);
   <h2 class="sidebar-title">{t.shop.categories}</h2>
   <ul class="category-list">
     <li>
-      <a href={homeHref} class={`cat-link${!categorySlug ? " cat-active" : ""}`}>{t.shop.allProducts}</a>
+      <a href={homeHref} class={`cat-link${!categorySlug ? " cat-active" : ""}`} data-filter-link>{t.shop.allProducts}</a>
     </li>
     {topLevel.map((cat) => (
       <li>
-        <a href={buildUrl({ category: cat.slug })} class={`cat-link${categorySlug === cat.slug ? " cat-active" : ""}`}>
+        <a href={buildUrl({ category: cat.slug })} class={`cat-link${categorySlug === cat.slug ? " cat-active" : ""}`} data-filter-link>
           {cat.name}
         </a>
         {categories.filter((c) => c.parent_id === cat.id).map((child) => (
-          <a href={buildUrl({ category: child.slug })} class={`cat-link cat-child${categorySlug === child.slug ? " cat-active" : ""}`}>
+          <a href={buildUrl({ category: child.slug })} class={`cat-link cat-child${categorySlug === child.slug ? " cat-active" : ""}`} data-filter-link>
             {child.name}
           </a>
         ))}
@@ -40,10 +40,10 @@ const topLevel = categories.filter((c) => !c.parent_id);
     <div class="filter-group">
       <h2 class="sidebar-title">{t.shop.conditionExplainerTitle}</h2>
       <ul class="category-list">
-        <li><a href={buildUrl({ condition: "" })} class={`cat-link${!activeCondition ? " cat-active" : ""}`}>{t.common.all}</a></li>
+        <li><a href={buildUrl({ condition: "" })} class={`cat-link${!activeCondition ? " cat-active" : ""}`} data-filter-link>{t.common.all}</a></li>
         {conditions.filter((c) => c.is_active).map((c) => (
           <li>
-            <a href={buildUrl({ condition: c.code })} class={`cat-link${activeCondition === c.code ? " cat-active" : ""}`}>
+            <a href={buildUrl({ condition: c.code })} class={`cat-link${activeCondition === c.code ? " cat-active" : ""}`} data-filter-link>
               <span class="condition-dot" style={`background:${c.color_hex}`}></span> {c.label}
             </a>
           </li>

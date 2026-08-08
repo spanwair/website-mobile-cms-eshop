@@ -21,7 +21,7 @@ const lang = getLang(Astro);
       <div class="product-img-placeholder">{t.shop.noImage}</div>
     )}
     {product.is_featured && <span class="featured-badge">{t.shop.featured}</span>}
-    {product.discount_price && <span class="sale-badge">{t.shop.sale}</span>}
+    {!product.hasVariants && product.discount_price && <span class="sale-badge">{t.shop.sale}</span>}
     {product.hasVideo && (
       <span class="video-badge" title={t.shop.hasVideo} aria-label={t.shop.hasVideo}>
         <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
@@ -39,7 +39,9 @@ const lang = getLang(Astro);
       </div>
     )}
     <div class="product-pricing">
-      {product.discount_price ? (
+      {product.hasVariants ? (
+        <span class="price">{formatPrice(product.displayPrice, lang, currency)}</span>
+      ) : product.discount_price ? (
         <>
           <span class="price-old">{formatPrice(Number(product.price), lang, currency)}</span>
           <span class="price-sale">{formatPrice(Number(product.discount_price), lang, currency)}</span>

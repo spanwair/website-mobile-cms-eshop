@@ -31,7 +31,7 @@ const lang = getLang(Astro);
   {product.condition && <span class="condition-badge" style={`background:${product.condition.color_hex}`}>{product.condition.label}</span>}
   <div class="product-info">
     <h3 class="product-title">{product.title}</h3>
-    <span class="price">{formatPrice(Number(product.discount_price ?? product.price), lang, currency)}</span>
+    <span class="price">{formatPrice(product.hasVariants ? product.displayPrice : Number(product.discount_price ?? product.price), lang, currency)}</span>
   </div>
   {product.variants && product.variants.length > 1 && (
     <div class="variant-chips">

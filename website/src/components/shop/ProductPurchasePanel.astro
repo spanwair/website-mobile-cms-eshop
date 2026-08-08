@@ -103,14 +103,15 @@ const variantDataJson = JSON.stringify(
     </div>
   )}
 
-  {addedToCart && <div class="cart-success">✓ {t.shop.addedToCartMessage} <a href={`${linkBase}/cart`}>{t.shop.viewCart}</a></div>}
-  {cartError && <div class="cart-error">{cartError}</div>}
+  <div class="cart-success" id="cart-success-msg" style={addedToCart ? "" : "display:none"}>✓ {t.shop.addedToCartMessage} <a href={`${linkBase}/cart`}>{t.shop.viewCart}</a></div>
+  <div class="cart-error" id="cart-error-msg" style={cartError ? "" : "display:none"}>{cartError}</div>
 
   <div
     class="add-to-cart-section"
     data-variant-info={variants.length > 0 ? variantDataJson : null}
     data-currency={currency}
     data-lang={lang}
+    data-generic-error={t.common.somethingWentWrong}
   >
     <div class="out-of-stock-badge" id="oos-badge" style={isOutOfStock ? "" : "display:none"}>{t.shop.outOfStock}</div>
     <form method="POST" class="cart-form" id="cart-form" style={isOutOfStock ? "display:none" : ""}>
@@ -140,7 +141,14 @@ const variantDataJson = JSON.stringify(
             ♡ {t.shop.addToWishlist}
           </a>
         ) : (
-          <button type="submit" class={`wishlist-toggle ${inWishlist ? "wishlist-toggle--active" : ""}`}>
+          <button
+            type="submit"
+            id="wishlist-toggle-btn"
+            class={`wishlist-toggle ${inWishlist ? "wishlist-toggle--active" : ""}`}
+            data-in-wishlist={String(inWishlist)}
+            data-label-add={t.shop.addToWishlist}
+            data-label-remove={t.shop.removeFromWishlist}
+          >
             {inWishlist ? "♥" : "♡"} {inWishlist ? t.shop.removeFromWishlist : t.shop.addToWishlist}
           </button>
         )}
@@ -165,59 +173,8 @@ const variantDataJson = JSON.stringify(
 </div>
 
 <script>
-  // Switching the selected variant re-points the whole purchase panel at it — stock text, qty
-  // cap, price (a variant's own price is always authoritative once the product has any), and
-  // the out-of-stock state — without a page reload. No-op when there are no variant radios
-  // (simple products keep the server-rendered state as-is).
-  import { formatPrice } from "@shared/utils/format";
-  import type { AppLanguage } from "@shared/i18n/getT";
-
-  const section = document.querySelector<HTMLElement>(".add-to-cart-section");
-  const infoJson = section?.dataset.variantInfo;
-  const variantInfo: Record<string, { price: number; qtyAvailable: number | null; isOutOfStock: boolean }> = infoJson
-    ? JSON.parse(infoJson)
-    : {};
-  const currency = section?.dataset.currency;
-  const lang = (section?.dataset.lang as AppLanguage) || "cs";
-
-  const radios = document.querySelectorAll<HTMLInputElement>('input[name="variant"]');
-  const variantIdInput = document.getElementById("variant-id-input") as HTMLInputElement | null;
-  const unitPriceInput = document.getElementById("unit-price-input") as HTMLInputElement | null;
-  const priceMain = document.getElementById("price-main");
-  const qtyInput = document.getElementById("qty-input") as HTMLInputElement | null;
-  const lowStockHint = document.getElementById("low-stock-hint");
-  const oosBadge = document.getElementById("oos-badge");
-  const cartForm = document.getElementById("cart-form");
-
-  function applyVariant(variantId: string) {
-    const info = variantInfo[variantId];
-    if (!info || !variantIdInput || !qtyInput || !lowStockHint || !oosBadge || !cartForm) return;
-
-    variantIdInput.value = variantId;
-    if (unitPriceInput) unitPriceInput.value = String(info.price);
-    if (priceMain) priceMain.textContent = formatPrice(info.price, lang, currency);
-
-    if (info.isOutOfStock) {
-      oosBadge.style.display = "";
-      cartForm.style.display = "none";
-      return;
-    }
-    oosBadge.style.display = "none";
-    cartForm.style.display = "";
-
-    qtyInput.max = String(info.qtyAvailable && info.qtyAvailable > 0 ? info.qtyAvailable : 99);
-    if (info.qtyAvailable !== null && Number(qtyInput.value) > info.qtyAvailable) {
-      qtyInput.value = String(Math.max(1, info.qtyAvailable));
-    }
-
-    const showLowStock = info.qtyAvailable !== null && info.qtyAvailable <= 10 && info.qtyAvailable > 0;
-    lowStockHint.style.display = showLowStock ? "" : "none";
-    if (showLowStock) {
-      lowStockHint.textContent = lowStockHint.textContent?.replace(/\d+/, String(info.qtyAvailable)) ?? "";
-    }
-  }
-
-  radios.forEach((radio) => radio.addEventListener("change", () => applyVariant(radio.value)));
+  import { initPurchasePanel } from "../../lib/client/purchasePanel";
+  initPurchasePanel();
 </script>
 
 <style>

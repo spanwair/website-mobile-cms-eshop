@@ -1,8 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
 import type { Product, ProductWithDetails, PaginatedResult } from "../types";
+import { variantImages } from "./productImageService";
 
 type Client = SupabaseClient<Database>;
+
+export type ProductListRow = Product & { primaryImage: string | null; displayPrice: number };
 
 export async function fetchProducts(
   client: Client,
@@ -14,14 +17,17 @@ export async function fetchProducts(
     category_id?: string;
     search?: string;
   } = {}
-): Promise<PaginatedResult<Product>> {
+): Promise<PaginatedResult<ProductListRow>> {
   const { page = 1, pageSize = 20, status, category_id, search } = opts;
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
+  // A product's card everywhere (this list, storefront cards) always represents itself with
+  // its first variant's price/image when it has variants — see ProductPurchasePanel for the
+  // same rule on the detail page.
   let query = client
     .from("products")
-    .select("*", { count: "exact" })
+    .select("*, product_variants(id, price, sort_order, is_active), product_images(url, is_primary, variant_id)", { count: "exact" })
     .eq("party_id", partyId);
 
   if (status) query = query.eq("status", status);
@@ -59,10 +65,21 @@ export async function fetchProducts(
     }
   }
 
-  const products = (data ?? []).map((p) => ({
-    ...p,
-    stock: stockMap.get(p.id) ?? null,
-  })) as Product[];
+  const products = ((data ?? []) as any[]).map((p) => {
+    const variants = ((p.product_variants ?? []) as any[])
+      .filter((v) => v.is_active)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    const firstVariant = variants[0] ?? null;
+    const images = variantImages((p.product_images ?? []) as any[], firstVariant?.id ?? null);
+    const primary = images.find((i) => i.is_primary) ?? images[0] ?? null;
+    const { product_variants, product_images, ...rest } = p;
+    return {
+      ...rest,
+      stock: stockMap.get(p.id) ?? null,
+      primaryImage: primary?.url ?? null,
+      displayPrice: firstVariant?.price != null ? Number(firstVariant.price) : Number(p.price),
+    };
+  }) as ProductListRow[];
 
   return { data: products, total: count ?? 0, page, pageSize };
 }
@@ -87,11 +104,14 @@ export async function fetchProduct(
   if (error || !data) return null;
 
   const raw = data as Record<string, unknown>;
+  const variants = ((raw.variants as ProductWithDetails["variants"]) ?? [])
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order);
   return {
     ...(raw as unknown as Product),
     brand: (raw.brand as ProductWithDetails["brand"]) ?? null,
     images: (raw.images as ProductWithDetails["images"]) ?? [],
-    variants: (raw.variants as ProductWithDetails["variants"]) ?? [],
+    variants,
     categories: ((raw.product_categories as Array<{ category_id: string }>) ?? []).map((r) => r.category_id),
     tags: ((raw.product_tags as Array<{ tag: string }>) ?? []).map((r) => r.tag),
   };

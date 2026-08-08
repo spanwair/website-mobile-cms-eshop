@@ -4,7 +4,7 @@ import ProductImages from "../../../components/cms/ProductImages.astro";
 import ProductVariants from "../../../components/admin/ProductVariants.astro";
 import { createSupabase } from "../../../lib/supabase";
 import { fetchProduct, updateProduct, deleteProduct, setProductCategories } from "@shared/services/productService";
-import { addProductImage, deleteProductImage, setPrimaryImage, addProductVariant, updateProductVariant, deleteProductVariant } from "@shared/services/productImageService";
+import { addProductImage, deleteProductImage, setPrimaryImage, addProductVariant, updateProductVariant, deleteProductVariant, reorderProductVariants } from "@shared/services/productImageService";
 import { fetchCategories } from "@shared/services/categoryService";
 import { fetchProductConditions } from "@shared/services/productConditionService";
 import { fetchInventoryRowsByProduct, updateStock, fetchStockMovements, updateThresholds, setTrackInventory } from "@shared/services/inventoryService";
@@ -37,6 +37,10 @@ if (Astro.request.method === "POST") {
     return Astro.redirect("/admin/products");
   }
 
+  // Images/videos attach to whichever variant is currently selected (variant_id NULL when the
+  // product has no variants) — mirrors inventory's existing "one row always in focus" model.
+  const formVariantId = (form.get("variant_id_scope") as string) || null;
+
   if (action === "upload_image") {
     const files = form.getAll("image") as File[];
     const alt = (form.get("image_alt") as string) || null;
@@ -46,15 +50,15 @@ if (Astro.request.method === "POST") {
       const file = files[i];
       if (!file || file.size === 0) continue;
       const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${partyId}/${id}/${ts}-${i}.${ext}`;
+      const path = `${partyId}/${id}/${formVariantId ?? "shared"}/${ts}-${i}.${ext}`;
       const buf = await file.arrayBuffer();
       const { error: upErr } = await supabase.storage.from("product-images").upload(path, buf, { contentType: file.type });
       if (upErr) { error = t.admin.products.imageUploadFailed.replace("{{message}}", upErr.message); break; }
       const { data: { publicUrl } } = supabase.storage.from("product-images").getPublicUrl(path);
-      const imgResult = await addProductImage(supabase, { product_id: id!, url: publicUrl, alt, is_primary: i === 0 && isPrimary, sort_order: 0 });
+      const imgResult = await addProductImage(supabase, { product_id: id!, variant_id: formVariantId, url: publicUrl, alt, is_primary: i === 0 && isPrimary, sort_order: 0 });
       if (imgResult.error) { error = imgResult.error.message; break; }
     }
-    if (!error) return Astro.redirect(`/admin/products/${id}`);
+    if (!error) return Astro.redirect(`/admin/products/${id}${formVariantId ? `?variant=${formVariantId}` : ""}`);
   }
 
   if (action === "upload_video") {
@@ -64,24 +68,44 @@ if (Astro.request.method === "POST") {
       const file = files[i];
       if (!file || file.size === 0) continue;
       const ext = file.name.split(".").pop() ?? "mp4";
-      const path = `${partyId}/${id}/${ts}-${i}.${ext}`;
+      const path = `${partyId}/${id}/${formVariantId ?? "shared"}/${ts}-${i}.${ext}`;
       const buf = await file.arrayBuffer();
       const { error: upErr } = await supabase.storage.from("product-videos").upload(path, buf, { contentType: file.type });
       if (upErr) { error = t.admin.products.videoUploadFailed.replace("{{message}}", upErr.message); break; }
       const { data: { publicUrl } } = supabase.storage.from("product-videos").getPublicUrl(path);
-      const vidResult = await addProductImage(supabase, { product_id: id!, url: publicUrl, alt: null, is_primary: false, sort_order: 0, media_type: "video" });
+      const vidResult = await addProductImage(supabase, { product_id: id!, variant_id: formVariantId, url: publicUrl, alt: null, is_primary: false, sort_order: 0, media_type: "video" });
       if (vidResult.error) { error = vidResult.error.message; break; }
     }
-    if (!error) return Astro.redirect(`/admin/products/${id}`);
+    if (!error) return Astro.redirect(`/admin/products/${id}${formVariantId ? `?variant=${formVariantId}` : ""}`);
   }
 
   if (action === "delete_image") {
     await deleteProductImage(supabase, form.get("image_id") as string);
-    return Astro.redirect(`/admin/products/${id}`);
+    return Astro.redirect(`/admin/products/${id}${formVariantId ? `?variant=${formVariantId}` : ""}`);
   }
 
   if (action === "set_primary") {
     await setPrimaryImage(supabase, id!, form.get("image_id") as string);
+    return Astro.redirect(`/admin/products/${id}${formVariantId ? `?variant=${formVariantId}` : ""}`);
+  }
+
+  if (action === "move_variant") {
+    const variantId = form.get("variant_id") as string;
+    const direction = form.get("direction") as string;
+    const { data: rows } = await supabase
+      .from("product_variants")
+      .select("id, sort_order")
+      .eq("product_id", id!)
+      .order("sort_order");
+    const list = rows ?? [];
+    const idx = list.findIndex((v) => v.id === variantId);
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (idx >= 0 && swapIdx >= 0 && swapIdx < list.length) {
+      await reorderProductVariants(supabase, [
+        { id: list[idx].id, sort_order: list[swapIdx].sort_order },
+        { id: list[swapIdx].id, sort_order: list[idx].sort_order },
+      ]);
+    }
     return Astro.redirect(`/admin/products/${id}`);
   }
 
@@ -320,7 +344,12 @@ const recentMovements = inventoryItem
     </form>
   </div>
 
-  <ProductImages images={product.images} productId={id!} />
+  <ProductImages
+    images={product.images}
+    productId={id!}
+    variantId={selectedVariantId}
+    variantName={selectedVariantId ? (product.variants.find((v) => v.id === selectedVariantId)?.name ?? null) : null}
+  />
 
   <div class="inv-card" style="max-width:720px">
       <h2 class="inv-title">

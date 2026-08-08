@@ -5,27 +5,41 @@ import { useT } from "../../lib/i18n";
 interface Props {
   images: ProductImage[];
   productId: string;
+  variantId?: string | null;
+  variantName?: string | null;
 }
 
-const { images, productId } = Astro.props;
+const { images, productId, variantId = null, variantName = null } = Astro.props;
 const t = useT(Astro);
 
-const imgItems = images.filter((m) => m.media_type !== "video");
-const vidItems = images.filter((m) => m.media_type === "video");
+// Simple products (no variants, variantId null) keep exactly the old single-group behavior.
+// A selected variant sees its own media first, with the shared (variant_id NULL) group shown
+// underneath as the fallback every variant without its own media falls back to.
+const ownImages = variantId ? images.filter((m) => m.variant_id === variantId) : images.filter((m) => m.variant_id === null);
+const sharedImages = variantId ? images.filter((m) => m.variant_id === null) : [];
+
+const ownImgItems = ownImages.filter((m) => m.media_type !== "video");
+const ownVidItems = ownImages.filter((m) => m.media_type === "video");
+const sharedImgItems = sharedImages.filter((m) => m.media_type !== "video");
+const sharedVidItems = sharedImages.filter((m) => m.media_type === "video");
 ---
 
 <div class="card media-card">
-  <h3 class="media-title">{t.admin.media.videosTitle}</h3>
+  <h3 class="media-title">
+    {t.admin.media.videosTitle}
+    {variantId && variantName && <span class="scope-hint">{t.admin.media.imagesForVariant.replace("{{name}}", variantName)}</span>}
+  </h3>
 
-  {vidItems.length > 0 && (
+  {ownVidItems.length > 0 && (
     <div class="media-grid">
-      {vidItems.map((vid) => (
+      {ownVidItems.map((vid) => (
         <div class="media-item">
           <video src={vid.url} class="media-thumb" controls preload="metadata" />
           <div class="media-actions">
             <form method="POST" onsubmit={`return confirm('${t.admin.media.deleteVideoConfirm}')`}>
               <input type="hidden" name="action" value="delete_image" />
               <input type="hidden" name="image_id" value={vid.id} />
+              <input type="hidden" name="variant_id_scope" value={variantId ?? ""} />
               <button type="submit" class="btn btn-danger" style="font-size:12px;padding:4px 8px">{t.common.delete}</button>
             </form>
           </div>
@@ -36,6 +50,7 @@ const vidItems = images.filter((m) => m.media_type === "video");
 
   <form method="POST" enctype="multipart/form-data" class="upload-form">
     <input type="hidden" name="action" value="upload_video" />
+    <input type="hidden" name="variant_id_scope" value={variantId ?? ""} />
     <div class="form-group">
       <label class="form-label">{t.admin.media.videoFileLabel}</label>
       <div class="file-picker">
@@ -46,14 +61,30 @@ const vidItems = images.filter((m) => m.media_type === "video");
     </div>
     <button type="submit" class="btn btn-primary" style="margin-top:8px">{t.admin.media.uploadVideo}</button>
   </form>
+
+  {sharedVidItems.length > 0 && (
+    <div class="shared-group">
+      <p class="shared-label">{t.admin.media.sharedImagesLabel}</p>
+      <div class="media-grid">
+        {sharedVidItems.map((vid) => (
+          <div class="media-item">
+            <video src={vid.url} class="media-thumb" controls preload="metadata" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
 </div>
 
 <div class="card media-card" style="margin-top:16px">
-  <h3 class="media-title">{t.admin.media.imagesTitle}</h3>
+  <h3 class="media-title">
+    {t.admin.media.imagesTitle}
+    {variantId && variantName && <span class="scope-hint">{t.admin.media.imagesForVariant.replace("{{name}}", variantName)}</span>}
+  </h3>
 
-  {imgItems.length > 0 && (
+  {ownImgItems.length > 0 && (
     <div class="media-grid">
-      {imgItems.map((img) => (
+      {ownImgItems.map((img) => (
         <div class="media-item">
           <img src={img.url} alt={img.alt ?? ""} class="media-thumb" />
           {img.is_primary && <span class="badge badge-active primary-badge">{t.admin.media.primaryBadge}</span>}
@@ -62,12 +93,14 @@ const vidItems = images.filter((m) => m.media_type === "video");
               <form method="POST">
                 <input type="hidden" name="action" value="set_primary" />
                 <input type="hidden" name="image_id" value={img.id} />
+                <input type="hidden" name="variant_id_scope" value={variantId ?? ""} />
                 <button type="submit" class="btn btn-secondary" style="font-size:12px;padding:4px 8px">{t.admin.media.setPrimary}</button>
               </form>
             )}
             <form method="POST" onsubmit={`return confirm('${t.admin.media.deleteImageConfirm}')`}>
               <input type="hidden" name="action" value="delete_image" />
               <input type="hidden" name="image_id" value={img.id} />
+              <input type="hidden" name="variant_id_scope" value={variantId ?? ""} />
               <button type="submit" class="btn btn-danger" style="font-size:12px;padding:4px 8px">{t.common.delete}</button>
             </form>
           </div>
@@ -78,6 +111,7 @@ const vidItems = images.filter((m) => m.media_type === "video");
 
   <form method="POST" enctype="multipart/form-data" class="upload-form">
     <input type="hidden" name="action" value="upload_image" />
+    <input type="hidden" name="variant_id_scope" value={variantId ?? ""} />
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">{t.admin.media.imageFileLabel}</label>
@@ -98,13 +132,28 @@ const vidItems = images.filter((m) => m.media_type === "video");
     </div>
     <button type="submit" class="btn btn-primary">{t.admin.media.uploadImage}</button>
   </form>
+
+  {sharedImgItems.length > 0 && (
+    <div class="shared-group">
+      <p class="shared-label">{t.admin.media.sharedImagesLabel}</p>
+      <div class="media-grid">
+        {sharedImgItems.map((img) => (
+          <div class="media-item">
+            <img src={img.url} alt={img.alt ?? ""} class="media-thumb" />
+            {img.is_primary && <span class="badge badge-active primary-badge">{t.admin.media.primaryBadge}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
 </div>
 
 <style>
   .media-card { max-width:720px; margin-top:16px; }
-  .media-title { margin:0 0 16px; font-size:16px; font-weight:600; }
+  .media-title { margin:0 0 16px; font-size:16px; font-weight:600; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .scope-hint { font-size:12px; font-weight:500; color:var(--text-muted); }
   .media-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:20px; }
-  .media-item { border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .media-item { border:1px solid var(--border); border-radius:8px; overflow:hidden; position:relative; }
   .media-thumb { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
   video.media-thumb { aspect-ratio:16/9; background:#000; }
   .primary-badge { display:block; margin:4px; font-size:11px; }
@@ -120,6 +169,8 @@ const vidItems = images.filter((m) => m.media_type === "video");
   .file-input { display:none; }
   .file-btn { font-size:13px; padding:6px 12px; white-space:nowrap; flex-shrink:0; }
   .file-name { font-size:13px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .shared-group { margin-top:16px; padding-top:16px; border-top:1px dashed var(--border); }
+  .shared-label { font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin:0 0 10px; }
 </style>
 
 <script>

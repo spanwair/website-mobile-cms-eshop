@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { fetchOutOfStockMap } from "@shared/services/searchService";
+import { fetchOutOfStockMap, fetchInventoryTrackingMap } from "@shared/services/searchService";
+import { variantImages } from "@shared/services/productImageService";
 
 interface ShopQueryParams {
   partyId?: string | null;
@@ -30,7 +31,7 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
   if (isHomepageView) {
     let featuredQuery = supabase
       .from("products")
-      .select(`id, title, slug, price, discount_price, is_featured, review_count, rating_avg, product_images(url, is_primary, media_type), product_conditions(label, color_hex), product_variants(id, name, is_active)`)
+      .select(`id, title, slug, price, discount_price, is_featured, review_count, rating_avg, product_images(url, is_primary, media_type, variant_id), product_conditions(code, label, color_hex), product_variants(id, name, price, sort_order, is_active)`)
       .eq("status", "active")
       .eq("is_visible", true)
       .eq("is_featured", true)
@@ -38,16 +39,14 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
       .limit(8);
     if (partyId) featuredQuery = featuredQuery.eq("party_id", partyId);
     const { data: featuredRaw } = await featuredQuery;
-    const featuredOutOfStockMap = await fetchOutOfStockMap(supabase, (featuredRaw ?? []).map((p: any) => p.id));
+    const featuredIds = (featuredRaw ?? []).map((p: any) => p.id);
+    const [featuredOutOfStockMap, featuredTrackingMap] = await Promise.all([
+      fetchOutOfStockMap(supabase, featuredIds),
+      fetchInventoryTrackingMap(supabase, featuredIds),
+    ]);
     featuredProducts = (featuredRaw ?? []).map((p: any) => {
-      const { primaryImage, primaryMediaType, hasVideo } = pickPrimaryMedia(p.product_images);
       const qtyAvailable = featuredOutOfStockMap.has(p.id) ? featuredOutOfStockMap.get(p.id)! : null;
-      return {
-        ...p, primaryImage, primaryMediaType, hasVideo,
-        isOutOfStock: qtyAvailable !== null && qtyAvailable <= 0,
-        condition: p.product_conditions ?? null,
-        variants: activeVariants(p.product_variants),
-      };
+      return deriveCardFields(p, qtyAvailable !== null && qtyAvailable <= 0, featuredTrackingMap);
     });
   }
 
@@ -57,10 +56,10 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
   const matchedCategory = categorySlug ? categories?.find((c) => c.slug === categorySlug) : undefined;
   const productCols = matchedCategory
     ? `id, party_id, title, slug, price, discount_price, is_featured, review_count, rating_avg,
-       product_images(url, is_primary, media_type), product_conditions(label, color_hex), product_variants(id, name, is_active),
+       product_images(url, is_primary, media_type, variant_id), product_conditions(code, label, color_hex), product_variants(id, name, price, sort_order, is_active),
        product_categories!inner(category_id)`
     : `id, party_id, title, slug, price, discount_price, is_featured, review_count, rating_avg,
-       product_images(url, is_primary, media_type), product_conditions(label, color_hex), product_variants(id, name, is_active)`;
+       product_images(url, is_primary, media_type, variant_id), product_conditions(code, label, color_hex), product_variants(id, name, price, sort_order, is_active)`;
 
   let productQuery = supabase
     .from("products")
@@ -110,20 +109,48 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
   const { data: rawProducts, count } = await productQuery.range(from, from + pageSize - 1);
   const totalPages = Math.ceil((count ?? 0) / pageSize);
   const productIds = (rawProducts ?? []).map((p: any) => p.id);
-  const inventoryMap = await fetchOutOfStockMap(supabase, productIds);
+  const [inventoryMap, trackingMap] = await Promise.all([
+    fetchOutOfStockMap(supabase, productIds),
+    fetchInventoryTrackingMap(supabase, productIds),
+  ]);
 
   const products = ((rawProducts ?? []) as any[]).map((p) => {
-    const { primaryImage, primaryMediaType, hasVideo } = pickPrimaryMedia(p.product_images);
     const qtyAvailable = inventoryMap.has(p.id) ? inventoryMap.get(p.id)! : null;
-    return {
-      ...p, primaryImage, primaryMediaType, hasVideo,
-      isOutOfStock: qtyAvailable !== null && qtyAvailable <= 0,
-      condition: p.product_conditions ?? null,
-      variants: activeVariants(p.product_variants),
-    };
+    return deriveCardFields(p, qtyAvailable !== null && qtyAvailable <= 0, trackingMap);
   });
 
   return { categories: categories ?? [], featuredProducts, products, count: count ?? 0, totalPages };
+}
+
+// A card always represents its product with the first active variant's own price/image
+// (falling back to shared images) when the product has variants — same rule as the product
+// detail page (ProductPurchasePanel) and the admin product list.
+//
+// The "made to order" condition badge is only a label — it can drift from the actual
+// inventory setting (an admin can pick that condition without checking the on-demand
+// checkbox, or vice versa). So it's only trusted when the represented row's own
+// track_inventory flag agrees; otherwise the badge is suppressed and the product falls back
+// to normal stock-based display (isOutOfStock, computed separately from the same map).
+function deriveCardFields(p: any, isOutOfStock: boolean, trackingMap: Map<string, boolean>) {
+  const variants = ((p.product_variants ?? []) as any[])
+    .filter((v) => v.is_active)
+    .sort((a, b) => a.sort_order - b.sort_order);
+  const firstVariant = variants[0] ?? null;
+  const { primaryImage, primaryMediaType, hasVideo } = pickPrimaryMedia(
+    variantImages((p.product_images ?? []) as any[], firstVariant?.id ?? null)
+  );
+  const trackInventory = trackingMap.get(`${p.id}:${firstVariant?.id ?? ""}`);
+  const isOnDemand = trackInventory === false;
+  const rawCondition = p.product_conditions ?? null;
+  const condition = rawCondition && (rawCondition.code !== "made_to_order" || isOnDemand) ? rawCondition : null;
+  return {
+    ...p, primaryImage, primaryMediaType, hasVideo,
+    isOutOfStock,
+    condition,
+    variants: variants.map((v) => ({ id: v.id, name: v.name })),
+    hasVariants: variants.length > 0,
+    displayPrice: firstVariant?.price != null ? Number(firstVariant.price) : Number(p.price),
+  };
 }
 
 // Card thumbnails prefer an image, but fall back to the product's video (a still frame is
@@ -142,10 +169,4 @@ function pickPrimaryMedia(rows: unknown): {
     primaryMediaType: primary && videos.includes(primary) ? "video" : "image",
     hasVideo: videos.length > 0,
   };
-}
-
-function activeVariants(rows: unknown): { id: string; name: string }[] {
-  return ((rows as { id: string; name: string; is_active: boolean }[]) ?? [])
-    .filter((v) => v.is_active)
-    .map((v) => ({ id: v.id, name: v.name }));
 }
