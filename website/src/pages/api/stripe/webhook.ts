@@ -5,6 +5,7 @@ import { createAdminClient } from "../../../lib/supabase";
 import { recordCommissionForOrder, reverseCommissionForOrder } from "@shared/services/commissionLedgerService";
 import { SELLER_MODE } from "@shared/constants/sellerMode";
 import { sellerOfRecordInfo } from "@shared/constants/company";
+import type { AppLanguage } from "@shared/i18n/getT";
 
 export const POST: APIRoute = async ({ request }) => {
   const signature = request.headers.get("stripe-signature");
@@ -40,7 +41,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { data: customer } = await adminClient
       .from("customers")
-      .select("email, first_name, last_name")
+      .select("email, first_name, last_name, preferred_language")
       .eq("id", order.customer_id)
       .single();
     const { data: items } = await adminClient
@@ -50,6 +51,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!customer || !items) return;
 
     const { data: sellingParty } = await adminClient.from("parties").select("seller_mode").eq("id", order.party_id).single();
+    const lang: AppLanguage = customer.preferred_language === "en" ? "en" : "cs";
 
     await sendOrderConfirmation({
       to: customer.email,
@@ -58,7 +60,8 @@ export const POST: APIRoute = async ({ request }) => {
       orderTotal: order.total_amount,
       items: items.map((i) => ({ title: i.title, quantity: i.quantity, price: i.unit_price })),
       currency: order.currency,
-      sellerOfRecord: sellingParty?.seller_mode === SELLER_MODE.SMALLJOBS_COMMISSION ? sellerOfRecordInfo() : undefined,
+      lang,
+      sellerOfRecord: sellingParty?.seller_mode === SELLER_MODE.SMALLJOBS_COMMISSION ? sellerOfRecordInfo(lang) : undefined,
     });
   });
 

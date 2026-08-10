@@ -16,6 +16,7 @@ function toUser(row: ProfileRow, email: string): User {
     role: row.role,
     admin_assigned_by: row.admin_assigned_by ?? null,
     created_at: row.created_at,
+    lang: row.lang,
   };
 }
 

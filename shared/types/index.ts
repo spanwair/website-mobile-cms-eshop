@@ -6,6 +6,7 @@ export interface User {
   role: number;
   admin_assigned_by: string | null;
   created_at: string;
+  lang: string;
 }
 
 export interface Item {

@@ -7,7 +7,7 @@ import { clearCart, calcCartTotal } from "@shared/services/cartService";
 import { createOrder, addOrderItemsOrRollback } from "@shared/services/orderService";
 import { computeItemTax, computeOrderTax } from "@shared/utils/tax";
 import { startOrderCheckout } from "../../lib/checkoutFlow";
-import { useT } from "../../lib/i18n";
+import { useT, getLang } from "../../lib/i18n";
 
 const { partySlug } = Astro.params;
 const storeParty = Astro.locals.storeParty;
@@ -17,6 +17,7 @@ const linkBase = `/eshop-${partySlug}`;
 
 const supabase = createSupabase(Astro);
 const t = useT(Astro);
+const lang = getLang(Astro);
 
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) return Astro.redirect(`/login?redirect=${linkBase}/checkout`);
@@ -73,11 +74,16 @@ if (Astro.request.method === "POST") {
           user_id: session.user.id,
           is_active: true,
           gdpr_consent: true,
+          preferred_language: lang,
         })
         .select("id")
         .single();
       if (custErr) throw new Error(custErr.message);
       customer = newCust!;
+    } else {
+      // Keep in sync so a returning customer's confirmation email always matches
+      // their current session language, not whatever it was on their first order.
+      await adminClient.from("customers").update({ preferred_language: lang }).eq("id", customer.id);
     }
 
     const { data: address, error: addrErr } = await adminClient

@@ -90,64 +90,54 @@ export async function sendPartyInvitation(opts: {
   siteUrl: string;
 }): Promise<void> {
   const { lang, partyName, roleName, systemRole, rolePermissions, inviteLink, userOrganizations, siteUrl } = opts;
-  const isCz = lang === 'cs';
   const t = getT(lang);
+  const e = t.email.invite;
 
   const roleNames = makeRoleNames(lang);
   const isNew = inviteLink !== null;
   const adminOnly = systemRole === ROLE.ADMIN;
   const sysLabel = systemRole ? (roleNames[systemRole] ?? null) : null;
 
-  const subject = isCz
-    ? (isNew ? `Pozvánka do ${partyName}` : `Byli jste přidáni do ${partyName}`)
-    : (isNew ? `You've been invited to ${partyName}` : `You've been added to ${partyName}`);
-
-  const heading   = isCz ? (isNew ? 'Obdrželi jste pozvánku' : 'Byli jste přidáni') : (isNew ? "You've been invited" : "You've been added");
-  const bodyText  = isCz
-    ? (isNew ? `Byli jste pozváni, abyste se připojili k organizaci <strong>${partyName}</strong>. Klikněte na tlačítko níže pro vytvoření účtu.` : `Byli jste přidáni do organizace <strong>${partyName}</strong>. Přihlaste se pro přístup.`)
-    : (isNew ? `You've been invited to join <strong>${partyName}</strong>. Click the button below to create your account and accept the invitation.` : `You've been added to <strong>${partyName}</strong>. Sign in to your account to access it.`);
-
-  const roleLabel = isCz ? 'Vaše role' : 'Your role';
-  const sysLabel2 = isCz ? 'Systémová role' : 'System role';
-  const permLabel = isCz ? 'Vaše oprávnění' : 'Your permissions';
-  const orgsLabel = isCz ? 'Organizace' : 'Organizations';
-  const ctaText   = isCz ? 'Přijmout pozvánku' : 'Accept invitation';
-  const loginText = isCz ? 'Přihlásit se' : 'Sign in';
+  const subject = isNew ? `${e.subjectInvitedPrefix}${partyName}` : `${e.subjectAddedPrefix}${partyName}`;
+  const heading = isNew ? e.headingInvited : e.headingAdded;
+  const bodyText = isNew
+    ? `${e.bodyInvitedPrefix}${partyName}${e.bodyInvitedSuffix}`
+    : `${e.bodyAddedPrefix}${partyName}${e.bodyAddedSuffix}`;
 
   const roleBlock = adminOnly
     ? `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:20px;margin-bottom:24px">
-         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:8px">${sysLabel2}</div>
+         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:8px">${e.systemRoleLabel}</div>
          <div style="font-size:18px;font-weight:700;color:#0284c7">${sysLabel ?? ''}</div>
-         <div style="font-size:13px;color:#6b7280;margin-top:6px">${isCz ? 'Plný přístup ke všem organizacím.' : 'Full access to all organizations.'}</div>
+         <div style="font-size:13px;color:#6b7280;margin-top:6px">${e.fullAccessNote}</div>
        </div>`
     : `<div style="background:#f8f7ff;border:1px solid #e0ddff;border-radius:8px;padding:20px;margin-bottom:24px">
-         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:8px">${roleLabel}</div>
+         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:8px">${e.roleLabel}</div>
          <div style="font-size:18px;font-weight:700;color:#4f46e5">${roleName || (sysLabel ?? '')}</div>
-         ${sysLabel && roleName ? `<div style="font-size:12px;color:#6b7280;margin-top:6px">${sysLabel2}: <strong>${sysLabel}</strong></div>` : ''}
+         ${sysLabel && roleName ? `<div style="font-size:12px;color:#6b7280;margin-top:6px">${e.systemRoleLabel}: <strong>${sysLabel}</strong></div>` : ''}
        </div>`;
 
   const activePerms = activePermNames(lang, systemRole, rolePermissions);
   const permsBlock = activePerms.length
     ? `<div style="margin-bottom:24px">
-         <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:10px">${permLabel}:</div>
+         <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:10px">${e.permissionsLabel}:</div>
          <div>${activePerms.map(p => `<span style="display:inline-block;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;padding:3px 10px;font-size:12px;color:#374151;margin:2px 4px 2px 0">${p}</span>`).join('')}</div>
        </div>`
     : '';
 
   const orgsBlock = userOrganizations.length
     ? `<div style="margin-bottom:24px">
-         <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">${orgsLabel}:</div>
+         <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">${e.organizationsLabel}:</div>
          ${userOrganizations.map(o => `<div style="font-size:14px;color:#4b5563;padding:5px 0;border-bottom:1px solid #f3f4f6">• ${o}</div>`).join('')}
        </div>`
     : '';
 
   const ctaBlock = inviteLink
     ? `<div style="text-align:center;margin:32px 0">
-         <a href="${inviteLink}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;font-weight:600">${ctaText}</a>
-         <div style="font-size:11px;color:#9ca3af;margin-top:12px">${isCz ? 'Odkaz je platný 24 hodin.' : 'Link expires in 24 hours.'}</div>
+         <a href="${inviteLink}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;font-weight:600">${e.ctaAccept}</a>
+         <div style="font-size:11px;color:#9ca3af;margin-top:12px">${e.linkExpires24h}</div>
        </div>`
     : `<div style="text-align:center;margin:32px 0">
-         <a href="${siteUrl}/login" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;font-weight:600">${loginText}</a>
+         <a href="${siteUrl}/login" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;font-weight:600">${e.ctaSignIn}</a>
        </div>`;
 
   const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -166,7 +156,7 @@ export async function sendPartyInvitation(opts: {
   <tr><td style="background:#f9fafb;padding:20px 48px;border-top:1px solid #e5e7eb">
     <div style="font-size:12px;color:#9ca3af">
       <a href="${siteUrl}/admin" style="color:#4f46e5;text-decoration:none">Admin</a> &nbsp;·&nbsp;
-      <a href="${siteUrl}/login" style="color:#4f46e5;text-decoration:none">${loginText}</a> &nbsp;·&nbsp;
+      <a href="${siteUrl}/login" style="color:#4f46e5;text-decoration:none">${e.ctaSignIn}</a> &nbsp;·&nbsp;
       <a href="${siteUrl}/shop" style="color:#4f46e5;text-decoration:none">Shop</a> &nbsp;·&nbsp;
       <a href="${siteUrl}/profile" style="color:#4f46e5;text-decoration:none">Profile</a>
     </div>
@@ -198,29 +188,32 @@ export async function sendOrderConfirmation(opts: {
   sellerOfRecord?: { name: string; ico: string; address: string; vatNote: string };
 }): Promise<void> {
   const lang = opts.lang ?? 'cs';
+  const t = getT(lang);
+  const e = t.email.orderConfirmation;
+
   const itemsHtml = opts.items
     .map(i => `<tr><td>${i.title}</td><td>${i.quantity}×</td><td>${formatPrice(i.price, lang, opts.currency)}</td></tr>`)
     .join("");
   const sellerHtml = opts.sellerOfRecord
     ? `<p style="color:#555;font-size:13px">
-        ${lang === 'cs' ? 'Prodávající' : 'Seller'}: <strong>${opts.sellerOfRecord.name}</strong>, IČO ${opts.sellerOfRecord.ico}<br/>
+        ${e.sellerLabel}: <strong>${opts.sellerOfRecord.name}</strong>, IČO ${opts.sellerOfRecord.ico}<br/>
         ${opts.sellerOfRecord.address}<br/>${opts.sellerOfRecord.vatNote}
       </p>`
     : "";
 
   await sendEmail({
     to: opts.to,
-    subject: `Order Confirmation — ${opts.orderNumber}`,
+    subject: `${e.subjectPrefix}${opts.orderNumber}`,
     html: `
-      <h1>Thank you for your order, ${opts.customerName}!</h1>
-      <p>Your order <strong>${opts.orderNumber}</strong> has been received and is being processed.</p>
+      <h1>${e.thankYouPrefix}${opts.customerName}${e.thankYouSuffix}</h1>
+      <p>${e.receivedPrefix}${opts.orderNumber}${e.receivedSuffix}</p>
       <table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse;width:100%;max-width:500px">
-        <thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead>
+        <thead><tr><th>${e.itemHeader}</th><th>${e.qtyHeader}</th><th>${e.priceHeader}</th></tr></thead>
         <tbody>${itemsHtml}</tbody>
-        <tfoot><tr><td colspan="2"><strong>Total</strong></td><td><strong>${formatPrice(opts.orderTotal, lang, opts.currency)}</strong></td></tr></tfoot>
+        <tfoot><tr><td colspan="2"><strong>${e.totalLabel}</strong></td><td><strong>${formatPrice(opts.orderTotal, lang, opts.currency)}</strong></td></tr></tfoot>
       </table>
       ${sellerHtml}
-      <p>We will notify you when your order ships.</p>
+      <p>${e.shipNotice}</p>
     `,
   });
 }
@@ -231,15 +224,20 @@ export async function sendShippingNotification(opts: {
   orderNumber: string;
   trackingNumber: string;
   carrier?: string;
+  lang?: AppLanguage;
 }): Promise<void> {
+  const lang = opts.lang ?? 'cs';
+  const t = getT(lang);
+  const e = t.email.shippingNotification;
+
   await sendEmail({
     to: opts.to,
-    subject: `Your order ${opts.orderNumber} has shipped!`,
+    subject: `${e.subjectPrefix}${opts.orderNumber}${e.subjectSuffix}`,
     html: `
-      <h1>Your order is on its way, ${opts.customerName}!</h1>
-      <p>Order <strong>${opts.orderNumber}</strong> has been shipped.</p>
-      <p>Tracking number: <strong>${opts.trackingNumber}</strong>${opts.carrier ? ` via ${opts.carrier}` : ""}</p>
-      <p>Estimated delivery: 2-5 business days.</p>
+      <h1>${e.headingPrefix}${opts.customerName}${e.headingSuffix}</h1>
+      <p>${e.shippedPrefix}${opts.orderNumber}${e.shippedSuffix}</p>
+      <p>${e.trackingLabel}<strong>${opts.trackingNumber}</strong>${opts.carrier ? `${e.viaLabel}${opts.carrier}` : ""}</p>
+      <p>${e.estimatedDelivery}</p>
     `,
   });
 }
@@ -247,15 +245,20 @@ export async function sendShippingNotification(opts: {
 export async function sendPasswordReset(opts: {
   to: string;
   resetLink: string;
+  lang?: AppLanguage;
 }): Promise<void> {
+  const lang = opts.lang ?? 'cs';
+  const t = getT(lang);
+  const e = t.email.passwordReset;
+
   await sendEmail({
     to: opts.to,
-    subject: "Reset your password",
+    subject: e.subject,
     html: `
-      <h1>Reset your password</h1>
-      <p>Click the link below to reset your password. This link expires in 1 hour.</p>
-      <p><a href="${opts.resetLink}" style="background:#4f46e5;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">Reset Password</a></p>
-      <p>If you didn't request this, ignore this email.</p>
+      <h1>${e.heading}</h1>
+      <p>${e.instructions}</p>
+      <p><a href="${opts.resetLink}" style="background:#4f46e5;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">${e.ctaButton}</a></p>
+      <p>${e.ignoreNote}</p>
     `,
   });
 }
@@ -266,19 +269,24 @@ export async function sendReviewRequest(opts: {
   orderNumber: string;
   products: Array<{ title: string; slug: string }>;
   shopBaseUrl: string;
+  lang?: AppLanguage;
 }): Promise<void> {
+  const lang = opts.lang ?? 'cs';
+  const t = getT(lang);
+  const e = t.email.reviewRequest;
+
   const linksHtml = opts.products
     .map(p => `<li><a href="${opts.shopBaseUrl}/shop/${p.slug}?reviewed=0">${p.title}</a></li>`)
     .join("");
 
   await sendEmail({
     to: opts.to,
-    subject: `How was your order ${opts.orderNumber}?`,
+    subject: `${e.subjectPrefix}${opts.orderNumber}${e.subjectSuffix}`,
     html: `
-      <h1>How did we do, ${opts.customerName}?</h1>
-      <p>We hope you're enjoying your recent purchase. Please leave a review:</p>
+      <h1>${e.headingPrefix}${opts.customerName}${e.headingSuffix}</h1>
+      <p>${e.intro}</p>
       <ul>${linksHtml}</ul>
-      <p>Your feedback helps other customers make better decisions!</p>
+      <p>${e.footerNote}</p>
     `,
   });
 }
@@ -293,6 +301,9 @@ export async function sendAbandonedCartRecovery(opts: {
   lang?: AppLanguage;
 }): Promise<void> {
   const lang = opts.lang ?? 'cs';
+  const t = getT(lang);
+  const e = t.email.abandonedCart;
+
   const itemsHtml = opts.items
     .map(i => `<li>${i.title} — ${formatPrice(i.price, lang, opts.currency)}</li>`)
     .join("");
@@ -300,14 +311,14 @@ export async function sendAbandonedCartRecovery(opts: {
   await sendEmail({
     to: opts.to,
     subject: opts.couponCode
-      ? `${opts.customerName}, use ${opts.couponCode} to complete your order!`
-      : `${opts.customerName}, you left something behind!`,
+      ? `${opts.customerName}${e.subjectCouponMid}${opts.couponCode}${e.subjectCouponSuffix}`
+      : `${opts.customerName}${e.subjectNoCouponSuffix}`,
     html: `
-      <h1>You left something in your cart!</h1>
-      <p>Hi ${opts.customerName}, these items are waiting for you:</p>
+      <h1>${e.heading}</h1>
+      <p>${e.greetingPrefix}${opts.customerName}${e.greetingSuffix}</p>
       <ul>${itemsHtml}</ul>
-      ${opts.couponCode ? `<p>Use code <strong>${opts.couponCode}</strong> for 10% off!</p>` : ""}
-      <p><a href="${opts.cartUrl}" style="background:#4f46e5;color:#fff;padding:10px 24px;border-radius:6px;text-decoration:none">Complete Your Order</a></p>
+      ${opts.couponCode ? `<p>${e.couponPrefix}${opts.couponCode}${e.couponSuffix}</p>` : ""}
+      <p><a href="${opts.cartUrl}" style="background:#4f46e5;color:#fff;padding:10px 24px;border-radius:6px;text-decoration:none">${e.ctaComplete}</a></p>
     `,
   });
 }

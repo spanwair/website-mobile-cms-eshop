@@ -10,7 +10,7 @@
   <tr><td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);padding:40px 48px">
     <div style="color:#fff;font-size:26px;font-weight:700">{{ index .Data "party_name" }}</div>
     <div style="color:rgba(255,255,255,0.8);font-size:15px;margin-top:8px">
-      {{ if eq (index .Data "lang") "cs" }}Obdrželi jste pozvánku{{ else }}You've been invited{{ end }}
+      {{ if eq (index .Data "lang") "en" }}You've been invited{{ else }}Obdrželi jste pozvánku{{ end }}
     </div>
   </td></tr>
 
@@ -18,10 +18,10 @@
   <tr><td style="padding:40px 48px">
 
     <p style="margin:0 0 24px;color:#4b5563;font-size:15px;line-height:1.7">
-      {{ if eq (index .Data "lang") "cs" }}
-        Byli jste pozváni, abyste se připojili k organizaci <strong>{{ index .Data "party_name" }}</strong>. Klikněte na tlačítko níže pro vytvoření účtu.
-      {{ else }}
+      {{ if eq (index .Data "lang") "en" }}
         You've been invited to join <strong>{{ index .Data "party_name" }}</strong>. Click the button below to create your account and accept the invitation.
+      {{ else }}
+        Byli jste pozváni, abyste se připojili k organizaci <strong>{{ index .Data "party_name" }}</strong>. Klikněte na tlačítko níže pro vytvoření účtu.
       {{ end }}
     </p>
 
@@ -29,24 +29,24 @@
     {{ if eq (index .Data "is_admin_only") "true" }}
     <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:20px;margin-bottom:24px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:8px">
-        {{ if eq (index .Data "lang") "cs" }}Systémová role{{ else }}System role{{ end }}
+        {{ if eq (index .Data "lang") "en" }}System role{{ else }}Systémová role{{ end }}
       </div>
       <div style="font-size:18px;font-weight:700;color:#0284c7">{{ index .Data "system_role_label" }}</div>
       <div style="font-size:13px;color:#6b7280;margin-top:6px">
-        {{ if eq (index .Data "lang") "cs" }}Plný přístup ke všem organizacím.{{ else }}Full access to all organizations.{{ end }}
+        {{ if eq (index .Data "lang") "en" }}Full access to all organizations.{{ else }}Plný přístup ke všem organizacím.{{ end }}
       </div>
     </div>
     {{ else }}
     <div style="background:#f8f7ff;border:1px solid #e0ddff;border-radius:8px;padding:20px;margin-bottom:24px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:8px">
-        {{ if eq (index .Data "lang") "cs" }}Vaše role{{ else }}Your role{{ end }}
+        {{ if eq (index .Data "lang") "en" }}Your role{{ else }}Vaše role{{ end }}
       </div>
       <div style="font-size:18px;font-weight:700;color:#4f46e5">
         {{ if index .Data "role_name" }}{{ index .Data "role_name" }}{{ else }}{{ index .Data "system_role_label" }}{{ end }}
       </div>
       {{ if and (index .Data "system_role_label") (index .Data "role_name") }}
       <div style="font-size:12px;color:#6b7280;margin-top:6px">
-        {{ if eq (index .Data "lang") "cs" }}Systémová role{{ else }}System role{{ end }}: <strong>{{ index .Data "system_role_label" }}</strong>
+        {{ if eq (index .Data "lang") "en" }}System role{{ else }}Systémová role{{ end }}: <strong>{{ index .Data "system_role_label" }}</strong>
       </div>
       {{ end }}
     </div>
@@ -56,7 +56,7 @@
     {{ if index .Data "permissions_text" }}
     <div style="margin-bottom:24px">
       <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">
-        {{ if eq (index .Data "lang") "cs" }}Vaše oprávnění{{ else }}Your permissions{{ end }}:
+        {{ if eq (index .Data "lang") "en" }}Your permissions{{ else }}Vaše oprávnění{{ end }}:
       </div>
       <div style="font-size:14px;color:#4b5563;line-height:1.8">{{ index .Data "permissions_text" }}</div>
     </div>
@@ -65,10 +65,10 @@
     <!-- CTA -->
     <div style="text-align:center;margin:32px 0">
       <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=invite" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;font-weight:600">
-        {{ if eq (index .Data "lang") "cs" }}Přijmout pozvánku{{ else }}Accept invitation{{ end }}
+        {{ if eq (index .Data "lang") "en" }}Accept invitation{{ else }}Přijmout pozvánku{{ end }}
       </a>
       <div style="font-size:11px;color:#9ca3af;margin-top:12px">
-        {{ if eq (index .Data "lang") "cs" }}Odkaz je platný 24 hodin.{{ else }}Link expires in 24 hours.{{ end }}
+        {{ if eq (index .Data "lang") "en" }}Link expires in 24 hours.{{ else }}Odkaz je platný 24 hodin.{{ end }}
       </div>
     </div>
 
@@ -79,7 +79,7 @@
     <div style="font-size:12px;color:#9ca3af">
       <a href="{{ .SiteURL }}/admin" style="color:#4f46e5;text-decoration:none">Admin</a> &nbsp;·&nbsp;
       <a href="{{ .SiteURL }}/login" style="color:#4f46e5;text-decoration:none">
-        {{ if eq (index .Data "lang") "cs" }}Přihlásit se{{ else }}Sign in{{ end }}
+        {{ if eq (index .Data "lang") "en" }}Sign in{{ else }}Přihlásit se{{ end }}
       </a> &nbsp;·&nbsp;
       <a href="{{ .SiteURL }}/shop" style="color:#4f46e5;text-decoration:none">Shop</a> &nbsp;·&nbsp;
       <a href="{{ .SiteURL }}/profile" style="color:#4f46e5;text-decoration:none">Profile</a>

@@ -81,7 +81,10 @@ if (Astro.request.method === "POST") {
       const adminClient = createAdminClient();
 
       const { data: senderProf } = await supabase.from("profiles").select("lang").eq("id", session.user.id).single();
-      const emailLang: 'cs' | 'en' = senderProf?.lang === 'en' ? 'en' : 'cs';
+      // New users have no profile/lang yet, so the inviter's own language is the best
+      // available signal for that path. Existing users already have their own saved
+      // preference — that always wins over whatever language the inviter happens to use.
+      const inviterLang: 'cs' | 'en' = senderProf?.lang === 'en' ? 'en' : 'cs';
       const partyName = ctx.parties.find(p => p.id === id)?.name ?? id!;
 
       let inviteRoleName = '';
@@ -112,6 +115,7 @@ if (Astro.request.method === "POST") {
           const allPartyIds = [...new Set([...memberPartyIds, id!])];
           const { data: partyRows } = await adminClient.from("parties").select("name").in("id", allPartyIds);
           const orgNames = (partyRows ?? []).map((p) => p.name);
+          const emailLang: 'cs' | 'en' = existingUser.lang === 'en' ? 'en' : 'cs';
           try {
             await sendPartyInvitation({ to: email, lang: emailLang, partyName, roleName: inviteRoleName, systemRole: validSystemRole, rolePermissions: inviteRolePerms, inviteLink: null, userOrganizations: orgNames, siteUrl: origin });
           } catch (e) { console.error('[invite] email send failed:', e); }
@@ -125,7 +129,7 @@ if (Astro.request.method === "POST") {
         };
         if (!import.meta.env.RESEND_API_KEY) {
           // Dev: inviteUserByEmail → GoTrue renders supabase/templates/invite.html → Mailpit
-          const emailMeta = buildDevInviteMetadata({ lang: emailLang, partyName, roleName: inviteRoleName, systemRole: validSystemRole, rolePermissions: inviteRolePerms });
+          const emailMeta = buildDevInviteMetadata({ lang: inviterLang, partyName, roleName: inviteRoleName, systemRole: validSystemRole, rolePermissions: inviteRolePerms });
           const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
             redirectTo: `${origin}/auth/callback`,
             data: { ...authData, ...emailMeta },
@@ -143,7 +147,7 @@ if (Astro.request.method === "POST") {
           } else {
             const inviteLink = (linkData as { properties?: { action_link?: string } })?.properties?.action_link ?? null;
             try {
-              await sendPartyInvitation({ to: email, lang: emailLang, partyName, roleName: inviteRoleName, systemRole: validSystemRole, rolePermissions: inviteRolePerms, inviteLink, userOrganizations: [partyName], siteUrl: origin });
+              await sendPartyInvitation({ to: email, lang: inviterLang, partyName, roleName: inviteRoleName, systemRole: validSystemRole, rolePermissions: inviteRolePerms, inviteLink, userOrganizations: [partyName], siteUrl: origin });
             } catch (e) { console.error('[invite] email send failed:', e); }
             success = t.admin.parties.inviteSentPrefix + email + t.admin.parties.inviteSentSuffix;
           }
