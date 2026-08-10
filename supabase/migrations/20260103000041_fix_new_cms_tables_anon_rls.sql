@@ -12,10 +12,8 @@ CREATE POLICY "Public read store_media of active parties"
   ON store_media FOR SELECT TO anon, authenticated
   USING (party_is_active(party_id));
 
-DROP POLICY IF EXISTS "Public read active conditions" ON product_conditions;
-CREATE POLICY "Public read active conditions"
-  ON product_conditions FOR SELECT TO anon, authenticated
-  USING (is_active AND party_is_active(party_id));
+-- product_conditions doesn't exist yet at this point in migration order (created in
+-- 20260103000049) — its policy fix lives in 20260103000067_fix_product_conditions_rls_ordering.sql.
 
 DROP POLICY IF EXISTS "Public read visible hero_slides" ON hero_slides;
 CREATE POLICY "Public read visible hero_slides"

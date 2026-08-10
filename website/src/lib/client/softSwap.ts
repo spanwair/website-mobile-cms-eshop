@@ -2,14 +2,7 @@
 // target URL, swaps the id-tagged container's innerHTML with the fetched page's version of it,
 // and pushes the URL — no full page load, so scroll position and focus never move. Falls back to
 // a real navigation on any fetch/parse failure so the feature degrades to plain links with JS off.
-function executeScripts(container: HTMLElement) {
-  container.querySelectorAll("script").forEach((old) => {
-    const replacement = document.createElement("script");
-    for (const attr of Array.from(old.attributes)) replacement.setAttribute(attr.name, attr.value);
-    replacement.textContent = old.textContent;
-    old.replaceWith(replacement);
-  });
-}
+import { executeScripts } from "./domUtils";
 
 export function initFilterSwap(containerId: string) {
   async function swap(url: string) {

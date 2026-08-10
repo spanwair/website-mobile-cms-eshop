@@ -14,11 +14,13 @@ if [[ "$ENV" == "production" ]]; then
     echo "Production push requires master branch (you are on '$BRANCH')" >&2
     exit 1
   fi
-  # Read only SUPABASE_DB_URL from env file (avoids sourcing issues with spaces/special chars)
-  SUPABASE_DB_URL=$(grep '^SUPABASE_DB_URL=' .env.production 2>/dev/null | cut -d= -f2-)
+  # Read only SUPABASE_DB_URL_POOLER from env file (avoids sourcing issues with spaces/special
+  # chars). The pooler host is dual-stack (IPv4-reachable); the direct db.<ref>.supabase.co
+  # host is IPv6-only and fails to connect from most networks.
+  SUPABASE_DB_URL=$(grep '^SUPABASE_DB_URL_POOLER=' .env.production 2>/dev/null | cut -d= -f2-)
   if [[ -z "$SUPABASE_DB_URL" ]]; then
-    echo "SUPABASE_DB_URL missing — add it to .env.production" >&2
-    echo "  Find it at: Supabase dashboard → Settings → Database → Connection string" >&2
+    echo "SUPABASE_DB_URL_POOLER missing — add it to .env.production" >&2
+    echo "  Find it at: Supabase dashboard → Connect → Session pooler" >&2
     exit 1
   fi
   echo "Pushing DB migrations to PRODUCTION..."

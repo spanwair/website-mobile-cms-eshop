@@ -11,6 +11,20 @@ if [[ "$ENV" == "production" ]]; then
   fi
 fi
 
-echo "Deploying Edge Functions to $ENV..."
-supabase functions deploy --project-ref "$(cat supabase/.temp/project-ref 2>/dev/null || echo 'YOUR_PROJECT_REF')"
+if [[ "$ENV" == "production" ]]; then
+  PROJECT_REF=$(grep '^PUBLIC_SUPABASE_URL=' .env.production 2>/dev/null | cut -d= -f2- | sed -E 's#https?://([^.]+)\.supabase\.co.*#\1#')
+  if [[ -z "$PROJECT_REF" ]]; then
+    echo "Could not derive project ref from PUBLIC_SUPABASE_URL in .env.production" >&2
+    exit 1
+  fi
+else
+  PROJECT_REF=$(cat supabase/.temp/project-ref 2>/dev/null || echo "")
+  if [[ -z "$PROJECT_REF" ]]; then
+    echo "No linked project ref found at supabase/.temp/project-ref — run 'npx supabase link' first" >&2
+    exit 1
+  fi
+fi
+
+echo "Deploying Edge Functions to $ENV (project-ref: $PROJECT_REF)..."
+npx supabase functions deploy --project-ref "$PROJECT_REF"
 echo "Done: $ENV"

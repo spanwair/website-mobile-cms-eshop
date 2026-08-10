@@ -9,11 +9,8 @@
 -- store_domains, store_media, products, categories, ...) is `is_owner() OR
 -- user_has_permission(...)` — re-point these 9 to match.
 
-DROP POLICY IF EXISTS "Managers manage product_conditions" ON product_conditions;
-CREATE POLICY "Managers manage product_conditions"
-  ON product_conditions FOR ALL TO authenticated
-  USING (is_owner() OR user_has_permission(auth.uid(), party_id, 8))
-  WITH CHECK (is_owner() OR user_has_permission(auth.uid(), party_id, 8));
+-- product_conditions doesn't exist yet at this point in migration order (created in
+-- 20260103000049) — its policy fix lives in 20260103000067_fix_product_conditions_rls_ordering.sql.
 
 DROP POLICY IF EXISTS "Settings managers manage hero_slides" ON hero_slides;
 CREATE POLICY "Settings managers manage hero_slides"
