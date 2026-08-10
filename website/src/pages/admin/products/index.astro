@@ -108,7 +108,11 @@ const filterQs = `&search=${encodeURIComponent(search)}&status=${status}&categor
           <tr>
             <td class="thumb-cell">
               {p.primaryImage ? (
-                <img src={p.primaryImage} alt={p.title} class="thumb-img" />
+                p.primaryImageIsVideo ? (
+                  <video src={`${p.primaryImage}#t=0.1`} class="thumb-img" muted playsinline preload="metadata" aria-label={p.title} />
+                ) : (
+                  <img src={p.primaryImage} alt={p.title} class="thumb-img" />
+                )
               ) : (
                 <div class="thumb-placeholder">{t.shop.noImage}</div>
               )}

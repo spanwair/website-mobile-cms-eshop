@@ -56,6 +56,16 @@ export function variantImages<T extends { variant_id: string | null }>(images: T
   return own.length > 0 ? own : images.filter((img) => img.variant_id === null);
 }
 
+// The thumbnail everywhere (admin list, storefront related cards) prefers a real image; a
+// product with only video media falls back to the video so callers can render its first frame
+// instead of showing nothing. Single place this rule lives — reused by admin and storefront alike.
+export function resolvePrimaryMedia<T extends { is_primary: boolean; media_type?: string | null }>(
+  items: T[]
+): T | null {
+  const images = items.filter((i) => i.media_type !== "video");
+  return images.find((i) => i.is_primary) ?? images[0] ?? items.find((i) => i.is_primary) ?? items[0] ?? null;
+}
+
 export async function updateProductImage(
   client: Client,
   imageId: string,

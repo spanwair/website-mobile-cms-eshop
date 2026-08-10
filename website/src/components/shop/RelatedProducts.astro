@@ -3,7 +3,7 @@ import { useT, getLang } from "../../lib/i18n";
 import { formatPrice } from "@shared/utils/format";
 
 interface Props {
-  products: { slug: string; primaryImage?: string; title: string; discount_price: number | null; price: number }[];
+  products: { slug: string; primaryImage?: string; primaryImageIsVideo?: boolean; title: string; discount_price: number | null; price: number }[];
   linkBase: string;
   currency?: string;
 }
@@ -18,7 +18,13 @@ const lang = getLang(Astro);
     <div class="related-grid">
       {products.map((p) => (
         <a href={`${linkBase}/${p.slug}`} class="related-card">
-          {p.primaryImage && <img src={p.primaryImage} alt={p.title} class="related-img" loading="lazy" />}
+          {p.primaryImage && (
+            p.primaryImageIsVideo ? (
+              <video src={`${p.primaryImage}#t=0.1`} class="related-img" muted playsinline preload="metadata" aria-label={p.title} />
+            ) : (
+              <img src={p.primaryImage} alt={p.title} class="related-img" loading="lazy" />
+            )
+          )}
           <p class="related-title">{p.title}</p>
           <p class="related-price">{formatPrice(Number(p.discount_price ?? p.price), lang, currency)}</p>
         </a>

@@ -1,11 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
 import type { Product, ProductWithDetails, PaginatedResult } from "../types";
-import { variantImages } from "./productImageService";
+import { variantImages, resolvePrimaryMedia } from "./productImageService";
 
 type Client = SupabaseClient<Database>;
 
-export type ProductListRow = Product & { primaryImage: string | null; displayPrice: number };
+export type ProductListRow = Product & { primaryImage: string | null; primaryImageIsVideo: boolean; displayPrice: number };
 
 export async function fetchProducts(
   client: Client,
@@ -27,7 +27,7 @@ export async function fetchProducts(
   // same rule on the detail page.
   let query = client
     .from("products")
-    .select("*, product_variants(id, price, sort_order, is_active), product_images(url, is_primary, variant_id)", { count: "exact" })
+    .select("*, product_variants(id, price, sort_order, is_active), product_images(url, is_primary, variant_id, media_type)", { count: "exact" })
     .eq("party_id", partyId);
 
   if (status) query = query.eq("status", status);
@@ -71,12 +71,13 @@ export async function fetchProducts(
       .sort((a, b) => a.sort_order - b.sort_order);
     const firstVariant = variants[0] ?? null;
     const images = variantImages((p.product_images ?? []) as any[], firstVariant?.id ?? null);
-    const primary = images.find((i) => i.is_primary) ?? images[0] ?? null;
+    const primary = resolvePrimaryMedia(images);
     const { product_variants, product_images, ...rest } = p;
     return {
       ...rest,
       stock: stockMap.get(p.id) ?? null,
       primaryImage: primary?.url ?? null,
+      primaryImageIsVideo: primary?.media_type === "video",
       displayPrice: firstVariant?.price != null ? Number(firstVariant.price) : Number(p.price),
     };
   }) as ProductListRow[];

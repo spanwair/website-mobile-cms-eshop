@@ -7,7 +7,7 @@ import RelatedProducts from "../../components/shop/RelatedProducts.astro";
 import { createSupabase } from "../../lib/supabase";
 import { fetchProductReviews, submitReview, resolveReviewIdentity } from "@shared/services/reviewService";
 import { fetchInventoryRowsByProduct } from "@shared/services/inventoryService";
-import { variantImages } from "@shared/services/productImageService";
+import { variantImages, resolvePrimaryMedia } from "@shared/services/productImageService";
 import { getOrCreateCart, addToCart, fetchCartItemCount } from "@shared/services/cartService";
 import { addToWishlist, removeFromWishlist, isInWishlist } from "@shared/services/wishlistService";
 import { fetchVisibleBenefitItems } from "@shared/services/benefitItemService";
@@ -187,8 +187,8 @@ if (categories.length > 0) {
     .in("product_categories.category_id", categories.map((c) => c.id))
     .limit(4);
   relatedProducts = (related ?? []).map((p) => {
-    const imgs = ((p as any).product_images ?? []).filter((i: any) => i.media_type !== "video");
-    return { ...p, primaryImage: (imgs.find((i: any) => i.is_primary) ?? imgs[0])?.url };
+    const primary = resolvePrimaryMedia(((p as any).product_images ?? []) as any[]);
+    return { ...p, primaryImage: primary?.url, primaryImageIsVideo: primary?.media_type === "video" };
   });
 }
 
