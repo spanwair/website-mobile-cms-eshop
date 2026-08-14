@@ -22,7 +22,9 @@ const icons = [
     <div class="grid-auto" data-reveal-group>
       {f.items.map((item, i) => (
         <div class="card feature-card" data-reveal>
-          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" set:html={icons[i % icons.length]} />
+          <div class="feature-icon-badge">
+            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" set:html={icons[i % icons.length]} />
+          </div>
           <h3 class="feature-title">{item.title}</h3>
           <p class="feature-desc">{item.desc}</p>
         </div>
@@ -32,9 +34,17 @@ const icons = [
 </section>
 
 <style>
-  .feature-card { transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease; }
+  .feature-card {
+    background: var(--landing-cream);
+    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  }
   .feature-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); border-color: var(--border-strong); }
-  .feature-icon { width: 32px; height: 32px; color: var(--accent-primary); margin-bottom: 16px; }
+  .feature-icon-badge {
+    display: flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: var(--radius-md);
+    background: var(--landing-mint-soft); margin-bottom: 16px;
+  }
+  .feature-icon { width: 32px; height: 32px; color: var(--accent-primary); }
   .feature-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
   .feature-desc { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
 </style>
