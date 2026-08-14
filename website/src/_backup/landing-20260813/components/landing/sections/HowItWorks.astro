@@ -1,0 +1,37 @@
+---
+import { useT } from "../../../lib/i18n";
+const t = useT(Astro);
+const h = t.landing.howItWorks;
+---
+
+<section class="landing" id="how-it-works" style="background:var(--bg-surface)">
+  <div class="container-lg">
+    <p class="section-eyebrow section-eyebrow--center">{h.eyebrow}</p>
+    <h2 class="section-title section-title--center">{h.title}</h2>
+    <p class="section-sub section-sub--center" style="margin-bottom:56px">{h.sub}</p>
+
+    <div class="steps-row" data-reveal-group>
+      {h.steps.map((step) => (
+        <div class="step-card" data-reveal>
+          <span class="step-number">{step.step}</span>
+          <h3 class="step-title">{step.title}</h3>
+          <p class="step-desc">{step.desc}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .steps-row { display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .step-card { text-align: center; padding: var(--space-4); }
+  .step-number {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--accent-primary); color: #fff;
+    font-weight: 800; font-size: 18px; margin-bottom: var(--space-4);
+    box-shadow: 0 6px 16px rgba(79,70,229,0.35);
+  }
+  .step-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+  .step-desc { color: var(--text-muted); font-size: 14px; line-height: 1.6; max-width: 280px; margin-inline: auto; }
+</style>

@@ -5,11 +5,13 @@ import { formatPrice } from "@shared/utils/format";
 interface Props {
   items: { product?: { title: string }; quantity: number; unit_price: number }[];
   subtotal: number;
+  shippingCost?: number;
   currency?: string;
 }
-const { items, subtotal, currency } = Astro.props;
+const { items, subtotal, shippingCost, currency } = Astro.props;
 const t = useT(Astro);
 const lang = getLang(Astro);
+const grandTotal = subtotal + (shippingCost ?? 0);
 ---
 
 <aside class="order-summary card">
@@ -20,9 +22,17 @@ const lang = getLang(Astro);
       <span class="summary-price">{formatPrice(Number(item.unit_price) * item.quantity, lang, currency)}</span>
     </div>
   ))}
+  {shippingCost !== undefined && (
+    <div class="summary-item" id="summary-shipping-row">
+      <span class="summary-name">{t.shop.shipping}</span>
+      <span class="summary-price" id="summary-shipping-price">
+        {shippingCost === 0 ? t.shop.freeShipping : formatPrice(shippingCost, lang, currency)}
+      </span>
+    </div>
+  )}
   <div class="summary-total">
     <span>Total</span>
-    <span class="total-price">{formatPrice(subtotal, lang, currency)}</span>
+    <span class="total-price" id="summary-grand-total">{formatPrice(grandTotal, lang, currency)}</span>
   </div>
 </aside>
 

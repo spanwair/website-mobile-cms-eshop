@@ -30,6 +30,11 @@ const ordersResult = await fetchOrders(supabase, partyId, { page, pageSize, stat
 const orders = ordersResult.data;
 const total = ordersResult.total;
 
+const { data: shipmentRows } = orders.length
+  ? await supabase.from("order_shipments").select("order_id, provider, status").in("order_id", orders.map((o) => o.id))
+  : { data: [] as { order_id: string; provider: string; status: string }[] };
+const shipmentByOrder = new Map((shipmentRows ?? []).map((s) => [s.order_id, s]));
+
 const totalPages = Math.ceil(total / pageSize);
 
 const STATUS_TABS: Array<{ value: string; label: string }> = [
@@ -58,7 +63,7 @@ function statusClass(s: string) {
 }
 ---
 
-<CmsLayout title={t.admin.orders.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.orders.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="tabs">
     {STATUS_TABS.map((tab) => (
       <a
@@ -73,21 +78,31 @@ function statusClass(s: string) {
   <div class="card" style="padding:0;overflow:hidden;margin-top:16px">
     <table class="data-table">
       <thead>
-        <tr><th>{t.admin.orders.colNumber}</th><th>{t.admin.orders.colStatus}</th><th>{t.admin.orders.colPayment}</th><th>{t.admin.orders.colTotal}</th><th>{t.admin.orders.colDate}</th><th>{t.admin.orders.colActions}</th></tr>
+        <tr><th>{t.admin.orders.colNumber}</th><th>{t.admin.orders.colStatus}</th><th>{t.admin.orders.colPayment}</th><th>{t.admin.orders.sectionShipment}</th><th>{t.admin.orders.colTotal}</th><th>{t.admin.orders.colDate}</th><th>{t.admin.orders.colActions}</th></tr>
       </thead>
       <tbody>
-        {orders.map((o) => (
+        {orders.map((o) => {
+          const shipment = shipmentByOrder.get(o.id);
+          return (
           <tr>
             <td style="font-weight:600">{o.order_number}</td>
             <td><span class={`badge ${statusClass(o.status)}`}>{STATUS_LABELS[o.status] ?? o.status}</span></td>
             <td><span class={`badge ${o.payment_status === "paid" ? "badge-active" : "badge-draft"}`}>{PAYMENT_LABELS[o.payment_status] ?? o.payment_status}</span></td>
+            <td>
+              {shipment ? (
+                <span class="badge badge-inactive" style="font-size:11px">{shipment.provider.toUpperCase()} · {shipment.status}</span>
+              ) : (
+                <span style="color:var(--text-muted);font-size:12px">—</span>
+              )}
+            </td>
             <td>{formatPrice(o.total_amount, lang, o.currency)}</td>
             <td style="color:var(--text-muted);font-size:13px">{new Date(o.created_at).toLocaleDateString(lang)}</td>
             <td><a href={`/admin/orders/${o.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.orders.detail}</a></td>
           </tr>
-        ))}
+          );
+        })}
         {orders.length === 0 && (
-          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.orders.noOrders}</td></tr>
+          <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.orders.noOrders}</td></tr>
         )}
       </tbody>
     </table>

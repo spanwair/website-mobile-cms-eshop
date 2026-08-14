@@ -1,0 +1,163 @@
+---
+// Platform-level, cross-party billing overview — every party's current pricing state (10%
+// capped-at-2,990 for own_company, 30%/12,000-payout-limit for smalljobs_commission) and
+// outstanding balance in one place, so whoever holds MANAGE_AUDIT doesn't have to switch
+// active party and hunt through /admin/payouts for each org individually. Always scoped to
+// ctx.parties (owner sees every party, admin sees only their assigned ones) — never queries
+// beyond that set.
+import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import { createSupabase } from "../../../lib/supabase";
+import { requireAdminCtx } from "../../../lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { useT, getLang } from "../../../lib/i18n";
+import { SELLER_MODE, MONTHLY_COMMISSION_CAP_CZK, NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK } from "@shared/constants/sellerMode";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_AUDIT)) return Astro.redirect("/admin");
+const t = useT(Astro);
+const lang = getLang(Astro);
+const b = t.admin.billing;
+
+const partyIds = ctx.parties.map((p) => p.id);
+
+function fmt(n: number) {
+  return n.toLocaleString(lang === "en" ? "en-US" : "cs-CZ", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " Kč";
+}
+
+const { data: partyRows } = await supabase.from("parties").select("id, name, seller_mode").in("id", partyIds);
+const ownCompanyIds = (partyRows ?? []).filter((p) => p.seller_mode === SELLER_MODE.OWN_COMPANY).map((p) => p.id);
+const commissionIds = (partyRows ?? []).filter((p) => p.seller_mode === SELLER_MODE.SMALLJOBS_COMMISSION).map((p) => p.id);
+
+const monthStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString();
+const periodMonthDate = monthStart.slice(0, 10);
+
+const feesByParty = new Map<string, { thisMonth: any; unpaidTotal: number; unpaidCount: number }>();
+if (ownCompanyIds.length > 0) {
+  const { data: feeRows } = await supabase.from("monthly_platform_fees").select("*").in("party_id", ownCompanyIds);
+  for (const partyId of ownCompanyIds) {
+    const rows = (feeRows ?? []).filter((f) => f.party_id === partyId);
+    const thisMonth = rows.find((f) => f.period_month === periodMonthDate) ?? null;
+    const unpaid = rows.filter((f) => f.status === "unpaid");
+    feesByParty.set(partyId, {
+      thisMonth,
+      unpaidTotal: unpaid.reduce((sum, f) => sum + Number(f.fee_amount), 0),
+      unpaidCount: unpaid.length,
+    });
+  }
+}
+
+const ledgerByParty = new Map<string, { payoutThisMonth: number; withheldThisMonth: number; eligibleTotal: number; eligibleCount: number }>();
+if (commissionIds.length > 0) {
+  const { data: ledgerRows } = await supabase
+    .from("order_commission_ledger")
+    .select("party_id, net_payable, withheld_amount, status, hold_until, created_at")
+    .in("party_id", commissionIds)
+    .neq("status", "reversed");
+  const now = Date.now();
+  for (const partyId of commissionIds) {
+    const rows = (ledgerRows ?? []).filter((r) => r.party_id === partyId);
+    const thisMonthRows = rows.filter((r) => r.created_at >= monthStart);
+    const eligible = rows.filter((r) => r.status === "held" && new Date(r.hold_until).getTime() <= now);
+    ledgerByParty.set(partyId, {
+      payoutThisMonth: thisMonthRows.reduce((sum, r) => sum + Number(r.net_payable), 0),
+      withheldThisMonth: thisMonthRows.reduce((sum, r) => sum + Number(r.withheld_amount ?? 0), 0),
+      eligibleTotal: eligible.reduce((sum, r) => sum + Number(r.net_payable), 0),
+      eligibleCount: eligible.length,
+    });
+  }
+}
+
+const rows = (partyRows ?? []).map((party) => {
+  const isCommission = party.seller_mode === SELLER_MODE.SMALLJOBS_COMMISSION;
+  const fee = feesByParty.get(party.id);
+  const ledger = ledgerByParty.get(party.id);
+  return { party, isCommission, fee, ledger };
+});
+---
+
+<CmsLayout title={b.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+  <p class="content-hint">{b.hint}</p>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>{b.colParty}</th><th>{b.colMode}</th><th>{b.colThisMonth}</th><th>{b.colOutstanding}</th><th>{b.colActions}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(({ party, isCommission, fee, ledger }) => (
+          <tr>
+            <td style="font-weight:600">{party.name}</td>
+            <td>
+              <span class={`badge ${isCommission ? "badge-pending" : "badge-active"}`}>
+                {isCommission ? b.modeCommission : b.modeOwnCompany}
+              </span>
+            </td>
+            <td>
+              {isCommission ? (
+                <div>
+                  <div class="progress-line">{fmt(ledger?.payoutThisMonth ?? 0)} {b.of} {fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK)}</div>
+                  <div class="cap-bar"><div class="cap-bar-fill" style={`width:${Math.min(((ledger?.payoutThisMonth ?? 0) / NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK) * 100, 100)}%`}></div></div>
+                  {(ledger?.withheldThisMonth ?? 0) > 0 && (
+                    <div class="withheld-note">{b.withheldLabel}: {fmt(ledger!.withheldThisMonth)}</div>
+                  )}
+                </div>
+              ) : fee?.thisMonth ? (
+                <div>
+                  <div class="progress-line">{fmt(Number(fee.thisMonth.fee_amount))} {b.of} {fmt(MONTHLY_COMMISSION_CAP_CZK)}</div>
+                  <span class={`badge ${fee.thisMonth.status === "paid" ? "badge-active" : "badge-pending"}`}>
+                    {fee.thisMonth.status === "paid" ? b.statusPaid : b.statusUnpaid}
+                  </span>
+                </div>
+              ) : (
+                <span class="muted">{b.noActivityYet}</span>
+              )}
+            </td>
+            <td>
+              {isCommission ? (
+                (ledger?.eligibleCount ?? 0) > 0 ? (
+                  <span class="outstanding">{fmt(ledger!.eligibleTotal)} <span class="muted">({ledger!.eligibleCount} {b.readyToPay})</span></span>
+                ) : (
+                  <span class="muted">{b.nothingDue}</span>
+                )
+              ) : (fee?.unpaidCount ?? 0) > 0 ? (
+                <span class="outstanding">{fmt(fee!.unpaidTotal)} <span class="muted">({fee!.unpaidCount} {b.unpaidMonths})</span></span>
+              ) : (
+                <span class="muted">{b.nothingDue}</span>
+              )}
+            </td>
+            <td>
+              <form method="POST" action="/api/switch-party">
+                <input type="hidden" name="partyId" value={party.id} />
+                <input type="hidden" name="redirect" value="/admin/payouts" />
+                <button type="submit" class="btn btn-secondary" style="padding:4px 10px;font-size:12px">{b.resolveBtn}</button>
+              </form>
+            </td>
+          </tr>
+        ))}
+        {rows.length === 0 && (
+          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{b.noParties}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</CmsLayout>
+
+<style>
+  .content-hint { font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+  .progress-line { font-size:13px; font-weight:600; margin-bottom:4px; }
+  .cap-bar { height:6px; border-radius:999px; background:var(--border-default); overflow:hidden; max-width:180px; }
+  .cap-bar-fill { height:100%; background:var(--accent-primary); border-radius:999px; }
+  .withheld-note { font-size:12px; color:var(--error); margin-top:4px; }
+  .muted { color:var(--text-muted); font-size:12px; }
+  .outstanding { font-weight:600; }
+</style>
