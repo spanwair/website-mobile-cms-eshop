@@ -1,35 +1,7 @@
 ---
-// Public pricing calculator — Phase 1 (display only). Every number comes from
-// shared/constants/sellerMode.ts, the single source of truth; nothing here is
-// independently hardcoded. The monthly-cap and no-IČO enforcement itself is not yet
-// wired into the ledger (see shared/services/commissionLedgerService.ts) — that is a
-// separate, reviewed Phase 2 change. This calculator is an accurate estimate, not a
-// live account balance.
 import { useT } from "../../../lib/i18n";
-import {
-  COMMISSION_RATE,
-  MONTHLY_COMMISSION_CAP_CZK,
-  COMMISSION_BREAK_EVEN_CZK,
-  NO_ICO_DEDUCTION_RATE,
-  NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK,
-  NO_ICO_WITHHOLDING_EXPIRY_YEARS,
-} from "@shared/constants/sellerMode";
-
 const t = useT(Astro);
 const c = t.landing.commissionCalculator;
-
-const commissionPct = Math.round(COMMISSION_RATE * 100);
-const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
-const fmt = (n: number) => Math.round(n).toLocaleString("cs-CZ");
-
-const exampleNote = c.exampleNote
-  .replace("{breakEven}", fmt(COMMISSION_BREAK_EVEN_CZK))
-  .replace("{rate}", String(commissionPct))
-  .replace("{cap}", fmt(MONTHLY_COMMISSION_CAP_CZK));
-const employmentNote = c.employmentNote
-  .replace("{limit}", fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK))
-  .replace("{years}", String(NO_ICO_WITHHOLDING_EXPIRY_YEARS));
-const employmentDeductionLabel = c.employmentDeductionLabel.replace("{rate}", String(employmentPct));
 ---
 
 <section class="landing landing--dark" id="pricing">
@@ -38,64 +10,26 @@ const employmentDeductionLabel = c.employmentDeductionLabel.replace("{rate}", St
     <h2 class="section-title section-title--center">{c.title}</h2>
     <p class="section-sub section-sub--center" style="margin-bottom:48px">{c.sub}</p>
 
-    <div
-      class="calc-card"
-      data-commission-rate={COMMISSION_RATE}
-      data-monthly-cap={MONTHLY_COMMISSION_CAP_CZK}
-      data-break-even={COMMISSION_BREAK_EVEN_CZK}
-      data-employment-rate={NO_ICO_DEDUCTION_RATE}
-      data-payout-limit={NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK}
-      data-badge-percentage={c.badgePercentage.replace("{rate}", String(commissionPct))}
-      data-badge-flat={c.badgeFlatFee.replace("{cap}", fmt(MONTHLY_COMMISSION_CAP_CZK))}
-      data-badge-ico={c.badgeIcoRequired}
-      data-savings-template={c.savingsNote}
-    >
+    <div class="calc-card">
       <label class="calc-label" for="calc-input">{c.sliderLabel}</label>
-      <input id="calc-input" type="range" min="0" max="300000" step="5000" value="60000" class="calc-slider" />
-      <div class="calc-price-row">
-        <div class="calc-price" id="calc-price-display">60 000 Kč</div>
-        <span class="badge badge-active" id="calc-badge">{c.badgePercentage.replace("{rate}", String(commissionPct))}</span>
-      </div>
+      <input id="calc-input" type="range" min="100" max="10000" step="50" value="1000" class="calc-slider" />
+      <div class="calc-price" id="calc-price-display">1 000 Kč</div>
 
-      <label class="calc-toggle">
-        <input type="checkbox" id="calc-employment-toggle" />
-        {c.employmentToggleLabel}
-      </label>
-
-      <div class="calc-split" id="calc-split-commission">
+      <div class="calc-split">
         <div class="calc-split-item calc-split-item--keep">
           <span class="calc-split-label">{c.youKeepLabel}</span>
-          <span class="calc-split-value" id="calc-keep">54 000 Kč</span>
+          <span class="calc-split-value" id="calc-keep">900 Kč</span>
         </div>
         <div class="calc-split-item">
           <span class="calc-split-label">{c.weTakeLabel}</span>
-          <span class="calc-split-value" id="calc-fee">6 000 Kč</span>
+          <span class="calc-split-value" id="calc-fee">100 Kč</span>
         </div>
         <div class="calc-split-item">
           <span class="calc-split-label">{c.monthlyLabel}</span>
-          <span class="calc-split-value" id="calc-monthly">6 000 Kč</span>
+          <span class="calc-split-value">0 Kč</span>
         </div>
       </div>
-
-      <div class="calc-split calc-split--hidden" id="calc-split-employment">
-        <div class="calc-split-item">
-          <span class="calc-split-label">{employmentDeductionLabel}</span>
-          <span class="calc-split-value" id="calc-employment-deduction">18 000 Kč</span>
-        </div>
-        <div class="calc-split-item calc-split-item--keep">
-          <span class="calc-split-label">{c.employmentPayableLabel}</span>
-          <span class="calc-split-value" id="calc-employment-payable">12 000 Kč</span>
-        </div>
-        <div class="calc-split-item" id="calc-withheld-row">
-          <span class="calc-split-label">{c.employmentWithheldLabel}</span>
-          <span class="calc-split-value calc-split-value--warn" id="calc-employment-withheld">30 000 Kč</span>
-        </div>
-      </div>
-
-      <p class="calc-note calc-note--savings calc-note--hidden" id="calc-savings"></p>
-      <p class="calc-note" id="calc-note-commission">{exampleNote}</p>
-      <p class="calc-note calc-note--hidden" id="calc-note-employment">{employmentNote}</p>
-      <p class="calc-disclaimer">{c.estimateDisclaimer}</p>
+      <p class="calc-note">{c.exampleNote}</p>
     </div>
 
     <div class="calc-comparison">
@@ -106,96 +40,26 @@ const employmentDeductionLabel = c.employmentDeductionLabel.replace("{rate}", St
 </section>
 
 <script>
-  const card = document.querySelector<HTMLElement>(".calc-card");
   const input = document.getElementById("calc-input") as HTMLInputElement | null;
-  const employmentToggle = document.getElementById("calc-employment-toggle") as HTMLInputElement | null;
   const priceDisplay = document.getElementById("calc-price-display");
-  const badge = document.getElementById("calc-badge");
   const keepEl = document.getElementById("calc-keep");
   const feeEl = document.getElementById("calc-fee");
-  const monthlyEl = document.getElementById("calc-monthly");
-  const splitCommission = document.getElementById("calc-split-commission");
-  const splitEmployment = document.getElementById("calc-split-employment");
-  const noteCommission = document.getElementById("calc-note-commission");
-  const noteEmployment = document.getElementById("calc-note-employment");
-  const savingsEl = document.getElementById("calc-savings");
-  const deductionEl = document.getElementById("calc-employment-deduction");
-  const payableEl = document.getElementById("calc-employment-payable");
-  const withheldEl = document.getElementById("calc-employment-withheld");
-  const withheldRow = document.getElementById("calc-withheld-row");
 
-  function formatNum(n: number) {
-    return Math.round(n).toLocaleString("cs-CZ");
-  }
   function formatKc(n: number) {
-    return `${formatNum(n)} Kč`;
+    return `${Math.round(n).toLocaleString("cs-CZ")} Kč`;
   }
 
   function update() {
-    if (!input || !card) return;
-    const rate = Number(card.dataset.commissionRate);
-    const cap = Number(card.dataset.monthlyCap);
-    const employmentRate = Number(card.dataset.employmentRate);
-    const payoutLimit = Number(card.dataset.payoutLimit);
-    const turnover = Number(input.value);
-    const employmentMode = employmentToggle?.checked ?? false;
-
-    if (priceDisplay) priceDisplay.textContent = formatKc(turnover);
-
-    if (employmentMode) {
-      splitCommission?.classList.add("calc-split--hidden");
-      splitEmployment?.classList.remove("calc-split--hidden");
-      noteCommission?.classList.add("calc-note--hidden");
-      noteEmployment?.classList.remove("calc-note--hidden");
-
-      const deduction = turnover * employmentRate;
-      const net = turnover - deduction;
-      const withheld = Math.max(net - payoutLimit, 0);
-      const payable = net - withheld;
-
-      if (deductionEl) deductionEl.textContent = formatKc(deduction);
-      if (payableEl) payableEl.textContent = formatKc(payable);
-      if (withheldEl) withheldEl.textContent = formatKc(withheld);
-      if (withheldRow) withheldRow.style.display = withheld > 0 ? "" : "none";
-      savingsEl?.classList.add("calc-note--hidden");
-      if (badge) {
-        badge.textContent = withheld > 0 ? (card.dataset.badgeIco ?? "") : (card.dataset.badgePercentage ?? "");
-        badge.classList.toggle("badge-error", withheld > 0);
-        badge.classList.toggle("badge-active", withheld <= 0);
-      }
-    } else {
-      splitCommission?.classList.remove("calc-split--hidden");
-      splitEmployment?.classList.add("calc-split--hidden");
-      noteCommission?.classList.remove("calc-note--hidden");
-      noteEmployment?.classList.add("calc-note--hidden");
-
-      const uncappedFee = turnover * rate;
-      const fee = Math.min(uncappedFee, cap);
-      const keep = turnover - fee;
-      const usingCap = uncappedFee > cap;
-
-      if (keepEl) keepEl.textContent = formatKc(keep);
-      if (feeEl) feeEl.textContent = formatKc(fee);
-      if (monthlyEl) monthlyEl.textContent = formatKc(fee);
-      if (badge) {
-        badge.textContent = usingCap ? (card.dataset.badgeFlat ?? "") : (card.dataset.badgePercentage ?? "");
-        badge.classList.remove("badge-error");
-        badge.classList.add("badge-active");
-      }
-      if (savingsEl) {
-        if (usingCap) {
-          const savings = uncappedFee - cap;
-          savingsEl.textContent = (card.dataset.savingsTemplate ?? "").replace("{amount}", formatNum(savings));
-          savingsEl.classList.remove("calc-note--hidden");
-        } else {
-          savingsEl.classList.add("calc-note--hidden");
-        }
-      }
-    }
+    if (!input) return;
+    const price = Number(input.value);
+    const fee = price * 0.1;
+    const keep = price - fee;
+    if (priceDisplay) priceDisplay.textContent = formatKc(price);
+    if (keepEl) keepEl.textContent = formatKc(keep);
+    if (feeEl) feeEl.textContent = formatKc(fee);
   }
 
   input?.addEventListener("input", update);
-  employmentToggle?.addEventListener("change", update);
   update();
 </script>
 
@@ -206,23 +70,14 @@ const employmentDeductionLabel = c.employmentDeductionLabel.replace("{rate}", St
     text-align: center;
   }
   .calc-label { display: block; font-size: 13px; color: var(--landing-dark-text-muted); margin-bottom: 12px; }
-  .calc-slider { width: 100%; margin-bottom: 16px; accent-color: var(--landing-mint); }
-  .calc-price-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px; }
-  .calc-price { font-family: var(--font-display); font-size: 40px; }
-  .calc-toggle {
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    font-size: 13px; color: var(--landing-dark-text-muted); margin-bottom: 20px; cursor: pointer;
-  }
+  .calc-slider { width: 100%; margin-bottom: 16px; accent-color: var(--accent-primary); }
+  .calc-price { font-size: 40px; font-weight: 800; margin-bottom: 24px; }
   .calc-split { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); }
-  .calc-split--hidden { display: none; }
   .calc-split-item { display: flex; flex-direction: column; gap: 4px; }
   .calc-split-label { font-size: 12px; color: var(--landing-dark-text-muted); }
   .calc-split-value { font-size: 20px; font-weight: 700; }
-  .calc-split-value--warn { color: var(--landing-coral); }
-  .calc-split-item--keep .calc-split-value { color: var(--landing-mint); }
+  .calc-split-item--keep .calc-split-value { color: var(--success); }
   .calc-note { margin-top: 20px; font-size: 13px; color: var(--landing-dark-text-muted); }
-  .calc-note--hidden { display: none; }
-  .calc-disclaimer { margin-top: 12px; font-size: 11px; color: var(--landing-dark-text-muted); opacity: 0.7; font-style: italic; }
   .calc-comparison { max-width: 640px; margin: 56px auto 0; text-align: center; }
   .calc-comparison-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
   .calc-comparison-note { color: var(--landing-dark-text-muted); line-height: 1.6; }

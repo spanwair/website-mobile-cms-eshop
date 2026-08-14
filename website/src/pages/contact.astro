@@ -1,32 +1,16 @@
 ---
 import LandingLayout from "../components/landing/LandingLayout.astro";
-import PageHero from "../components/landing/PageHero.astro";
 import { useT } from "../lib/i18n";
-import { SMALLJOBS_COMPANY } from "@shared/constants/company";
 
 const t = useT(Astro);
 const c = t.landing.contact;
-const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.registeredSeat.postalCode} ${SMALLJOBS_COMPANY.registeredSeat.city}`;
 ---
 
-<LandingLayout title={`${c.title} — Mamtodoma`} description={c.sub}>
-  <PageHero eyebrow={c.eyebrow} title={c.title} lead={c.sub} image="/img/support-team.jpg" imageAlt="" />
-  <section class="landing" style="padding-top:0">
-    <div class="container-lg contact-grid">
-      <div class="contact-info">
-        <div class="contact-info-row">
-          <span class="contact-info-label font-mono">{c.icoLabel}</span>
-          <span>{SMALLJOBS_COMPANY.ico}</span>
-        </div>
-        <div class="contact-info-row">
-          <span class="contact-info-label font-mono">{c.formEmail}</span>
-          <span>jan@mamtodoma.cz</span>
-        </div>
-        <div class="contact-info-row">
-          <span class="contact-info-label font-mono">{c.addressLabel}</span>
-          <span>{address}</span>
-        </div>
-      </div>
+<LandingLayout title={`${c.title} — mamtodoma.cz`} description={c.sub}>
+  <section class="landing">
+    <div class="container-lg contact-content">
+      <h1 class="section-title section-title--center">{c.title}</h1>
+      <p class="section-sub section-sub--center" style="margin-bottom:40px">{c.sub}</p>
 
       <form id="contact-form" class="contact-form">
         <div class="form-group">
@@ -67,14 +51,7 @@ const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.
 </script>
 
 <style>
-  .contact-grid { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 48px; max-width: 800px; margin-inline: auto; }
-  .contact-info { display: flex; flex-direction: column; gap: 20px; padding-top: 4px; }
-  .contact-info-row { display: flex; flex-direction: column; gap: 2px; }
-  .contact-info-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-placeholder); }
+  .contact-content { max-width: 560px; margin-inline: auto; }
   .contact-form { display: flex; flex-direction: column; gap: 20px; }
   .contact-msg { font-size: 14px; color: var(--text-muted); min-height: 18px; }
-
-  @media (max-width: 700px) {
-    .contact-grid { grid-template-columns: 1fr; }
-  }
 </style>

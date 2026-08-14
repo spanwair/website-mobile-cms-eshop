@@ -1,22 +1,14 @@
 ---
 import { useT } from "../../lib/i18n";
-import { SMALLJOBS_COMPANY } from "@shared/constants/company";
-
 const t = useT(Astro);
 const f = t.landing.footer;
 const year = new Date().getFullYear();
-const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.registeredSeat.postalCode} ${SMALLJOBS_COMPANY.registeredSeat.city}`;
 ---
 
 <footer class="landing-footer">
   <div class="container-lg footer-grid">
     <div class="footer-brand">
-      <a href="/" class="landing-nav-brand font-display footer-brand-link">
-        <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-          <path d="M6 14 L16 6 L26 14 L26 26 L6 26 Z" fill="#5BD4A8" /><rect x="13" y="18" width="6" height="8" fill="#111827" />
-        </svg>
-        mamtodoma<span class="landing-nav-brand-accent">.cz</span>
-      </a>
+      <span class="landing-nav-brand">mamtodoma.cz</span>
       <p class="footer-tagline">{f.tagline}</p>
     </div>
 
@@ -30,15 +22,6 @@ const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.
         </ul>
       </div>
     ))}
-
-    <div class="footer-col">
-      <h4>{f.contactTitle}</h4>
-      <ul class="footer-contact">
-        <li>{SMALLJOBS_COMPANY.name}</li>
-        <li>IČO {SMALLJOBS_COMPANY.ico}</li>
-        <li>{address}</li>
-      </ul>
-    </div>
 
     <div class="footer-newsletter">
       <h4>{f.newsletterTitle}</h4>
@@ -70,19 +53,15 @@ const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.
 </script>
 
 <style>
-  .landing-footer { background: var(--landing-ink, #111827); color: #9CA3AF; padding-block: 64px 32px; }
-  .footer-grid { display: grid; gap: 32px; grid-template-columns: 1.4fr repeat(4, 1fr); margin-bottom: 40px; }
-  .footer-brand-link { color: #fff; }
+  .landing-footer { background: var(--landing-dark, #111827); color: #9CA3AF; padding-block: 64px 32px; }
+  .footer-grid { display: grid; gap: 32px; grid-template-columns: 1.4fr repeat(3, 1fr); margin-bottom: 40px; }
   .footer-tagline { font-size: 13px; margin-top: 8px; max-width: 220px; line-height: 1.6; }
   .footer-col h4, .footer-newsletter h4 { color: #fff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
   .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
   .footer-col a { color: #9CA3AF; font-size: 14px; }
-  .footer-col a:hover { color: var(--landing-mint, #5BD4A8); text-decoration: none; }
-  .footer-contact li { font-size: 13px; line-height: 1.6; }
+  .footer-col a:hover { color: #fff; text-decoration: none; }
   .footer-newsletter-sub { font-size: 13px; margin-bottom: 12px; }
   .footer-newsletter-form { display: flex; gap: 8px; }
-  .footer-newsletter-form .btn-primary { background: var(--landing-mint, #5BD4A8); color: #0B1220; }
-  .footer-newsletter-form .btn-primary:hover { opacity: 0.9; }
   .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 24px; font-size: 12px; }
 
   @media (max-width: 900px) {

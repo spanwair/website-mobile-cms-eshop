@@ -1,6 +1,5 @@
 ---
 import LandingLayout from "../components/landing/LandingLayout.astro";
-import PageHero from "../components/landing/PageHero.astro";
 import Features from "../components/landing/sections/Features.astro";
 import AICapabilities from "../components/landing/sections/AICapabilities.astro";
 import FinalCta from "../components/landing/sections/FinalCta.astro";
@@ -10,8 +9,13 @@ const t = useT(Astro);
 const f = t.landing.featuresPage;
 ---
 
-<LandingLayout title={`${f.title} — Mamtodoma`} description={f.sub}>
-  <PageHero eyebrow={f.eyebrow} title={f.title} lead={f.sub} image="/img/team-work.jpg" imageAlt="" />
+<LandingLayout title={`${f.title} — mamtodoma.cz`} description={f.sub}>
+  <section class="landing" style="padding-bottom:0">
+    <div class="container-lg">
+      <h1 class="section-title section-title--center">{f.title}</h1>
+      <p class="section-sub section-sub--center">{f.sub}</p>
+    </div>
+  </section>
   <Features />
   <AICapabilities />
   <FinalCta />

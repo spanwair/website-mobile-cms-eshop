@@ -7,7 +7,6 @@ import ProfileMenu from "../layout/ProfileMenu.astro";
 
 const t = useT(Astro);
 const n = t.landing.nav;
-const path = Astro.url.pathname;
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -27,129 +26,43 @@ if (session) {
   isAdmin = ctx !== null && (ctx.role >= ROLE.ADMIN || ctx.parties.length > 0);
 }
 const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
-
-const navItems = [
-  { href: "/features", label: n.features },
-  { href: "/pricing", label: n.pricing },
-  { href: "/templates", label: n.templates },
-  { href: "/employment", label: n.employment },
-  { href: "/about", label: n.about },
-  { href: "/contact", label: n.contact },
-];
 ---
 
-<header class="landing-nav" id="landing-nav">
+<header class="landing-nav">
   <div class="container-lg landing-nav-inner">
-    <a href="/" class="landing-nav-brand font-display">
-      <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-        <path d="M6 14 L16 6 L26 14 L26 26 L6 26 Z" fill="#5BD4A8" />
-        <rect x="13" y="18" width="6" height="8" fill="#FAFBF9" />
-      </svg>
-      mamtodoma<span class="landing-nav-brand-accent">.cz</span>
-    </a>
-
-    <nav class="landing-nav-links" aria-label={n.cta}>
-      {navItems.map((item) => (
-        <a href={item.href} class:list={["nav-link", { aktivni: path === item.href }]} aria-current={path === item.href ? "page" : undefined}>{item.label}</a>
-      ))}
+    <a href="/" class="landing-nav-brand">mamtodoma.cz</a>
+    <nav class="landing-nav-links">
+      <a href="/features">{n.features}</a>
+      <a href="/pricing">{n.pricing}</a>
+      <a href="/templates">{n.templates}</a>
+      <a href="/about">{n.about}</a>
+      <a href="/contact">{n.contact}</a>
     </nav>
-
     <div class="landing-nav-auth">
       {session ? (
         <ProfileMenu displayName={displayName} navInitial={navInitial} isAdmin={isAdmin} />
       ) : (
         <>
           <a href="/login" class="landing-nav-login">{t.nav.signIn}</a>
-          <a href="/login?mode=signup" class="btn btn-primary landing-nav-cta">{n.cta}</a>
+          <a href="/login?mode=signup" class="btn btn-primary">{n.cta}</a>
         </>
       )}
-      <button id="landing-menu-open" class="landing-menu-toggle" aria-label={n.cta} aria-expanded="false" aria-controls="landing-mobile-menu">
-        <span></span><span></span>
-      </button>
     </div>
   </div>
 </header>
 
-<div id="landing-mobile-menu" class="landing-mobile-menu" hidden>
-  <button id="landing-menu-close" class="landing-menu-close" aria-label="Close">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18" /></svg>
-  </button>
-  <nav class="landing-mobile-links" aria-label={n.cta}>
-    {navItems.map((item, i) => (
-      <a href={item.href} data-close-menu>
-        <span class="landing-mobile-index font-mono">{String(i + 1).padStart(2, "0")}</span>
-        <span class="font-display">{item.label}</span>
-      </a>
-    ))}
-  </nav>
-  {!session && (
-    <a href="/login?mode=signup" class="btn btn-primary landing-mobile-cta" data-close-menu>{n.cta}</a>
-  )}
-</div>
-
-<script>
-  const nav = document.getElementById("landing-nav");
-  const menu = document.getElementById("landing-mobile-menu") as HTMLElement | null;
-  const openBtn = document.getElementById("landing-menu-open");
-  const closeBtn = document.getElementById("landing-menu-close");
-
-  const onScroll = () => nav?.classList.toggle("scrolled", window.scrollY > 12);
-  window.addEventListener("scroll", onScroll, { passive: true });
-  onScroll();
-
-  const setMenu = (open: boolean) => {
-    if (!menu) return;
-    menu.hidden = !open;
-    openBtn?.setAttribute("aria-expanded", String(open));
-    document.body.style.overflow = open ? "hidden" : "";
-  };
-  openBtn?.addEventListener("click", () => setMenu(true));
-  closeBtn?.addEventListener("click", () => setMenu(false));
-  menu?.querySelectorAll("[data-close-menu]").forEach((el) => el.addEventListener("click", () => setMenu(false)));
-</script>
-
 <style>
-  .landing-nav {
-    position: sticky; top: 0; z-index: 40; background: rgba(250,251,249,0.85);
-    backdrop-filter: blur(14px); border-bottom: 1px solid transparent;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  }
-  .landing-nav.scrolled { border-bottom-color: var(--border-default); box-shadow: var(--shadow-sm); }
+  .landing-nav { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,0.85); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border-default); }
   .landing-nav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 16px; }
-  .landing-nav-brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 20px; color: var(--text-primary); }
-  .landing-nav-brand-accent { font-style: italic; color: var(--landing-mint); }
-  .landing-nav-links { display: flex; gap: 28px; }
-  .landing-nav-links a { font-size: 14px; }
+  .landing-nav-brand { font-weight: 800; font-size: 18px; color: var(--text-primary); }
+  .landing-nav-links { display: flex; gap: 24px; }
+  .landing-nav-links a { color: var(--text-muted); font-size: 14px; font-weight: 600; }
+  .landing-nav-links a:hover { color: var(--accent-primary); text-decoration: none; }
   .landing-nav-auth { display: flex; align-items: center; gap: 16px; }
   .landing-nav-login { color: var(--text-muted); font-size: 14px; font-weight: 600; }
-  .landing-nav-login:hover { color: var(--text-primary); text-decoration: none; }
-  .landing-nav-cta { padding: 9px 18px; font-size: 13px; }
-
-  .landing-menu-toggle {
-    display: none; flex-direction: column; gap: 5px; width: 40px; height: 40px;
-    align-items: center; justify-content: center; border-radius: 999px; border: 1px solid var(--border-default);
-    background: var(--bg-page);
-  }
-  .landing-menu-toggle span { width: 18px; height: 1px; background: var(--text-primary); }
+  .landing-nav-login:hover { color: var(--accent-primary); text-decoration: none; }
 
   @media (max-width: 900px) {
     .landing-nav-links { display: none; }
-    .landing-nav-login, .landing-nav-cta { display: none; }
-    .landing-menu-toggle { display: flex; }
   }
-
-  .landing-mobile-menu {
-    position: fixed; inset: 0; z-index: 100; background: var(--bg-page);
-    display: flex; flex-direction: column; justify-content: center; padding-inline: 32px;
-  }
-  .landing-mobile-menu[hidden] { display: none; }
-  .landing-menu-close {
-    position: absolute; right: 24px; top: 24px; width: 44px; height: 44px; border-radius: 999px;
-    border: 1px solid var(--border-default); display: grid; place-items: center; background: var(--bg-page);
-  }
-  .landing-mobile-links { display: flex; flex-direction: column; gap: 20px; }
-  .landing-mobile-links a { display: flex; align-items: baseline; gap: 16px; color: var(--text-primary); }
-  .landing-mobile-links a span.font-display { font-size: 36px; }
-  .landing-mobile-index { color: var(--landing-mint); font-size: 12px; }
-  .landing-mobile-cta { margin-top: 32px; align-self: flex-start; }
 </style>

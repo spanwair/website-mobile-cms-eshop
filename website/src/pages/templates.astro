@@ -1,6 +1,5 @@
 ---
 import LandingLayout from "../components/landing/LandingLayout.astro";
-import PageHero from "../components/landing/PageHero.astro";
 import TemplatesShowcase from "../components/landing/sections/TemplatesShowcase.astro";
 import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
@@ -9,15 +8,20 @@ const t = useT(Astro);
 const p = t.landing.templatesPage;
 ---
 
-<LandingLayout title={`${p.title} — Mamtodoma`} description={p.sub}>
-  <PageHero eyebrow={p.eyebrow} title={p.title} lead={p.sub} image="/img/template-fashion.jpg" imageAlt="" />
+<LandingLayout title={`${p.title} — mamtodoma.cz`} description={p.sub}>
+  <section class="landing" style="padding-bottom:0">
+    <div class="container-lg">
+      <h1 class="section-title section-title--center">{p.title}</h1>
+      <p class="section-sub section-sub--center">{p.sub}</p>
+    </div>
+  </section>
   <section class="landing">
     <div class="container-lg">
       <h2 class="section-title section-title--center">{p.demosTitle}</h2>
       <p class="section-sub section-sub--center">{p.demosSub}</p>
       <div class="demo-grid">
         {p.demos.map((demo) => (
-          <a href={demo.href} class="demo-card karta" target="_blank" rel="noopener">
+          <a href={demo.href} class="demo-card" target="_blank" rel="noopener">
             <img class="demo-card-preview" src={demo.image} alt={demo.title} loading="lazy" />
             <div class="demo-card-body">
               <strong>{demo.title}</strong>
@@ -36,11 +40,11 @@ const p = t.landing.templatesPage;
   .demo-grid { display: grid; gap: 20px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 32px; }
   .demo-card {
     display: flex; flex-direction: column; overflow: hidden;
-    border: 1px solid var(--border-default); border-radius: var(--radius-lg);
-    background: var(--bg-page); text-decoration: none; color: inherit;
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    background: var(--bg-surface); text-decoration: none; color: inherit;
     transition: border-color 0.15s ease;
   }
-  .demo-card:hover { border-color: var(--accent-primary); text-decoration: none; }
+  .demo-card:hover { border-color: var(--accent-primary); }
   .demo-card-preview { width: 100%; aspect-ratio: 16/10; object-fit: cover; object-position: top; display: block; background: var(--bg-subtle); }
   .demo-card-body { display: flex; flex-direction: column; gap: 6px; padding: 20px 24px; }
   .demo-card strong { font-size: 16px; }

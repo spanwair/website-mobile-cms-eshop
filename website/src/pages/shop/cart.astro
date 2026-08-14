@@ -1,11 +1,7 @@
 ---
 import Layout from "../../components/layout/Layout.astro";
-import { createSupabase, createAdminClient } from "../../lib/supabase";
-import { getOrCreateGuestCartId } from "../../lib/guestCart";
-import {
-  applyCoupon, updateCartItemQty, removeFromCart, calcCartTotal,
-  cartBelongsToIdentity, cartItemBelongsToIdentity, type CartIdentity,
-} from "@shared/services/cartService";
+import { createSupabase } from "../../lib/supabase";
+import { applyCoupon, updateCartItemQty, removeFromCart, calcCartTotal } from "@shared/services/cartService";
 import { useT, getLang } from "../../lib/i18n";
 import { formatPrice } from "@shared/utils/format";
 
@@ -14,10 +10,7 @@ const t = useT(Astro);
 const lang = getLang(Astro);
 
 const { data: { session } } = await supabase.auth.getSession();
-const identity: CartIdentity = session
-  ? { userId: session.user.id }
-  : { sessionId: getOrCreateGuestCartId(Astro.cookies) };
-const cartClient = session ? supabase : createAdminClient();
+if (!session) return Astro.redirect("/login?redirect=/shop/cart");
 
 let couponMessage = "";
 let couponError = "";
@@ -28,9 +21,13 @@ let qtyError = "";
 const wantsJson = Astro.request.headers.get("accept")?.includes("application/json") ?? false;
 
 async function loadCartSummary() {
-  let query = cartClient.from("carts").select("*, cart_items(*)");
-  query = identity.userId !== undefined ? query.eq("user_id", identity.userId) : query.eq("session_id", identity.sessionId);
-  const { data: cartRow } = await query.order("updated_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: cartRow } = await supabase
+    .from("carts")
+    .select("*, cart_items(*)")
+    .eq("user_id", session.user.id)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
   const cartItems = (cartRow as any)?.cart_items ?? [];
   const totals = calcCartTotal(cartItems.map((i: any) => ({ ...i, unit_price: Number(i.unit_price) })));
   return { cartItems, ...totals };
@@ -41,10 +38,7 @@ if (Astro.request.method === "POST") {
   const action = form.get("_action") as string;
 
   if (action === "remove_item") {
-    const itemId = form.get("item_id") as string;
-    if (await cartItemBelongsToIdentity(cartClient, itemId, identity)) {
-      await removeFromCart(cartClient, itemId);
-    }
+    await removeFromCart(supabase, form.get("item_id") as string);
     if (wantsJson) {
       const { subtotal, itemCount } = await loadCartSummary();
       return Response.json({ ok: true, subtotal, itemCount });
@@ -55,43 +49,36 @@ if (Astro.request.method === "POST") {
   if (action === "update_qty") {
     const itemId = form.get("item_id") as string;
     const qty = parseInt(form.get("quantity") as string, 10);
-    if (!(await cartItemBelongsToIdentity(cartClient, itemId, identity))) {
-      qtyError = "Item not found";
+    const result = await updateCartItemQty(supabase, itemId, qty);
+    if (result.error) {
+      qtyError = result.error.message;
       if (wantsJson) return Response.json({ ok: false, error: qtyError });
-    } else {
-      const result = await updateCartItemQty(cartClient, itemId, qty);
-      if (result.error) {
-        qtyError = result.error.message;
-        if (wantsJson) return Response.json({ ok: false, error: qtyError });
-      } else if (wantsJson) {
-        const { cartItems, subtotal, itemCount } = await loadCartSummary();
-        const item = cartItems.find((i: any) => i.id === itemId);
-        const itemTotal = item ? Number(item.unit_price) * item.quantity : 0;
-        return Response.json({ ok: true, itemTotal, subtotal, itemCount });
-      } else return Astro.redirect("/shop/cart");
-    }
+    } else if (wantsJson) {
+      const { cartItems, subtotal, itemCount } = await loadCartSummary();
+      const item = cartItems.find((i: any) => i.id === itemId);
+      const itemTotal = item ? Number(item.unit_price) * item.quantity : 0;
+      return Response.json({ ok: true, itemTotal, subtotal, itemCount });
+    } else return Astro.redirect("/shop/cart");
   }
 
   if (action === "apply_coupon") {
     const cartId = form.get("cart_id") as string;
     const partyId = form.get("party_id") as string;
     const code = form.get("coupon_code") as string;
-    if (!(await cartBelongsToIdentity(cartClient, cartId, identity))) {
-      couponError = "Cart not found";
-    } else {
-      const result = await applyCoupon(cartClient, cartId, partyId, code);
-      if (result.error) { couponError = result.error; }
-      else { couponMessage = t.shop.couponApplied; }
-    }
-    if (wantsJson) return Response.json({ ok: !couponError, message: couponMessage, error: couponError });
+    const result = await applyCoupon(supabase, cartId, partyId, code);
+    if (result.error) { couponError = result.error; }
+    else { couponMessage = t.shop.couponApplied; }
+    if (wantsJson) return Response.json({ ok: !result.error, message: couponMessage, error: couponError });
   }
 }
 
-let cartQuery = cartClient
+const { data: cart } = await supabase
   .from("carts")
-  .select("*, cart_items(*, product:products(id, title, slug, price, discount_price, product_images(url, is_primary, media_type)), variant:product_variants(name))");
-cartQuery = identity.userId !== undefined ? cartQuery.eq("user_id", identity.userId) : cartQuery.eq("session_id", identity.sessionId);
-const { data: cart } = await cartQuery.order("updated_at", { ascending: false }).limit(1).maybeSingle();
+  .select("*, cart_items(*, product:products(id, title, slug, price, discount_price, product_images(url, is_primary, media_type)), variant:product_variants(name))")
+  .eq("user_id", session.user.id)
+  .order("updated_at", { ascending: false })
+  .limit(1)
+  .maybeSingle();
 
 const items = (cart as any)?.cart_items ?? [];
 const { subtotal, itemCount } = calcCartTotal(

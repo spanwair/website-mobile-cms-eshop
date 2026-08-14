@@ -1,38 +1,20 @@
 ---
 import LandingLayout from "../components/landing/LandingLayout.astro";
-import PageHero from "../components/landing/PageHero.astro";
 import CommissionCalculator from "../components/landing/sections/CommissionCalculator.astro";
 import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
-import {
-  COMMISSION_RATE,
-  MONTHLY_COMMISSION_CAP_CZK,
-  NO_ICO_DEDUCTION_RATE,
-} from "@shared/constants/sellerMode";
 
 const t = useT(Astro);
 const p = t.landing.pricingPage;
-const commissionPct = Math.round(COMMISSION_RATE * 100);
-const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 ---
 
-<LandingLayout title={`${p.title} — Mamtodoma`} description={p.sub}>
-  <PageHero eyebrow={p.eyebrow} title={p.title} lead={p.sub}>
-    <div class="pricing-summary" data-reveal-group>
-      <div class="pricing-summary-card" data-reveal>
-        <span class="pricing-summary-num font-display">{commissionPct} %</span>
-        <span class="pricing-summary-label">{p.summaryCommissionLabel}</span>
-      </div>
-      <div class="pricing-summary-card" data-reveal>
-        <span class="pricing-summary-num font-display">{MONTHLY_COMMISSION_CAP_CZK.toLocaleString("cs-CZ")} Kč</span>
-        <span class="pricing-summary-label">{p.summaryCapLabel}</span>
-      </div>
-      <div class="pricing-summary-card" data-reveal>
-        <span class="pricing-summary-num font-display">{employmentPct} %</span>
-        <span class="pricing-summary-label">{p.summaryEmploymentLabel}</span>
-      </div>
+<LandingLayout title={`${p.title} — mamtodoma.cz`} description={p.sub}>
+  <section class="landing" style="padding-bottom:0">
+    <div class="container-lg">
+      <h1 class="section-title section-title--center">{p.title}</h1>
+      <p class="section-sub section-sub--center">{p.sub}</p>
     </div>
-  </PageHero>
+  </section>
   <CommissionCalculator />
   <section class="landing" id="faq">
     <div class="container-lg faq-list">
@@ -48,26 +30,8 @@ const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 </LandingLayout>
 
 <style>
-  /* PageHero defaults to padding-bottom:0, assuming the next section shares its light
-     background (see about.astro, which zeroes the next section's padding-top to match).
-     Here the next section is the dark CommissionCalculator, so the flush edge reads as
-     an abrupt, undesigned cut — restore breathing room before that color change. */
-  :global(.page-hero) { padding-bottom: var(--landing-section-y); }
-
-  .pricing-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 32px 0; max-width: 480px; }
-  .pricing-summary-card {
-    background: var(--bg-page); border: 1px solid var(--border-default); border-radius: var(--radius-lg);
-    padding: 16px; display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow-sm);
-  }
-  .pricing-summary-num { font-size: 22px; color: var(--accent-primary); }
-  .pricing-summary-label { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
-
   .faq-list { max-width: 720px; margin-inline: auto; display: flex; flex-direction: column; gap: 12px; }
   .faq-item { border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 16px 20px; }
   .faq-item summary { cursor: pointer; font-weight: 700; }
   .faq-item p { margin-top: 12px; color: var(--text-muted); line-height: 1.6; }
-
-  @media (max-width: 640px) {
-    .pricing-summary { grid-template-columns: 1fr; max-width: 260px; }
-  }
 </style>

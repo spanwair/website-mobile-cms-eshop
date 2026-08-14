@@ -1,6 +1,5 @@
 ---
 import LandingLayout from "../components/landing/LandingLayout.astro";
-import PageHero from "../components/landing/PageHero.astro";
 import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
 
@@ -8,10 +7,11 @@ const t = useT(Astro);
 const a = t.landing.about;
 ---
 
-<LandingLayout title={`${a.title} — Mamtodoma`} description={a.sub}>
-  <PageHero eyebrow={a.eyebrow} title={a.title} lead={a.sub} image="/img/desk-work.jpg" imageAlt="" />
-  <section class="landing" style="padding-top:0">
+<LandingLayout title={`${a.title} — mamtodoma.cz`} description={a.sub}>
+  <section class="landing">
     <div class="container-lg about-content">
+      <h1 class="section-title section-title--center">{a.title}</h1>
+      <p class="section-sub section-sub--center" style="margin-bottom:40px">{a.sub}</p>
       {a.paragraphs.map((p) => <p class="about-paragraph">{p}</p>)}
     </div>
   </section>

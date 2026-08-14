@@ -24,11 +24,10 @@ const current = parties.find((p) => p.id === partyId);
 <style>
   .party-switcher { display: flex; align-items: center; }
   .party-select {
-    background: #fff; border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 6px; color: #1a1a1a; font-size: 13px; font-weight: 600;
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px; color: inherit; font-size: 13px; font-weight: 600;
     padding: 4px 8px; cursor: pointer; max-width: 200px;
   }
   .party-select:focus { outline: none; }
-  .party-select option { background: #fff; color: #1a1a1a; }
   .party-name { font-size: 13px; font-weight: 600; opacity: 0.85; color: #fff; }
 </style>

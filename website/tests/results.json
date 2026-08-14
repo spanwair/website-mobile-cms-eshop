@@ -2,9 +2,9 @@
   "config": {
     "argv": [
       "/home/jan/.nvm/versions/node/v22.21.0/bin/node",
-      "/home/jan/PROJECTS/react-native/website-mobile-template/website/node_modules/@playwright/test/cli.js",
+      "/home/jan/PROJECTS/react-native/website-mobile-template/website/node_modules/.pnpm/@playwright+test@1.61.1/node_modules/@playwright/test/cli.js",
       "test",
-      "tests/e2e/32-packeta-verification.spec.ts"
+      "tests/e2e/29-on-demand-products.spec.ts"
     ],
     "configFile": "/home/jan/PROJECTS/react-native/website-mobile-template/website/playwright.config.ts",
     "rootDir": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e",
@@ -66,21 +66,21 @@
   },
   "suites": [
     {
-      "title": "32-packeta-verification.spec.ts",
-      "file": "32-packeta-verification.spec.ts",
+      "title": "29-on-demand-products.spec.ts",
+      "file": "29-on-demand-products.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "32 — Packeta verification: guest tracking visibility + admin cancel/return (mock mode)",
-          "file": "32-packeta-verification.spec.ts",
-          "line": 70,
+          "title": "29 — On-Demand Products (track_inventory=false)",
+          "file": "29-on-demand-products.spec.ts",
+          "line": 27,
           "column": 6,
           "specs": [
             {
-              "title": "32-01 guest (unauthenticated) checkout with Packeta: does order-confirmation show tracking?",
-              "ok": false,
+              "title": "29-01 on-demand product with zero stock never shows out-of-stock and offers the cart form",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -93,91 +93,83 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 10527,
-                      "error": {
-                        "message": "Error: Guest should see their tracking number on the confirmation page\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
-                        "stack": "Error: Guest should see their tracking number on the confirmation page\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/32-packeta-verification.spec.ts:128:96",
-                        "location": {
-                          "file": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/32-packeta-verification.spec.ts",
-                          "column": 96,
-                          "line": 128
-                        },
-                        "snippet": "  126 |     // orders\"/\"...order_shipments\" policies are `TO authenticated` only, no anon grant)\n  127 |     // is real. Left as a real assertion (not soft) so the report reflects true pass/fail.\n> 128 |     expect(trackingVisible, \"Guest should see their tracking number on the confirmation page\").toBe(true);\n      |                                                                                                ^\n  129 |   });\n  130 |\n  131 |   test(\"32-02 admin creates Packeta shipment, then cancels it\", async () => {"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/32-packeta-verification.spec.ts",
-                            "column": 96,
-                            "line": 128
-                          },
-                          "message": "Error: Guest should see their tracking number on the confirmation page\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  126 |     // orders\"/\"...order_shipments\" policies are `TO authenticated` only, no anon grant)\n  127 |     // is real. Left as a real assertion (not soft) so the report reflects true pass/fail.\n> 128 |     expect(trackingVisible, \"Guest should see their tracking number on the confirmation page\").toBe(true);\n      |                                                                                                ^\n  129 |   });\n  130 |\n  131 |   test(\"32-02 admin creates Packeta shipment, then cancels it\", async () => {\n    at /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/32-packeta-verification.spec.ts:128:96"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 838,
+                      "errors": [],
                       "stdout": [
                         {
-                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/001-login-fill-owner.png\n"
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/001-login-fill-user.png\n"
                         },
                         {
                           "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/002-after-login.png\n"
                         },
                         {
-                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/003-32-01-guest-checkout-page.png\n"
-                        },
-                        {
-                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/004-32-01-guest-order-confirmation.png\n"
-                        },
-                        {
-                          "text": "[32-01] DB tracking_number for guest order:  tracking_number \n-----------------\n Z6530584745\n(1 row)\n\n\n"
-                        },
-                        {
-                          "text": "[32-01] Tracking line visible to guest on order-confirmation page: \u001b[33mfalse\u001b[39m\n"
+                          "text": "[screenshot] /home/jan/PROJECTS/react-native/website-mobile-template/website/tests/screenshots/003-29-01-on-demand-purchasable.png\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-08-12T10:29:32.561Z",
+                      "startTime": "2026-08-07T06:47:41.731Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/32-packeta-verification-32-70e64-confirmation-show-tracking--chromium/test-finished-1.png"
-                        },
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/29-on-demand-products-29-—-83672-ck-and-offers-the-cart-form-chromium/test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0bf7ce75b8a48cf59b04-2821f141b1d083dda0ea",
+              "file": "29-on-demand-products.spec.ts",
+              "line": 43,
+              "column": 3
+            },
+            {
+              "title": "29-02 adding more than qty_on_hand to the cart succeeds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 697,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-07T06:47:45.140Z",
+                      "annotations": [],
+                      "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/32-packeta-verification-32-70e64-confirmation-show-tracking--chromium/test-failed-2.png"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/32-packeta-verification-32-70e64-confirmation-show-tracking--chromium/error-context.md"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/32-packeta-verification-32-70e64-confirmation-show-tracking--chromium/error-context.md"
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/29-on-demand-products-29-—-2330f-n-hand-to-the-cart-succeeds-chromium/test-finished-1.png"
                         }
-                      ],
-                      "errorLocation": {
-                        "file": "/home/jan/PROJECTS/react-native/website-mobile-template/website/tests/e2e/32-packeta-verification.spec.ts",
-                        "column": 96,
-                        "line": 128
-                      }
+                      ]
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
-              "id": "ccb489256c43cc3af799-dca6761284206820eca2",
-              "file": "32-packeta-verification.spec.ts",
-              "line": 90,
+              "id": "0bf7ce75b8a48cf59b04-9183d0d51a9398332dce",
+              "file": "29-on-demand-products.spec.ts",
+              "line": 51,
               "column": 3
             },
             {
-              "title": "32-02 admin creates Packeta shipment, then cancels it",
+              "title": "29-03 order + order_items are created and qty_on_hand is left untouched (not decremented, not negative)",
               "ok": true,
               "tags": [],
               "tests": [
@@ -189,29 +181,35 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": -1,
-                      "parallelIndex": -1,
-                      "status": "skipped",
-                      "duration": 0,
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2679,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-08-12T10:29:46.555Z",
+                      "startTime": "2026-08-07T06:47:45.847Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/29-on-demand-products-29-—-ad4ae-t-decremented-not-negative--chromium/test-finished-1.png"
+                        }
+                      ]
                     }
                   ],
-                  "status": "skipped"
+                  "status": "expected"
                 }
               ],
-              "id": "ccb489256c43cc3af799-883221dc9322d097a706",
-              "file": "32-packeta-verification.spec.ts",
-              "line": 131,
+              "id": "0bf7ce75b8a48cf59b04-9c0fe260809a9d8a056e",
+              "file": "29-on-demand-products.spec.ts",
+              "line": 58,
               "column": 3
             },
             {
-              "title": "32-03 admin creates a Packeta return shipment on a shipped order + consignment code shown",
+              "title": "29-04 product page still shows no out-of-stock badge after the sale",
               "ok": true,
               "tags": [],
               "tests": [
@@ -223,25 +221,31 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": -1,
-                      "parallelIndex": -1,
-                      "status": "skipped",
-                      "duration": 0,
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 720,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-08-12T10:29:46.556Z",
+                      "startTime": "2026-08-07T06:47:48.535Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/jan/PROJECTS/react-native/website-mobile-template/website/test-results/29-on-demand-products-29-—-cec80--stock-badge-after-the-sale-chromium/test-finished-1.png"
+                        }
+                      ]
                     }
                   ],
-                  "status": "skipped"
+                  "status": "expected"
                 }
               ],
-              "id": "ccb489256c43cc3af799-8c2b6976d759d4c4e427",
-              "file": "32-packeta-verification.spec.ts",
-              "line": 176,
+              "id": "0bf7ce75b8a48cf59b04-5a41ac22c874a89de3ce",
+              "file": "29-on-demand-products.spec.ts",
+              "line": 81,
               "column": 3
             }
           ]
@@ -251,11 +255,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-08-12T10:29:30.211Z",
-    "duration": 16373.43,
-    "expected": 0,
-    "skipped": 2,
-    "unexpected": 1,
+    "startTime": "2026-08-07T06:47:39.441Z",
+    "duration": 9949.018,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
     "flaky": 0
   }
 }

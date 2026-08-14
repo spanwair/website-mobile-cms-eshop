@@ -1,7 +1,6 @@
 ---
 import LandingLayout from "../components/landing/LandingLayout.astro";
 import Hero from "../components/landing/sections/Hero.astro";
-import LogoMarquee from "../components/landing/LogoMarquee.astro";
 import FoundingSellers from "../components/landing/sections/FoundingSellers.astro";
 import Features from "../components/landing/sections/Features.astro";
 import HowItWorks from "../components/landing/sections/HowItWorks.astro";
@@ -18,7 +17,6 @@ const t = useT(Astro);
 
 <LandingLayout title={t.landing.meta.defaultTitle} description={t.landing.meta.defaultDescription}>
   <Hero />
-  <LogoMarquee logos={["PPL", "Zásilkovna", "Stripe"]} label={t.landing.logoMarquee.label} />
   <FoundingSellers />
   <Features />
   <HowItWorks />

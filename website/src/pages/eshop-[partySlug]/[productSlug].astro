@@ -4,12 +4,11 @@ import ProductGallery from "../../components/shop/ProductGallery.astro";
 import ProductPurchasePanel from "../../components/shop/ProductPurchasePanel.astro";
 import ProductReviews from "../../components/shop/ProductReviews.astro";
 import RelatedProducts from "../../components/shop/RelatedProducts.astro";
-import { createSupabase, createAdminClient } from "../../lib/supabase";
-import { getOrCreateGuestCartId } from "../../lib/guestCart";
+import { createSupabase } from "../../lib/supabase";
 import { fetchProductReviews, submitReview, resolveReviewIdentity } from "@shared/services/reviewService";
 import { fetchInventoryRowsByProduct } from "@shared/services/inventoryService";
 import { variantImages, resolvePrimaryMedia } from "@shared/services/productImageService";
-import { getOrCreateCart, addToCart, fetchCartItemCount, type CartIdentity } from "@shared/services/cartService";
+import { getOrCreateCart, addToCart, fetchCartItemCount } from "@shared/services/cartService";
 import { addToWishlist, removeFromWishlist, isInWishlist } from "@shared/services/wishlistService";
 import { fetchVisibleBenefitItems } from "@shared/services/benefitItemService";
 
@@ -67,20 +66,17 @@ if (Astro.request.method === "POST") {
 
   if (action === "add_to_cart") {
     const { data: { session } } = await supabase.auth.getSession();
-    const identity: CartIdentity = session
-      ? { userId: session.user.id }
-      : { sessionId: getOrCreateGuestCartId(Astro.cookies) };
-    const cartClient = session ? supabase : createAdminClient();
+    if (!session) return Astro.redirect(`/login?redirect=${linkBase}/${productSlug}`);
     const productId = form.get("product_id") as string;
     const variantId = (form.get("variant_id") as string) || null;
     const unitPrice = parseFloat(form.get("unit_price") as string);
     const qty = Math.max(1, parseInt(form.get("quantity") as string, 10) || 1);
     try {
-      const cart = await getOrCreateCart(cartClient, partyId, identity);
-      const result = await addToCart(cartClient, cart.id, productId, qty, unitPrice, variantId);
+      const cart = await getOrCreateCart(supabase, partyId, session.user.id);
+      const result = await addToCart(supabase, cart.id, productId, qty, unitPrice, variantId);
       if (result.error) cartError = result.error.message;
       else if (wantsJson) {
-        const cartCount = await fetchCartItemCount(cartClient, identity, partyId);
+        const cartCount = await fetchCartItemCount(supabase, session.user.id, partyId);
         return Response.json({ ok: true, cartCount });
       } else return Astro.redirect(`${linkBase}/${productSlug}?added=1`);
     } catch (e: any) {

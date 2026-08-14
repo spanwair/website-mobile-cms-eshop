@@ -1,13 +1,12 @@
 ---
 import "../../styles/global.css";
-import { createSupabase, createAdminClient } from "../../lib/supabase";
-import { peekGuestCartId, clearGuestCartId } from "../../lib/guestCart";
+import { createSupabase } from "../../lib/supabase";
 import { useT } from "../../lib/i18n";
 import { requireAdminCtx } from "../../lib/admin";
 import { ROLE } from "@shared/constants/permissions";
 import { buildThemeCss, googleFontsUrl } from "../../lib/themeEngine";
 import { fetchStoreMedia } from "@shared/services/storeMediaService";
-import { fetchCartItemCount, mergeGuestCartIntoUser, type CartIdentity } from "@shared/services/cartService";
+import { fetchCartItemCount } from "@shared/services/cartService";
 import { fetchStorefrontNavTree } from "@shared/services/navItemService";
 import { fetchVisibleFooterLinks } from "@shared/services/footerLinkService";
 import { fetchVisibleFooterBadges } from "@shared/services/footerBadgeService";
@@ -54,15 +53,6 @@ let displayName: string | null = null;
 let isAdmin = false;
 let obchodHref: string | null = null;
 if (session) {
-  // Fold any guest cart from before login into this account, once — a browsing guest who
-  // signs in (via any of the three sign-in paths: OAuth/magic-link callback, or direct
-  // email+password on /login, which never touches that callback) shouldn't lose their cart.
-  const guestCartId = peekGuestCartId(Astro.cookies);
-  if (guestCartId) {
-    await mergeGuestCartIntoUser(createAdminClient(), guestCartId, session.user.id);
-    clearGuestCartId(Astro.cookies);
-  }
-
   const { data } = await supabase
     .from("profiles")
     .select("display_name, role")
@@ -82,15 +72,8 @@ if (session) {
   }
 }
 const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
-// Only reads an existing guest cart cookie here — never creates one just for viewing a page.
-const guestIdentityForCount = session ? null : peekGuestCartId(Astro.cookies);
-const cartIdentity: CartIdentity | null = session
-  ? { userId: session.user.id }
-  : guestIdentityForCount
-    ? { sessionId: guestIdentityForCount }
-    : null;
-const cartCount = isStorefront && storeParty && cartIdentity
-  ? await fetchCartItemCount(session ? supabase : createAdminClient(), cartIdentity, storeParty.id)
+const cartCount = isStorefront && session && storeParty
+  ? await fetchCartItemCount(supabase, session.user.id, storeParty.id)
   : 0;
 const currentPath = Astro.url.pathname + Astro.url.search;
 ---

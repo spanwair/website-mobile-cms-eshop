@@ -126,7 +126,11 @@ const variantDataJson = JSON.stringify(
       <p class="low-stock-hint" id="low-stock-hint" style={qtyAvailable !== null && qtyAvailable <= 10 && qtyAvailable > 0 ? "" : "display:none"}>
         {t.shop.stockRemaining.replace("{{n}}", String(qtyAvailable ?? 0))}
       </p>
-      <button type="submit" class="btn btn-primary btn-large">{t.shop.addToCart}</button>
+      {!isLoggedIn ? (
+        <a href={`/login?redirect=${linkBase}/${productSlug}`} class="btn btn-primary btn-large">{t.shop.loginToCheckout}</a>
+      ) : (
+        <button type="submit" class="btn btn-primary btn-large">{t.shop.addToCart}</button>
+      )}
     </form>
     {enableWishlists && (
       <form method="POST">
@@ -134,7 +138,7 @@ const variantDataJson = JSON.stringify(
         <input type="hidden" name="product_id" value={product.id} />
         {!isLoggedIn ? (
           <a href={`/login?redirect=${linkBase}/${productSlug}`} class="wishlist-toggle">
-            ♡ {t.shop.loginToWishlist}
+            ♡ {t.shop.addToWishlist}
           </a>
         ) : (
           <button

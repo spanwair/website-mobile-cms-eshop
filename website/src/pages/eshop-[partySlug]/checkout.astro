@@ -2,13 +2,9 @@
 import Layout from "../../components/layout/Layout.astro";
 import CheckoutAddressForm from "../../components/shop/CheckoutAddressForm.astro";
 import CheckoutOrderSummary from "../../components/shop/CheckoutOrderSummary.astro";
-import ShippingProviderSelector from "../../components/shop/ShippingProviderSelector.astro";
 import { createSupabase, createAdminClient } from "../../lib/supabase";
-import { getOrCreateGuestCartId } from "../../lib/guestCart";
-import { clearCart, calcCartTotal, type CartIdentity } from "@shared/services/cartService";
+import { clearCart, calcCartTotal } from "@shared/services/cartService";
 import { createOrder, addOrderItemsOrRollback } from "@shared/services/orderService";
-import { fetchEnabledShippingConfigs, computeShippingCost } from "@shared/services/shippingConfigService";
-import { createShipmentRecord } from "@shared/services/shipmentService";
 import { computeItemTax, computeOrderTax } from "@shared/utils/tax";
 import { startOrderCheckout } from "../../lib/checkoutFlow";
 import { useT, getLang } from "../../lib/i18n";
@@ -24,18 +20,16 @@ const t = useT(Astro);
 const lang = getLang(Astro);
 
 const { data: { session } } = await supabase.auth.getSession();
-const identity: CartIdentity = session
-  ? { userId: session.user.id }
-  : { sessionId: getOrCreateGuestCartId(Astro.cookies) };
-const adminClient = createAdminClient();
-const cartClient = session ? supabase : adminClient;
+if (!session) return Astro.redirect(`/login?redirect=${linkBase}/checkout`);
 
-let cartQuery = cartClient
+const { data: cartRaw } = await supabase
   .from("carts")
   .select("*, cart_items(*, product:products(id, title, slug, price, discount_price, sku, tax_rate))")
-  .eq("party_id", partyId);
-cartQuery = identity.userId !== undefined ? cartQuery.eq("user_id", identity.userId) : cartQuery.eq("session_id", identity.sessionId);
-const { data: cartRaw } = await cartQuery.order("updated_at", { ascending: false }).limit(1).maybeSingle();
+  .eq("user_id", session.user.id)
+  .eq("party_id", partyId)
+  .order("updated_at", { ascending: false })
+  .limit(1)
+  .maybeSingle();
 
 const cart = cartRaw as any;
 if (!cart || !(cart.cart_items?.length > 0)) return Astro.redirect(`${linkBase}/cart`);
@@ -45,7 +39,6 @@ const { subtotal } = calcCartTotal(items.map((i: any) => ({ ...i, unit_price: Nu
 
 const { data: sellingParty } = await supabase.from("parties").select("seller_mode").eq("id", partyId).single();
 const sellerMode = (sellingParty?.seller_mode ?? "own_company") as "own_company" | "smalljobs_commission";
-const shippingConfigs = await fetchEnabledShippingConfigs(supabase);
 
 let checkoutError = "";
 
@@ -58,24 +51,15 @@ if (Astro.request.method === "POST") {
   const city = (form.get("city") as string).trim();
   const postalCode = (form.get("postal_code") as string).trim();
   const countryCode = ((form.get("country_code") as string)?.trim() || "CZ").toUpperCase().slice(0, 2);
-  const shippingProviderCode = (form.get("shipping_provider") as string) || "";
-  const deliveryType = (form.get("delivery_type") as string) || "home";
-  const pickupPointId = (form.get("pickup_point_id") as string) || null;
-  const pickupPointName = (form.get("pickup_point_name") as string) || null;
-  const pickupPointAddress = (form.get("pickup_point_address") as string) || null;
-  const email = (session?.user.email ?? (form.get("email") as string))?.trim();
+
+  const adminClient = createAdminClient();
 
   try {
-    if (!email) throw new Error(t.shop.emailLabel);
-    const shippingConfig = shippingConfigs.find((c) => c.code === shippingProviderCode);
-    if (!shippingConfig) throw new Error("Invalid shipping method");
-    if (deliveryType === "pickup" && !pickupPointId) throw new Error(t.shop.pickupPointRequired);
-    const shippingCost = computeShippingCost(shippingConfig, subtotal);
     let { data: customer } = await adminClient
       .from("customers")
       .select("id")
       .eq("party_id", partyId)
-      .eq("email", email)
+      .eq("email", session.user.email!)
       .maybeSingle();
 
     if (!customer) {
@@ -83,11 +67,11 @@ if (Astro.request.method === "POST") {
         .from("customers")
         .insert({
           party_id: partyId,
-          email,
+          email: session.user.email!,
           first_name: firstName,
           last_name: lastName,
           phone,
-          user_id: session?.user.id ?? null,
+          user_id: session.user.id,
           is_active: true,
           gdpr_consent: true,
           preferred_language: lang,
@@ -131,8 +115,7 @@ if (Astro.request.method === "POST") {
       payment_status: "unpaid",
       subtotal,
       tax_amount: computeOrderTax(taxItems, sellerMode),
-      shipping_amount: shippingCost,
-      total_amount: subtotal + shippingCost,
+      total_amount: subtotal,
       currency: "CZK",
     });
     if (orderErr || !order) throw new Error(orderErr?.message ?? "Order creation failed");
@@ -156,35 +139,16 @@ if (Astro.request.method === "POST") {
       adminClient,
       order.id,
       orderItemInputs,
-      session?.user.id ?? null
+      session.user.id
     );
     if (itemsErr) throw new Error(insufficientStock ? t.shop.itemNoLongerAvailable : itemsErr.message);
 
-    // No product weight field exists in this schema yet — a flat per-item estimate is
-    // used for the carrier payload until real product weights are tracked.
-    const itemCount = items.reduce((s: number, i: any) => s + i.quantity, 0);
-    const { error: shipmentErr } = await createShipmentRecord(adminClient, {
-      order_id: order.id,
-      party_id: partyId,
-      provider: shippingProviderCode as "ppl" | "packeta",
-      status: "pending",
-      pickup_point_id: pickupPointId,
-      pickup_point_name: pickupPointName,
-      pickup_point_address: pickupPointAddress,
-      shipping_cost: shippingCost,
-      weight_kg: Math.max(1, itemCount * 0.5),
-    });
-    if (shipmentErr) throw new Error(shipmentErr.message);
-
-    // adminClient — a guest cart has no anon RLS grant to clear via `supabase`
-    await clearCart(adminClient, cart.id);
+    await clearCart(supabase, cart.id);
 
     const { url: sessionUrl, error: sessionError } = await startOrderCheckout({
       items,
       orderId: order.id,
       currency: "czk",
-      shippingCost,
-      shippingLabel: shippingConfig.display_name,
       successUrl: `${Astro.url.origin}${linkBase}/order-confirmation?order=${order.order_number}&session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${Astro.url.origin}${linkBase}/checkout`,
     });
@@ -204,10 +168,7 @@ if (Astro.request.method === "POST") {
     {checkoutError && <div class="form-error" style="margin-bottom:16px">{checkoutError}</div>}
 
     <div class="checkout-layout">
-      <div class="checkout-form-col">
-        <ShippingProviderSelector configs={shippingConfigs} subtotal={subtotal} currency={storeParty.config?.currency_code} />
-        <CheckoutAddressForm cancelHref={`${linkBase}/cart`} sessionEmail={session?.user.email ?? null} />
-      </div>
+      <CheckoutAddressForm cancelHref={`${linkBase}/cart`} />
       <CheckoutOrderSummary items={items} subtotal={subtotal} currency={storeParty.config?.currency_code} />
     </div>
   </div>
@@ -217,6 +178,5 @@ if (Astro.request.method === "POST") {
   .checkout-page { max-width:1000px; margin:0 auto; padding:32px 24px; }
   .page-title { font-size:28px; font-weight:800; margin-bottom:24px; }
   .checkout-layout { display:grid; grid-template-columns:1fr 320px; gap:32px; align-items:start; }
-  .checkout-form-col { display:flex; flex-direction:column; gap:24px; }
   @media(max-width:768px) { .checkout-layout { grid-template-columns:1fr; } }
 </style>

@@ -405,57 +405,10 @@ export interface OrderItem {
   created_at: string;
 }
 
-export interface OrderShipment {
-  id: string;
-  order_id: string;
-  party_id: string;
-  provider: "ppl" | "packeta";
-  status: "pending" | "created" | "label_ready" | "in_transit" | "delivered" | "returned" | "cancelled" | "failed";
-  provider_shipment_id: string | null;
-  tracking_number: string | null;
-  pickup_point_id: string | null;
-  pickup_point_name: string | null;
-  pickup_point_address: string | null;
-  label_storage_path: string | null;
-  shipping_cost: number;
-  weight_kg: number;
-  is_mock: boolean;
-  last_status_raw: unknown;
-  error_message: string | null;
-  consignment_code: string | null;
-  cancelled_at: string | null;
-  return_provider_shipment_id: string | null;
-  return_tracking_number: string | null;
-  return_password: string | null;
-  return_label_storage_path: string | null;
-  return_created_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ShippingProviderConfig {
-  id: string;
-  code: "ppl" | "packeta";
-  display_name: string;
-  enabled: boolean;
-  base_price: number;
-  free_above_amount: number | null;
-  sender_name: string;
-  sender_street: string;
-  sender_city: string;
-  sender_postal_code: string;
-  sender_country_code: string;
-  sender_phone: string | null;
-  sender_email: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface OrderWithDetails extends Order {
   items: OrderItem[];
   customer: Customer;
   shipping_address: Address | null;
-  shipment: OrderShipment | null;
 }
 
 export interface OrderStatusHistory {

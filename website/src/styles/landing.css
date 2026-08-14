@@ -3,7 +3,7 @@
   --landing-dark-elevated: #1A2033;
   --landing-dark-text: #F3F4F6;
   --landing-dark-text-muted: #9CA3AF;
-  --landing-glow-accent: rgba(91, 212, 168, 0.35);
+  --landing-glow-accent: rgba(79, 70, 229, 0.35);
   --landing-glow-success: rgba(16, 185, 129, 0.25);
   --landing-gradient-hero: linear-gradient(180deg, var(--landing-dark) 0%, #0B0F1A 100%);
 
@@ -14,106 +14,6 @@
 
   --landing-section-y: clamp(56px, 8vw, 120px);
   --landing-max-width: 1200px;
-
-  /* MámToDoma visual identity — scoped to .landing only (body.landing), so the admin
-     panel (never rendered inside .landing) keeps its existing indigo theme untouched.
-     Re-declaring the same variable names global.css already defines works because CSS
-     custom properties cascade: everything under body.landing that reads var(--text-primary)
-     etc. picks up these values instead, with zero markup/classname changes needed. */
-  --bg-page: #FAFBF9;
-  --bg-surface: #FDF8EF;
-  --bg-subtle: #E8F5EE;
-  --border-default: #E5E7EB;
-  --border-strong: #D8DEE3;
-  --text-primary: #0B1220;
-  --text-muted: #64748B;
-  --text-placeholder: #94A3B8;
-  /* Accessible dark-mint used for actual text/links/focus rings (WCAG AA on white).
-     The bright decorative mint (--landing-mint) fails 4.5:1 as text and is reserved for
-     backgrounds, badges, underlines and icons instead — see --landing-mint below. */
-  --accent-primary: #0E8F65;
-  --accent-primary-hover: #0B7452;
-  --accent-secondary: #7DD3FC;
-
-  --landing-mint: #5BD4A8;
-  --landing-mint-soft: #E8F5EE;
-  --landing-cream: #FDF8EF;
-  --landing-ink: #0B1220;
-  --landing-sky: #7DD3FC;
-  --landing-coral: #F97B7A;
-  --font-display: "Instrument Serif", Georgia, serif;
-  --font-mono-landing: "JetBrains Mono", ui-monospace, monospace;
-}
-
-.landing { background: var(--bg-page); color: var(--text-primary); }
-.landing .font-display { font-family: var(--font-display); }
-.landing .font-mono { font-family: var(--font-mono-landing); }
-
-/* Primary CTA gets the brand's dark-pill-flips-to-mint treatment, scoped so admin's
-   identical .btn.btn-primary markup (indigo, no flip) is completely unaffected. */
-.landing .btn-primary {
-  background: var(--landing-ink); color: var(--bg-page);
-  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
-}
-.landing .btn-primary:hover:not(:disabled) {
-  background: var(--landing-mint); color: var(--landing-ink);
-  transform: translateY(-1px); box-shadow: var(--shadow-md);
-}
-.landing .btn-white { background: var(--bg-page); color: var(--landing-ink); }
-.landing .btn-white:hover { background: var(--landing-mint-soft); }
-.landing .btn-outline-light:hover { background: rgba(255,255,255,0.08); }
-
-.landing .gradient-text {
-  background: linear-gradient(135deg, var(--landing-mint), var(--landing-sky));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
-
-/* Hover-lift card, layered onto the existing .card so markup stays `class="card karta"`. */
-.landing .karta { transition: transform 0.25s ease, box-shadow 0.25s ease; }
-.landing .karta:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
-
-/* Animated-underline nav link, used by the rebuilt LandingNav. */
-.landing .nav-link {
-  position: relative; color: var(--text-muted); font-weight: 600; text-decoration: none;
-}
-.landing .nav-link:hover, .landing .nav-link.aktivni { color: var(--text-primary); text-decoration: none; }
-.landing .nav-link::after {
-  content: ""; position: absolute; left: 0; bottom: -4px; height: 1.5px; width: 100%;
-  background: var(--landing-mint); transform: scaleX(0); transform-origin: left;
-  transition: transform 0.25s ease;
-}
-.landing .nav-link:hover::after, .landing .nav-link.aktivni::after { transform: scaleX(1); }
-
-/* Category-filter pills, used by the templates gallery. */
-.landing .filtr {
-  font-family: var(--font-mono-landing); text-transform: uppercase; font-size: 11px;
-  letter-spacing: 0.06em; padding: 8px 16px; border-radius: var(--radius-full);
-  border: 1px solid var(--border-default); background: var(--bg-page); color: var(--text-muted);
-  cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-.landing .filtr:hover { border-color: var(--landing-ink); color: var(--text-primary); }
-.landing .filtr.aktivni { background: var(--landing-ink); border-color: var(--landing-ink); color: var(--bg-page); }
-
-/* Infinite logo/carrier marquee (decorative, aria-hidden at the markup level). */
-.landing .marquee-track {
-  display: flex; gap: 48px; width: max-content;
-  animation: landing-marquee 40s linear infinite;
-}
-.landing .marquee-track:hover { animation-play-state: paused; }
-@keyframes landing-marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-
-/* Gentle float used by the hero's floating stat card. */
-.landing .float { animation: landing-float 6s ease-in-out infinite; }
-@keyframes landing-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing .marquee-track, .landing .float { animation: none; }
 }
 
 .landing section { padding-block: var(--landing-section-y); }
@@ -125,13 +25,11 @@
 
 .landing .section-eyebrow {
   display: inline-flex; align-items: center; gap: 6px;
-  font-family: var(--font-mono-landing);
   font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--accent-primary); margin-bottom: 12px;
 }
-.landing .section-title, .landing h1, .landing h2 {
-  font-family: var(--font-display);
-  font-size: var(--display-lg); font-weight: 500; letter-spacing: -0.01em;
+.landing .section-title {
+  font-size: var(--display-lg); font-weight: 800; letter-spacing: -0.02em;
   color: var(--text-primary); margin-bottom: 16px;
 }
 .landing .section-sub {

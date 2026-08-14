@@ -1,22 +1,13 @@
 ---
 import { useT } from "../../lib/i18n";
 
-interface Props { cancelHref: string; sessionEmail?: string | null }
-const { cancelHref, sessionEmail = null } = Astro.props;
+interface Props { cancelHref: string }
+const { cancelHref } = Astro.props;
 const t = useT(Astro);
 ---
 
-<form method="POST" class="address-form card" id="checkout-form">
+<form method="POST" class="address-form card">
   <h2 class="section-title">{t.shop.shippingAddress}</h2>
-
-  <div class="form-group">
-    <label class="form-label">{t.shop.emailLabel}</label>
-    {sessionEmail ? (
-      <input class="form-input" name="email" type="email" value={sessionEmail} readonly />
-    ) : (
-      <input class="form-input" name="email" type="email" required />
-    )}
-  </div>
 
   <div class="form-row">
     <div class="form-group">
