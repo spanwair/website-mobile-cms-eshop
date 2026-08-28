@@ -23,28 +23,80 @@ export type Cart = {
   items: CartItem[];
 };
 
+// A cart belongs to either a logged-in user or an anonymous guest (identified by a
+// cookie-backed session id) — never both. Guest reads/writes always go through a
+// service-role client (see website/src/lib/guestCart.ts for why there's no anon RLS
+// policy) so callers passing a sessionId must also pass an admin-privileged client.
+export type CartIdentity = { userId: string; sessionId?: undefined } | { userId?: undefined; sessionId: string };
+
 export async function getOrCreateCart(
   client: Client,
   partyId: string,
-  userId: string
+  identity: CartIdentity
 ): Promise<Cart> {
-  const { data: existing } = await client
+  let query = client
     .from("carts")
     .select("*, cart_items(*, product:products(title, slug, product_images(url)))")
-    .eq("party_id", partyId)
-    .eq("user_id", userId)
-    .maybeSingle();
+    .eq("party_id", partyId);
+  query = identity.userId !== undefined ? query.eq("user_id", identity.userId) : query.eq("session_id", identity.sessionId);
 
+  const { data: existing } = await query.maybeSingle();
   if (existing) return existing as unknown as Cart;
 
   const { data, error } = await client
     .from("carts")
-    .insert({ party_id: partyId, user_id: userId })
+    .insert(identity.userId !== undefined ? { party_id: partyId, user_id: identity.userId } : { party_id: partyId, session_id: identity.sessionId })
     .select("*, cart_items(*)")
     .single();
 
   if (error) throw new Error(error.message);
   return { ...data, items: [] } as unknown as Cart;
+}
+
+// Only needed on the service-role (guest) path — RLS already enforces this for authenticated
+// users. Re-verifies a cart_id/item_id taken from a form field actually belongs to the
+// requesting guest before any mutation, so one guest can't pass another guest's id.
+export async function cartBelongsToIdentity(
+  client: Client,
+  cartId: string,
+  identity: CartIdentity
+): Promise<boolean> {
+  const { data } = await client.from("carts").select("user_id, session_id").eq("id", cartId).maybeSingle();
+  if (!data) return false;
+  return identity.userId !== undefined ? data.user_id === identity.userId : data.session_id === identity.sessionId;
+}
+
+export async function cartItemBelongsToIdentity(
+  client: Client,
+  itemId: string,
+  identity: CartIdentity
+): Promise<boolean> {
+  const { data } = await client
+    .from("cart_items")
+    .select("cart:carts!inner(user_id, session_id)")
+    .eq("id", itemId)
+    .maybeSingle();
+  const cart = (data as unknown as { cart: { user_id: string | null; session_id: string | null } } | null)?.cart;
+  if (!cart) return false;
+  return identity.userId !== undefined ? cart.user_id === identity.userId : cart.session_id === identity.sessionId;
+}
+
+// Folds a guest cart into the user's cart right after login, so browsing before signing in
+// doesn't lose the items. Reuses addToCart's existing-item merge/stock logic instead of
+// duplicating it; a guest item that fails the stock check is simply skipped.
+export async function mergeGuestCartIntoUser(client: Client, sessionId: string, userId: string): Promise<void> {
+  const { data: guestCarts } = await client
+    .from("carts")
+    .select("id, party_id, cart_items(product_id, variant_id, quantity, unit_price)")
+    .eq("session_id", sessionId);
+
+  for (const guestCart of guestCarts ?? []) {
+    const cart = await getOrCreateCart(client, guestCart.party_id, { userId });
+    for (const item of (guestCart as unknown as { cart_items: CartItem[] }).cart_items ?? []) {
+      await addToCart(client, cart.id, item.product_id, item.quantity, Number(item.unit_price), item.variant_id);
+    }
+    await client.from("carts").delete().eq("id", guestCart.id);
+  }
 }
 
 async function getAvailableStock(
@@ -184,13 +236,10 @@ export async function applyCoupon(
   return { discount: 0, error: null };
 }
 
-export async function fetchCartItemCount(client: Client, userId: string, partyId: string): Promise<number> {
-  const { data: cart } = await client
-    .from("carts")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("party_id", partyId)
-    .maybeSingle();
+export async function fetchCartItemCount(client: Client, identity: CartIdentity, partyId: string): Promise<number> {
+  let query = client.from("carts").select("id").eq("party_id", partyId);
+  query = identity.userId !== undefined ? query.eq("user_id", identity.userId) : query.eq("session_id", identity.sessionId);
+  const { data: cart } = await query.maybeSingle();
   if (!cart) return 0;
 
   const { data } = await client

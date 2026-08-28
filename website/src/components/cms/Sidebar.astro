@@ -7,8 +7,9 @@ interface Props {
   userPermissions: number;
   storeHref?: string | null;
   hasParty?: boolean;
+  isOwner?: boolean;
 }
-const { currentPath, userPermissions, storeHref = null, hasParty = true } = Astro.props;
+const { currentPath, userPermissions, storeHref = null, hasParty = true, isOwner = false } = Astro.props;
 const t = useT(Astro);
 const s = t.admin.sidebar;
 
@@ -69,7 +70,11 @@ const groups = [
     label: s.system,
     items: [
       { href: "/admin/settings/branding", label: s.settings,      icon: "🎨", perm: PERMISSIONS.MANAGE_SETTINGS },
+      // Platform-wide (not per-party) — gated by role, not a permission bit, same as
+      // party creation/closing. Only ever included in the sidebar for the owner.
+      ...(isOwner ? [{ href: "/admin/settings/shipping", label: s.shipping, icon: "🚚", perm: 0 }] : []),
       { href: "/admin/payouts",           label: s.payouts,       icon: "💸", perm: PERMISSIONS.MANAGE_AUDIT },
+      { href: "/admin/billing",           label: s.billing,       icon: "🧾", perm: PERMISSIONS.MANAGE_AUDIT },
       { href: "/admin/audit",             label: s.audit,         icon: "📝", perm: PERMISSIONS.MANAGE_AUDIT },
       { href: "/admin/notifications",     label: s.notifications, icon: "🔔", perm: 0 },
     ],

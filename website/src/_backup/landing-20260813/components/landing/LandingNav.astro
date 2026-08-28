@@ -1,0 +1,68 @@
+---
+import { createSupabase } from "../../lib/supabase";
+import { requireAdminCtx } from "../../lib/admin";
+import { ROLE } from "@shared/constants/permissions";
+import { useT } from "../../lib/i18n";
+import ProfileMenu from "../layout/ProfileMenu.astro";
+
+const t = useT(Astro);
+const n = t.landing.nav;
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+
+let displayName: string | null = null;
+let isAdmin = false;
+if (session) {
+  const { data } = await supabase
+    .from("profiles")
+    .select("display_name, role")
+    .eq("id", session.user.id)
+    .single();
+  displayName = data?.display_name ?? session.user.email?.split("@")[0] ?? null;
+
+  const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+  const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+  isAdmin = ctx !== null && (ctx.role >= ROLE.ADMIN || ctx.parties.length > 0);
+}
+const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
+---
+
+<header class="landing-nav">
+  <div class="container-lg landing-nav-inner">
+    <a href="/" class="landing-nav-brand">mamtodoma.cz</a>
+    <nav class="landing-nav-links">
+      <a href="/features">{n.features}</a>
+      <a href="/pricing">{n.pricing}</a>
+      <a href="/templates">{n.templates}</a>
+      <a href="/about">{n.about}</a>
+      <a href="/contact">{n.contact}</a>
+    </nav>
+    <div class="landing-nav-auth">
+      {session ? (
+        <ProfileMenu displayName={displayName} navInitial={navInitial} isAdmin={isAdmin} />
+      ) : (
+        <>
+          <a href="/login" class="landing-nav-login">{t.nav.signIn}</a>
+          <a href="/login?mode=signup" class="btn btn-primary">{n.cta}</a>
+        </>
+      )}
+    </div>
+  </div>
+</header>
+
+<style>
+  .landing-nav { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,0.85); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border-default); }
+  .landing-nav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 16px; }
+  .landing-nav-brand { font-weight: 800; font-size: 18px; color: var(--text-primary); }
+  .landing-nav-links { display: flex; gap: 24px; }
+  .landing-nav-links a { color: var(--text-muted); font-size: 14px; font-weight: 600; }
+  .landing-nav-links a:hover { color: var(--accent-primary); text-decoration: none; }
+  .landing-nav-auth { display: flex; align-items: center; gap: 16px; }
+  .landing-nav-login { color: var(--text-muted); font-size: 14px; font-weight: 600; }
+  .landing-nav-login:hover { color: var(--accent-primary); text-decoration: none; }
+
+  @media (max-width: 900px) {
+    .landing-nav-links { display: none; }
+  }
+</style>

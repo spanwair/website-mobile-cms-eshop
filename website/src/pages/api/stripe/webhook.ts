@@ -6,6 +6,7 @@ import { recordCommissionForOrder, reverseCommissionForOrder } from "@shared/ser
 import { SELLER_MODE } from "@shared/constants/sellerMode";
 import { sellerOfRecordInfo } from "@shared/constants/company";
 import type { AppLanguage } from "@shared/i18n/getT";
+import { notifyPayoutLimitReachedIfNeeded } from "../../../lib/commissionNotifications";
 
 export const POST: APIRoute = async ({ request }) => {
   const signature = request.headers.get("stripe-signature");
@@ -30,7 +31,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
     if (status !== "paid") return;
 
-    await recordCommissionForOrder(adminClient, orderId);
+    const { payoutLimitReached } = await recordCommissionForOrder(adminClient, orderId);
 
     const { data: order } = await adminClient
       .from("orders")
@@ -63,6 +64,8 @@ export const POST: APIRoute = async ({ request }) => {
       lang,
       sellerOfRecord: sellingParty?.seller_mode === SELLER_MODE.SMALLJOBS_COMMISSION ? sellerOfRecordInfo(lang) : undefined,
     });
+
+    if (payoutLimitReached) await notifyPayoutLimitReachedIfNeeded(adminClient, order.party_id, lang);
   });
 
   return new Response(JSON.stringify({ received: true }), {

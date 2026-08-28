@@ -67,7 +67,17 @@ const slideImages = slides.map((slide) => resolveMediaUrl(slide.image_url, media
   .hero-dots { position: absolute; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; z-index: 2; }
   .hero-dot { width: 9px; height: 9px; border-radius: 50%; border: none; background: rgba(255,255,255,0.5); cursor: pointer; padding: 0; }
   .hero-dot--active { background: #fff; }
-  @media (max-width: 640px) { .hero-slider { height: 320px; } }
+  @media (max-width: 650px) {
+    .hero-slider { height: 380px; }
+    .hero-slide-content { padding: 0 20px; }
+    .hero-slide .hero-title { font-size: 26px; line-height: 1.25; margin-bottom: 8px; }
+    .hero-slide .hero-sub {
+      font-size: 14px; line-height: 1.4; margin-bottom: 18px; max-width: none;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .hero-slide .btn { padding: 9px 18px; font-size: 13px; }
+    .hero-dots { bottom: 12px; }
+  }
 </style>
 
 {slides.length > 1 && (

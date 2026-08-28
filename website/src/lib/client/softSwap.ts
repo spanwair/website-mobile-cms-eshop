@@ -1,11 +1,13 @@
 // Progressive enhancement for filter/sort/pagination links: intercepts navigation, fetches the
 // target URL, swaps the id-tagged container's innerHTML with the fetched page's version of it,
-// and pushes the URL — no full page load, so scroll position and focus never move. Falls back to
-// a real navigation on any fetch/parse failure so the feature degrades to plain links with JS off.
+// and pushes the URL — no full page load, so scroll position and focus are preserved by default.
+// Links marked data-scroll-top (category navigation) scroll back to the top after swapping, since
+// switching category is a new view rather than a refinement of the current one. Falls back to a
+// real navigation on any fetch/parse failure so the feature degrades to plain links with JS off.
 import { executeScripts } from "./domUtils";
 
 export function initFilterSwap(containerId: string) {
-  async function swap(url: string) {
+  async function swap(url: string, scrollTop = false) {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.setAttribute("aria-busy", "true");
@@ -20,6 +22,7 @@ export function initFilterSwap(containerId: string) {
       executeScripts(container);
       document.title = doc.title;
       history.pushState({ softNav: true }, "", url);
+      if (scrollTop) window.scrollTo({ top: 0 });
     } catch {
       window.location.href = url;
     } finally {
@@ -34,7 +37,7 @@ export function initFilterSwap(containerId: string) {
     const href = link.getAttribute("href");
     if (!href) return;
     e.preventDefault();
-    swap(href);
+    swap(href, link.hasAttribute("data-scroll-top"));
   });
 
   document.addEventListener("change", (e) => {

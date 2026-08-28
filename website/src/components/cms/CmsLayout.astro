@@ -10,15 +10,16 @@ interface Props {
   currentPath: string;
   parties?: Array<{ id: string; name: string; slug: string }>;
   partyId?: string | null;
+  isOwner?: boolean;
 }
-const { title, userPermissions, currentPath, parties = [], partyId = null } = Astro.props;
+const { title, userPermissions, currentPath, parties = [], partyId = null, isOwner = false } = Astro.props;
 const activeParty = parties.find((p) => p.id === partyId);
 const storeHref = activeParty ? `/eshop-${activeParty.slug}` : null;
 ---
 
 <Layout title={title}>
   <div class="cms-shell">
-    <Sidebar currentPath={currentPath} userPermissions={userPermissions} storeHref={storeHref} hasParty={!!partyId} />
+    <Sidebar currentPath={currentPath} userPermissions={userPermissions} storeHref={storeHref} hasParty={!!partyId} isOwner={isOwner} />
     <div class="cms-main">
       <header class="cms-header">
         <h1 class="cms-title">{title}</h1>

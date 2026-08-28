@@ -20,15 +20,15 @@ const topLevel = categories.filter((c) => !c.parent_id);
   <h2 class="sidebar-title">{t.shop.categories}</h2>
   <ul class="category-list">
     <li>
-      <a href={homeHref} class={`cat-link${!categorySlug ? " cat-active" : ""}`} data-filter-link>{t.shop.allProducts}</a>
+      <a href={homeHref} class={`cat-link${!categorySlug ? " cat-active" : ""}`} data-filter-link data-scroll-top>{t.shop.allProducts}</a>
     </li>
     {topLevel.map((cat) => (
       <li>
-        <a href={buildUrl({ category: cat.slug })} class={`cat-link${categorySlug === cat.slug ? " cat-active" : ""}`} data-filter-link>
+        <a href={buildUrl({ category: cat.slug })} class={`cat-link${categorySlug === cat.slug ? " cat-active" : ""}`} data-filter-link data-scroll-top>
           {cat.name}
         </a>
         {categories.filter((c) => c.parent_id === cat.id).map((child) => (
-          <a href={buildUrl({ category: child.slug })} class={`cat-link cat-child${categorySlug === child.slug ? " cat-active" : ""}`} data-filter-link>
+          <a href={buildUrl({ category: child.slug })} class={`cat-link cat-child${categorySlug === child.slug ? " cat-active" : ""}`} data-filter-link data-scroll-top>
             {child.name}
           </a>
         ))}

@@ -1,12 +1,14 @@
 ---
 import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import { createSupabase } from "../../../lib/supabase";
+import { createSupabase, createAdminClient } from "../../../lib/supabase";
 import { fetchOrder, updateOrderStatus, updateOrder } from "@shared/services/orderService";
 import { requireAdminCtx } from "../../../lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT, getLang } from "../../../lib/i18n";
 import type { Order } from "@shared/types/index";
 import { formatPrice } from "@shared/utils/format";
+import { createShipmentForOrder } from "../../../lib/checkoutFlow";
+import { refreshShipmentStatus, cancelShipmentForOrder, createReturnShipmentForOrder } from "../../../lib/shipmentActions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -37,6 +39,17 @@ if (Astro.request.method === "POST") {
   } else if (action === "tracking") {
     const result = await updateOrder(supabase, id!, { tracking_number: form.get("tracking_number") as string });
     if (result.error) error = result.error.message;
+  } else if (action === "create_shipment") {
+    await createShipmentForOrder(createAdminClient(), id!);
+  } else if (action === "refresh_shipment") {
+    const result = await refreshShipmentStatus(createAdminClient(), id!);
+    if (result.error) error = result.error;
+  } else if (action === "cancel_shipment") {
+    const result = await cancelShipmentForOrder(createAdminClient(), id!);
+    if (result.error) error = result.error;
+  } else if (action === "create_return_shipment") {
+    const result = await createReturnShipmentForOrder(createAdminClient(), id!);
+    if (result.error) error = result.error;
   }
   if (!error) return Astro.redirect(`/admin/orders/${id}`);
 }
@@ -71,7 +84,7 @@ const STATUS_LABELS: Record<string, string> = {
 const PAYMENT_LABELS: Record<string, string> = { paid: t.admin.orders.paymentPaid, unpaid: t.admin.orders.paymentUnpaid };
 ---
 
-<CmsLayout title={`${t.admin.orders.colNumber} ${order.order_number}`} userPermissions={permissions} currentPath="/admin/orders" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={`${t.admin.orders.colNumber} ${order.order_number}`} userPermissions={permissions} currentPath="/admin/orders" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <a href="/admin/orders" class="back-link">{t.admin.orders.back}</a>
   {error && <div class="alert-error">{error}</div>}
 
@@ -156,6 +169,80 @@ const PAYMENT_LABELS: Record<string, string> = { paid: t.admin.orders.paymentPai
           </p>
         </div>
       )}
+
+      {order.shipment && (
+        <div class="card" style="margin-top:16px">
+          <h2 class="section-title">
+            {t.admin.orders.sectionShipment}
+            {order.shipment.is_mock && <span class="badge badge-pending" style="margin-left:8px;font-size:11px">{t.admin.orders.shipmentTestMode}</span>}
+          </h2>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px">{t.admin.orders.shipmentProvider}: <strong>{order.shipment.provider.toUpperCase()}</strong></p>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px">{t.admin.orders.shipmentStatusLabel}: <strong>{order.shipment.status}</strong></p>
+          {order.shipment.tracking_number && (
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px">{t.admin.orders.shipmentTracking}: <strong>{order.shipment.tracking_number}</strong></p>
+          )}
+          {order.shipment.consignment_code && (
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px">
+              {t.admin.orders.shipmentConsignmentCode}: <strong>{order.shipment.consignment_code}</strong>
+              <br /><span style="font-size:12px">{t.admin.orders.shipmentConsignmentHint}</span>
+            </p>
+          )}
+          {order.shipment.pickup_point_address && (
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px">{t.admin.orders.shipmentPickupPoint}: {order.shipment.pickup_point_name} — {order.shipment.pickup_point_address}</p>
+          )}
+          {order.shipment.error_message && <p style="font-size:13px;color:var(--error);margin-bottom:4px">{t.admin.orders.shipmentError}: {order.shipment.error_message}</p>}
+
+          <div class="shipment-actions">
+            {order.shipment.label_storage_path && (
+              <a href={`/api/shipping-label/${order.id}`} target="_blank" class="btn btn-secondary" style="font-size:13px">{t.admin.orders.shipmentDownloadLabel}</a>
+            )}
+            {(order.shipment.status === "pending" || order.shipment.status === "failed") && (
+              <form method="POST"><input type="hidden" name="action" value="create_shipment" />
+                <button type="submit" class="btn btn-primary" style="font-size:13px">
+                  {order.shipment.status === "failed" ? t.admin.orders.shipmentRetry : t.admin.orders.shipmentCreate}
+                </button>
+              </form>
+            )}
+            {order.shipment.provider_shipment_id && (
+              <form method="POST"><input type="hidden" name="action" value="refresh_shipment" />
+                <button type="submit" class="btn btn-ghost" style="font-size:13px">{t.admin.orders.shipmentRefresh}</button>
+              </form>
+            )}
+            {order.shipment.provider_shipment_id && !["in_transit", "delivered", "returned", "cancelled"].includes(order.shipment.status) && (
+              <form method="POST"><input type="hidden" name="action" value="cancel_shipment" />
+                <button type="submit" class="btn btn-ghost" style="font-size:13px;color:var(--error)">{t.admin.orders.shipmentCancel}</button>
+              </form>
+            )}
+          </div>
+
+          {order.shipment.status === "cancelled" && (
+            <p style="font-size:13px;color:var(--error);margin-top:8px">{t.admin.orders.shipmentCancelledLabel}</p>
+          )}
+        </div>
+      )}
+
+      {order.shipment && order.shipment.provider_shipment_id && (
+        <div class="card" style="margin-top:16px">
+          <h2 class="section-title">{t.admin.orders.sectionReturn}</h2>
+          {order.shipment.return_provider_shipment_id ? (
+            <>
+              {order.shipment.return_tracking_number && (
+                <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px">{t.admin.orders.shipmentTracking}: <strong>{order.shipment.return_tracking_number}</strong></p>
+              )}
+              {order.shipment.return_password && (
+                <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px">{t.admin.orders.returnPassword}: <strong>{order.shipment.return_password}</strong></p>
+              )}
+              {order.shipment.return_label_storage_path && (
+                <a href={`/api/shipping-label/${order.id}?type=return`} target="_blank" class="btn btn-secondary" style="font-size:13px">{t.admin.orders.shipmentDownloadLabel}</a>
+              )}
+            </>
+          ) : (
+            <form method="POST"><input type="hidden" name="action" value="create_return_shipment" />
+              <button type="submit" class="btn btn-secondary" style="font-size:13px">{t.admin.orders.shipmentCreateReturn}</button>
+            </form>
+          )}
+        </div>
+      )}
     </div>
   </div>
 </CmsLayout>
@@ -170,6 +257,8 @@ const PAYMENT_LABELS: Record<string, string> = { paid: t.admin.orders.paymentPai
   .total-row { display:flex; justify-content:space-between; font-size:14px; }
   .total-grand { font-weight:800; font-size:16px; padding-top:8px; border-top:1px solid var(--border-default); margin-top:4px; }
   .tracking-form { display:flex; gap:8px; align-items:center; }
+  .shipment-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .shipment-actions form { display:contents; }
   .status-form { display:flex; flex-direction:column; gap:0; }
   @media(max-width:768px) { .order-grid { grid-template-columns:1fr; } }
 </style>

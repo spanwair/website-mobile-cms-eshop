@@ -1,0 +1,172 @@
+---
+import { useT, getLang } from "../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
+import { computeShippingCost } from "@shared/services/shippingConfigService";
+import type { ShippingProviderConfig } from "@shared/types";
+
+interface Props {
+  configs: ShippingProviderConfig[];
+  subtotal: number;
+  currency?: string;
+}
+const { configs, subtotal, currency } = Astro.props;
+const t = useT(Astro);
+const lang = getLang(Astro);
+
+const mockMode = (import.meta.env.PUBLIC_SHIPPING_MOCK_MODE ?? "true") !== "false";
+const packetaWidgetKey = import.meta.env.PUBLIC_PACKETA_WIDGET_API_KEY ?? "";
+const pplWidgetKey = import.meta.env.PUBLIC_PPL_WIDGET_API_KEY ?? "";
+
+const PROVIDER_LOGOS: Record<string, string> = {
+  ppl: "/logo-delivery-providers/Logo-ppl-1024x333.jpg",
+  packeta: "/logo-delivery-providers/preview-repasado-dark.png",
+};
+
+const MOCK_POINTS: Record<string, { id: string; name: string; address: string }[]> = {
+  ppl: [
+    { id: "MOCK-PPL-101", name: "PPL ParcelShop Praha - Václavské náměstí", address: "Václavské náměstí 1, 110 00 Praha 1" },
+    { id: "MOCK-PPL-202", name: "PPL ParcelShop Brno - Náměstí Svobody", address: "Náměstí Svobody 8, 602 00 Brno" },
+    { id: "MOCK-PPL-303", name: "PPL ParcelBox Ostrava - Nádraží", address: "Nádražní 685, 702 00 Ostrava" },
+  ],
+  packeta: [
+    { id: "MOCK-ZBOX-401", name: "Zásilkovna Praha - Anděl", address: "Radlická 3185, 150 00 Praha 5" },
+    { id: "MOCK-ZBOX-502", name: "Zásilkovna Brno - Vaňkovka", address: "Ve Vaňkovce 1, 602 00 Brno" },
+    { id: "MOCK-ZBOX-603", name: "Zásilkovna Olomouc - Šantovka", address: "Kavaleristů 936, 779 00 Olomouc" },
+  ],
+};
+---
+
+<div class="shipping-selector card" id="shipping-selector" data-subtotal={subtotal} data-currency={currency} data-lang={lang}>
+  <h2 class="section-title">{t.shop.shippingMethod}</h2>
+
+  <div class="provider-list">
+    {configs.map((cfg, i) => {
+      const cost = computeShippingCost(cfg, subtotal);
+      const logo = PROVIDER_LOGOS[cfg.code];
+      return (
+        <label class="provider-option">
+          <input type="radio" name="shipping_provider" value={cfg.code} data-cost={cost} form="checkout-form" checked={i === 0} class="styled-radio" required />
+          {logo && <img src={logo} alt={cfg.display_name} class="provider-logo" />}
+          <span class="provider-name">{cfg.display_name}</span>
+          <span class="provider-price">{cost === 0 ? t.shop.freeShipping : formatPrice(cost, lang, currency)}</span>
+        </label>
+      );
+    })}
+  </div>
+
+  <div class="delivery-type" data-delivery-type-block style="display:none">
+    <label class="delivery-type-option">
+      <input type="radio" name="delivery_type" value="home" form="checkout-form" class="styled-radio styled-radio--small" checked />
+      <span>{t.shop.shippingHome}</span>
+    </label>
+    <label class="delivery-type-option">
+      <input type="radio" name="delivery_type" value="pickup" form="checkout-form" class="styled-radio styled-radio--small" />
+      <span>{t.shop.shippingPickup}</span>
+    </label>
+  </div>
+
+  {configs.map((cfg) => {
+    // A single global mock flag can't represent "real widget for carrier A, no key yet
+    // for carrier B" — each carrier's widget only renders for real once mock mode is off
+    // AND that specific carrier's key is configured; otherwise it falls back to the mock
+    // picker rather than showing a carrier's "invalid API key" widget error to customers.
+    const hasRealWidget = !mockMode && (cfg.code === "ppl" ? Boolean(pplWidgetKey) : Boolean(packetaWidgetKey));
+    return (
+      <div class="pickup-block" data-pickup-block={cfg.code} style="display:none">
+        {hasRealWidget ? (
+          cfg.code === "ppl" ? (
+            <button type="button" class="btn btn-secondary" data-open-ppl-widget data-api-key={pplWidgetKey}>{t.shop.choosePickupPoint}</button>
+          ) : (
+            <button type="button" class="btn btn-secondary" data-open-packeta-widget data-api-key={packetaWidgetKey}>{t.shop.choosePickupPoint}</button>
+          )
+        ) : (
+          <select data-mock-pickup-select class="form-input">
+            <option value="">{t.shop.choosePickupPoint}</option>
+            {(MOCK_POINTS[cfg.code] ?? []).map((p) => (
+              <option value={p.id} data-point-name={p.name} data-point-address={p.address}>{p.name}</option>
+            ))}
+          </select>
+        )}
+      </div>
+    );
+  })}
+
+  <p class="pickup-summary" data-pickup-summary style="display:none">
+    {t.shop.pickupPointChosen} <span data-pickup-summary-text></span>
+  </p>
+
+  <input type="hidden" name="pickup_point_id" form="checkout-form" />
+  <input type="hidden" name="pickup_point_name" form="checkout-form" />
+  <input type="hidden" name="pickup_point_address" form="checkout-form" />
+</div>
+
+<script>
+  import { initShippingSelector } from "../../lib/client/shippingSelector";
+  initShippingSelector();
+</script>
+
+<style>
+  .section-title { font-size:18px; font-weight:700; margin:0 0 16px; }
+  .shipping-selector { display:flex; flex-direction:column; gap:16px; }
+
+  .provider-list { display:flex; flex-direction:column; gap:10px; }
+
+  .provider-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+  }
+  .provider-option:hover { border-color: var(--primary); }
+  .provider-option:has(input:checked) {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 6%, transparent);
+    box-shadow: 0 0 0 1px var(--primary);
+  }
+
+  /* Ordinary browser-native radio — just sized and tinted with accent-color, no custom
+     appearance/redraw. */
+  .styled-radio {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--primary);
+  }
+
+  .styled-radio--small { width: 16px; height: 16px; margin-right: 6px; }
+
+  .provider-logo {
+    flex-shrink: 0;
+    height: 26px;
+    max-width: 90px;
+    object-fit: contain;
+  }
+
+  .provider-name { flex: 1; font-size: 14px; font-weight: 600; }
+  .provider-price { font-size: 14px; font-weight: 700; color: var(--primary); white-space: nowrap; }
+
+  .delivery-type { display:flex; gap:8px; padding:4px; background:var(--bg-subtle); border-radius:10px; width:fit-content; }
+  .delivery-type-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+  }
+  .delivery-type-option:has(input:checked) { background: var(--surface, #fff); color: var(--text-primary); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+
+  .pickup-block { margin-top: 4px; }
+  .pickup-summary { font-size:13px; color:var(--text-muted); margin:0; }
+</style>

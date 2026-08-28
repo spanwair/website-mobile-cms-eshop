@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
-import type { Order, OrderWithDetails, OrderItem, PaginatedResult } from "../types";
+import type { Order, OrderWithDetails, OrderItem, OrderShipment, PaginatedResult } from "../types";
 
 type Client = SupabaseClient<Database>;
 type OrderStatus = Order["status"];
@@ -51,7 +51,8 @@ export async function fetchOrder(
       *,
       customer:customer_id(*),
       items:order_items(*),
-      shipping_address:shipping_address_id(*)
+      shipping_address:shipping_address_id(*),
+      shipment:order_shipments(*)
     `)
     .eq("id", orderId)
     .single();
@@ -62,6 +63,7 @@ export async function fetchOrder(
     customer: raw.customer as OrderWithDetails["customer"],
     items: (raw.items as OrderItem[]) ?? [],
     shipping_address: (raw.shipping_address as OrderWithDetails["shipping_address"]) ?? null,
+    shipment: (Array.isArray(raw.shipment) ? (raw.shipment[0] as OrderShipment) : (raw.shipment as OrderShipment)) ?? null,
   };
 }
 
@@ -80,7 +82,7 @@ export async function updateOrderStatus(
   client: Client,
   orderId: string,
   toStatus: OrderStatus,
-  changedBy: string,
+  changedBy: string | null,
   note?: string
 ): Promise<{ error: Error | null }> {
   const { data: current, error: fetchErr } = await client
@@ -142,7 +144,7 @@ export async function addOrderItemsOrRollback(
   client: Client,
   orderId: string,
   items: Database["public"]["Tables"]["order_items"]["Insert"][],
-  changedBy: string
+  changedBy: string | null
 ): Promise<{ error: Error | null; insufficientStock: boolean }> {
   for (const item of items) {
     const { error } = await addOrderItem(client, item);
