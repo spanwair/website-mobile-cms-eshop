@@ -1,11 +1,11 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import { createSupabase } from "../../../lib/supabase";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import { createSupabase } from "@/lib/supabase";
 import { fetchCustomer, updateCustomer, addAddress, deleteAddress } from "@shared/services/customerService";
 import { fetchOrders } from "@shared/services/orderService";
-import { requireAdminCtx } from "../../../lib/admin";
+import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT, getLang } from "../../../lib/i18n";
+import { useT, getLang } from "@/lib/i18n";
 import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);

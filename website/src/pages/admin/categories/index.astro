@@ -1,10 +1,10 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import { createSupabase } from "../../../lib/supabase";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import { createSupabase } from "@/lib/supabase";
 import { fetchCategoryTree, deleteCategory } from "@shared/services/categoryService";
-import { requireAdminCtx } from "../../../lib/admin";
+import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT } from "../../../lib/i18n";
+import { useT } from "@/lib/i18n";
 import type { CategoryTree } from "@shared/types/index";
 
 const supabase = createSupabase(Astro);

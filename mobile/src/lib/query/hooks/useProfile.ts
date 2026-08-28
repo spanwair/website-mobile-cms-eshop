@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "../../../../supabase/client";
+import { supabase } from "@mobile/supabase/client";
 import {
   fetchProfile,
   updateProfile,

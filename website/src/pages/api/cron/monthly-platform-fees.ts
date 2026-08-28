@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
-import { createAdminClient } from "../../../lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 import { computeMonthlyFeesForPeriod } from "@shared/services/monthlyFeeService";
-import { sendMonthlyFeeNotice } from "../../../lib/integrations/email";
+import { sendMonthlyFeeNotice } from "@/lib/integrations/email";
 
 // Called monthly by Supabase pg_cron (see supabase/migrations/20260103000073_monthly_fee_cron.sql)
 // on the 1st of each month to bill own_company parties for the previous month's platform fee.

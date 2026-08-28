@@ -1,11 +1,11 @@
 ---
-import { createSupabase } from "../../../lib/supabase";
+import { createSupabase } from "@/lib/supabase";
 import { fetchInventory, updateStock, updateThresholds } from "@shared/services/inventoryService";
 import type { StockMovementType } from "@shared/types";
-import { requireAdminCtx } from "../../../lib/admin";
-import { useT } from "../../../lib/i18n";
+import { requireAdminCtx } from "@/lib/admin";
+import { useT } from "@/lib/i18n";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();

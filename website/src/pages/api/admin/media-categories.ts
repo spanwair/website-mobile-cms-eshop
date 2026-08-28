@@ -1,6 +1,6 @@
 import type { APIContext, APIRoute } from "astro";
-import { createSupabase } from "../../../lib/supabase";
-import { requireAdminCtx } from "../../../lib/admin";
+import { createSupabase } from "@/lib/supabase";
+import { requireAdminCtx } from "@/lib/admin";
 import { fetchMediaCategories, createMediaCategory, deleteMediaCategory } from "@shared/services/mediaCategoryService";
 
 function json(body: unknown, status = 200) {

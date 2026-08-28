@@ -1,12 +1,12 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import CmsTabs from "../../../components/cms/CmsTabs.astro";
-import { createSupabase } from "../../../lib/supabase";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import CmsTabs from "@/components/cms/CmsTabs.astro";
+import { createSupabase } from "@/lib/supabase";
 import { fetchContentPages } from "@shared/services/contentPageService";
 import { SMALLJOBS_SALE_NOTICE_SLUG, SMALLJOBS_SALE_NOTICE_TITLE_CS } from "@shared/services/legalTemplates";
-import { requireAdminCtx } from "../../../lib/admin";
+import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT } from "../../../lib/i18n";
+import { useT } from "@/lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();

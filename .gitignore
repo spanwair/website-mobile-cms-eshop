@@ -1,44 +1,42 @@
+# Supabase
+supabase/.temp/
+supabase/.branches/
+
+# Dependencies
 node_modules/
 .pnp
 .pnp.js
 
-# Env secrets — NEVER commit these
-.env
-.env.development
-.env.production
-.env.local
-.envrc
+# Testing
+coverage/
 
-# Expo / React Native
-.expo/
+# Next.js
+.next/
+out/
+
+# Production
+build/
 dist/
-android/app/build/
-android/.gradle/
-android/.kotlin/
-ios/Pods/
-*.apk
-*.aab
 
-# Astro
-website/dist/
-website/.astro/
-
-# Supabase local
-supabase/.temp/
-
-# OS
+# Misc
 .DS_Store
-Thumbs.db
+*.pem
 
-# IDE
-.vscode/
-.idea/
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-config.toml
-.cache/
-sessions/*.md
-!sessions/.gitkeep
-__pycache__/
-*.pyc
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-.aider*
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { createSupabase } from "../../../lib/supabase";
+import { createSupabase } from "@/lib/supabase";
 import { subscribeToNewsletter } from "@shared/services/newsletterService";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

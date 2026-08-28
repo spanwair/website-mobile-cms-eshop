@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { supabase } from "../../../supabase/client";
+import { supabase } from "@mobile/supabase/client";
 import { fetchItems } from "@shared/services/itemService";
 import { fetchAllUsers } from "@shared/services/profileService";
 import { colors, shadow } from "@shared/constants/theme";

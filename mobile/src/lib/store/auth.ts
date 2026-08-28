@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "../../../supabase/client";
+import { supabase } from "@mobile/supabase/client";
 import { createSelectors } from "./utils";
 
 type AuthState = {

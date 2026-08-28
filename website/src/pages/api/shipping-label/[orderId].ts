@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { createSupabase, createAdminClient } from "../../../lib/supabase";
+import { createSupabase, createAdminClient } from "@/lib/supabase";
 
 // The shipping-labels bucket is private with no storage.objects SELECT policy at all —
 // every read goes through a signed URL minted here, after the order_shipments RLS read

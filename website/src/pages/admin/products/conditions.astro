@@ -1,12 +1,12 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import { createSupabase } from "../../../lib/supabase";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import { createSupabase } from "@/lib/supabase";
 import {
   fetchProductConditions, createProductCondition, updateProductCondition, deleteProductCondition,
 } from "@shared/services/productConditionService";
-import { requireAdminCtx } from "../../../lib/admin";
+import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT } from "../../../lib/i18n";
+import { useT } from "@/lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();

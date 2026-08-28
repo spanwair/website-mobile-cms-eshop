@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Text, ActivityIndicator, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
-import { supabase } from "../../../supabase/client";
+import { supabase } from "@mobile/supabase/client";
 import { fetchItem } from "@shared/services/itemService";
 import { formatDate } from "@shared/utils/format";
 import { colors } from "@shared/constants/theme";

@@ -5,11 +5,11 @@
 // active party and hunt through /admin/payouts for each org individually. Always scoped to
 // ctx.parties (owner sees every party, admin sees only their assigned ones) — never queries
 // beyond that set.
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import { createSupabase } from "../../../lib/supabase";
-import { requireAdminCtx } from "../../../lib/admin";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import { createSupabase } from "@/lib/supabase";
+import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT, getLang } from "../../../lib/i18n";
+import { useT, getLang } from "@/lib/i18n";
 import { SELLER_MODE, MONTHLY_COMMISSION_CAP_CZK, NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK } from "@shared/constants/sellerMode";
 
 const supabase = createSupabase(Astro);

@@ -12,7 +12,7 @@ import {
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { useTranslation } from "react-i18next";
-import { supabase } from "../../../supabase/client";
+import { supabase } from "@mobile/supabase/client";
 WebBrowser.maybeCompleteAuthSession();
 import { signInWithPassword, signUpWithPassword, signInWithGoogle } from "@shared/services/authService";
 import { isValidEmail, isStrongPassword } from "@shared/utils/validation";

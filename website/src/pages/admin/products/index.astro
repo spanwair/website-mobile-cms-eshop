@@ -1,10 +1,10 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import { createSupabase } from "../../../lib/supabase";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import { createSupabase } from "@/lib/supabase";
 import { fetchProducts } from "@shared/services/productService";
 import { fetchCategories } from "@shared/services/categoryService";
-import { requireAdminCtx } from "../../../lib/admin";
-import { useT, getLang } from "../../../lib/i18n";
+import { requireAdminCtx } from "@/lib/admin";
+import { useT, getLang } from "@/lib/i18n";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { formatPrice } from "@shared/utils/format";
 

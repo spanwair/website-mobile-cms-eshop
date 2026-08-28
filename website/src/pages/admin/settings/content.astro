@@ -1,16 +1,16 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import SettingsTabs from "../../../components/cms/SettingsTabs.astro";
-import ContentSectionEditor from "../../../components/cms/ContentSectionEditor.astro";
-import MediaLibrary from "../../../components/cms/MediaLibrary.astro";
-import HeroSlideEditor from "../../../components/cms/HeroSlideEditor.astro";
-import { createSupabase } from "../../../lib/supabase";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import SettingsTabs from "@/components/cms/SettingsTabs.astro";
+import ContentSectionEditor from "@/components/cms/ContentSectionEditor.astro";
+import MediaLibrary from "@/components/cms/MediaLibrary.astro";
+import HeroSlideEditor from "@/components/cms/HeroSlideEditor.astro";
+import { createSupabase } from "@/lib/supabase";
 import { fetchStoreConfig, updateStoreConfig } from "@shared/services/storeConfigService";
 import { fetchStoreMedia, uploadStoreMedia, deleteStoreMedia } from "@shared/services/storeMediaService";
 import { fetchHeroSlides, createHeroSlide, updateHeroSlide, deleteHeroSlide } from "@shared/services/heroSlideService";
-import { requireAdminCtx } from "../../../lib/admin";
+import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT } from "../../../lib/i18n";
+import { useT } from "@/lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();

@@ -1,15 +1,15 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import PartySellerModeCard from "../../../components/admin/PartySellerModeCard.astro";
-import { createSupabase, createAdminClient } from "../../../lib/supabase";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import PartySellerModeCard from "@/components/admin/PartySellerModeCard.astro";
+import { createSupabase, createAdminClient } from "@/lib/supabase";
 import { fetchParty, updateParty, fetchPartyMembers, inviteUserToParty, removeUserFromParty } from "@shared/services/partyService";
 import { fetchCommissionaireAgreement, acceptCommissionaireAgreement, revokeCommissionaireAgreement } from "@shared/services/commissionaireService";
 import { fetchRoles } from "@shared/services/permissionsService";
 import { findUserByEmail } from "@shared/services/profileService";
-import { requireAdminCtx } from "../../../lib/admin";
-import { useT, getLang } from "../../../lib/i18n";
+import { requireAdminCtx } from "@/lib/admin";
+import { useT, getLang } from "@/lib/i18n";
 import { PERMISSIONS, hasPermission, ROLE, ROLE_LABEL, assignableRoles, canAssignRole } from "@shared/constants/permissions";
-import { sendPartyInvitation, buildDevInviteMetadata } from "../../../lib/integrations/email";
+import { sendPartyInvitation, buildDevInviteMetadata } from "@/lib/integrations/email";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();

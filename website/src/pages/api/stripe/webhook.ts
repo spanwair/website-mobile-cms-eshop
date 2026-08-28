@@ -1,12 +1,12 @@
 import type { APIRoute } from "astro";
-import { constructWebhookEvent, handleWebhookEvent } from "../../../lib/integrations/stripe";
-import { sendOrderConfirmation } from "../../../lib/integrations/email";
-import { createAdminClient } from "../../../lib/supabase";
+import { constructWebhookEvent, handleWebhookEvent } from "@/lib/integrations/stripe";
+import { sendOrderConfirmation } from "@/lib/integrations/email";
+import { createAdminClient } from "@/lib/supabase";
 import { recordCommissionForOrder, reverseCommissionForOrder } from "@shared/services/commissionLedgerService";
 import { SELLER_MODE } from "@shared/constants/sellerMode";
 import { sellerOfRecordInfo } from "@shared/constants/company";
 import type { AppLanguage } from "@shared/i18n/getT";
-import { notifyPayoutLimitReachedIfNeeded } from "../../../lib/commissionNotifications";
+import { notifyPayoutLimitReachedIfNeeded } from "@/lib/commissionNotifications";
 
 export const POST: APIRoute = async ({ request }) => {
   const signature = request.headers.get("stripe-signature");

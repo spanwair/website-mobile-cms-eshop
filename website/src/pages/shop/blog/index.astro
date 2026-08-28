@@ -1,10 +1,10 @@
 ---
-import Layout from "../../../components/layout/Layout.astro";
-import { createSupabase } from "../../../lib/supabase";
+import Layout from "@/components/layout/Layout.astro";
+import { createSupabase } from "@/lib/supabase";
 import { fetchPublishedBlogPosts } from "@shared/services/blogService";
 import { fetchStoreMedia } from "@shared/services/storeMediaService";
-import { resolveMediaUrl } from "../../../lib/contentRenderer";
-import { useT } from "../../../lib/i18n";
+import { resolveMediaUrl } from "@/lib/contentRenderer";
+import { useT } from "@/lib/i18n";
 
 const storeParty = Astro.locals.storeParty;
 if (!storeParty) return Astro.redirect("/shop");

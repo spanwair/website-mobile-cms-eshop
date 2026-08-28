@@ -1,14 +1,14 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import { createSupabase, createAdminClient } from "../../../lib/supabase";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import { createSupabase, createAdminClient } from "@/lib/supabase";
 import { fetchOrder, updateOrderStatus, updateOrder } from "@shared/services/orderService";
-import { requireAdminCtx } from "../../../lib/admin";
+import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT, getLang } from "../../../lib/i18n";
+import { useT, getLang } from "@/lib/i18n";
 import type { Order } from "@shared/types/index";
 import { formatPrice } from "@shared/utils/format";
-import { createShipmentForOrder } from "../../../lib/checkoutFlow";
-import { refreshShipmentStatus, cancelShipmentForOrder, createReturnShipmentForOrder } from "../../../lib/shipmentActions";
+import { createShipmentForOrder } from "@/lib/checkoutFlow";
+import { refreshShipmentStatus, cancelShipmentForOrder, createReturnShipmentForOrder } from "@/lib/shipmentActions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();

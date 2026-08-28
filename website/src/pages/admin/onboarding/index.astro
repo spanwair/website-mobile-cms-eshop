@@ -1,8 +1,8 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import { createSupabase } from "../../../lib/supabase";
-import { requireAdminCtx } from "../../../lib/admin";
-import { useT } from "../../../lib/i18n";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import { createSupabase } from "@/lib/supabase";
+import { requireAdminCtx } from "@/lib/admin";
+import { useT } from "@/lib/i18n";
 import { ROLE } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);

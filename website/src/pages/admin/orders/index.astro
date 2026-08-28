@@ -1,9 +1,9 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import { createSupabase } from "../../../lib/supabase";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import { createSupabase } from "@/lib/supabase";
 import { fetchOrders } from "@shared/services/orderService";
-import { requireAdminCtx } from "../../../lib/admin";
-import { useT, getLang } from "../../../lib/i18n";
+import { requireAdminCtx } from "@/lib/admin";
+import { useT, getLang } from "@/lib/i18n";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import type { Order } from "@shared/types/index";
 import { formatPrice } from "@shared/utils/format";

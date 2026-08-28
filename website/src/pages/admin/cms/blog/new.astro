@@ -1,12 +1,12 @@
 ---
-import CmsLayout from "../../../../components/cms/CmsLayout.astro";
-import ImagePicker from "../../../../components/cms/ImagePicker.astro";
-import { createSupabase } from "../../../../lib/supabase";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import ImagePicker from "@/components/cms/ImagePicker.astro";
+import { createSupabase } from "@/lib/supabase";
 import { createBlogPost } from "@shared/services/blogService";
 import { fetchStoreMedia } from "@shared/services/storeMediaService";
-import { requireAdminCtx } from "../../../../lib/admin";
+import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT } from "../../../../lib/i18n";
+import { useT } from "@/lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "../../../../supabase/client";
+import { supabase } from "@mobile/supabase/client";
 import { fetchItems } from "@shared/services/itemService";
 
 export const ITEMS_KEY = ["items"] as const;

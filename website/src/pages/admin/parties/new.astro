@@ -1,11 +1,11 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import OrgLegalStatusFields from "../../../components/admin/OrgLegalStatusFields.astro";
-import { createSupabase } from "../../../lib/supabase";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import OrgLegalStatusFields from "@/components/admin/OrgLegalStatusFields.astro";
+import { createSupabase } from "@/lib/supabase";
 import { createParty } from "@shared/services/partyService";
 import { acceptCommissionaireAgreement } from "@shared/services/commissionaireService";
-import { requireAdminCtx } from "../../../lib/admin";
-import { useT } from "../../../lib/i18n";
+import { requireAdminCtx } from "@/lib/admin";
+import { useT } from "@/lib/i18n";
 import { ROLE } from "@shared/constants/permissions";
 
 const CURRENT_PLATFORM_TERMS_VERSION = "2026-08-07";

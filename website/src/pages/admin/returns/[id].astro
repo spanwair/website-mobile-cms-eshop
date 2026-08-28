@@ -1,10 +1,10 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import { createSupabase } from "../../../lib/supabase";
-import { requireAdminCtx } from "../../../lib/admin";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import { createSupabase } from "@/lib/supabase";
+import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { fetchReturn, updateReturnStatus } from "@shared/services/returnService";
-import { useT, getLang } from "../../../lib/i18n";
+import { useT, getLang } from "@/lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();

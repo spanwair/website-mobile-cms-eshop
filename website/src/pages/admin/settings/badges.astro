@@ -1,13 +1,13 @@
 ---
-import CmsLayout from "../../../components/cms/CmsLayout.astro";
-import SettingsTabs from "../../../components/cms/SettingsTabs.astro";
-import { createSupabase } from "../../../lib/supabase";
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import SettingsTabs from "@/components/cms/SettingsTabs.astro";
+import { createSupabase } from "@/lib/supabase";
 import {
   fetchFooterBadges, createFooterBadge, updateFooterBadge, deleteFooterBadge,
 } from "@shared/services/footerBadgeService";
-import { requireAdminCtx } from "../../../lib/admin";
+import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
-import { useT } from "../../../lib/i18n";
+import { useT } from "@/lib/i18n";
 import type { FooterBadgeKind } from "@shared/types";
 
 const supabase = createSupabase(Astro);
