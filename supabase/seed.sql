@@ -13,9 +13,9 @@ ON CONFLICT (id) DO NOTHING;
 -- Profiles (trigger creates them, but we upsert to set display_name + role)
 INSERT INTO profiles (id, display_name, role)
 VALUES
-  ('00000000-0000-0000-0000-000000000001', 'Admin User', 'admin'),
-  ('00000000-0000-0000-0000-000000000002', 'Alice Demo',  'user'),
-  ('00000000-0000-0000-0000-000000000003', 'Bob Demo',    'user')
+  ('00000000-0000-0000-0000-000000000001', 'Admin User', 4),
+  ('00000000-0000-0000-0000-000000000002', 'Alice Demo',  1),
+  ('00000000-0000-0000-0000-000000000003', 'Bob Demo',    1)
 ON CONFLICT (id) DO UPDATE SET display_name = EXCLUDED.display_name, role = EXCLUDED.role;
 
 -- Mock items
