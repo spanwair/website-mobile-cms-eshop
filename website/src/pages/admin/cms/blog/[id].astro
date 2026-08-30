@@ -19,7 +19,6 @@ if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/a
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
 const t = useT(Astro);
-const s = t.admin.cms;
 const { id } = Astro.params;
 
 let error = "";
@@ -56,67 +55,67 @@ const media = await fetchStoreMedia(supabase, partyId);
 
 <CmsLayout title={post.title} userPermissions={permissions} currentPath="/admin/cms/blog" parties={ctx.parties} partyId={ctx.partyId}>
   <div class="card" style="max-width:720px">
-    <a href="/admin/cms/blog" class="back-link">{s.back}</a>
+    <a href="/admin/cms/blog" class="back-link">{t.admin.cms.back}</a>
     {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
     <form method="POST" class="post-form">
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldTitle}</label>
+          <label class="form-label">{t.admin.cms.fieldTitle}</label>
           <input class="form-input" name="title" required value={post.title} />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldSlug}</label>
+          <label class="form-label">{t.admin.cms.fieldSlug}</label>
           <input class="form-input" name="slug" required value={post.slug} />
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">{s.fieldExcerpt}</label>
+        <label class="form-label">{t.admin.cms.fieldExcerpt}</label>
         <textarea class="form-input" name="excerpt" rows="2">{post.excerpt ?? ""}</textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">{s.fieldContent}</label>
+        <label class="form-label">{t.admin.cms.fieldContent}</label>
         <textarea class="form-input" name="content" rows="10">{post.content ?? ""}</textarea>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldContentFormat}</label>
+          <label class="form-label">{t.admin.cms.fieldContentFormat}</label>
           <select class="form-input" name="content_format">
             <option value="markdown" selected={post.content_format === "markdown"}>{t.admin.settings.formatMarkdown}</option>
             <option value="html" selected={post.content_format === "html"}>{t.admin.settings.formatHtml}</option>
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldStatus}</label>
+          <label class="form-label">{t.admin.cms.fieldStatus}</label>
           <select class="form-input" name="status">
-            <option value="draft" selected={post.status === "draft"}>{s.statusDraft}</option>
-            <option value="published" selected={post.status === "published"}>{s.statusPublished}</option>
+            <option value="draft" selected={post.status === "draft"}>{t.admin.cms.statusDraft}</option>
+            <option value="published" selected={post.status === "published"}>{t.admin.cms.statusPublished}</option>
           </select>
         </div>
       </div>
       <div class="form-row">
-        <ImagePicker name="featured_image_url" label={s.fieldFeaturedImage} value={post.featured_image_url} media={media} />
+        <ImagePicker name="featured_image_url" label={t.admin.cms.fieldFeaturedImage} value={post.featured_image_url} media={media} />
         <div class="form-group">
-          <label class="form-label">{s.fieldAuthor}</label>
+          <label class="form-label">{t.admin.cms.fieldAuthor}</label>
           <input class="form-input" name="author_name" value={post.author_name ?? ""} />
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldSeoTitle}</label>
+          <label class="form-label">{t.admin.cms.fieldSeoTitle}</label>
           <input class="form-input" name="seo_title" value={post.seo_title ?? ""} />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldSeoDescription}</label>
+          <label class="form-label">{t.admin.cms.fieldSeoDescription}</label>
           <input class="form-input" name="seo_description" value={post.seo_description ?? ""} />
         </div>
       </div>
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary">{s.saveBtnPost}</button>
+        <button type="submit" class="btn btn-primary">{t.admin.cms.saveBtnPost}</button>
       </div>
     </form>
-    <form method="POST" onsubmit={`return confirm('${s.deleteConfirm}')`} style="margin-top:16px">
+    <form method="POST" onsubmit={`return confirm('${t.admin.cms.deleteConfirm}')`} style="margin-top:16px">
       <input type="hidden" name="action" value="delete" />
-      <button type="submit" class="btn btn-danger">{s.deletePostBtn}</button>
+      <button type="submit" class="btn btn-danger">{t.admin.cms.deletePostBtn}</button>
     </form>
   </div>
 </CmsLayout>

@@ -22,7 +22,6 @@ if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/a
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
 const t = useT(Astro);
-const s = t.admin.cms;
 
 let error = "";
 
@@ -56,30 +55,30 @@ const editId = Astro.url.searchParams.get("edit");
 const editing = editId ? members.find((m) => m.id === editId) ?? null : null;
 ---
 
-<CmsLayout title={s.teamTitle} userPermissions={permissions} currentPath="/admin/cms/team" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.cms.teamTitle} userPermissions={permissions} currentPath="/admin/cms/team" parties={ctx.parties} partyId={ctx.partyId}>
   <CmsTabs active="team" />
   {error && <div class="alert-error">{error}</div>}
-  <p class="content-hint">{s.teamHint}</p>
+  <p class="content-hint">{t.admin.cms.teamHint}</p>
 
   <div class="card" style="max-width:640px;margin-bottom:24px">
-    <h2 class="section-title">{editing ? t.common.edit : s.addMemberBtn}</h2>
+    <h2 class="section-title">{editing ? t.common.edit : t.admin.cms.addMemberBtn}</h2>
     <form method="POST" class="member-form">
       {editing && <input type="hidden" name="id" value={editing.id} />}
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldName}</label>
+          <label class="form-label">{t.admin.cms.fieldName}</label>
           <input class="form-input" name="name" required value={editing?.name ?? ""} />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldPosition}</label>
+          <label class="form-label">{t.admin.cms.fieldPosition}</label>
           <input class="form-input" name="position" value={editing?.position ?? ""} />
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">{s.fieldBio}</label>
+        <label class="form-label">{t.admin.cms.fieldBio}</label>
         <textarea class="form-input" name="bio" rows="2">{editing?.bio ?? ""}</textarea>
       </div>
-      <ImagePicker name="photo_url" label={s.fieldPhoto} value={editing?.photo_url ?? null} media={media} />
+      <ImagePicker name="photo_url" label={t.admin.cms.fieldPhoto} value={editing?.photo_url ?? null} media={media} />
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">{t.admin.settings.fieldSortOrder}</label>
@@ -92,7 +91,7 @@ const editing = editId ? members.find((m) => m.id === editId) ?? null : null;
       </div>
       <div class="form-actions">
         {editing && <a href="/admin/cms/team" class="btn btn-ghost">{t.common.cancel}</a>}
-        <button type="submit" class="btn btn-primary">{editing ? t.common.saveChanges : s.addMemberBtn}</button>
+        <button type="submit" class="btn btn-primary">{editing ? t.common.saveChanges : t.admin.cms.addMemberBtn}</button>
       </div>
     </form>
   </div>
@@ -100,7 +99,7 @@ const editing = editId ? members.find((m) => m.id === editId) ?? null : null;
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>
-        <tr><th>{s.colName}</th><th>{s.colPosition}</th><th>{s.colOrder}</th><th>{s.colActive}</th><th>{s.colActions}</th></tr>
+        <tr><th>{t.admin.cms.colName}</th><th>{t.admin.cms.colPosition}</th><th>{t.admin.cms.colOrder}</th><th>{t.admin.cms.colActive}</th><th>{t.admin.cms.colActions}</th></tr>
       </thead>
       <tbody>
         {members.map((m) => (
@@ -120,7 +119,7 @@ const editing = editId ? members.find((m) => m.id === editId) ?? null : null;
           </tr>
         ))}
         {members.length === 0 && (
-          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noMembers}</td></tr>
+          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.cms.noMembers}</td></tr>
         )}
       </tbody>
     </table>

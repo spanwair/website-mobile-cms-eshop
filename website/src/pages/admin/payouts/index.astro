@@ -18,7 +18,6 @@ const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_AUDIT)) return Astro.redirect("/admin");
 const t = useT(Astro);
 const lang = getLang(Astro);
-const p = t.admin.payouts;
 
 let error = "";
 let success = "";
@@ -37,7 +36,7 @@ if (Astro.request.method === "POST") {
       .eq("party_id", partyId)
       .eq("status", "held");
     if (updateErr) error = updateErr.message;
-    else success = p.markPaidBtn;
+    else success = t.admin.payouts.markPaidBtn;
   }
 
   if (action === "mark_fee_paid") {
@@ -50,7 +49,7 @@ if (Astro.request.method === "POST") {
       .eq("party_id", partyId)
       .eq("status", "unpaid");
     if (updateErr) error = updateErr.message;
-    else success = p.markFeePaidBtn;
+    else success = t.admin.payouts.markFeePaidBtn;
   }
 }
 
@@ -70,10 +69,10 @@ function statusOf(e: any): "held" | "eligible" | "paid" | "reversed" {
   return new Date(e.hold_until).getTime() <= now ? "eligible" : "held";
 }
 const statusLabel: Record<string, string> = {
-  held: p.statusHeld,
-  eligible: p.statusEligible,
-  paid: p.statusPaid,
-  reversed: p.statusReversed,
+  held: t.admin.payouts.statusHeld,
+  eligible: t.admin.payouts.statusEligible,
+  paid: t.admin.payouts.statusPaid,
+  reversed: t.admin.payouts.statusReversed,
 };
 const statusBadgeClass: Record<string, string> = {
   held: "badge-pending",
@@ -138,8 +137,8 @@ function periodLabel(dateStr: string) {
 }
 ---
 
-<CmsLayout title={p.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
-  <p class="content-hint">{isCommissionMode ? p.hint : p.monthlyFeesHint}</p>
+<CmsLayout title={t.admin.payouts.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+  <p class="content-hint">{isCommissionMode ? t.admin.payouts.hint : t.admin.payouts.monthlyFeesHint}</p>
   {error && <div class="alert-error">{error}</div>}
   {success && <div class="alert-success">{success}</div>}
 
@@ -147,22 +146,22 @@ function periodLabel(dateStr: string) {
     <>
       <div class="summary-row">
         <div class="summary-tile summary-tile--wide">
-          <span>{p.payoutProgressLabel}</span>
-          <strong>{fmt(payoutThisMonth)} <span class="cap-of">{p.capProgressOf} {fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK)}</span></strong>
+          <span>{t.admin.payouts.payoutProgressLabel}</span>
+          <strong>{fmt(payoutThisMonth)} <span class="cap-of">{t.admin.payouts.capProgressOf} {fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK)}</span></strong>
           <div class="cap-bar"><div class="cap-bar-fill" style={`width:${Math.min((payoutThisMonth / NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK) * 100, 100)}%`}></div></div>
         </div>
-        <div class="summary-tile"><span>{p.summaryHeld}</span><strong>{fmt(totals.held)}</strong></div>
-        <div class="summary-tile"><span>{p.summaryEligible}</span><strong>{fmt(totals.eligible)}</strong></div>
-        <div class="summary-tile"><span>{p.summaryPaid}</span><strong>{fmt(totals.paid)}</strong></div>
-        <div class="summary-tile"><span>{p.summaryWithheld}</span><strong>{fmt(totals.withheld)}</strong></div>
+        <div class="summary-tile"><span>{t.admin.payouts.summaryHeld}</span><strong>{fmt(totals.held)}</strong></div>
+        <div class="summary-tile"><span>{t.admin.payouts.summaryEligible}</span><strong>{fmt(totals.eligible)}</strong></div>
+        <div class="summary-tile"><span>{t.admin.payouts.summaryPaid}</span><strong>{fmt(totals.paid)}</strong></div>
+        <div class="summary-tile"><span>{t.admin.payouts.summaryWithheld}</span><strong>{fmt(totals.withheld)}</strong></div>
       </div>
 
       <div class="card" style="padding:0;overflow:hidden">
         <table class="data-table">
           <thead>
             <tr>
-              <th>{p.colOrder}</th><th>{p.colGross}</th><th>{p.colTax}</th><th>{p.colCommission}</th>
-              <th>{p.colNet}</th><th>{p.colWithheld}</th><th>{p.colHoldUntil}</th><th>{p.colStatus}</th><th>{p.colActions}</th>
+              <th>{t.admin.payouts.colOrder}</th><th>{t.admin.payouts.colGross}</th><th>{t.admin.payouts.colTax}</th><th>{t.admin.payouts.colCommission}</th>
+              <th>{t.admin.payouts.colNet}</th><th>{t.admin.payouts.colWithheld}</th><th>{t.admin.payouts.colHoldUntil}</th><th>{t.admin.payouts.colStatus}</th><th>{t.admin.payouts.colActions}</th>
             </tr>
           </thead>
           <tbody>
@@ -186,22 +185,22 @@ function periodLabel(dateStr: string) {
                   <td><span class={`badge ${statusBadgeClass[st]}`}>{statusLabel[st]}</span></td>
                   <td>
                     {st === "eligible" && (
-                      <form method="POST" onsubmit={`return confirm('${p.markPaidConfirm}')`} style="display:flex;gap:6px;align-items:center">
+                      <form method="POST" onsubmit={`return confirm('${t.admin.payouts.markPaidConfirm}')`} style="display:flex;gap:6px;align-items:center">
                         <input type="hidden" name="action" value="mark_paid" />
                         <input type="hidden" name="ledger_id" value={e.id} />
-                        <input class="form-input" name="payout_reference" placeholder={p.fieldPayoutReference} style="width:140px;padding:4px 8px;font-size:12px" />
-                        <button type="submit" class="btn btn-primary" style="padding:4px 10px;font-size:12px">{p.markPaidBtn}</button>
+                        <input class="form-input" name="payout_reference" placeholder={t.admin.payouts.fieldPayoutReference} style="width:140px;padding:4px 8px;font-size:12px" />
+                        <button type="submit" class="btn btn-primary" style="padding:4px 10px;font-size:12px">{t.admin.payouts.markPaidBtn}</button>
                       </form>
                     )}
                     {st === "paid" && e.paid_at && (
-                      <span style="font-size:11px;color:var(--text-muted)">{p.paidByLabel}: {new Date(e.paid_at).toLocaleDateString(lang)}</span>
+                      <span style="font-size:11px;color:var(--text-muted)">{t.admin.payouts.paidByLabel}: {new Date(e.paid_at).toLocaleDateString(lang)}</span>
                     )}
                   </td>
                 </tr>
               );
             })}
             {entries.length === 0 && (
-              <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted)">{p.noEntries}</td></tr>
+              <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.payouts.noEntries}</td></tr>
             )}
           </tbody>
         </table>
@@ -210,15 +209,15 @@ function periodLabel(dateStr: string) {
   ) : (
     <>
       <div class="summary-row">
-        <div class="summary-tile"><span>{p.summaryUnpaid}</span><strong>{fmt(feeTotals.unpaid)}</strong></div>
-        <div class="summary-tile"><span>{p.summaryPaidFees}</span><strong>{fmt(feeTotals.paid)}</strong></div>
+        <div class="summary-tile"><span>{t.admin.payouts.summaryUnpaid}</span><strong>{fmt(feeTotals.unpaid)}</strong></div>
+        <div class="summary-tile"><span>{t.admin.payouts.summaryPaidFees}</span><strong>{fmt(feeTotals.paid)}</strong></div>
       </div>
 
       <div class="card" style="padding:0;overflow:hidden">
         <table class="data-table">
           <thead>
             <tr>
-              <th>{p.colPeriod}</th><th>{p.colTurnover}</th><th>{p.colFee}</th><th>{p.colStatus}</th><th>{p.colActions}</th>
+              <th>{t.admin.payouts.colPeriod}</th><th>{t.admin.payouts.colTurnover}</th><th>{t.admin.payouts.colFee}</th><th>{t.admin.payouts.colStatus}</th><th>{t.admin.payouts.colActions}</th>
             </tr>
           </thead>
           <tbody>
@@ -227,24 +226,25 @@ function periodLabel(dateStr: string) {
                 <td style="text-transform:capitalize">{periodLabel(f.period_month)}</td>
                 <td>{fmt(Number(f.turnover_amount))}</td>
                 <td style="font-weight:600">{fmt(Number(f.fee_amount))}</td>
-                <td><span class={`badge ${f.status === "paid" ? "badge-active" : "badge-pending"}`}>{f.status === "paid" ? p.statusPaidFee : p.statusUnpaid}</span></td>
+                <td><span class={`badge ${f.status === "paid" ? "badge-active" : "badge-pending"}`}>{f.status === "paid" ? t.admin.payouts.statusPaidFee : t.admin.payouts.statusUnpaid}</span></td>
                 <td>
                   {f.status === "unpaid" && (
-                    <form method="POST" onsubmit={`return confirm('${p.markFeePaidConfirm}')`} style="display:flex;gap:6px;align-items:center">
+                    <form method="POST" onsubmit={`return confirm('${t.admin.payouts.markFeePaidConfirm}')`} style="display:flex;gap:6px;align-items:center">
                       <input type="hidden" name="action" value="mark_fee_paid" />
                       <input type="hidden" name="fee_id" value={f.id} />
-                      <input class="form-input" name="payment_reference" placeholder={p.fieldFeeReference} style="width:140px;padding:4px 8px;font-size:12px" />
-                      <button type="submit" class="btn btn-primary" style="padding:4px 10px;font-size:12px">{p.markFeePaidBtn}</button>
+                      <input class="form-input" name="payment_reference" placeholder={t.admin.payouts.fieldFeeReference} style="width:140px;padding:4px 8px;font-size:12px" />
+                      <button type="submit" class="btn btn-primary" style="padding:4px 10px;font-size:12px">{t.admin.payouts.markFeePaidBtn}</button>
                     </form>
                   )}
                   {f.status === "paid" && f.paid_at && (
-                    <span style="font-size:11px;color:var(--text-muted)">{p.paidByLabel}: {new Date(f.paid_at).toLocaleDateString(lang)}</span>
+                    <span style="font-size:11px;color:var(--text-muted)">{t.admin.payouts.paidByLabel}: {new Date(f.paid_at).toLocaleDateString(lang)}</span>
                   )}
                 </td>
               </tr>
             ))}
             {fees.length === 0 && (
-              <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{p.noFees}</td></tr>
+              <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.payouts.noFees}</td></tr>
+            )}
             )}
           </tbody>
         </table>

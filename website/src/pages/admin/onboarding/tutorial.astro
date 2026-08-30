@@ -15,7 +15,6 @@ if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 
 const t = useT(Astro);
-const w = t.admin.onboardingWizard;
 
 const party = await fetchParty(supabase, ctx.partyId);
 const { count: categoryCount } = await supabase
@@ -27,45 +26,45 @@ const hasCategory = (categoryCount ?? 0) > 0;
 const hasProduct = (productCount ?? 0) > 0;
 ---
 
-<CmsLayout title={w.tutorialTitle} userPermissions={0xffff} currentPath="/admin/onboarding" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.onboardingWizard.tutorialTitle} userPermissions={0xffff} currentPath="/admin/onboarding" parties={ctx.parties} partyId={ctx.partyId}>
   <div class="card tutorial-card">
-    <h1 class="tutorial-title">{w.tutorialTitle}</h1>
-    <p class="tutorial-intro">{w.tutorialIntro}</p>
+    <h1 class="tutorial-title">{t.admin.onboardingWizard.tutorialTitle}</h1>
+    <p class="tutorial-intro">{t.admin.onboardingWizard.tutorialIntro}</p>
 
-    {party?.status === "pending_approval" && <p class="pending-note">{w.pendingNote}</p>}
+    {party?.status === "pending_approval" && <p class="pending-note">{t.admin.onboardingWizard.pendingNote}</p>}
 
     <ol class="checklist">
       <li class:list={["checklist-item", { done: hasCategory }]}>
         <div class="check-icon">{hasCategory ? "✓" : "1"}</div>
         <div class="check-body">
-          <h3>{w.stepCategoryTitle}</h3>
-          <p>{w.stepCategoryBody}</p>
+          <h3>{t.admin.onboardingWizard.stepCategoryTitle}</h3>
+          <p>{t.admin.onboardingWizard.stepCategoryBody}</p>
           {hasCategory
-            ? <span class="done-label">{w.stepCategoryDone}</span>
-            : <a href="/admin/categories/new" class="btn btn-secondary">{w.stepCategoryCta}</a>}
+            ? <span class="done-label">{t.admin.onboardingWizard.stepCategoryDone}</span>
+            : <a href="/admin/categories/new" class="btn btn-secondary">{t.admin.onboardingWizard.stepCategoryCta}</a>}
         </div>
       </li>
       <li class:list={["checklist-item", { done: hasProduct }]}>
         <div class="check-icon">{hasProduct ? "✓" : "2"}</div>
         <div class="check-body">
-          <h3>{w.stepProductTitle}</h3>
-          <p>{w.stepProductBody}</p>
+          <h3>{t.admin.onboardingWizard.stepProductTitle}</h3>
+          <p>{t.admin.onboardingWizard.stepProductBody}</p>
           {hasProduct
-            ? <span class="done-label">{w.stepProductDone}</span>
-            : <a href="/admin/products/new" class="btn btn-secondary">{w.stepProductCta}</a>}
+            ? <span class="done-label">{t.admin.onboardingWizard.stepProductDone}</span>
+            : <a href="/admin/products/new" class="btn btn-secondary">{t.admin.onboardingWizard.stepProductCta}</a>}
         </div>
       </li>
       <li class="checklist-item">
         <div class="check-icon">3</div>
         <div class="check-body">
-          <h3>{w.stepBrandingTitle}</h3>
-          <p>{w.stepBrandingBody}</p>
-          <a href="/admin/settings/branding" class="btn btn-secondary">{w.stepBrandingCta}</a>
+          <h3>{t.admin.onboardingWizard.stepBrandingTitle}</h3>
+          <p>{t.admin.onboardingWizard.stepBrandingBody}</p>
+          <a href="/admin/settings/branding" class="btn btn-secondary">{t.admin.onboardingWizard.stepBrandingCta}</a>
         </div>
       </li>
     </ol>
 
-    <a href="/admin" class="btn btn-primary">{w.finishBtn}</a>
+    <a href="/admin" class="btn btn-primary">{t.admin.onboardingWizard.finishBtn}</a>
   </div>
 </CmsLayout>
 

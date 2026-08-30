@@ -1,17 +1,16 @@
 ---
 import { useT } from "@/lib/i18n";
 const t = useT(Astro);
-const s = t.landing.foundingSellers;
 ---
 
 <section class="landing" id="founding-sellers">
   <div class="container-lg">
-    <p class="section-eyebrow">{s.eyebrow}</p>
-    <h2 class="section-title" style="max-width:760px">{s.title}</h2>
-    <p class="section-sub" style="margin-bottom:48px">{s.sub}</p>
+    <p class="section-eyebrow">{t.landing.foundingSellers.eyebrow}</p>
+    <h2 class="section-title" style="max-width:760px">{t.landing.foundingSellers.title}</h2>
+    <p class="section-sub" style="margin-bottom:48px">{t.landing.foundingSellers.sub}</p>
 
     <div class="grid-auto" data-reveal-group>
-      {s.cards.map((card) => (
+      {t.landing.foundingSellers.cards.map((card) => (
         <div class="card founding-card" data-reveal>
           <h3 class="founding-card-title">{card.title}</h3>
           <p class="founding-card-desc">{card.desc}</p>
@@ -20,7 +19,7 @@ const s = t.landing.foundingSellers;
     </div>
 
     <div class="founding-cta">
-      <a href="#hero" class="btn btn-primary btn-lg">{s.cta}</a>
+      <a href="#hero" class="btn btn-primary btn-lg">{t.landing.foundingSellers.cta}</a>
     </div>
   </div>
 </section>

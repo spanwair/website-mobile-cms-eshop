@@ -23,7 +23,6 @@ if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/a
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
 const t = useT(Astro);
-const s = t.admin.cms;
 
 let error = "";
 
@@ -63,22 +62,22 @@ const editId = Astro.url.searchParams.get("edit");
 const editing = editId ? items.find((n) => n.id === editId) ?? null : null;
 ---
 
-<CmsLayout title={s.navTitle} userPermissions={permissions} currentPath="/admin/cms/navigation" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.cms.navTitle} userPermissions={permissions} currentPath="/admin/cms/navigation" parties={ctx.parties} partyId={ctx.partyId}>
   <CmsTabs active="navigation" />
   {error && <div class="alert-error">{error}</div>}
-  <p class="content-hint">{s.navHint}</p>
+  <p class="content-hint">{t.admin.cms.navHint}</p>
 
   <div class="card" style="max-width:720px;margin-bottom:24px">
-    <h2 class="section-title">{editing ? t.common.edit : s.addNavItemBtn}</h2>
+    <h2 class="section-title">{editing ? t.common.edit : t.admin.cms.addNavItemBtn}</h2>
     <form method="POST" class="nav-form">
       {editing && <input type="hidden" name="id" value={editing.id} />}
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldLabel}</label>
+          <label class="form-label">{t.admin.cms.fieldLabel}</label>
           <input class="form-input" name="label" required value={editing?.label ?? ""} />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldParent}</label>
+          <label class="form-label">{t.admin.cms.fieldParent}</label>
           <select class="form-input" name="parent_id">
             <option value="">{t.admin.categories.noParentOption}</option>
             {topLevel.filter((n) => n.id !== editId).map((n) => (
@@ -89,40 +88,40 @@ const editing = editId ? items.find((n) => n.id === editId) ?? null : null;
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldCategory}</label>
+          <label class="form-label">{t.admin.cms.fieldCategory}</label>
           <select class="form-input" name="category_id">
-            <option value="">{s.noCategoryOption}</option>
+            <option value="">{t.admin.cms.noCategoryOption}</option>
             {categories.map((c) => (
               <option value={c.id} selected={editing?.category_id === c.id}>{c.name}</option>
             ))}
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldUrl}</label>
+          <label class="form-label">{t.admin.cms.fieldUrl}</label>
           <CreatableCombobox
             name="url"
             value={editing?.url ?? ""}
             options={urlOptions}
             placeholder="/stranka/o-nas"
-            createLabel={s.urlCreateLabel}
+            createLabel={t.admin.cms.urlCreateLabel}
             urlOnly
           />
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldColumnLabel}</label>
+          <label class="form-label">{t.admin.cms.fieldColumnLabel}</label>
           <input class="form-input" name="column_label" value={editing?.column_label ?? ""} placeholder="iPhone" />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldSortOrder}</label>
+          <label class="form-label">{t.admin.cms.fieldSortOrder}</label>
           <input class="form-input" type="number" name="sort_order" value={editing?.sort_order ?? 0} />
         </div>
       </div>
       <div class="form-row">
         <div class="form-check">
           <input type="checkbox" name="is_mega" id="is_mega" checked={editing?.is_mega ?? false} />
-          <label for="is_mega">{s.fieldIsMega}</label>
+          <label for="is_mega">{t.admin.cms.fieldIsMega}</label>
         </div>
         <div class="form-check">
           <input type="checkbox" name="is_visible" id="nav_visible" checked={editing ? editing.is_visible : true} />
@@ -131,7 +130,7 @@ const editing = editId ? items.find((n) => n.id === editId) ?? null : null;
       </div>
       <div class="form-actions">
         {editing && <a href="/admin/cms/navigation" class="btn btn-ghost">{t.common.cancel}</a>}
-        <button type="submit" class="btn btn-primary">{editing ? t.common.saveChanges : s.addNavItemBtn}</button>
+        <button type="submit" class="btn btn-primary">{editing ? t.common.saveChanges : t.admin.cms.addNavItemBtn}</button>
       </div>
     </form>
   </div>
@@ -139,7 +138,7 @@ const editing = editId ? items.find((n) => n.id === editId) ?? null : null;
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>
-        <tr><th>{s.colLabel}</th><th>{s.colTarget}</th><th>{s.colParent}</th><th>{s.colMega}</th><th>{s.colOrder}</th><th>{s.colActions}</th></tr>
+        <tr><th>{t.admin.cms.colLabel}</th><th>{t.admin.cms.colTarget}</th><th>{t.admin.cms.colParent}</th><th>{t.admin.cms.colMega}</th><th>{t.admin.cms.colOrder}</th><th>{t.admin.cms.colActions}</th></tr>
       </thead>
       <tbody>
         {items.map((n) => (
@@ -160,7 +159,7 @@ const editing = editId ? items.find((n) => n.id === editId) ?? null : null;
           </tr>
         ))}
         {items.length === 0 && (
-          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noNavItems}</td></tr>
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.cms.noNavItems}</td></tr>
         )}
       </tbody>
     </table>

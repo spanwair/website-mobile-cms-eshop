@@ -1,7 +1,6 @@
 ---
 import { useT } from "@/lib/i18n";
 const t = useT(Astro);
-const s = t.landing.aiCapabilities;
 ---
 
 <section class="landing" id="ai-capabilities">
@@ -63,12 +62,12 @@ const s = t.landing.aiCapabilities;
     </div>
 
     <div>
-      <p class="section-eyebrow">{s.eyebrow}</p>
-      <h2 class="section-title">{s.title}</h2>
-      <p class="section-sub" style="margin-bottom:8px">{s.sub}</p>
-      <p class="roadmap-note">{s.roadmapNote}</p>
+      <p class="section-eyebrow">{t.landing.aiCapabilities.eyebrow}</p>
+      <h2 class="section-title">{t.landing.aiCapabilities.title}</h2>
+      <p class="section-sub" style="margin-bottom:8px">{t.landing.aiCapabilities.sub}</p>
+      <p class="roadmap-note">{t.landing.aiCapabilities.roadmapNote}</p>
       <ul class="showcase-list" style="margin-top:24px">
-        {s.items.map((item) => (
+        {t.landing.aiCapabilities.items.map((item) => (
           <li>
             <strong>{item.title}</strong>
             <span>{item.desc}</span>

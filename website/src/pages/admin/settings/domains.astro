@@ -21,7 +21,6 @@ const partySlug = parties.find((p) => p.id === partyId)?.slug;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redirect("/admin");
 const t = useT(Astro);
 const dateLocale = getLang(Astro) === "en" ? "en-US" : "cs-CZ";
-const s = t.admin.settings;
 
 let error = "";
 
@@ -37,11 +36,11 @@ if (Astro.request.method === "POST") {
     const domainId = form.get("domain_id") as string;
     const row = await getStoreDomain(supabase, partyId, domainId);
     if (!row) {
-      error = s.verifyHint;
+      error = t.admin.settings.verifyHint;
     } else {
       const verified = await verifyDomainTxtRecord(row.domain, row.verification_token);
       if (verified) await verifyStoreDomain(supabase, domainId);
-      else error = s.verifyHint;
+      else error = t.admin.settings.verifyHint;
     }
   } else if (action === "remove") {
     const domainId = form.get("domain_id") as string;
@@ -55,23 +54,23 @@ if (Astro.request.method === "POST") {
 const domains = await fetchStoreDomains(supabase, partyId);
 ---
 
-<CmsLayout title={s.title} userPermissions={permissions} currentPath="/admin/settings/domains" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.settings.title} userPermissions={permissions} currentPath="/admin/settings/domains" parties={ctx.parties} partyId={ctx.partyId}>
   <SettingsTabs active="domains" partySlug={partySlug} />
   {error && <div class="alert-error">{error}</div>}
 
   <div class="card">
-    <h2 class="section-title">{s.domainsTitle}</h2>
-    <p class="hint">{s.domainsHint}</p>
+    <h2 class="section-title">{t.admin.settings.domainsTitle}</h2>
+    <p class="hint">{t.admin.settings.domainsHint}</p>
 
     <form method="POST" class="add-form">
       <input type="hidden" name="action" value="add" />
-      <input class="form-input" type="text" name="domain" placeholder={s.domainPlaceholder} required />
-      <button type="submit" class="btn btn-primary">{s.addDomain}</button>
+      <input class="form-input" type="text" name="domain" placeholder={t.admin.settings.domainPlaceholder} required />
+      <button type="submit" class="btn btn-primary">{t.admin.settings.addDomain}</button>
     </form>
 
     <table class="data-table">
       <thead>
-        <tr><th>{s.colDomain}</th><th>{s.colStatus}</th><th>{s.colAdded}</th><th></th></tr>
+        <tr><th>{t.admin.settings.colDomain}</th><th>{t.admin.settings.colStatus}</th><th>{t.admin.settings.colAdded}</th><th></th></tr>
       </thead>
       <tbody>
         {domains.map((d) => (
@@ -79,7 +78,7 @@ const domains = await fetchStoreDomains(supabase, partyId);
             <td style="font-family:monospace">{d.domain}</td>
             <td>
               <span class={`badge ${d.verified ? "badge-active" : "badge-pending"}`}>
-                {d.verified ? s.statusVerified : s.statusPending}
+                {d.verified ? t.admin.settings.statusVerified : t.admin.settings.statusPending}
               </span>
               {!d.verified && (
                 <p class="txt-hint">
@@ -93,19 +92,19 @@ const domains = await fetchStoreDomains(supabase, partyId);
                 <form method="POST" style="display:inline">
                   <input type="hidden" name="action" value="verify" />
                   <input type="hidden" name="domain_id" value={d.id} />
-                  <button type="submit" class="btn btn-secondary" style="padding:6px 12px;font-size:13px">{s.verifyBtn}</button>
+                  <button type="submit" class="btn btn-secondary" style="padding:6px 12px;font-size:13px">{t.admin.settings.verifyBtn}</button>
                 </form>
               )}
-              <form method="POST" onsubmit={`return confirm('${s.removeBtn}?')`} style="display:inline">
+              <form method="POST" onsubmit={`return confirm('${t.admin.settings.removeBtn}?')`} style="display:inline">
                 <input type="hidden" name="action" value="remove" />
                 <input type="hidden" name="domain_id" value={d.id} />
-                <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{s.removeBtn}</button>
+                <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{t.admin.settings.removeBtn}</button>
               </form>
             </td>
           </tr>
         ))}
         {domains.length === 0 && (
-          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noDomains}</td></tr>
+          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.settings.noDomains}</td></tr>
         )}
       </tbody>
     </table>

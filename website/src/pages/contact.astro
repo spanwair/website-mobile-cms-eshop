@@ -5,50 +5,49 @@ import { useT } from "../lib/i18n";
 import { SMALLJOBS_COMPANY } from "@shared/constants/company";
 
 const t = useT(Astro);
-const c = t.landing.contact;
 const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.registeredSeat.postalCode} ${SMALLJOBS_COMPANY.registeredSeat.city}`;
 ---
 
-<LandingLayout title={`${c.title} — Mamtodoma`} description={c.sub}>
-  <PageHero eyebrow={c.eyebrow} title={c.title} lead={c.sub} image="/img/support-team.jpg" imageAlt="" />
+<LandingLayout title={`${t.landing.contact.title} — Mamtodoma`} description={t.landing.contact.sub}>
+  <PageHero eyebrow={t.landing.contact.eyebrow} title={t.landing.contact.title} lead={t.landing.contact.sub} image="/img/support-team.jpg" imageAlt="" />
   <section class="landing" style="padding-top:0">
     <div class="container-lg contact-grid">
       <div class="contact-info">
         <div class="contact-info-row">
-          <span class="contact-info-label font-mono">{c.icoLabel}</span>
+          <span class="contact-info-label font-mono">{t.landing.contact.icoLabel}</span>
           <span>{SMALLJOBS_COMPANY.ico}</span>
         </div>
         <div class="contact-info-row">
-          <span class="contact-info-label font-mono">{c.formEmail}</span>
+          <span class="contact-info-label font-mono">{t.landing.contact.formEmail}</span>
           <span>jan@mamtodoma.cz</span>
         </div>
         <div class="contact-info-row">
-          <span class="contact-info-label font-mono">{c.addressLabel}</span>
+          <span class="contact-info-label font-mono">{t.landing.contact.addressLabel}</span>
           <span>{address}</span>
         </div>
       </div>
 
       <form id="contact-form" class="contact-form">
         <div class="form-group">
-          <label class="form-label" for="contact-name">{c.formName}</label>
+          <label class="form-label" for="contact-name">{t.landing.contact.formName}</label>
           <input id="contact-name" name="name" class="form-input" required />
         </div>
         <div class="form-group">
-          <label class="form-label" for="contact-email">{c.formEmail}</label>
+          <label class="form-label" for="contact-email">{t.landing.contact.formEmail}</label>
           <input id="contact-email" name="email" type="email" class="form-input" required />
         </div>
         <div class="form-group">
-          <label class="form-label" for="contact-message">{c.formMessage}</label>
+          <label class="form-label" for="contact-message">{t.landing.contact.formMessage}</label>
           <textarea id="contact-message" name="message" class="form-input" rows="5" required></textarea>
         </div>
-        <button type="submit" class="btn btn-primary btn-lg">{c.formSubmit}</button>
+        <button type="submit" class="btn btn-primary btn-lg">{t.landing.contact.formSubmit}</button>
         <p id="contact-msg" class="contact-msg"></p>
       </form>
     </div>
   </section>
 </LandingLayout>
 
-<script define:vars={{ successMsg: c.successMsg, errorMsg: c.errorMsg }}>
+<script define:vars={{ successMsg: t.landing.contact.successMsg, errorMsg: t.landing.contact.errorMsg }}>
   const form = document.getElementById("contact-form");
   const msg = document.getElementById("contact-msg");
   form?.addEventListener("submit", async (e) => {

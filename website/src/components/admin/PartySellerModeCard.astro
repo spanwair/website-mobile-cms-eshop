@@ -8,75 +8,74 @@ interface Props {
   t: any;
 }
 const { party, agreement, lang, t } = Astro.props;
-const s = t.admin.parties.sellerMode;
 const isCommission = party.seller_mode === "smalljobs_commission";
 ---
 
 <div class="card seller-mode-card">
-  <h2 class="section-title">{s.section}</h2>
+  <h2 class="section-title">{t.admin.parties.sellerMode.section}</h2>
   <p class="mode-current">
     <span class="mode-badge" class:list={[isCommission ? "mode-badge--commission" : "mode-badge--own"]}>
-      {isCommission ? s.commissionLabel : s.ownCompanyLabel}
+      {isCommission ? t.admin.parties.sellerMode.commissionLabel : t.admin.parties.sellerMode.ownCompanyLabel}
     </span>
   </p>
-  <p class="mode-desc">{isCommission ? s.commissionDesc : s.ownCompanyDesc}</p>
+  <p class="mode-desc">{isCommission ? t.admin.parties.sellerMode.commissionDesc : t.admin.parties.sellerMode.ownCompanyDesc}</p>
 
   {isCommission && agreement && (
     <div class="agreement-summary">
-      <div class="agreement-row"><span>{s.agreementActiveSince}</span><strong>{new Date(agreement.accepted_at).toLocaleDateString(lang)}</strong></div>
-      <div class="agreement-row"><span>{s.agreementAcceptedTermsVersion}</span><strong>{agreement.terms_version}</strong></div>
-      <a href={`/admin/payouts?party=${party.id}`} class="payout-link">{s.payoutLedgerLink}</a>
-      <form method="POST" onsubmit={`return confirm('${s.revertConfirm}')`}>
+      <div class="agreement-row"><span>{t.admin.parties.sellerMode.agreementActiveSince}</span><strong>{new Date(agreement.accepted_at).toLocaleDateString(lang)}</strong></div>
+      <div class="agreement-row"><span>{t.admin.parties.sellerMode.agreementAcceptedTermsVersion}</span><strong>{agreement.terms_version}</strong></div>
+      <a href={`/admin/payouts?party=${party.id}`} class="payout-link">{t.admin.parties.sellerMode.payoutLedgerLink}</a>
+      <form method="POST" onsubmit={`return confirm('${t.admin.parties.sellerMode.revertConfirm}')`}>
         <input type="hidden" name="action" value="revoke_commission_agreement" />
-        <button type="submit" class="btn btn-danger" style="margin-top:12px">{s.revertBtn}</button>
+        <button type="submit" class="btn btn-danger" style="margin-top:12px">{t.admin.parties.sellerMode.revertBtn}</button>
       </form>
     </div>
   )}
 
   {!isCommission && (
     <details class="switch-form">
-      <summary class="btn btn-secondary">{s.switchBtn}</summary>
-      <p class="switch-intro">{s.switchIntro}</p>
+      <summary class="btn btn-secondary">{t.admin.parties.sellerMode.switchBtn}</summary>
+      <p class="switch-intro">{t.admin.parties.sellerMode.switchIntro}</p>
 
       <details class="terms-box">
-        <summary>{s.termsToggle}</summary>
-        <h3>{s.agreementTitle}</h3>
-        {s.agreementTerms.map((p: string) => <p class="terms-paragraph">{p}</p>)}
+        <summary>{t.admin.parties.sellerMode.termsToggle}</summary>
+        <h3>{t.admin.parties.sellerMode.agreementTitle}</h3>
+        {t.admin.parties.sellerMode.agreementTerms.map((p: string) => <p class="terms-paragraph">{p}</p>)}
       </details>
 
       <form method="POST" class="edit-form">
         <input type="hidden" name="action" value="accept_commission_agreement" />
         <div class="form-group">
-          <label class="form-label">{s.fieldLegalFullName}</label>
+          <label class="form-label">{t.admin.parties.sellerMode.fieldLegalFullName}</label>
           <input class="form-input" name="legal_full_name" required />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldAddressLine1}</label>
+          <label class="form-label">{t.admin.parties.sellerMode.fieldAddressLine1}</label>
           <input class="form-input" name="address_line1" required />
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">{s.fieldAddressCity}</label>
+            <label class="form-label">{t.admin.parties.sellerMode.fieldAddressCity}</label>
             <input class="form-input" name="address_city" required />
           </div>
           <div class="form-group">
-            <label class="form-label">{s.fieldAddressPostalCode}</label>
+            <label class="form-label">{t.admin.parties.sellerMode.fieldAddressPostalCode}</label>
             <input class="form-input" name="address_postal_code" required />
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldBankAccount}</label>
+          <label class="form-label">{t.admin.parties.sellerMode.fieldBankAccount}</label>
           <input class="form-input" name="bank_account" required />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldPersonalIdNote}</label>
+          <label class="form-label">{t.admin.parties.sellerMode.fieldPersonalIdNote}</label>
           <input class="form-input" name="personal_id_note" />
         </div>
         <label class="form-check">
           <input type="checkbox" name="terms_accepted" required />
-          {s.termsCheckboxLabel}
+          {t.admin.parties.sellerMode.termsCheckboxLabel}
         </label>
-        <button type="submit" class="btn btn-primary" style="margin-top:4px">{s.acceptBtn}</button>
+        <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.admin.parties.sellerMode.acceptBtn}</button>
       </form>
     </details>
   )}

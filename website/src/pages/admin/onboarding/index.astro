@@ -18,31 +18,30 @@ if (ctx.partyId) return Astro.redirect("/admin");
 if (ctx.role !== ROLE.ADMIN) return Astro.redirect("/admin/setup");
 
 const t = useT(Astro);
-const w = t.admin.onboardingWizard;
 ---
 
-<CmsLayout title={w.welcomeTitle} userPermissions={0} currentPath="/admin/onboarding" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.onboardingWizard.welcomeTitle} userPermissions={0} currentPath="/admin/onboarding" parties={ctx.parties} partyId={ctx.partyId}>
   <div class="card welcome-card">
     <div class="welcome-icon">🚀</div>
-    <h1 class="welcome-title">{w.welcomeTitle}</h1>
-    <p class="welcome-intro">{w.welcomeIntro}</p>
+    <h1 class="welcome-title">{t.admin.onboardingWizard.welcomeTitle}</h1>
+    <p class="welcome-intro">{t.admin.onboardingWizard.welcomeIntro}</p>
 
     <div class="steps">
       <div class="step">
-        <h3>{w.welcomeStep1Title}</h3>
-        <p>{w.welcomeStep1Body}</p>
+        <h3>{t.admin.onboardingWizard.welcomeStep1Title}</h3>
+        <p>{t.admin.onboardingWizard.welcomeStep1Body}</p>
       </div>
       <div class="step">
-        <h3>{w.welcomeStep2Title}</h3>
-        <p>{w.welcomeStep2Body}</p>
+        <h3>{t.admin.onboardingWizard.welcomeStep2Title}</h3>
+        <p>{t.admin.onboardingWizard.welcomeStep2Body}</p>
       </div>
       <div class="step">
-        <h3>{w.welcomeStep3Title}</h3>
-        <p>{w.welcomeStep3Body}</p>
+        <h3>{t.admin.onboardingWizard.welcomeStep3Title}</h3>
+        <p>{t.admin.onboardingWizard.welcomeStep3Body}</p>
       </div>
     </div>
 
-    <a href="/admin/parties/new?onboarding=1" class="btn btn-primary btn-lg">{w.ctaCreateOrg}</a>
+    <a href="/admin/parties/new?onboarding=1" class="btn btn-primary btn-lg">{t.admin.onboardingWizard.ctaCreateOrg}</a>
   </div>
 </CmsLayout>
 

@@ -11,32 +11,31 @@ import {
 } from "@shared/constants/sellerMode";
 
 const t = useT(Astro);
-const p = t.landing.pricingPage;
 const commissionPct = Math.round(COMMISSION_RATE * 100);
 const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 ---
 
-<LandingLayout title={`${p.title} — Mamtodoma`} description={p.sub}>
-  <PageHero eyebrow={p.eyebrow} title={p.title} lead={p.sub}>
+<LandingLayout title={`${t.landing.pricingPage.title} — Mamtodoma`} description={t.landing.pricingPage.sub}>
+  <PageHero eyebrow={t.landing.pricingPage.eyebrow} title={t.landing.pricingPage.title} lead={t.landing.pricingPage.sub}>
     <div class="pricing-summary" data-reveal-group>
       <div class="pricing-summary-card" data-reveal>
         <span class="pricing-summary-num font-display">{commissionPct} %</span>
-        <span class="pricing-summary-label">{p.summaryCommissionLabel}</span>
+        <span class="pricing-summary-label">{t.landing.pricingPage.summaryCommissionLabel}</span>
       </div>
       <div class="pricing-summary-card" data-reveal>
         <span class="pricing-summary-num font-display">{MONTHLY_COMMISSION_CAP_CZK.toLocaleString("cs-CZ")} Kč</span>
-        <span class="pricing-summary-label">{p.summaryCapLabel}</span>
+        <span class="pricing-summary-label">{t.landing.pricingPage.summaryCapLabel}</span>
       </div>
       <div class="pricing-summary-card" data-reveal>
         <span class="pricing-summary-num font-display">{employmentPct} %</span>
-        <span class="pricing-summary-label">{p.summaryEmploymentLabel}</span>
+        <span class="pricing-summary-label">{t.landing.pricingPage.summaryEmploymentLabel}</span>
       </div>
     </div>
   </PageHero>
   <CommissionCalculator />
   <section class="landing" id="faq">
     <div class="container-lg faq-list">
-      {p.faq.map((item) => (
+      {t.landing.pricingPage.faq.map((item) => (
         <details class="faq-item">
           <summary>{item.q}</summary>
           <p>{item.a}</p>

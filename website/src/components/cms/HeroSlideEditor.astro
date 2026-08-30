@@ -6,57 +6,56 @@ import { useT } from "../../lib/i18n";
 interface Props { slides: HeroSlide[]; editingSlide: HeroSlide | null; media: StoreMedia[] }
 const { slides, editingSlide, media } = Astro.props;
 const t = useT(Astro);
-const s = t.admin.settings;
 ---
 
 <div class="card">
-  <h2 class="section-title">{s.heroSlidesTitle}</h2>
-  <p class="hint">{s.heroSlidesHint}</p>
+  <h2 class="section-title">{t.admin.settings.heroSlidesTitle}</h2>
+  <p class="hint">{t.admin.settings.heroSlidesHint}</p>
 
   <form method="POST" class="slide-form">
     <input type="hidden" name="_action" value="save_slide" />
     {editingSlide && <input type="hidden" name="slide_id" value={editingSlide.id} />}
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">{s.fieldHeadline}</label>
+        <label class="form-label">{t.admin.settings.fieldHeadline}</label>
         <input class="form-input" name="headline" required value={editingSlide?.headline ?? ""} />
       </div>
       <div class="form-group">
-        <label class="form-label">{s.fieldSubheadline}</label>
+        <label class="form-label">{t.admin.settings.fieldSubheadline}</label>
         <input class="form-input" name="subheadline" value={editingSlide?.subheadline ?? ""} />
       </div>
     </div>
-    <ImagePicker name="image_url" label={s.fieldImageUrl} value={editingSlide?.image_url ?? null} media={media} />
+    <ImagePicker name="image_url" label={t.admin.settings.fieldImageUrl} value={editingSlide?.image_url ?? null} media={media} />
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">{s.fieldCtaText}</label>
+        <label class="form-label">{t.admin.settings.fieldCtaText}</label>
         <input class="form-input" name="cta_text" value={editingSlide?.cta_text ?? ""} />
       </div>
       <div class="form-group">
-        <label class="form-label">{s.fieldCtaLink}</label>
+        <label class="form-label">{t.admin.settings.fieldCtaLink}</label>
         <input class="form-input" name="cta_link" value={editingSlide?.cta_link ?? ""} />
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">{s.fieldSortOrder}</label>
+        <label class="form-label">{t.admin.settings.fieldSortOrder}</label>
         <input class="form-input" type="number" name="sort_order" value={editingSlide?.sort_order ?? 0} />
       </div>
       <div class="form-check" style="align-self:end">
         <input type="checkbox" name="is_visible" id="slide_visible" checked={editingSlide ? editingSlide.is_visible : true} />
-        <label for="slide_visible">{s.fieldVisible}</label>
+        <label for="slide_visible">{t.admin.settings.fieldVisible}</label>
       </div>
     </div>
     <div class="form-actions">
       {editingSlide && <a href="/admin/settings/content" class="btn btn-ghost">{t.common.cancel}</a>}
-      <button type="submit" class="btn btn-primary">{editingSlide ? s.saveSlideBtn : s.addSlideBtn}</button>
+      <button type="submit" class="btn btn-primary">{editingSlide ? t.admin.settings.saveSlideBtn : t.admin.settings.addSlideBtn}</button>
     </div>
   </form>
 
   {slides.length > 0 && (
     <table class="data-table" style="margin-top:16px">
       <thead>
-        <tr><th>{s.colHeadline}</th><th>{s.colOrder}</th><th>{s.colVisible}</th><th>{s.colActions}</th></tr>
+        <tr><th>{t.admin.settings.colHeadline}</th><th>{t.admin.settings.colOrder}</th><th>{t.admin.settings.colVisible}</th><th>{t.admin.settings.colActions}</th></tr>
       </thead>
       <tbody>
         {slides.map((sl) => (
@@ -66,7 +65,7 @@ const s = t.admin.settings;
             <td>{sl.is_visible ? t.admin.categories.visible : t.admin.categories.hidden}</td>
             <td class="action-cell">
               <a href={`/admin/settings/content?edit_slide=${sl.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.common.edit}</a>
-              <form method="POST" onsubmit={`return confirm('${s.deleteSlideConfirm}')`} style="display:inline">
+              <form method="POST" onsubmit={`return confirm('${t.admin.settings.deleteSlideConfirm}')`} style="display:inline">
                 <input type="hidden" name="_action" value="delete_slide" />
                 <input type="hidden" name="slide_id" value={sl.id} />
                 <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{t.common.delete}</button>

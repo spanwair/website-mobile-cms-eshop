@@ -18,7 +18,6 @@ if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/a
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
 const t = useT(Astro);
-const s = t.admin.cms;
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
@@ -30,17 +29,17 @@ if (Astro.request.method === "POST") {
 const pages = await fetchContentPages(supabase, partyId);
 ---
 
-<CmsLayout title={s.pagesTitle} userPermissions={permissions} currentPath="/admin/cms/pages" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.cms.pagesTitle} userPermissions={permissions} currentPath="/admin/cms/pages" parties={ctx.parties} partyId={ctx.partyId}>
   <CmsTabs active="pages" />
   <div class="toolbar">
-    <span class="total-label">{pages.length} {s.pagesTitle.toLowerCase()}</span>
-    <a href="/admin/cms/pages/new" class="btn btn-primary">{s.pagesNew}</a>
+    <span class="total-label">{pages.length} {t.admin.cms.pagesTitle.toLowerCase()}</span>
+    <a href="/admin/cms/pages/new" class="btn btn-primary">{t.admin.cms.pagesNew}</a>
   </div>
 
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>
-        <tr><th>{s.colTitle}</th><th>{s.colSlug}</th><th>{s.colTemplate}</th><th>{s.colVisible}</th><th>{s.colActions}</th></tr>
+        <tr><th>{t.admin.cms.colTitle}</th><th>{t.admin.cms.colSlug}</th><th>{t.admin.cms.colTemplate}</th><th>{t.admin.cms.colVisible}</th><th>{t.admin.cms.colActions}</th></tr>
       </thead>
       <tbody>
         {pages.map((p) => (
@@ -59,7 +58,7 @@ const pages = await fetchContentPages(supabase, partyId);
           </tr>
         ))}
         {pages.length === 0 && (
-          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noPages}</td></tr>
+          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.cms.noPages}</td></tr>
         )}
       </tbody>
     </table>

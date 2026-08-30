@@ -10,17 +10,16 @@ interface Props {
 const { topProducts } = Astro.props;
 const t = useT(Astro);
 const lang = getLang(Astro);
-const po = t.admin.productsOverview;
 ---
 
 <div class="card" data-section="top-products">
-  <h2 class="section-title">{po.topProductsTitle}</h2>
+  <h2 class="section-title">{t.admin.productsOverview.topProductsTitle}</h2>
   {topProducts.length === 0 ? (
-    <p class="empty">{po.noData}</p>
+    <p class="empty">{t.admin.productsOverview.noData}</p>
   ) : (
     <table class="data-table">
       <thead>
-        <tr><th>{po.colProduct}</th><th>{po.colQtySold}</th><th>{po.colRevenue}</th><th>{po.colProfit}</th></tr>
+        <tr><th>{t.admin.productsOverview.colProduct}</th><th>{t.admin.productsOverview.colQtySold}</th><th>{t.admin.productsOverview.colRevenue}</th><th>{t.admin.productsOverview.colProfit}</th></tr>
       </thead>
       <tbody>
         {topProducts.map((p) => (

@@ -5,40 +5,39 @@ import { useT } from "../../lib/i18n";
 interface Props { media: StoreMedia[] }
 const { media } = Astro.props;
 const t = useT(Astro);
-const s = t.admin.settings;
 ---
 
 <div class="card">
-  <h2 class="section-title">{s.mediaLibraryTitle}</h2>
-  <p class="hint">{s.mediaHint}</p>
+  <h2 class="section-title">{t.admin.settings.mediaLibraryTitle}</h2>
+  <p class="hint">{t.admin.settings.mediaHint}</p>
 
   <form method="POST" enctype="multipart/form-data" class="upload-form">
     <input type="hidden" name="_action" value="upload_media" />
     <div class="form-group">
-      <label class="form-label">{s.fieldSlug}</label>
-      <input class="form-input" name="slug" placeholder={s.slugPlaceholder} required pattern="[a-z0-9]+(-[a-z0-9]+)*" />
+      <label class="form-label">{t.admin.settings.fieldSlug}</label>
+      <input class="form-input" name="slug" placeholder={t.admin.settings.slugPlaceholder} required pattern="[a-z0-9]+(-[a-z0-9]+)*" />
     </div>
     <div class="form-group">
-      <label class="form-label">{s.fieldAlt}</label>
+      <label class="form-label">{t.admin.settings.fieldAlt}</label>
       <input class="form-input" name="alt" />
     </div>
     <div class="form-group">
-      <label class="form-label">{s.fieldFile}</label>
+      <label class="form-label">{t.admin.settings.fieldFile}</label>
       <input class="form-input" type="file" name="file" accept="image/*,video/*" required />
     </div>
-    <button type="submit" class="btn btn-primary">{s.uploadMedia}</button>
+    <button type="submit" class="btn btn-primary">{t.admin.settings.uploadMedia}</button>
   </form>
 
   {media.length === 0 ? (
-    <p class="empty">{s.noMedia}</p>
+    <p class="empty">{t.admin.settings.noMedia}</p>
   ) : (
     <table class="media-table">
       <thead>
         <tr>
-          <th>{s.colPreview}</th>
-          <th>{s.colSlug}</th>
-          <th>{s.colType}</th>
-          <th>{s.colToken}</th>
+          <th>{t.admin.settings.colPreview}</th>
+          <th>{t.admin.settings.colSlug}</th>
+          <th>{t.admin.settings.colType}</th>
+          <th>{t.admin.settings.colToken}</th>
           <th></th>
         </tr>
       </thead>
@@ -53,10 +52,10 @@ const s = t.admin.settings;
               )}
             </td>
             <td>{m.slug}</td>
-            <td>{m.media_type === "video" ? s.mediaTypeVideo : s.mediaTypeImage}</td>
+            <td>{m.media_type === "video" ? t.admin.settings.mediaTypeVideo : t.admin.settings.mediaTypeImage}</td>
             <td>
               <code class="token" data-token={`{{media:${m.slug}}}`}>{`{{media:${m.slug}}}`}</code>
-              <button type="button" class="copy-btn" data-copy={`{{media:${m.slug}}}`} data-copied={s.copiedToken}>{s.copyToken}</button>
+              <button type="button" class="copy-btn" data-copy={`{{media:${m.slug}}}`} data-copied={t.admin.settings.copiedToken}>{t.admin.settings.copyToken}</button>
             </td>
             <td>
               <form method="POST">

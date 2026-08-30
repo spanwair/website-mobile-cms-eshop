@@ -9,7 +9,6 @@ interface Props {
 const { customPresets = [] } = Astro.props;
 
 const t = useT(Astro);
-const s = t.admin.settings;
 
 const COLOR_FIELDS = [
   "color_primary", "color_secondary", "color_background", "color_surface",
@@ -38,21 +37,21 @@ const COLOR_FIELDS = [
           <span class="swatch" style={`background:${preset.color_surface}`}></span>
         </span>
         <span class="preset-label">{preset.name}</span>
-        <span class="preset-font">{s.customPresetLabel}</span>
+        <span class="preset-font">{t.admin.settings.customPresetLabel}</span>
       </button>
-      <button type="button" class="preset-remove" data-preset-id={preset.id} aria-label={s.deleteTemplate} title={s.deleteTemplate}>×</button>
+      <button type="button" class="preset-remove" data-preset-id={preset.id} aria-label={t.admin.settings.deleteTemplate} title={t.admin.settings.deleteTemplate}>×</button>
     </span>
   ))}
-  <span class="preset-hint">{s.presetHint}</span>
+  <span class="preset-hint">{t.admin.settings.presetHint}</span>
 </div>
 
 <div class="save-preset-row">
-  <input type="text" class="form-input save-preset-name" placeholder={s.templateNamePlaceholder} maxlength="60" />
-  <button type="button" class="btn btn-secondary save-preset-btn">{s.saveAsTemplate}</button>
+  <input type="text" class="form-input save-preset-name" placeholder={t.admin.settings.templateNamePlaceholder} maxlength="60" />
+  <button type="button" class="btn btn-secondary save-preset-btn">{t.admin.settings.saveAsTemplate}</button>
   <span class="save-preset-error"></span>
 </div>
 
-<script define:vars={{ colorFields: COLOR_FIELDS, saveTemplateError: s.saveTemplateError }}>
+<script define:vars={{ colorFields: COLOR_FIELDS, saveTemplateError: t.admin.settings.saveTemplateError }}>
   document.querySelectorAll(".preset-card, .preset-apply").forEach((btn) => {
     btn.addEventListener("click", () => {
       const preset = JSON.parse(btn.dataset.preset ?? "{}");

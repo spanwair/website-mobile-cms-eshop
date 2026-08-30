@@ -12,33 +12,32 @@ interface Props {
 }
 const { name, label, content, format, media } = Astro.props;
 const t = useT(Astro);
-const s = t.admin.settings;
 const preview = content ? renderContent(content, format, media) : null;
 ---
 
 <div class="card">
   <h2 class="section-title">{label}</h2>
   <div class="format-row">
-    <span class="form-label">{s.fieldFormat}</span>
+    <span class="form-label">{t.admin.settings.fieldFormat}</span>
     <label class="radio-label">
       <input type="radio" name={`${name}_format`} value="markdown" checked={format === "markdown"} />
-      {s.formatMarkdown}
+      {t.admin.settings.formatMarkdown}
     </label>
     <label class="radio-label">
       <input type="radio" name={`${name}_format`} value="html" checked={format === "html"} />
-      {s.formatHtml}
+      {t.admin.settings.formatHtml}
     </label>
   </div>
   <div class="form-group">
-    <label class="form-label">{s.fieldContent}</label>
+    <label class="form-label">{t.admin.settings.fieldContent}</label>
     <textarea name={`${name}_content`} class="form-input content-textarea" rows="6">{content ?? ""}</textarea>
   </div>
   <div class="preview-wrap">
-    <span class="form-label">{s.previewLabel}</span>
+    <span class="form-label">{t.admin.settings.previewLabel}</span>
     {preview ? (
       <div class="preview-box" set:html={preview} />
     ) : (
-      <p class="preview-empty">{s.previewEmpty}</p>
+      <p class="preview-empty">{t.admin.settings.previewEmpty}</p>
     )}
   </div>
 </div>

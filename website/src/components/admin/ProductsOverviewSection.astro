@@ -15,47 +15,46 @@ interface Props {
 
 const { stats, activity, locale } = Astro.props;
 const t = useT(Astro);
-const po = t.admin.productsOverview;
 
 const lifecycleStages = [
-  { key: "purchased", label: po.stagePurchased, value: stats.lifecycle.purchased_qty, color: "var(--accent-secondary)" },
-  { key: "sold",      label: po.stageSold,      value: stats.lifecycle.sold_qty,      color: "var(--accent-primary)" },
-  { key: "delivered", label: po.stageDelivered, value: stats.lifecycle.delivered_qty, color: "var(--success)" },
-  { key: "refunded",  label: po.stageRefunded,  value: stats.lifecycle.refunded_qty,  color: "var(--warning)" },
-  { key: "damaged",   label: po.stageDamaged,   value: stats.lifecycle.damaged_qty,   color: "var(--error)" },
+  { key: "purchased", label: t.admin.productsOverview.stagePurchased, value: stats.lifecycle.purchased_qty, color: "var(--accent-secondary)" },
+  { key: "sold",      label: t.admin.productsOverview.stageSold,      value: stats.lifecycle.sold_qty,      color: "var(--accent-primary)" },
+  { key: "delivered", label: t.admin.productsOverview.stageDelivered, value: stats.lifecycle.delivered_qty, color: "var(--success)" },
+  { key: "refunded",  label: t.admin.productsOverview.stageRefunded,  value: stats.lifecycle.refunded_qty,  color: "var(--warning)" },
+  { key: "damaged",   label: t.admin.productsOverview.stageDamaged,   value: stats.lifecycle.damaged_qty,   color: "var(--error)" },
 ];
 ---
 
 <div class="card" data-section="products-overview" style="margin-bottom:24px">
   <div class="overview-header">
-    <h2 class="section-title" style="margin-bottom:0">{po.title}</h2>
-    <span class="range-label">{po.rangeLabel}</span>
+    <h2 class="section-title" style="margin-bottom:0">{t.admin.productsOverview.title}</h2>
+    <span class="range-label">{t.admin.productsOverview.rangeLabel}</span>
   </div>
   <ProductStatCards stats={stats} />
   <div class="overview-grid">
     <div>
-      <h3 class="subsection-title">{po.lifecycleTitle}</h3>
+      <h3 class="subsection-title">{t.admin.productsOverview.lifecycleTitle}</h3>
       <ProductLifecycleChart
         stages={lifecycleStages}
-        unitsSuffix={po.unitsSuffix}
-        showTableLabel={po.showTable}
-        colStage={po.colProduct}
-        colUnits={po.colQtySold}
+        unitsSuffix={t.admin.productsOverview.unitsSuffix}
+        showTableLabel={t.admin.productsOverview.showTable}
+        colStage={t.admin.productsOverview.colProduct}
+        colUnits={t.admin.productsOverview.colQtySold}
       />
     </div>
     <div>
-      <h3 class="subsection-title">{po.revenueChartTitle}</h3>
+      <h3 class="subsection-title">{t.admin.productsOverview.revenueChartTitle}</h3>
       <ProductRevenueChart
         series={stats.timeseries}
-        legendRevenue={po.legendRevenue}
-        legendRefunds={po.legendRefunds}
-        showTableLabel={po.showTable}
-        colDate={po.colDate}
-        colOrders={po.colOrders}
-        colRevenue={po.colRevenue}
-        colRefunds={po.colRefunds}
-        colRefundAmount={po.colRefundAmount}
-        noDataLabel={po.noData}
+        legendRevenue={t.admin.productsOverview.legendRevenue}
+        legendRefunds={t.admin.productsOverview.legendRefunds}
+        showTableLabel={t.admin.productsOverview.showTable}
+        colDate={t.admin.productsOverview.colDate}
+        colOrders={t.admin.productsOverview.colOrders}
+        colRevenue={t.admin.productsOverview.colRevenue}
+        colRefunds={t.admin.productsOverview.colRefunds}
+        colRefundAmount={t.admin.productsOverview.colRefundAmount}
+        noDataLabel={t.admin.productsOverview.noData}
       />
     </div>
   </div>

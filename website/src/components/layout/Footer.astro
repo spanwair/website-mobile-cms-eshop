@@ -13,7 +13,6 @@ interface Props {
 }
 const { storeConfig, media = [], footerLinks = [], footerBadges = [], shopHref = "/shop" } = Astro.props;
 const t = useT(Astro);
-const f = t.storefront.footer;
 const brand = storeConfig?.brand_name ?? "Template";
 const tagline = storeConfig?.tagline ?? null;
 const customHtml = storeConfig?.footer_content
@@ -25,11 +24,11 @@ function resolveHref(url: string) {
 }
 
 const SYSTEM_COLUMN_LABELS: Record<SystemFooterColumn, string> = {
-  shop: f.shop,
-  information: f.information,
-  customer_service: f.customerService,
-  purchase_info: f.purchaseInfo,
-  custom: f.more,
+  shop: t.storefront.footer.shop,
+  information: t.storefront.footer.information,
+  customer_service: t.storefront.footer.customerService,
+  purchase_info: t.storefront.footer.purchaseInfo,
+  custom: t.storefront.footer.more,
 };
 const isSystemColumn = (key: string): key is SystemFooterColumn =>
   (SYSTEM_FOOTER_COLUMNS as readonly string[]).includes(key);
@@ -68,46 +67,46 @@ const footerTheme = storeConfig?.footer_theme ?? "light";
       <div class={`footer-top${showNewsletterPanel && hasVisitBlock ? "" : " footer-top--single"}`}>
         {showNewsletterPanel && (
           <div class="panel newsletter-panel">
-            <h2 class="footer-heading">{f.newsletterTitle}</h2>
+            <h2 class="footer-heading">{t.storefront.footer.newsletterTitle}</h2>
             <ul class="check-list">
-              <li>{f.newsletterBullet1}</li>
-              <li>{f.newsletterBullet2}</li>
-              <li>{f.newsletterBullet3}</li>
+              <li>{t.storefront.footer.newsletterBullet1}</li>
+              <li>{t.storefront.footer.newsletterBullet2}</li>
+              <li>{t.storefront.footer.newsletterBullet3}</li>
             </ul>
             <form class="newsletter-form" id="footer-newsletter-form">
-              <input type="email" name="email" required placeholder={f.newsletterPlaceholder} class="newsletter-input" />
-              <button type="submit" class="btn btn-primary newsletter-btn">{f.newsletterCta}</button>
+              <input type="email" name="email" required placeholder={t.storefront.footer.newsletterPlaceholder} class="newsletter-input" />
+              <button type="submit" class="btn btn-primary newsletter-btn">{t.storefront.footer.newsletterCta}</button>
             </form>
             <p class="newsletter-msg" id="footer-newsletter-msg"></p>
             <p class="fine-print">
-              {f.newsletterConsent}
-              {" "}<a href={`${shopHref}/stranka/ochrana-osobnich-udaju`}>{f.newsletterConsentLink}</a>.
+              {t.storefront.footer.newsletterConsent}
+              {" "}<a href={`${shopHref}/stranka/ochrana-osobnich-udaju`}>{t.storefront.footer.newsletterConsentLink}</a>.
             </p>
           </div>
         )}
 
         {hasVisitBlock && (
           <div class="panel visit-panel">
-            <h2 class="footer-heading">{f.visitTitle}</h2>
+            <h2 class="footer-heading">{t.storefront.footer.visitTitle}</h2>
             <div class="visit-body">
-              {storePhoto && <img src={storePhoto} alt={f.visitTitle} class="visit-photo" loading="lazy" />}
+              {storePhoto && <img src={storePhoto} alt={t.storefront.footer.visitTitle} class="visit-photo" loading="lazy" />}
               <div class="visit-info">
                 {storeConfig?.store_address && (
                   <p class="visit-address">
                     📍 {storeConfig.store_address}
                     {storeConfig.store_map_url && (
-                      <>{" "}<a href={storeConfig.store_map_url} target="_blank" rel="noopener noreferrer">{f.viewOnMap}</a></>
+                      <>{" "}<a href={storeConfig.store_map_url} target="_blank" rel="noopener noreferrer">{t.storefront.footer.viewOnMap}</a></>
                     )}
                   </p>
                 )}
-                {storeConfig?.business_hours && <p class="visit-hours">🕒 <strong>{f.hoursLabel}:</strong> {storeConfig.business_hours}</p>}
+                {storeConfig?.business_hours && <p class="visit-hours">🕒 <strong>{t.storefront.footer.hoursLabel}:</strong> {storeConfig.business_hours}</p>}
                 {storeFeatures.length > 0 && (
                   <ul class="check-list check-list--tight">
                     {storeFeatures.map((feat) => <li>{feat.label}</li>)}
                   </ul>
                 )}
                 {storeConfig?.store_map_url && (
-                  <a href={storeConfig.store_map_url} target="_blank" rel="noopener noreferrer" class="btn btn-ghost visit-cta">{f.moreAboutStore} ↗</a>
+                  <a href={storeConfig.store_map_url} target="_blank" rel="noopener noreferrer" class="btn btn-ghost visit-cta">{t.storefront.footer.moreAboutStore} ↗</a>
                 )}
               </div>
             </div>
@@ -119,18 +118,18 @@ const footerTheme = storeConfig?.footer_theme ?? "light";
     <div class="footer-links-grid">
       <div class="footer-brand">
         <p class="footer-brand-name">{brand}</p>
-        <p class="footer-daily-help">{f.dailyHelp}</p>
+        <p class="footer-daily-help">{t.storefront.footer.dailyHelp}</p>
         {tagline && <p class="footer-tagline">{tagline}</p>}
         {(storeConfig?.contact_phone || storeConfig?.contact_email) && (
           <div class="footer-contact">
-            <p class="footer-eyebrow">{f.needHelp}</p>
+            <p class="footer-eyebrow">{t.storefront.footer.needHelp}</p>
             {storeConfig?.contact_phone && <a href={`tel:${storeConfig.contact_phone}`}>📞 {storeConfig.contact_phone}</a>}
             {storeConfig?.contact_email && <a href={`mailto:${storeConfig.contact_email}`}>✉️ {storeConfig.contact_email}</a>}
           </div>
         )}
         {socialBadges.length > 0 && (
           <div class="footer-social">
-            <p class="footer-eyebrow">{f.followUs}</p>
+            <p class="footer-eyebrow">{t.storefront.footer.followUs}</p>
             <div class="footer-social-links">
               {socialBadges.map((s) => (
                 <a href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" class="social-link">{s.icon} {s.label}</a>
@@ -153,7 +152,7 @@ const footerTheme = storeConfig?.footer_theme ?? "light";
       <div class="badge-rows">
         {paymentBadges.length > 0 && (
           <div class="badge-row">
-            <span class="badge-row-label">{f.paymentTitle}</span>
+            <span class="badge-row-label">{t.storefront.footer.paymentTitle}</span>
             {paymentBadges.map((p) => <span class="chip">{p.icon} {p.label}</span>)}
           </div>
         )}
@@ -163,7 +162,7 @@ const footerTheme = storeConfig?.footer_theme ?? "light";
           </div>
         )}
       </div>
-      <p class="footer-copyright">© {new Date().getFullYear()} {brand}. {f.copyright}</p>
+      <p class="footer-copyright">© {new Date().getFullYear()} {brand}. {t.storefront.footer.copyright}</p>
     </div>
   </div>
 </footer>

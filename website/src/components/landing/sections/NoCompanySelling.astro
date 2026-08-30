@@ -1,33 +1,32 @@
 ---
 import { useT } from "@/lib/i18n";
 const t = useT(Astro);
-const n = t.landing.noCompanySelling;
 ---
 
 <section class="landing" id="no-company" style="background:var(--bg-surface)">
   <div class="container-lg">
-    <p class="section-eyebrow section-eyebrow--center">{n.eyebrow}</p>
-    <h2 class="section-title section-title--center">{n.title}</h2>
-    <p class="section-sub section-sub--center" style="margin-bottom:48px">{n.sub}</p>
+    <p class="section-eyebrow section-eyebrow--center">{t.landing.noCompanySelling.eyebrow}</p>
+    <h2 class="section-title section-title--center">{t.landing.noCompanySelling.title}</h2>
+    <p class="section-sub section-sub--center" style="margin-bottom:48px">{t.landing.noCompanySelling.sub}</p>
 
     <div class="compare-row" data-reveal-group>
       <div class="compare-card" data-reveal>
-        <h3 class="compare-title">{n.ownCompanyTitle}</h3>
+        <h3 class="compare-title">{t.landing.noCompanySelling.ownCompanyTitle}</h3>
         <ul class="compare-list">
-          {n.ownCompanyBullets.map((b) => <li>{b}</li>)}
+          {t.landing.noCompanySelling.ownCompanyBullets.map((b) => <li>{b}</li>)}
         </ul>
       </div>
       <div class="compare-card compare-card--highlight" data-reveal>
-        <h3 class="compare-title">{n.noCompanyTitle}</h3>
+        <h3 class="compare-title">{t.landing.noCompanySelling.noCompanyTitle}</h3>
         <ul class="compare-list">
-          {n.noCompanyBullets.map((b) => <li>{b}</li>)}
+          {t.landing.noCompanySelling.noCompanyBullets.map((b) => <li>{b}</li>)}
         </ul>
       </div>
     </div>
 
     <div class="compare-footer">
-      <a href="/pricing#faq" class="btn btn-secondary">{n.ctaLabel}</a>
-      <p class="compare-disclaimer">{n.disclaimer}</p>
+      <a href="/pricing#faq" class="btn btn-secondary">{t.landing.noCompanySelling.ctaLabel}</a>
+      <p class="compare-disclaimer">{t.landing.noCompanySelling.disclaimer}</p>
     </div>
   </div>
 </section>

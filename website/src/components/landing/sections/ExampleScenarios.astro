@@ -1,20 +1,19 @@
 ---
 import { useT } from "@/lib/i18n";
 const t = useT(Astro);
-const s = t.landing.exampleScenarios;
 ---
 
 <section class="landing" id="examples">
   <div class="container-lg">
-    <p class="section-eyebrow section-eyebrow--center">{s.eyebrow}</p>
-    <h2 class="section-title section-title--center">{s.title}</h2>
-    <p class="section-sub section-sub--center">{s.sub}</p>
-    <p class="scenarios-disclaimer">{s.disclaimer}</p>
+    <p class="section-eyebrow section-eyebrow--center">{t.landing.exampleScenarios.eyebrow}</p>
+    <h2 class="section-title section-title--center">{t.landing.exampleScenarios.title}</h2>
+    <p class="section-sub section-sub--center">{t.landing.exampleScenarios.sub}</p>
+    <p class="scenarios-disclaimer">{t.landing.exampleScenarios.disclaimer}</p>
 
     <div class="grid-auto" style="margin-top:40px" data-reveal-group>
-      {s.scenarios.map((scenario) => (
+      {t.landing.exampleScenarios.scenarios.map((scenario) => (
         <div class="card scenario-card" data-reveal>
-          <span class="badge badge-pending scenario-badge">{s.badgeLabel}</span>
+          <span class="badge badge-pending scenario-badge">{t.landing.exampleScenarios.badgeLabel}</span>
           <h3 class="scenario-persona">{scenario.persona}</h3>
           <div class="scenario-numbers">
             <span>{scenario.monthly}</span>

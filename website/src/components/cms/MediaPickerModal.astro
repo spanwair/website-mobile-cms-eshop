@@ -1,32 +1,31 @@
 ---
 import { useT } from "../../lib/i18n";
 const t = useT(Astro);
-const s = t.common;
 const i18n = {
   close: t.common.close,
   cancel: t.common.cancel,
   loading: t.common.loading,
-  uploading: s.uploading,
-  selected: s.selected,
+  uploading: t.common.uploading,
+  selected: t.common.selected,
   delete: t.common.delete,
-  deleteMediaConfirm: s.deleteMediaConfirm,
-  noImagesYet: s.noImagesYet,
+  deleteMediaConfirm: t.common.deleteMediaConfirm,
+  noImagesYet: t.common.noImagesYet,
   error: t.common.error,
-  wrongFileType: s.wrongFileType,
-  allCategories: s.allCategories,
-  editCategories: s.editCategories,
+  wrongFileType: t.common.wrongFileType,
+  allCategories: t.common.allCategories,
+  editCategories: t.common.editCategories,
 };
 ---
 
 <div class="mp-overlay" data-mp-overlay hidden>
-  <div class="mp-modal" role="dialog" aria-modal="true" aria-label={s.chooseFromLibrary}>
+  <div class="mp-modal" role="dialog" aria-modal="true" aria-label={t.common.chooseFromLibrary}>
     <div class="mp-header">
-      <h2>{s.chooseFromLibrary}</h2>
-      <button type="button" class="mp-close" data-mp-close aria-label={s.close}>&times;</button>
+      <h2>{t.common.chooseFromLibrary}</h2>
+      <button type="button" class="mp-close" data-mp-close aria-label={t.common.close}>&times;</button>
     </div>
 
     <div class="mp-dropzone" data-mp-dropzone>
-      <p>{s.dragDropHint} <span class="mp-browse-link">{s.browseFiles}</span></p>
+      <p>{t.common.dragDropHint} <span class="mp-browse-link">{t.common.browseFiles}</span></p>
       <input type="file" accept="image/*,video/*" multiple hidden data-mp-file-input />
     </div>
 
@@ -35,13 +34,13 @@ const i18n = {
 
     <div class="mp-category-panel" data-mp-category-panel hidden>
       <div class="mp-category-panel-header">
-        <span>{s.itemCategoriesLabel}</span>
-        <button type="button" class="mp-close" data-mp-category-panel-close aria-label={s.close}>&times;</button>
+        <span>{t.common.itemCategoriesLabel}</span>
+        <button type="button" class="mp-close" data-mp-category-panel-close aria-label={t.common.close}>&times;</button>
       </div>
       <div class="mp-category-checklist" data-mp-category-checklist></div>
       <div class="mp-category-new-row">
-        <input type="text" class="form-input" placeholder={s.newCategoryPlaceholder} data-mp-new-category-input />
-        <button type="button" class="btn btn-ghost" data-mp-new-category-add>{s.addCategoryBtn}</button>
+        <input type="text" class="form-input" placeholder={t.common.newCategoryPlaceholder} data-mp-new-category-input />
+        <button type="button" class="btn btn-ghost" data-mp-new-category-add>{t.common.addCategoryBtn}</button>
       </div>
     </div>
 
@@ -50,7 +49,7 @@ const i18n = {
     <div class="mp-footer">
       <span class="mp-count" data-mp-count hidden></span>
       <button type="button" class="btn btn-ghost" data-mp-cancel>{t.common.cancel}</button>
-      <button type="button" class="btn btn-primary" data-mp-confirm hidden>{s.useSelected}</button>
+      <button type="button" class="btn btn-primary" data-mp-confirm hidden>{t.common.useSelected}</button>
     </div>
   </div>
 </div>

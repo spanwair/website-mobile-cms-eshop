@@ -91,53 +91,52 @@ export async function sendPartyInvitation(opts: {
 }): Promise<void> {
   const { lang, partyName, roleName, systemRole, rolePermissions, inviteLink, userOrganizations, siteUrl } = opts;
   const t = getT(lang);
-  const e = t.email.invite;
 
   const roleNames = makeRoleNames(lang);
   const isNew = inviteLink !== null;
   const adminOnly = systemRole === ROLE.ADMIN;
   const sysLabel = systemRole ? (roleNames[systemRole] ?? null) : null;
 
-  const subject = isNew ? `${e.subjectInvitedPrefix}${partyName}` : `${e.subjectAddedPrefix}${partyName}`;
-  const heading = isNew ? e.headingInvited : e.headingAdded;
+  const subject = isNew ? `${t.email.invite.subjectInvitedPrefix}${partyName}` : `${t.email.invite.subjectAddedPrefix}${partyName}`;
+  const heading = isNew ? t.email.invite.headingInvited : t.email.invite.headingAdded;
   const bodyText = isNew
-    ? `${e.bodyInvitedPrefix}${partyName}${e.bodyInvitedSuffix}`
-    : `${e.bodyAddedPrefix}${partyName}${e.bodyAddedSuffix}`;
+    ? `${t.email.invite.bodyInvitedPrefix}${partyName}${t.email.invite.bodyInvitedSuffix}`
+    : `${t.email.invite.bodyAddedPrefix}${partyName}${t.email.invite.bodyAddedSuffix}`;
 
   const roleBlock = adminOnly
     ? `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:20px;margin-bottom:24px">
-         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:8px">${e.systemRoleLabel}</div>
+         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:8px">${t.email.invite.systemRoleLabel}</div>
          <div style="font-size:18px;font-weight:700;color:#0284c7">${sysLabel ?? ''}</div>
-         <div style="font-size:13px;color:#6b7280;margin-top:6px">${e.fullAccessNote}</div>
+         <div style="font-size:13px;color:#6b7280;margin-top:6px">${t.email.invite.fullAccessNote}</div>
        </div>`
     : `<div style="background:#f8f7ff;border:1px solid #e0ddff;border-radius:8px;padding:20px;margin-bottom:24px">
-         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:8px">${e.roleLabel}</div>
+         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:8px">${t.email.invite.roleLabel}</div>
          <div style="font-size:18px;font-weight:700;color:#4f46e5">${roleName || (sysLabel ?? '')}</div>
-         ${sysLabel && roleName ? `<div style="font-size:12px;color:#6b7280;margin-top:6px">${e.systemRoleLabel}: <strong>${sysLabel}</strong></div>` : ''}
+         ${sysLabel && roleName ? `<div style="font-size:12px;color:#6b7280;margin-top:6px">${t.email.invite.systemRoleLabel}: <strong>${sysLabel}</strong></div>` : ''}
        </div>`;
 
   const activePerms = activePermNames(lang, systemRole, rolePermissions);
   const permsBlock = activePerms.length
     ? `<div style="margin-bottom:24px">
-         <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:10px">${e.permissionsLabel}:</div>
+         <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:10px">${t.email.invite.permissionsLabel}:</div>
          <div>${activePerms.map(p => `<span style="display:inline-block;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;padding:3px 10px;font-size:12px;color:#374151;margin:2px 4px 2px 0">${p}</span>`).join('')}</div>
        </div>`
     : '';
 
   const orgsBlock = userOrganizations.length
     ? `<div style="margin-bottom:24px">
-         <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">${e.organizationsLabel}:</div>
+         <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">${t.email.invite.organizationsLabel}:</div>
          ${userOrganizations.map(o => `<div style="font-size:14px;color:#4b5563;padding:5px 0;border-bottom:1px solid #f3f4f6">• ${o}</div>`).join('')}
        </div>`
     : '';
 
   const ctaBlock = inviteLink
     ? `<div style="text-align:center;margin:32px 0">
-         <a href="${inviteLink}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;font-weight:600">${e.ctaAccept}</a>
-         <div style="font-size:11px;color:#9ca3af;margin-top:12px">${e.linkExpires24h}</div>
+         <a href="${inviteLink}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;font-weight:600">${t.email.invite.ctaAccept}</a>
+         <div style="font-size:11px;color:#9ca3af;margin-top:12px">${t.email.invite.linkExpires24h}</div>
        </div>`
     : `<div style="text-align:center;margin:32px 0">
-         <a href="${siteUrl}/login" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;font-weight:600">${e.ctaSignIn}</a>
+         <a href="${siteUrl}/login" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;font-weight:600">${t.email.invite.ctaSignIn}</a>
        </div>`;
 
   const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -156,7 +155,7 @@ export async function sendPartyInvitation(opts: {
   <tr><td style="background:#f9fafb;padding:20px 48px;border-top:1px solid #e5e7eb">
     <div style="font-size:12px;color:#9ca3af">
       <a href="${siteUrl}/admin" style="color:#4f46e5;text-decoration:none">Admin</a> &nbsp;·&nbsp;
-      <a href="${siteUrl}/login" style="color:#4f46e5;text-decoration:none">${e.ctaSignIn}</a> &nbsp;·&nbsp;
+      <a href="${siteUrl}/login" style="color:#4f46e5;text-decoration:none">${t.email.invite.ctaSignIn}</a> &nbsp;·&nbsp;
       <a href="${siteUrl}/shop" style="color:#4f46e5;text-decoration:none">Shop</a> &nbsp;·&nbsp;
       <a href="${siteUrl}/profile" style="color:#4f46e5;text-decoration:none">Profile</a>
     </div>
@@ -189,31 +188,30 @@ export async function sendOrderConfirmation(opts: {
 }): Promise<void> {
   const lang = opts.lang ?? 'cs';
   const t = getT(lang);
-  const e = t.email.orderConfirmation;
 
   const itemsHtml = opts.items
     .map(i => `<tr><td>${i.title}</td><td>${i.quantity}×</td><td>${formatPrice(i.price, lang, opts.currency)}</td></tr>`)
     .join("");
   const sellerHtml = opts.sellerOfRecord
     ? `<p style="color:#555;font-size:13px">
-        ${e.sellerLabel}: <strong>${opts.sellerOfRecord.name}</strong>, IČO ${opts.sellerOfRecord.ico}<br/>
+        ${t.email.orderConfirmation.sellerLabel}: <strong>${opts.sellerOfRecord.name}</strong>, IČO ${opts.sellerOfRecord.ico}<br/>
         ${opts.sellerOfRecord.address}<br/>${opts.sellerOfRecord.vatNote}
       </p>`
     : "";
 
   await sendEmail({
     to: opts.to,
-    subject: `${e.subjectPrefix}${opts.orderNumber}`,
+    subject: `${t.email.orderConfirmation.subjectPrefix}${opts.orderNumber}`,
     html: `
-      <h1>${e.thankYouPrefix}${opts.customerName}${e.thankYouSuffix}</h1>
-      <p>${e.receivedPrefix}${opts.orderNumber}${e.receivedSuffix}</p>
+      <h1>${t.email.orderConfirmation.thankYouPrefix}${opts.customerName}${t.email.orderConfirmation.thankYouSuffix}</h1>
+      <p>${t.email.orderConfirmation.receivedPrefix}${opts.orderNumber}${t.email.orderConfirmation.receivedSuffix}</p>
       <table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse;width:100%;max-width:500px">
-        <thead><tr><th>${e.itemHeader}</th><th>${e.qtyHeader}</th><th>${e.priceHeader}</th></tr></thead>
+        <thead><tr><th>${t.email.orderConfirmation.itemHeader}</th><th>${t.email.orderConfirmation.qtyHeader}</th><th>${t.email.orderConfirmation.priceHeader}</th></tr></thead>
         <tbody>${itemsHtml}</tbody>
-        <tfoot><tr><td colspan="2"><strong>${e.totalLabel}</strong></td><td><strong>${formatPrice(opts.orderTotal, lang, opts.currency)}</strong></td></tr></tfoot>
+        <tfoot><tr><td colspan="2"><strong>${t.email.orderConfirmation.totalLabel}</strong></td><td><strong>${formatPrice(opts.orderTotal, lang, opts.currency)}</strong></td></tr></tfoot>
       </table>
       ${sellerHtml}
-      <p>${e.shipNotice}</p>
+      <p>${t.email.orderConfirmation.shipNotice}</p>
     `,
   });
 }
@@ -228,16 +226,15 @@ export async function sendShippingNotification(opts: {
 }): Promise<void> {
   const lang = opts.lang ?? 'cs';
   const t = getT(lang);
-  const e = t.email.shippingNotification;
 
   await sendEmail({
     to: opts.to,
-    subject: `${e.subjectPrefix}${opts.orderNumber}${e.subjectSuffix}`,
+    subject: `${t.email.shippingNotification.subjectPrefix}${opts.orderNumber}${t.email.shippingNotification.subjectSuffix}`,
     html: `
-      <h1>${e.headingPrefix}${opts.customerName}${e.headingSuffix}</h1>
-      <p>${e.shippedPrefix}${opts.orderNumber}${e.shippedSuffix}</p>
-      <p>${e.trackingLabel}<strong>${opts.trackingNumber}</strong>${opts.carrier ? `${e.viaLabel}${opts.carrier}` : ""}</p>
-      <p>${e.estimatedDelivery}</p>
+      <h1>${t.email.shippingNotification.headingPrefix}${opts.customerName}${t.email.shippingNotification.headingSuffix}</h1>
+      <p>${t.email.shippingNotification.shippedPrefix}${opts.orderNumber}${t.email.shippingNotification.shippedSuffix}</p>
+      <p>${t.email.shippingNotification.trackingLabel}<strong>${opts.trackingNumber}</strong>${opts.carrier ? `${t.email.shippingNotification.viaLabel}${opts.carrier}` : ""}</p>
+      <p>${t.email.shippingNotification.estimatedDelivery}</p>
     `,
   });
 }
@@ -249,16 +246,15 @@ export async function sendPasswordReset(opts: {
 }): Promise<void> {
   const lang = opts.lang ?? 'cs';
   const t = getT(lang);
-  const e = t.email.passwordReset;
 
   await sendEmail({
     to: opts.to,
-    subject: e.subject,
+    subject: t.email.passwordReset.subject,
     html: `
-      <h1>${e.heading}</h1>
-      <p>${e.instructions}</p>
-      <p><a href="${opts.resetLink}" style="background:#4f46e5;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">${e.ctaButton}</a></p>
-      <p>${e.ignoreNote}</p>
+      <h1>${t.email.passwordReset.heading}</h1>
+      <p>${t.email.passwordReset.instructions}</p>
+      <p><a href="${opts.resetLink}" style="background:#4f46e5;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">${t.email.passwordReset.ctaButton}</a></p>
+      <p>${t.email.passwordReset.ignoreNote}</p>
     `,
   });
 }
@@ -273,7 +269,6 @@ export async function sendReviewRequest(opts: {
 }): Promise<void> {
   const lang = opts.lang ?? 'cs';
   const t = getT(lang);
-  const e = t.email.reviewRequest;
 
   const linksHtml = opts.products
     .map(p => `<li><a href="${opts.shopBaseUrl}/shop/${p.slug}?reviewed=0">${p.title}</a></li>`)
@@ -281,12 +276,12 @@ export async function sendReviewRequest(opts: {
 
   await sendEmail({
     to: opts.to,
-    subject: `${e.subjectPrefix}${opts.orderNumber}${e.subjectSuffix}`,
+    subject: `${t.email.reviewRequest.subjectPrefix}${opts.orderNumber}${t.email.reviewRequest.subjectSuffix}`,
     html: `
-      <h1>${e.headingPrefix}${opts.customerName}${e.headingSuffix}</h1>
-      <p>${e.intro}</p>
+      <h1>${t.email.reviewRequest.headingPrefix}${opts.customerName}${t.email.reviewRequest.headingSuffix}</h1>
+      <p>${t.email.reviewRequest.intro}</p>
       <ul>${linksHtml}</ul>
-      <p>${e.footerNote}</p>
+      <p>${t.email.reviewRequest.footerNote}</p>
     `,
   });
 }
@@ -366,7 +361,6 @@ export async function sendAbandonedCartRecovery(opts: {
 }): Promise<void> {
   const lang = opts.lang ?? 'cs';
   const t = getT(lang);
-  const e = t.email.abandonedCart;
 
   const itemsHtml = opts.items
     .map(i => `<li>${i.title} — ${formatPrice(i.price, lang, opts.currency)}</li>`)
@@ -375,14 +369,14 @@ export async function sendAbandonedCartRecovery(opts: {
   await sendEmail({
     to: opts.to,
     subject: opts.couponCode
-      ? `${opts.customerName}${e.subjectCouponMid}${opts.couponCode}${e.subjectCouponSuffix}`
-      : `${opts.customerName}${e.subjectNoCouponSuffix}`,
+      ? `${opts.customerName}${t.email.abandonedCart.subjectCouponMid}${opts.couponCode}${t.email.abandonedCart.subjectCouponSuffix}`
+      : `${opts.customerName}${t.email.abandonedCart.subjectNoCouponSuffix}`,
     html: `
-      <h1>${e.heading}</h1>
-      <p>${e.greetingPrefix}${opts.customerName}${e.greetingSuffix}</p>
+      <h1>${t.email.abandonedCart.heading}</h1>
+      <p>${t.email.abandonedCart.greetingPrefix}${opts.customerName}${t.email.abandonedCart.greetingSuffix}</p>
       <ul>${itemsHtml}</ul>
-      ${opts.couponCode ? `<p>${e.couponPrefix}${opts.couponCode}${e.couponSuffix}</p>` : ""}
-      <p><a href="${opts.cartUrl}" style="background:#4f46e5;color:#fff;padding:10px 24px;border-radius:6px;text-decoration:none">${e.ctaComplete}</a></p>
+      ${opts.couponCode ? `<p>${t.email.abandonedCart.couponPrefix}${opts.couponCode}${t.email.abandonedCart.couponSuffix}</p>` : ""}
+      <p><a href="${opts.cartUrl}" style="background:#4f46e5;color:#fff;padding:10px 24px;border-radius:6px;text-decoration:none">${t.email.abandonedCart.ctaComplete}</a></p>
     `,
   });
 }

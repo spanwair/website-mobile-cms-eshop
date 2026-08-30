@@ -24,7 +24,6 @@ const { permissions, partyId, parties } = ctx;
 const partySlug = parties.find((p) => p.id === partyId)?.slug;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redirect("/admin");
 const t = useT(Astro);
-const s = t.admin.settings;
 
 let success = "";
 let error = "";
@@ -58,7 +57,7 @@ if (Astro.request.method === "POST") {
     footer_theme: (form.get("footer_theme") as "light" | "dark") || "light",
   });
   if (result.error) error = result.error.message;
-  else success = s.savedSuccess;
+  else success = t.admin.settings.savedSuccess;
 }
 
 const config = await fetchStoreConfig(supabase, partyId);
@@ -66,89 +65,89 @@ const media = await fetchStoreMedia(supabase, partyId);
 const customPresets = await fetchColorPresets(supabase, partyId);
 ---
 
-<CmsLayout title={s.title} userPermissions={permissions} currentPath="/admin/settings/branding" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.settings.title} userPermissions={permissions} currentPath="/admin/settings/branding" parties={ctx.parties} partyId={ctx.partyId}>
   <SettingsTabs active="branding" partySlug={partySlug} />
   {error && <div class="alert-error">{error}</div>}
   {success && <div class="alert-success">{success}</div>}
 
   <form method="POST" class="settings-form">
     <div class="card">
-      <h2 class="section-title">{s.sectionPresets}</h2>
+      <h2 class="section-title">{t.admin.settings.sectionPresets}</h2>
       <DesignPresetPicker customPresets={customPresets} />
     </div>
 
     <div class="card">
-      <h2 class="section-title">{s.sectionBranding}</h2>
+      <h2 class="section-title">{t.admin.settings.sectionBranding}</h2>
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label">{s.fieldBrandName}</label>
+          <label class="form-label">{t.admin.settings.fieldBrandName}</label>
           <input class="form-input" name="brand_name" value={config?.brand_name ?? ""} />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldTagline}</label>
+          <label class="form-label">{t.admin.settings.fieldTagline}</label>
           <input class="form-input" name="tagline" value={config?.tagline ?? ""} />
         </div>
-        <ImagePicker name="logo_url" label={s.fieldLogoUrl} value={config?.logo_url ?? null} media={media} />
-        <ImagePicker name="favicon_url" label={s.fieldFaviconUrl} value={config?.favicon_url ?? null} media={media} />
+        <ImagePicker name="logo_url" label={t.admin.settings.fieldLogoUrl} value={config?.logo_url ?? null} media={media} />
+        <ImagePicker name="favicon_url" label={t.admin.settings.fieldFaviconUrl} value={config?.favicon_url ?? null} media={media} />
       </div>
     </div>
 
     <div class="card">
-      <h2 class="section-title">{s.sectionContact}</h2>
+      <h2 class="section-title">{t.admin.settings.sectionContact}</h2>
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label">{s.fieldContactPhone}</label>
+          <label class="form-label">{t.admin.settings.fieldContactPhone}</label>
           <input class="form-input" name="contact_phone" value={config?.contact_phone ?? ""} />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldContactEmail}</label>
+          <label class="form-label">{t.admin.settings.fieldContactEmail}</label>
           <input class="form-input" type="email" name="contact_email" value={config?.contact_email ?? ""} />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldBusinessHours}</label>
+          <label class="form-label">{t.admin.settings.fieldBusinessHours}</label>
           <input class="form-input" name="business_hours" placeholder="Po-Ne: 8:30 - 20:00" value={config?.business_hours ?? ""} />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldCurrencyCode}</label>
+          <label class="form-label">{t.admin.settings.fieldCurrencyCode}</label>
           <input class="form-input" name="currency_code" maxlength="3" style="text-transform:uppercase" value={config?.currency_code ?? "CZK"} />
         </div>
       </div>
-      <p class="section-note">{s.contactNote}</p>
+      <p class="section-note">{t.admin.settings.contactNote}</p>
     </div>
 
     <div class="card">
-      <h2 class="section-title">{s.storeVisitTitle}</h2>
+      <h2 class="section-title">{t.admin.settings.storeVisitTitle}</h2>
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label">{s.fieldStoreAddress}</label>
+          <label class="form-label">{t.admin.settings.fieldStoreAddress}</label>
           <input class="form-input" name="store_address" value={config?.store_address ?? ""} placeholder="Vodičkova 10, Praha 1" />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldStoreMapUrl}</label>
+          <label class="form-label">{t.admin.settings.fieldStoreMapUrl}</label>
           <input class="form-input" name="store_map_url" value={config?.store_map_url ?? ""} placeholder="https://maps.google.com/..." />
         </div>
-        <ImagePicker name="store_photo_url" label={s.fieldStorePhotoUrl} value={config?.store_photo_url ?? null} media={media} />
+        <ImagePicker name="store_photo_url" label={t.admin.settings.fieldStorePhotoUrl} value={config?.store_photo_url ?? null} media={media} />
         <div class="form-group">
-          <label class="form-label">{s.fieldFooterTheme}</label>
+          <label class="form-label">{t.admin.settings.fieldFooterTheme}</label>
           <select class="form-input" name="footer_theme">
-            <option value="light" selected={(config?.footer_theme ?? "light") === "light"}>{s.footerThemeLight}</option>
-            <option value="dark" selected={config?.footer_theme === "dark"}>{s.footerThemeDark}</option>
+            <option value="light" selected={(config?.footer_theme ?? "light") === "light"}>{t.admin.settings.footerThemeLight}</option>
+            <option value="dark" selected={config?.footer_theme === "dark"}>{t.admin.settings.footerThemeDark}</option>
           </select>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <h2 class="section-title">{s.sectionColors}</h2>
+      <h2 class="section-title">{t.admin.settings.sectionColors}</h2>
       <div class="color-grid">
         {[
-          ["color_primary", s.fieldColorPrimary, config?.color_primary ?? "#4F46E5"],
-          ["color_secondary", s.fieldColorSecondary, config?.color_secondary ?? "#7C3AED"],
-          ["color_background", s.fieldColorBackground, config?.color_background ?? "#FFFFFF"],
-          ["color_surface", s.fieldColorSurface, config?.color_surface ?? "#F8F9FA"],
-          ["color_text_primary", s.fieldColorTextPrimary, config?.color_text_primary ?? "#212529"],
-          ["color_text_secondary", s.fieldColorTextSecondary, config?.color_text_secondary ?? "#6C757D"],
-          ["color_border", s.fieldColorBorder, config?.color_border ?? "#E9ECEF"],
+          ["color_primary", t.admin.settings.fieldColorPrimary, config?.color_primary ?? "#4F46E5"],
+          ["color_secondary", t.admin.settings.fieldColorSecondary, config?.color_secondary ?? "#7C3AED"],
+          ["color_background", t.admin.settings.fieldColorBackground, config?.color_background ?? "#FFFFFF"],
+          ["color_surface", t.admin.settings.fieldColorSurface, config?.color_surface ?? "#F8F9FA"],
+          ["color_text_primary", t.admin.settings.fieldColorTextPrimary, config?.color_text_primary ?? "#212529"],
+          ["color_text_secondary", t.admin.settings.fieldColorTextSecondary, config?.color_text_secondary ?? "#6C757D"],
+          ["color_border", t.admin.settings.fieldColorBorder, config?.color_border ?? "#E9ECEF"],
         ].map(([name, label, value]) => (
           <div class="form-group color-field">
             <label class="form-label">{label}</label>
@@ -162,31 +161,31 @@ const customPresets = await fetchColorPresets(supabase, partyId);
     </div>
 
     <div class="card">
-      <h2 class="section-title">{s.sectionTypography}</h2>
+      <h2 class="section-title">{t.admin.settings.sectionTypography}</h2>
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label">{s.fieldFontHeading}</label>
+          <label class="form-label">{t.admin.settings.fieldFontHeading}</label>
           <input class="form-input" name="font_heading" value={config?.font_heading ?? "Inter"} />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldFontBody}</label>
+          <label class="form-label">{t.admin.settings.fieldFontBody}</label>
           <input class="form-input" name="font_body" value={config?.font_body ?? "Inter"} />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldRadiusScale}</label>
+          <label class="form-label">{t.admin.settings.fieldRadiusScale}</label>
           <select class="form-input" name="radius_scale">
-            <option value="sharp" selected={config?.radius_scale === "sharp"}>{s.radiusSharp}</option>
-            <option value="default" selected={!config || config.radius_scale === "default"}>{s.radiusDefault}</option>
-            <option value="soft" selected={config?.radius_scale === "soft"}>{s.radiusSoft}</option>
+            <option value="sharp" selected={config?.radius_scale === "sharp"}>{t.admin.settings.radiusSharp}</option>
+            <option value="default" selected={!config || config.radius_scale === "default"}>{t.admin.settings.radiusDefault}</option>
+            <option value="soft" selected={config?.radius_scale === "soft"}>{t.admin.settings.radiusSoft}</option>
           </select>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <h2 class="section-title">{s.sectionComponents}</h2>
+      <h2 class="section-title">{t.admin.settings.sectionComponents}</h2>
       <div class="form-group">
-        <label class="form-label">{s.fieldProductCardVariant}</label>
+        <label class="form-label">{t.admin.settings.fieldProductCardVariant}</label>
         <select class="form-input" name="product_card_variant">
           {PRODUCT_CARD_VARIANTS.map((v) => (
             <option value={v.value} selected={config?.product_card_variant === v.value}>{v.label}</option>
@@ -195,7 +194,7 @@ const customPresets = await fetchColorPresets(supabase, partyId);
       </div>
       <label class="checkbox-row">
         <input type="checkbox" name="enable_wishlists" checked={config?.enable_wishlists ?? true} />
-        {s.fieldEnableWishlists}
+        {t.admin.settings.fieldEnableWishlists}
       </label>
     </div>
 

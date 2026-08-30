@@ -18,7 +18,6 @@ if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/a
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
 const t = useT(Astro);
-const s = t.admin.cms;
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
@@ -30,24 +29,24 @@ if (Astro.request.method === "POST") {
 const posts = await fetchBlogPosts(supabase, partyId);
 ---
 
-<CmsLayout title={s.blogTitle} userPermissions={permissions} currentPath="/admin/cms/blog" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.cms.blogTitle} userPermissions={permissions} currentPath="/admin/cms/blog" parties={ctx.parties} partyId={ctx.partyId}>
   <CmsTabs active="blog" />
   <div class="toolbar">
-    <span class="total-label">{posts.length} {s.blogTitle.toLowerCase()}</span>
-    <a href="/admin/cms/blog/new" class="btn btn-primary">{s.blogNew}</a>
+    <span class="total-label">{posts.length} {t.admin.cms.blogTitle.toLowerCase()}</span>
+    <a href="/admin/cms/blog/new" class="btn btn-primary">{t.admin.cms.blogNew}</a>
   </div>
 
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>
-        <tr><th>{s.colTitle}</th><th>{s.colSlug}</th><th>{s.colStatus}</th><th>{s.colActions}</th></tr>
+        <tr><th>{t.admin.cms.colTitle}</th><th>{t.admin.cms.colSlug}</th><th>{t.admin.cms.colStatus}</th><th>{t.admin.cms.colActions}</th></tr>
       </thead>
       <tbody>
         {posts.map((p) => (
           <tr>
             <td style="font-weight:600">{p.title}</td>
             <td style="color:var(--text-muted)">/blog/{p.slug}</td>
-            <td><span class={`badge ${p.status === "published" ? "badge-active" : "badge-inactive"}`}>{p.status === "published" ? s.statusPublished : s.statusDraft}</span></td>
+            <td><span class={`badge ${p.status === "published" ? "badge-active" : "badge-inactive"}`}>{p.status === "published" ? t.admin.cms.statusPublished : t.admin.cms.statusDraft}</span></td>
             <td class="action-cell">
               <a href={`/admin/cms/blog/${p.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.common.edit}</a>
               <form method="POST" onsubmit={`return confirm('${t.common.delete}?')`} style="display:inline">
@@ -58,7 +57,7 @@ const posts = await fetchBlogPosts(supabase, partyId);
           </tr>
         ))}
         {posts.length === 0 && (
-          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noPosts}</td></tr>
+          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.cms.noPosts}</td></tr>
         )}
       </tbody>
     </table>

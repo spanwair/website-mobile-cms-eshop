@@ -1,17 +1,16 @@
 ---
 import { useT } from "@/lib/i18n";
 const t = useT(Astro);
-const h = t.landing.howItWorks;
 ---
 
 <section class="landing" id="how-it-works" style="background:var(--bg-surface)">
   <div class="container-lg">
-    <p class="section-eyebrow section-eyebrow--center">{h.eyebrow}</p>
-    <h2 class="section-title section-title--center">{h.title}</h2>
-    <p class="section-sub section-sub--center" style="margin-bottom:56px">{h.sub}</p>
+    <p class="section-eyebrow section-eyebrow--center">{t.landing.howItWorks.eyebrow}</p>
+    <h2 class="section-title section-title--center">{t.landing.howItWorks.title}</h2>
+    <p class="section-sub section-sub--center" style="margin-bottom:56px">{t.landing.howItWorks.sub}</p>
 
     <div class="steps-row" data-reveal-group>
-      {h.steps.map((step) => (
+      {t.landing.howItWorks.steps.map((step) => (
         <div class="step-card" data-reveal>
           <span class="step-number">{step.step}</span>
           <h3 class="step-title">{step.title}</h3>

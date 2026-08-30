@@ -19,7 +19,6 @@ if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/a
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
 const t = useT(Astro);
-const s = t.admin.cms;
 
 // Standard e-commerce legal/info document set. Content itself is authored per-store (or seeded
 // once for a demo org) via the normal content_pages editor — this page only tracks which of the
@@ -48,14 +47,14 @@ const existingPages = await fetchContentPages(supabase, partyId);
 const bySlug = new Map(existingPages.map((p) => [p.slug, p]));
 ---
 
-<CmsLayout title={s.legalTitle} userPermissions={permissions} currentPath="/admin/cms/legal" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.cms.legalTitle} userPermissions={permissions} currentPath="/admin/cms/legal" parties={ctx.parties} partyId={ctx.partyId}>
   <CmsTabs active="legal" />
-  <p class="content-hint">{s.legalHint}</p>
+  <p class="content-hint">{t.admin.cms.legalHint}</p>
 
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>
-        <tr><th>{s.colPage}</th><th>{s.colPageStatus}</th><th>{s.colActions}</th></tr>
+        <tr><th>{t.admin.cms.colPage}</th><th>{t.admin.cms.colPageStatus}</th><th>{t.admin.cms.colActions}</th></tr>
       </thead>
       <tbody>
         {STANDARD_DOCS.map((doc) => {
@@ -63,17 +62,17 @@ const bySlug = new Map(existingPages.map((p) => [p.slug, p]));
           return (
             <tr>
               <td style="font-weight:600">{doc.title}</td>
-              <td>{page ? s.statusCreated : s.statusMissing}</td>
+              <td>{page ? t.admin.cms.statusCreated : t.admin.cms.statusMissing}</td>
               <td class="action-cell">
                 {page ? (
-                  <a href={`/admin/cms/pages/${page.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{s.editPageBtn}</a>
+                  <a href={`/admin/cms/pages/${page.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.cms.editPageBtn}</a>
                 ) : (
                   <a
                     href={`/admin/cms/pages/new?slug=${encodeURIComponent(doc.slug)}&title=${encodeURIComponent(doc.title)}`}
                     class="btn btn-primary"
                     style="padding:6px 12px;font-size:13px"
                   >
-                    {s.createPageBtn}
+                    {t.admin.cms.createPageBtn}
                   </a>
                 )}
               </td>

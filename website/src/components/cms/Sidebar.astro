@@ -11,7 +11,6 @@ interface Props {
 }
 const { currentPath, userPermissions, storeHref = null, hasParty = true, isOwner = false } = Astro.props;
 const t = useT(Astro);
-const s = t.admin.sidebar;
 
 function can(perm: number) {
   return hasPermission(userPermissions, perm);
@@ -23,60 +22,60 @@ function isActive(path: string) {
 
 const groups = [
   {
-    label: s.overview,
+    label: t.admin.sidebar.overview,
     items: [
-      { href: "/admin", label: s.overview, icon: "📊", perm: PERMISSIONS.VIEW_DASHBOARD, exact: true },
+      { href: "/admin", label: t.admin.sidebar.overview, icon: "📊", perm: PERMISSIONS.VIEW_DASHBOARD, exact: true },
     ],
   },
   {
-    label: s.eshop,
+    label: t.admin.sidebar.eshop,
     items: [
-      { href: "/admin/products",   label: s.products,   icon: "🛍️", perm: PERMISSIONS.MANAGE_PRODUCTS },
-      { href: "/admin/categories", label: s.categories, icon: "📦", perm: PERMISSIONS.MANAGE_CATEGORIES },
-      { href: "/admin/orders",     label: s.orders,     icon: "📋", perm: PERMISSIONS.MANAGE_ORDERS },
-      { href: "/admin/customers",  label: s.customers,  icon: "👥", perm: PERMISSIONS.MANAGE_CUSTOMERS },
-      { href: "/admin/pricing",    label: s.pricing,    icon: "💰", perm: PERMISSIONS.MANAGE_PRICING },
-      { href: "/admin/inventory",  label: s.inventory,  icon: "🏭", perm: PERMISSIONS.MANAGE_INVENTORY },
-      { href: "/admin/reviews",    label: s.reviews,    icon: "⭐", perm: PERMISSIONS.MANAGE_PRODUCTS },
-      { href: "/admin/returns",    label: s.returns,    icon: "↩️", perm: PERMISSIONS.MANAGE_ORDERS },
-      { href: "/admin/products/conditions", label: s.conditions, icon: "🏷️", perm: PERMISSIONS.MANAGE_PRODUCTS },
+      { href: "/admin/products",   label: t.admin.sidebar.products,   icon: "🛍️", perm: PERMISSIONS.MANAGE_PRODUCTS },
+      { href: "/admin/categories", label: t.admin.sidebar.categories, icon: "📦", perm: PERMISSIONS.MANAGE_CATEGORIES },
+      { href: "/admin/orders",     label: t.admin.sidebar.orders,     icon: "📋", perm: PERMISSIONS.MANAGE_ORDERS },
+      { href: "/admin/customers",  label: t.admin.sidebar.customers,  icon: "👥", perm: PERMISSIONS.MANAGE_CUSTOMERS },
+      { href: "/admin/pricing",    label: t.admin.sidebar.pricing,    icon: "💰", perm: PERMISSIONS.MANAGE_PRICING },
+      { href: "/admin/inventory",  label: t.admin.sidebar.inventory,  icon: "🏭", perm: PERMISSIONS.MANAGE_INVENTORY },
+      { href: "/admin/reviews",    label: t.admin.sidebar.reviews,    icon: "⭐", perm: PERMISSIONS.MANAGE_PRODUCTS },
+      { href: "/admin/returns",    label: t.admin.sidebar.returns,    icon: "↩️", perm: PERMISSIONS.MANAGE_ORDERS },
+      { href: "/admin/products/conditions", label: t.admin.sidebar.conditions, icon: "🏷️", perm: PERMISSIONS.MANAGE_PRODUCTS },
     ],
   },
   {
-    label: s.content,
+    label: t.admin.sidebar.content,
     items: [
-      { href: "/admin/cms/navigation", label: s.navigation, icon: "🧭", perm: PERMISSIONS.MANAGE_CMS },
-      { href: "/admin/cms/pages",      label: s.pages,      icon: "📄", perm: PERMISSIONS.MANAGE_CMS },
-      { href: "/admin/cms/blog",       label: s.blog,       icon: "📰", perm: PERMISSIONS.MANAGE_CMS },
-      { href: "/admin/cms/team",       label: s.team,       icon: "🧑‍🤝‍🧑", perm: PERMISSIONS.MANAGE_CMS },
-      { href: "/admin/cms/faq",        label: s.faq,        icon: "❓", perm: PERMISSIONS.MANAGE_CMS },
+      { href: "/admin/cms/navigation", label: t.admin.sidebar.navigation, icon: "🧭", perm: PERMISSIONS.MANAGE_CMS },
+      { href: "/admin/cms/pages",      label: t.admin.sidebar.pages,      icon: "📄", perm: PERMISSIONS.MANAGE_CMS },
+      { href: "/admin/cms/blog",       label: t.admin.sidebar.blog,       icon: "📰", perm: PERMISSIONS.MANAGE_CMS },
+      { href: "/admin/cms/team",       label: t.admin.sidebar.team,       icon: "🧑‍🤝‍🧑", perm: PERMISSIONS.MANAGE_CMS },
+      { href: "/admin/cms/faq",        label: t.admin.sidebar.faq,        icon: "❓", perm: PERMISSIONS.MANAGE_CMS },
     ],
   },
   {
-    label: s.reports,
+    label: t.admin.sidebar.reports,
     items: [
-      { href: "/admin/reports", label: s.reportsSub, icon: "📈", perm: PERMISSIONS.MANAGE_REPORTS },
+      { href: "/admin/reports", label: t.admin.sidebar.reportsSub, icon: "📈", perm: PERMISSIONS.MANAGE_REPORTS },
     ],
   },
   {
-    label: s.people,
+    label: t.admin.sidebar.people,
     items: [
-      { href: "/admin/users",   label: s.users,   icon: "👤", perm: PERMISSIONS.MANAGE_USERS },
-      { href: "/admin/roles",   label: s.roles,   icon: "🔑", perm: PERMISSIONS.MANAGE_ROLES },
-      { href: "/admin/parties", label: s.parties, icon: "🏢", perm: PERMISSIONS.MANAGE_USERS },
+      { href: "/admin/users",   label: t.admin.sidebar.users,   icon: "👤", perm: PERMISSIONS.MANAGE_USERS },
+      { href: "/admin/roles",   label: t.admin.sidebar.roles,   icon: "🔑", perm: PERMISSIONS.MANAGE_ROLES },
+      { href: "/admin/parties", label: t.admin.sidebar.parties, icon: "🏢", perm: PERMISSIONS.MANAGE_USERS },
     ],
   },
   {
-    label: s.system,
+    label: t.admin.sidebar.system,
     items: [
-      { href: "/admin/settings/branding", label: s.settings,      icon: "🎨", perm: PERMISSIONS.MANAGE_SETTINGS },
+      { href: "/admin/settings/branding", label: t.admin.sidebar.settings,      icon: "🎨", perm: PERMISSIONS.MANAGE_SETTINGS },
       // Platform-wide (not per-party) — gated by role, not a permission bit, same as
       // party creation/closing. Only ever included in the sidebar for the owner.
-      ...(isOwner ? [{ href: "/admin/settings/shipping", label: s.shipping, icon: "🚚", perm: 0 }] : []),
-      { href: "/admin/payouts",           label: s.payouts,       icon: "💸", perm: PERMISSIONS.MANAGE_AUDIT },
-      { href: "/admin/billing",           label: s.billing,       icon: "🧾", perm: PERMISSIONS.MANAGE_AUDIT },
-      { href: "/admin/audit",             label: s.audit,         icon: "📝", perm: PERMISSIONS.MANAGE_AUDIT },
-      { href: "/admin/notifications",     label: s.notifications, icon: "🔔", perm: 0 },
+      ...(isOwner ? [{ href: "/admin/settings/shipping", label: t.admin.sidebar.shipping, icon: "🚚", perm: 0 }] : []),
+      { href: "/admin/payouts",           label: t.admin.sidebar.payouts,       icon: "💸", perm: PERMISSIONS.MANAGE_AUDIT },
+      { href: "/admin/billing",           label: t.admin.sidebar.billing,       icon: "🧾", perm: PERMISSIONS.MANAGE_AUDIT },
+      { href: "/admin/audit",             label: t.admin.sidebar.audit,         icon: "📝", perm: PERMISSIONS.MANAGE_AUDIT },
+      { href: "/admin/notifications",     label: t.admin.sidebar.notifications, icon: "🔔", perm: 0 },
     ],
   },
 ];
@@ -85,7 +84,7 @@ const groups = [
 // onboarding/setup) — show only the entry that lets an admin create or pick one.
 const renderGroups = hasParty
   ? groups
-  : [{ label: s.people, items: groups.flatMap((g) => g.items).filter((i) => i.href === "/admin/parties") }];
+  : [{ label: t.admin.sidebar.people, items: groups.flatMap((g) => g.items).filter((i) => i.href === "/admin/parties") }];
 ---
 
 <aside class="sidebar">
@@ -95,7 +94,7 @@ const renderGroups = hasParty
   {storeHref && (
     <a href={storeHref} target="_blank" rel="noopener" class="nav-item nav-item--store">
       <span class="nav-icon">🏬</span>
-      <span>{s.store}</span>
+      <span>{t.admin.sidebar.store}</span>
       <span class="nav-item-store-external">↗</span>
     </a>
   )}

@@ -1,7 +1,6 @@
 ---
 import { useT } from "@/lib/i18n";
 const t = useT(Astro);
-const f = t.landing.features;
 
 const icons = [
   `<path d="M4 8h16l-1.5 11a2 2 0 0 1-2 1.8H7.5a2 2 0 0 1-2-1.8L4 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>`,
@@ -15,12 +14,12 @@ const icons = [
 
 <section class="landing" id="features">
   <div class="container-lg">
-    <p class="section-eyebrow section-eyebrow--center">{f.eyebrow}</p>
-    <h2 class="section-title section-title--center">{f.title}</h2>
-    <p class="section-sub section-sub--center" style="margin-bottom:56px">{f.sub}</p>
+    <p class="section-eyebrow section-eyebrow--center">{t.landing.features.eyebrow}</p>
+    <h2 class="section-title section-title--center">{t.landing.features.title}</h2>
+    <p class="section-sub section-sub--center" style="margin-bottom:56px">{t.landing.features.sub}</p>
 
     <div class="grid-auto" data-reveal-group>
-      {f.items.map((item, i) => (
+      {t.landing.features.items.map((item, i) => (
         <div class="card feature-card" data-reveal>
           <div class="feature-icon-badge">
             <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" set:html={icons[i % icons.length]} />

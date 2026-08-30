@@ -16,27 +16,26 @@ import {
 } from "@shared/constants/sellerMode";
 
 const t = useT(Astro);
-const c = t.landing.commissionCalculator;
 
 const commissionPct = Math.round(COMMISSION_RATE * 100);
 const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 const fmt = (n: number) => Math.round(n).toLocaleString("cs-CZ");
 
-const exampleNote = c.exampleNote
+const exampleNote = t.landing.commissionCalculator.exampleNote
   .replace("{breakEven}", fmt(COMMISSION_BREAK_EVEN_CZK))
   .replace("{rate}", String(commissionPct))
   .replace("{cap}", fmt(MONTHLY_COMMISSION_CAP_CZK));
-const employmentNote = c.employmentNote
+const employmentNote = t.landing.commissionCalculator.employmentNote
   .replace("{limit}", fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK))
   .replace("{years}", String(NO_ICO_WITHHOLDING_EXPIRY_YEARS));
-const employmentDeductionLabel = c.employmentDeductionLabel.replace("{rate}", String(employmentPct));
+const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeductionLabel.replace("{rate}", String(employmentPct));
 ---
 
 <section class="landing landing--dark" id="pricing">
   <div class="container-lg">
-    <p class="section-eyebrow section-eyebrow--center">{c.eyebrow}</p>
-    <h2 class="section-title section-title--center">{c.title}</h2>
-    <p class="section-sub section-sub--center" style="margin-bottom:48px">{c.sub}</p>
+    <p class="section-eyebrow section-eyebrow--center">{t.landing.commissionCalculator.eyebrow}</p>
+    <h2 class="section-title section-title--center">{t.landing.commissionCalculator.title}</h2>
+    <p class="section-sub section-sub--center" style="margin-bottom:48px">{t.landing.commissionCalculator.sub}</p>
 
     <div
       class="calc-card"
@@ -45,20 +44,20 @@ const employmentDeductionLabel = c.employmentDeductionLabel.replace("{rate}", St
       data-break-even={COMMISSION_BREAK_EVEN_CZK}
       data-employment-rate={NO_ICO_DEDUCTION_RATE}
       data-payout-limit={NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK}
-      data-badge-percentage={c.badgePercentage.replace("{rate}", String(commissionPct))}
-      data-badge-flat={c.badgeFlatFee.replace("{cap}", fmt(MONTHLY_COMMISSION_CAP_CZK))}
-        data-badge-ico={c.badgeIcoRequired}
-      data-savings-template={c.savingsNote}
+      data-badge-percentage={t.landing.commissionCalculator.badgePercentage.replace("{rate}", String(commissionPct))}
+      data-badge-flat={t.landing.commissionCalculator.badgeFlatFee.replace("{cap}", fmt(MONTHLY_COMMISSION_CAP_CZK))}
+        data-badge-ico={t.landing.commissionCalculator.badgeIcoRequired}
+      data-savings-template={t.landing.commissionCalculator.savingsNote}
     >
-      <label class="calc-label" for="calc-input">{c.sliderLabel}</label>
+      <label class="calc-label" for="calc-input">{t.landing.commissionCalculator.sliderLabel}</label>
       <input id="calc-input" type="range" min="0" max="50000" step="500" value="10000" class="calc-slider" />
       <div class="calc-price-row">
         <div class="calc-price" id="calc-price-display">60 000 Kč</div>
-        <span class="badge badge-active" id="calc-badge">{c.badgePercentage.replace("{rate}", String(commissionPct))}</span>
+        <span class="badge badge-active" id="calc-badge">{t.landing.commissionCalculator.badgePercentage.replace("{rate}", String(commissionPct))}</span>
       </div>
 
       <label class="calc-toggle">
-        <span class="calc-toggle-label">{c.employmentToggleLabel}</span>
+        <span class="calc-toggle-label">{t.landing.commissionCalculator.employmentToggleLabel}</span>
         <span class="calc-switch">
           <input type="checkbox" id="calc-employment-toggle" class="calc-switch-input">
           <span class="calc-switch-track"><span class="calc-switch-thumb"></span></span>
@@ -67,15 +66,15 @@ const employmentDeductionLabel = c.employmentDeductionLabel.replace("{rate}", St
 
       <div class="calc-split" id="calc-split-commission">
         <div class="calc-split-item calc-split-item--keep">
-          <span class="calc-split-label">{c.youKeepLabel}</span>
+          <span class="calc-split-label">{t.landing.commissionCalculator.youKeepLabel}</span>
           <span class="calc-split-value" id="calc-keep">54 000 Kč</span>
         </div>
         <div class="calc-split-item">
-          <span class="calc-split-label">{c.weTakeLabel}</span>
+          <span class="calc-split-label">{t.landing.commissionCalculator.weTakeLabel}</span>
           <span class="calc-split-value" id="calc-fee">6 000 Kč</span>
         </div>
         <div class="calc-split-item">
-          <span class="calc-split-label">{c.monthlyLabel}</span>
+          <span class="calc-split-label">{t.landing.commissionCalculator.monthlyLabel}</span>
           <span class="calc-split-value" id="calc-monthly">6 000 Kč</span>
         </div>
       </div>
@@ -86,11 +85,11 @@ const employmentDeductionLabel = c.employmentDeductionLabel.replace("{rate}", St
           <span class="calc-split-value" id="calc-employment-deduction">18 000 Kč</span>
         </div>
         <div class="calc-split-item calc-split-item--keep">
-          <span class="calc-split-label">{c.employmentPayableLabel}</span>
+          <span class="calc-split-label">{t.landing.commissionCalculator.employmentPayableLabel}</span>
           <span class="calc-split-value" id="calc-employment-payable">12 000 Kč</span>
         </div>
         <div class="calc-split-item" id="calc-withheld-row">
-          <span class="calc-split-label">{c.employmentWithheldLabel}</span>
+          <span class="calc-split-label">{t.landing.commissionCalculator.employmentWithheldLabel}</span>
           <span class="calc-split-value calc-split-value--warn" id="calc-employment-withheld">30 000 Kč</span>
         </div>
       </div>
@@ -98,12 +97,12 @@ const employmentDeductionLabel = c.employmentDeductionLabel.replace("{rate}", St
       <p class="calc-note calc-note--savings calc-note--hidden" id="calc-savings"></p>
       <p class="calc-note" id="calc-note-commission">{exampleNote}</p>
       <p class="calc-note calc-note--hidden" id="calc-note-employment">{employmentNote}</p>
-      <p class="calc-disclaimer">{c.estimateDisclaimer}</p>
+      <p class="calc-disclaimer">{t.landing.commissionCalculator.estimateDisclaimer}</p>
     </div>
 
     <div class="calc-comparison">
-      <h3 class="calc-comparison-title">{c.comparisonTitle}</h3>
-      <p class="calc-comparison-note">{c.comparisonNote}</p>
+      <h3 class="calc-comparison-title">{t.landing.commissionCalculator.comparisonTitle}</h3>
+      <p class="calc-comparison-note">{t.landing.commissionCalculator.comparisonNote}</p>
     </div>
   </div>
 </section>

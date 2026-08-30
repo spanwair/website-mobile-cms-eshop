@@ -21,7 +21,6 @@ if (!ctx) return Astro.redirect("/");
 if (ctx.role < ROLE.ADMIN) return Astro.redirect("/admin/parties");
 const { permissions } = ctx;
 const t = useT(Astro);
-const p = t.admin.parties;
 
 const onboarding = Astro.url.searchParams.get("onboarding") === "1";
 
@@ -38,11 +37,11 @@ if (Astro.request.method === "POST") {
   const termsAccepted = form.get("terms_accepted") === "on";
 
   if (!name || !slug) {
-    error = p.errorInsufficientPermissions;
+    error = t.admin.parties.errorInsufficientPermissions;
   } else if (!privacyAccepted || !termsAccepted) {
-    error = p.onboarding.errorLegalRequired;
+    error = t.admin.parties.onboarding.errorLegalRequired;
   } else if (hasIco && !(form.get("company_ico") as string)?.trim()) {
-    error = p.onboarding.errorIcoRequired;
+    error = t.admin.parties.onboarding.errorIcoRequired;
   } else if (!hasIco && (
     !(form.get("legal_full_name") as string)?.trim() ||
     !(form.get("address_line1") as string)?.trim() ||
@@ -51,7 +50,7 @@ if (Astro.request.method === "POST") {
     !(form.get("bank_account") as string)?.trim() ||
     form.get("commission_terms_accepted") !== "on"
   )) {
-    error = p.onboarding.errorNoIcoFieldsRequired;
+    error = t.admin.parties.onboarding.errorNoIcoFieldsRequired;
   } else {
     const nowIso = new Date().toISOString();
     const result = await createParty(supabase, {
@@ -68,7 +67,7 @@ if (Astro.request.method === "POST") {
     });
 
     if (result.error || !result.data) {
-      error = result.error?.message ?? p.errorInsufficientPermissions;
+      error = result.error?.message ?? t.admin.parties.errorInsufficientPermissions;
     } else {
       if (!hasIco) {
         const agreementResult = await acceptCommissionaireAgreement(supabase, result.data.id, {
@@ -99,20 +98,20 @@ if (Astro.request.method === "POST") {
 }
 ---
 
-<CmsLayout title={p.newTitle} userPermissions={permissions} currentPath="/admin/parties" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.parties.newTitle} userPermissions={permissions} currentPath="/admin/parties" parties={ctx.parties} partyId={ctx.partyId}>
   <div class="card" style="max-width:680px">
-    <a href="/admin/parties" class="back-link">{p.back}</a>
-    {onboarding && <p class="onboarding-banner">{p.onboarding.formIntro}</p>}
+    <a href="/admin/parties" class="back-link">{t.admin.parties.back}</a>
+    {onboarding && <p class="onboarding-banner">{t.admin.parties.onboarding.formIntro}</p>}
     {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
     <form method="POST" class="party-form">
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{p.fieldName} *</label>
-          <input class="form-input" name="name" required placeholder={p.fieldNamePlaceholder} />
+          <label class="form-label">{t.admin.parties.fieldName} *</label>
+          <input class="form-input" name="name" required placeholder={t.admin.parties.fieldNamePlaceholder} />
         </div>
         <div class="form-group">
-          <label class="form-label">{p.fieldSlug} *</label>
-          <input class="form-input" name="slug" required placeholder={p.fieldSlugPlaceholder} />
+          <label class="form-label">{t.admin.parties.fieldSlug} *</label>
+          <input class="form-input" name="slug" required placeholder={t.admin.parties.fieldSlugPlaceholder} />
         </div>
       </div>
 
@@ -120,7 +119,7 @@ if (Astro.request.method === "POST") {
 
       <div class="form-actions">
         <a href="/admin/parties" class="btn btn-ghost">{t.common.cancel}</a>
-        <button type="submit" class="btn btn-primary">{p.createBtn}</button>
+        <button type="submit" class="btn btn-primary">{t.admin.parties.createBtn}</button>
       </div>
     </form>
   </div>

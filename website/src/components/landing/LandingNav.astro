@@ -6,7 +6,6 @@ import { useT } from "../../lib/i18n";
 import ProfileMenu from "../layout/ProfileMenu.astro";
 
 const t = useT(Astro);
-const n = t.landing.nav;
 const path = Astro.url.pathname;
 
 const supabase = createSupabase(Astro);
@@ -29,12 +28,12 @@ if (session) {
 const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
 
 const navItems = [
-  { href: "/features", label: n.features },
-  { href: "/pricing", label: n.pricing },
-  { href: "/templates", label: n.templates },
-  { href: "/employment", label: n.employment },
-  { href: "/about", label: n.about },
-  { href: "/contact", label: n.contact },
+  { href: "/features", label: t.landing.nav.features },
+  { href: "/pricing", label: t.landing.nav.pricing },
+  { href: "/templates", label: t.landing.nav.templates },
+  { href: "/employment", label: t.landing.nav.employment },
+  { href: "/about", label: t.landing.nav.about },
+  { href: "/contact", label: t.landing.nav.contact },
 ];
 ---
 
@@ -48,7 +47,7 @@ const navItems = [
       mamtodoma<span class="landing-nav-brand-accent">.cz</span>
     </a>
 
-    <nav class="landing-nav-links" aria-label={n.cta}>
+    <nav class="landing-nav-links" aria-label={t.landing.nav.cta}>
       {navItems.map((item) => (
         <a href={item.href} class:list={["nav-link", { aktivni: path === item.href }]} aria-current={path === item.href ? "page" : undefined}>{item.label}</a>
       ))}
@@ -60,10 +59,10 @@ const navItems = [
       ) : (
         <>
           <a href="/login" class="landing-nav-login">{t.nav.signIn}</a>
-          <a href="/login?mode=signup" class="btn btn-primary landing-nav-cta">{n.cta}</a>
+          <a href="/login?mode=signup" class="btn btn-primary landing-nav-cta">{t.landing.nav.cta}</a>
         </>
       )}
-      <button id="landing-menu-open" class="landing-menu-toggle" aria-label={n.cta} aria-expanded="false" aria-controls="landing-mobile-menu">
+      <button id="landing-menu-open" class="landing-menu-toggle" aria-label={t.landing.nav.cta} aria-expanded="false" aria-controls="landing-mobile-menu">
         <span></span><span></span>
       </button>
     </div>
@@ -74,7 +73,7 @@ const navItems = [
   <button id="landing-menu-close" class="landing-menu-close" aria-label="Close">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18" /></svg>
   </button>
-  <nav class="landing-mobile-links" aria-label={n.cta}>
+  <nav class="landing-mobile-links" aria-label={t.landing.nav.cta}>
     {navItems.map((item, i) => (
       <a href={item.href} data-close-menu>
         <span class="landing-mobile-index font-mono">{String(i + 1).padStart(2, "0")}</span>
@@ -83,7 +82,7 @@ const navItems = [
     ))}
   </nav>
   {!session && (
-    <a href="/login?mode=signup" class="btn btn-primary landing-mobile-cta" data-close-menu>{n.cta}</a>
+    <a href="/login?mode=signup" class="btn btn-primary landing-mobile-cta" data-close-menu>{t.landing.nav.cta}</a>
   )}
 </div>
 

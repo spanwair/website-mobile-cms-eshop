@@ -24,7 +24,6 @@ const { permissions, partyId, parties } = ctx;
 const partySlug = parties.find((p) => p.id === partyId)?.slug;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redirect("/admin");
 const t = useT(Astro);
-const s = t.admin.settings;
 
 let success = "";
 let error = "";
@@ -45,7 +44,7 @@ if (Astro.request.method === "POST") {
       buyback_format: form.get("buyback_format") as "markdown" | "html",
     });
     if (result.error) error = result.error.message;
-    else success = s.savedSuccess;
+    else success = t.admin.settings.savedSuccess;
   }
 
   if (action === "save_slide") {
@@ -63,7 +62,7 @@ if (Astro.request.method === "POST") {
       ? await updateHeroSlide(supabase, slideId, input)
       : await createHeroSlide(supabase, { ...input, party_id: partyId });
     if (result.error) error = result.error.message;
-    else success = s.savedSuccess;
+    else success = t.admin.settings.savedSuccess;
   }
 
   if (action === "delete_slide") {
@@ -92,19 +91,19 @@ const editSlideId = Astro.url.searchParams.get("edit_slide");
 const editingSlide = editSlideId ? slides.find((sl) => sl.id === editSlideId) ?? null : null;
 ---
 
-<CmsLayout title={s.title} userPermissions={permissions} currentPath="/admin/settings/content" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.settings.title} userPermissions={permissions} currentPath="/admin/settings/content" parties={ctx.parties} partyId={ctx.partyId}>
   <SettingsTabs active="content" partySlug={partySlug} />
   {error && <div class="alert-error">{error}</div>}
   {success && <div class="alert-success">{success}</div>}
 
-  <p class="content-hint">{s.contentHint}</p>
+  <p class="content-hint">{t.admin.settings.contentHint}</p>
 
   <form method="POST" class="settings-form">
     <input type="hidden" name="_action" value="save_content" />
-    <ContentSectionEditor name="hero" label={s.heroTitle} content={config?.hero_content ?? null} format={config?.hero_format ?? "markdown"} media={media} />
-    <ContentSectionEditor name="subhero" label={s.subheroTitle} content={config?.subhero_content ?? null} format={config?.subhero_format ?? "markdown"} media={media} />
-    <ContentSectionEditor name="buyback" label={s.buybackTitle} content={config?.buyback_content ?? null} format={config?.buyback_format ?? "markdown"} media={media} />
-    <ContentSectionEditor name="footer" label={s.footerTitle} content={config?.footer_content ?? null} format={config?.footer_format ?? "markdown"} media={media} />
+    <ContentSectionEditor name="hero" label={t.admin.settings.heroTitle} content={config?.hero_content ?? null} format={config?.hero_format ?? "markdown"} media={media} />
+    <ContentSectionEditor name="subhero" label={t.admin.settings.subheroTitle} content={config?.subhero_content ?? null} format={config?.subhero_format ?? "markdown"} media={media} />
+    <ContentSectionEditor name="buyback" label={t.admin.settings.buybackTitle} content={config?.buyback_content ?? null} format={config?.buyback_format ?? "markdown"} media={media} />
+    <ContentSectionEditor name="footer" label={t.admin.settings.footerTitle} content={config?.footer_content ?? null} format={config?.footer_format ?? "markdown"} media={media} />
     <button type="submit" class="btn btn-primary">{t.common.saveChanges}</button>
   </form>
 

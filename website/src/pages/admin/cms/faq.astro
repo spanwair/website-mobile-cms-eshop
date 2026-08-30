@@ -20,7 +20,6 @@ if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/a
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
 const t = useT(Astro);
-const s = t.admin.cms;
 
 let error = "";
 
@@ -52,26 +51,26 @@ const editId = Astro.url.searchParams.get("edit");
 const editing = editId ? items.find((f) => f.id === editId) ?? null : null;
 ---
 
-<CmsLayout title={s.faqTitle} userPermissions={permissions} currentPath="/admin/cms/faq" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.cms.faqTitle} userPermissions={permissions} currentPath="/admin/cms/faq" parties={ctx.parties} partyId={ctx.partyId}>
   <CmsTabs active="faq" />
   {error && <div class="alert-error">{error}</div>}
-  <p class="content-hint">{s.faqHint}</p>
+  <p class="content-hint">{t.admin.cms.faqHint}</p>
 
   <div class="card" style="max-width:640px;margin-bottom:24px">
-    <h2 class="section-title">{editing ? t.common.edit : s.addFaqBtn}</h2>
+    <h2 class="section-title">{editing ? t.common.edit : t.admin.cms.addFaqBtn}</h2>
     <form method="POST" class="faq-form">
       {editing && <input type="hidden" name="id" value={editing.id} />}
       <div class="form-group">
-        <label class="form-label">{s.fieldQuestion}</label>
+        <label class="form-label">{t.admin.cms.fieldQuestion}</label>
         <input class="form-input" name="question" required value={editing?.question ?? ""} />
       </div>
       <div class="form-group">
-        <label class="form-label">{s.fieldAnswer}</label>
+        <label class="form-label">{t.admin.cms.fieldAnswer}</label>
         <textarea class="form-input" name="answer" rows="3" required>{editing?.answer ?? ""}</textarea>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldContext}</label>
+          <label class="form-label">{t.admin.cms.fieldContext}</label>
           <input class="form-input" name="context" value={editing?.context ?? "general"} placeholder="general | about | buyback" />
         </div>
         <div class="form-group">
@@ -85,7 +84,7 @@ const editing = editId ? items.find((f) => f.id === editId) ?? null : null;
       </div>
       <div class="form-actions">
         {editing && <a href="/admin/cms/faq" class="btn btn-ghost">{t.common.cancel}</a>}
-        <button type="submit" class="btn btn-primary">{editing ? t.common.saveChanges : s.addFaqBtn}</button>
+        <button type="submit" class="btn btn-primary">{editing ? t.common.saveChanges : t.admin.cms.addFaqBtn}</button>
       </div>
     </form>
   </div>
@@ -93,7 +92,7 @@ const editing = editId ? items.find((f) => f.id === editId) ?? null : null;
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>
-        <tr><th>{s.colQuestion}</th><th>{s.colContext}</th><th>{s.colOrder}</th><th>{s.colActions}</th></tr>
+        <tr><th>{t.admin.cms.colQuestion}</th><th>{t.admin.cms.colContext}</th><th>{t.admin.cms.colOrder}</th><th>{t.admin.cms.colActions}</th></tr>
       </thead>
       <tbody>
         {items.map((f) => (
@@ -112,7 +111,7 @@ const editing = editId ? items.find((f) => f.id === editId) ?? null : null;
           </tr>
         ))}
         {items.length === 0 && (
-          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noFaq}</td></tr>
+          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.cms.noFaq}</td></tr>
         )}
       </tbody>
     </table>

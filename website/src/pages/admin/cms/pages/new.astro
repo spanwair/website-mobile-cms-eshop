@@ -17,7 +17,6 @@ if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/a
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
 const t = useT(Astro);
-const s = t.admin.cms;
 
 let error = "";
 
@@ -45,36 +44,36 @@ const prefillSlug = Astro.url.searchParams.get("slug") ?? "";
 const prefillTitle = Astro.url.searchParams.get("title") ?? "";
 ---
 
-<CmsLayout title={s.newPageTitle} userPermissions={permissions} currentPath="/admin/cms/pages" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.cms.newPageTitle} userPermissions={permissions} currentPath="/admin/cms/pages" parties={ctx.parties} partyId={ctx.partyId}>
   <div class="card" style="max-width:720px">
-    <a href="/admin/cms/pages" class="back-link">{s.back}</a>
+    <a href="/admin/cms/pages" class="back-link">{t.admin.cms.back}</a>
     {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
     <form method="POST" class="page-form">
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldTitle}</label>
+          <label class="form-label">{t.admin.cms.fieldTitle}</label>
           <input class="form-input" name="title" required value={prefillTitle} />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldSlug}</label>
+          <label class="form-label">{t.admin.cms.fieldSlug}</label>
           <input class="form-input" name="slug" required placeholder="o-nas" value={prefillSlug} />
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">{s.fieldTemplate}</label>
+        <label class="form-label">{t.admin.cms.fieldTemplate}</label>
         <select class="form-input" name="template">
-          <option value="default">{s.templateDefault}</option>
-          <option value="about">{s.templateAbout}</option>
-          <option value="contact">{s.templateContact}</option>
-          <option value="faq">{s.templateFaq}</option>
+          <option value="default">{t.admin.cms.templateDefault}</option>
+          <option value="about">{t.admin.cms.templateAbout}</option>
+          <option value="contact">{t.admin.cms.templateContact}</option>
+          <option value="faq">{t.admin.cms.templateFaq}</option>
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">{s.fieldBody}</label>
+        <label class="form-label">{t.admin.cms.fieldBody}</label>
         <textarea class="form-input" name="body" rows="10"></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">{s.fieldBodyFormat}</label>
+        <label class="form-label">{t.admin.cms.fieldBodyFormat}</label>
         <select class="form-input" name="body_format">
           <option value="markdown">{t.admin.settings.formatMarkdown}</option>
           <option value="html">{t.admin.settings.formatHtml}</option>
@@ -82,21 +81,21 @@ const prefillTitle = Astro.url.searchParams.get("title") ?? "";
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldSeoTitle}</label>
+          <label class="form-label">{t.admin.cms.fieldSeoTitle}</label>
           <input class="form-input" name="seo_title" />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldSeoDescription}</label>
+          <label class="form-label">{t.admin.cms.fieldSeoDescription}</label>
           <input class="form-input" name="seo_description" />
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldFooterColumn}</label>
+          <label class="form-label">{t.admin.cms.fieldFooterColumn}</label>
           <input class="form-input" name="show_in_footer_column" placeholder="information" />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldSortOrder}</label>
+          <label class="form-label">{t.admin.cms.fieldSortOrder}</label>
           <input class="form-input" type="number" name="sort_order" value="0" />
         </div>
       </div>
@@ -106,7 +105,7 @@ const prefillTitle = Astro.url.searchParams.get("title") ?? "";
       </div>
       <div class="form-actions">
         <a href="/admin/cms/pages" class="btn btn-ghost">{t.common.cancel}</a>
-        <button type="submit" class="btn btn-primary">{s.createBtn}</button>
+        <button type="submit" class="btn btn-primary">{t.admin.cms.createBtn}</button>
       </div>
     </form>
   </div>

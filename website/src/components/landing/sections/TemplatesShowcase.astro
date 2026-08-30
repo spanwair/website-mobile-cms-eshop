@@ -1,7 +1,6 @@
 ---
 import { useT } from "@/lib/i18n";
 const t = useT(Astro);
-const s = t.landing.templatesShowcase;
 
 const tabs = [
   { key: "grid", label: "Mřížka" },
@@ -13,18 +12,18 @@ const tabs = [
 <section class="landing" id="templates" style="background:var(--bg-surface)">
   <div class="container-lg showcase-grid">
     <div>
-      <p class="section-eyebrow">{s.eyebrow}</p>
-      <h2 class="section-title">{s.title}</h2>
-      <p class="section-sub" style="margin-bottom:32px">{s.sub}</p>
+      <p class="section-eyebrow">{t.landing.templatesShowcase.eyebrow}</p>
+      <h2 class="section-title">{t.landing.templatesShowcase.title}</h2>
+      <p class="section-sub" style="margin-bottom:32px">{t.landing.templatesShowcase.sub}</p>
       <ul class="showcase-list">
-        {s.items.map((item) => (
+        {t.landing.templatesShowcase.items.map((item) => (
           <li>
             <strong>{item.title}</strong>
             <span>{item.desc}</span>
           </li>
         ))}
       </ul>
-      <a href="/templates" class="btn btn-primary" style="margin-top:24px">{s.cta}</a>
+      <a href="/templates" class="btn btn-primary" style="margin-top:24px">{t.landing.templatesShowcase.cta}</a>
     </div>
 
     <div class="showcase-visual">

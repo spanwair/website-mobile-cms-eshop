@@ -24,7 +24,6 @@ const partySlug = parties.find((p) => p.id === partyId)?.slug;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redirect("/admin");
 const t = useT(Astro);
 const dateLocale = getLang(Astro) === "en" ? "en-US" : "cs-CZ";
-const s = t.admin.settings;
 
 let error = "";
 let success = "";
@@ -38,7 +37,7 @@ if (Astro.request.method === "POST") {
       footer_newsletter_enabled: form.get("footer_newsletter_enabled") === "on",
     });
     if (result.error) error = result.error.message;
-    else success = s.savedSuccess;
+    else success = t.admin.settings.savedSuccess;
   } else if (action === "unsubscribe" || action === "resubscribe") {
     const subscriberId = form.get("subscriber_id") as string;
     const result = await setNewsletterSubscriberStatus(supabase, subscriberId, action === "unsubscribe");
@@ -55,25 +54,25 @@ const subscribers = await fetchNewsletterSubscribers(supabase, partyId);
 const activeCount = await countNewsletterSubscribers(supabase, partyId);
 ---
 
-<CmsLayout title={s.newsletterTitle} userPermissions={permissions} currentPath="/admin/settings/newsletter" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.settings.newsletterTitle} userPermissions={permissions} currentPath="/admin/settings/newsletter" parties={ctx.parties} partyId={ctx.partyId}>
   <SettingsTabs active="newsletter" partySlug={partySlug} />
   {error && <div class="alert-error">{error}</div>}
   {success && <div class="alert-success">{success}</div>}
 
-  <p class="content-hint">{s.newsletterHint}</p>
+  <p class="content-hint">{t.admin.settings.newsletterHint}</p>
 
   <div class="card" style="max-width:640px;margin-bottom:24px">
-    <h2 class="section-title">{s.newsletterVisibilityTitle}</h2>
+    <h2 class="section-title">{t.admin.settings.newsletterVisibilityTitle}</h2>
     <form method="POST" class="visibility-form">
       <input type="hidden" name="_action" value="save_visibility" />
       <div class="form-check">
         <input type="checkbox" name="footer_newsletter_enabled" id="footer_newsletter_enabled" checked={config?.footer_newsletter_enabled ?? true} />
-        <label for="footer_newsletter_enabled">{s.fieldFooterNewsletterEnabled}</label>
+        <label for="footer_newsletter_enabled">{t.admin.settings.fieldFooterNewsletterEnabled}</label>
       </div>
-      <p class="hint">{s.footerNewsletterHint}</p>
+      <p class="hint">{t.admin.settings.footerNewsletterHint}</p>
       <p class="hint">
-        {s.homepageNewsletterHint}{" "}
-        <a href="/admin/settings/layout">{s.homepageNewsletterHintLink}</a>{" "}{s.homepageNewsletterHintSuffix}
+        {t.admin.settings.homepageNewsletterHint}{" "}
+        <a href="/admin/settings/layout">{t.admin.settings.homepageNewsletterHintLink}</a>{" "}{t.admin.settings.homepageNewsletterHintSuffix}
       </p>
       <button type="submit" class="btn btn-primary">{t.common.saveChanges}</button>
     </form>
@@ -83,17 +82,17 @@ const activeCount = await countNewsletterSubscribers(supabase, partyId);
     <div class="stats-row">
       <div class="stat">
         <span class="stat-value">{activeCount}</span>
-        <span class="stat-label">{s.statActiveSubscribers}</span>
+        <span class="stat-label">{t.admin.settings.statActiveSubscribers}</span>
       </div>
       <div class="stat">
         <span class="stat-value">{subscribers.length}</span>
-        <span class="stat-label">{s.statTotalSignups}</span>
+        <span class="stat-label">{t.admin.settings.statTotalSignups}</span>
       </div>
-      <a href="/admin/settings/newsletter/export.csv" class="btn btn-secondary export-btn">{s.exportCsvBtn}</a>
+      <a href="/admin/settings/newsletter/export.csv" class="btn btn-secondary export-btn">{t.admin.settings.exportCsvBtn}</a>
     </div>
     <table class="data-table">
       <thead>
-        <tr><th>{s.colEmail}</th><th>{s.colSubscribedAt}</th><th>{s.colSubscriberStatus}</th><th>{s.colActions}</th></tr>
+        <tr><th>{t.admin.settings.colEmail}</th><th>{t.admin.settings.colSubscribedAt}</th><th>{t.admin.settings.colSubscriberStatus}</th><th>{t.admin.settings.colActions}</th></tr>
       </thead>
       <tbody>
         {subscribers.map((sub) => {
@@ -104,7 +103,7 @@ const activeCount = await countNewsletterSubscribers(supabase, partyId);
               <td style="color:var(--text-muted)">{new Date(sub.subscribed_at).toLocaleDateString(dateLocale)}</td>
               <td>
                 <span class={`badge ${isUnsubscribed ? "badge-pending" : "badge-active"}`}>
-                  {isUnsubscribed ? s.statusUnsubscribed : s.statusSubscribed}
+                  {isUnsubscribed ? t.admin.settings.statusUnsubscribed : t.admin.settings.statusSubscribed}
                 </span>
               </td>
               <td class="action-cell">
@@ -112,10 +111,10 @@ const activeCount = await countNewsletterSubscribers(supabase, partyId);
                   <input type="hidden" name="_action" value={isUnsubscribed ? "resubscribe" : "unsubscribe"} />
                   <input type="hidden" name="subscriber_id" value={sub.id} />
                   <button type="submit" class="btn btn-ghost" style="padding:6px 12px;font-size:13px">
-                    {isUnsubscribed ? s.resubscribeBtn : s.unsubscribeBtn}
+                    {isUnsubscribed ? t.admin.settings.resubscribeBtn : t.admin.settings.unsubscribeBtn}
                   </button>
                 </form>
-                <form method="POST" onsubmit={`return confirm('${s.deleteSubscriberConfirm}')`} style="display:inline">
+                <form method="POST" onsubmit={`return confirm('${t.admin.settings.deleteSubscriberConfirm}')`} style="display:inline">
                   <input type="hidden" name="_action" value="delete" />
                   <input type="hidden" name="subscriber_id" value={sub.id} />
                   <button type="submit" class="btn btn-danger" style="padding:6px 12px;font-size:13px">{t.common.delete}</button>
@@ -125,7 +124,7 @@ const activeCount = await countNewsletterSubscribers(supabase, partyId);
           );
         })}
         {subscribers.length === 0 && (
-          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noSubscribers}</td></tr>
+          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.settings.noSubscribers}</td></tr>
         )}
       </tbody>
     </table>

@@ -10,26 +10,25 @@ interface Props {
 const { stats } = Astro.props;
 const t = useT(Astro);
 const lang = getLang(Astro);
-const po = t.admin.productsOverview;
 
 function money(n: number) {
   return formatPrice(n, lang);
 }
 
 const financialCards = [
-  { label: po.statGrossRevenue, value: money(stats.financials.gross_revenue), tone: "" },
-  { label: po.statPurchaseCost, value: money(stats.financials.purchase_cost), tone: "" },
-  { label: po.statCogs, value: money(stats.financials.cogs), tone: "" },
-  { label: po.statRefunded, value: money(stats.financials.refunded_amount), tone: "warning" },
-  { label: po.statDamagedLoss, value: money(stats.financials.damaged_loss), tone: "error" },
-  { label: po.statNetProfit, value: money(stats.financials.net_profit), tone: stats.financials.net_profit >= 0 ? "success" : "error" },
+  { label: t.admin.productsOverview.statGrossRevenue, value: money(stats.financials.gross_revenue), tone: "" },
+  { label: t.admin.productsOverview.statPurchaseCost, value: money(stats.financials.purchase_cost), tone: "" },
+  { label: t.admin.productsOverview.statCogs, value: money(stats.financials.cogs), tone: "" },
+  { label: t.admin.productsOverview.statRefunded, value: money(stats.financials.refunded_amount), tone: "warning" },
+  { label: t.admin.productsOverview.statDamagedLoss, value: money(stats.financials.damaged_loss), tone: "error" },
+  { label: t.admin.productsOverview.statNetProfit, value: money(stats.financials.net_profit), tone: stats.financials.net_profit >= 0 ? "success" : "error" },
 ];
 
 const stageCards = [
-  { label: po.statTotalProducts, value: stats.stage_counts.total },
-  { label: po.statActiveProducts, value: stats.stage_counts.active },
-  { label: po.statDraftProducts, value: stats.stage_counts.draft },
-  { label: po.statInactiveProducts, value: stats.stage_counts.inactive },
+  { label: t.admin.productsOverview.statTotalProducts, value: stats.stage_counts.total },
+  { label: t.admin.productsOverview.statActiveProducts, value: stats.stage_counts.active },
+  { label: t.admin.productsOverview.statDraftProducts, value: stats.stage_counts.draft },
+  { label: t.admin.productsOverview.statInactiveProducts, value: stats.stage_counts.inactive },
 ];
 ---
 

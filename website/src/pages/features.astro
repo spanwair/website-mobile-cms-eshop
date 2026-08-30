@@ -7,11 +7,10 @@ import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
 
 const t = useT(Astro);
-const f = t.landing.featuresPage;
 ---
 
-<LandingLayout title={`${f.title} — Mamtodoma`} description={f.sub}>
-  <PageHero eyebrow={f.eyebrow} title={f.title} lead={f.sub} image="/img/team-work.jpg" imageAlt="" />
+<LandingLayout title={`${t.landing.featuresPage.title} — Mamtodoma`} description={t.landing.featuresPage.sub}>
+  <PageHero eyebrow={t.landing.featuresPage.eyebrow} title={t.landing.featuresPage.title} lead={t.landing.featuresPage.sub} image="/img/team-work.jpg" imageAlt="" />
   <Features />
   <AICapabilities />
   <FinalCta />

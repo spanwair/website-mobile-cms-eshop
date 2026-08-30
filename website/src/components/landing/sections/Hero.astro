@@ -2,32 +2,31 @@
 import { useT } from "@/lib/i18n";
 import { COMMISSION_RATE } from "@shared/constants/sellerMode";
 const t = useT(Astro);
-const h = t.landing.hero;
 const commissionPct = Math.round(COMMISSION_RATE * 100);
 ---
 
 <section class="landing hero-section" id="hero">
   <div class="container-lg hero-layout">
     <div class="hero-content">
-      <span class="hero-badge font-mono">{h.eyebrow}</span>
+      <span class="hero-badge font-mono">{t.landing.hero.eyebrow}</span>
       <h1 class="hero-title font-display">
-        {h.titleLine1} <span class="gradient-text">{h.titleHighlight}</span> — {h.titleLine2}
+        {t.landing.hero.titleLine1} <span class="gradient-text">{t.landing.hero.titleHighlight}</span> — {t.landing.hero.titleLine2}
       </h1>
-      <p class="hero-sub">{h.sub}</p>
+      <p class="hero-sub">{t.landing.hero.sub}</p>
 
       <form id="hero-lead-form" class="hero-form" novalidate>
-        <input type="email" name="email" required placeholder={h.formPlaceholder} class="hero-input" />
-        <button type="submit" class="btn btn-primary btn-lg">{h.formCta}</button>
+        <input type="email" name="email" required placeholder={t.landing.hero.formPlaceholder} class="hero-input" />
+        <button type="submit" class="btn btn-primary btn-lg">{t.landing.hero.formCta}</button>
       </form>
-      <p class="hero-note" id="hero-form-msg">{h.formNote}</p>
-      <p class="hero-trust font-mono">{h.trustLine}</p>
+      <p class="hero-note" id="hero-form-msg">{t.landing.hero.formNote}</p>
+      <p class="hero-trust font-mono">{t.landing.hero.trustLine}</p>
     </div>
 
     <div class="hero-visual" data-reveal>
       <img src="/img/hero-eshop.jpg" alt="" width="560" height="640" class="hero-image" loading="eager" />
       <div class="hero-float-card float">
         <span class="hero-float-num font-display">{commissionPct} %</span>
-        <span class="hero-float-label">{h.floatLabel}</span>
+        <span class="hero-float-label">{t.landing.hero.floatLabel}</span>
       </div>
     </div>
   </div>

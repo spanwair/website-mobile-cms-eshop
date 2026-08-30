@@ -5,14 +5,13 @@ import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
 
 const t = useT(Astro);
-const a = t.landing.about;
 ---
 
-<LandingLayout title={`${a.title} — Mamtodoma`} description={a.sub}>
-  <PageHero eyebrow={a.eyebrow} title={a.title} lead={a.sub} image="/img/desk-work.jpg" imageAlt="" />
+<LandingLayout title={`${t.landing.about.title} — Mamtodoma`} description={t.landing.about.sub}>
+  <PageHero eyebrow={t.landing.about.eyebrow} title={t.landing.about.title} lead={t.landing.about.sub} image="/img/desk-work.jpg" imageAlt="" />
   <section class="landing" style="padding-top:0">
     <div class="container-lg about-content">
-      {a.paragraphs.map((p) => <p class="about-paragraph">{p}</p>)}
+      {t.landing.about.paragraphs.map((p) => <p class="about-paragraph">{p}</p>)}
     </div>
   </section>
   <FinalCta />

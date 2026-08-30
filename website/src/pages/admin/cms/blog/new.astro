@@ -19,7 +19,6 @@ if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/a
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_CMS)) return Astro.redirect("/admin");
 const t = useT(Astro);
-const s = t.admin.cms;
 
 let error = "";
 
@@ -47,65 +46,65 @@ if (Astro.request.method === "POST") {
 const media = await fetchStoreMedia(supabase, partyId);
 ---
 
-<CmsLayout title={s.newPostTitle} userPermissions={permissions} currentPath="/admin/cms/blog" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.cms.newPostTitle} userPermissions={permissions} currentPath="/admin/cms/blog" parties={ctx.parties} partyId={ctx.partyId}>
   <div class="card" style="max-width:720px">
-    <a href="/admin/cms/blog" class="back-link">{s.back}</a>
+    <a href="/admin/cms/blog" class="back-link">{t.admin.cms.back}</a>
     {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
     <form method="POST" class="post-form">
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldTitle}</label>
+          <label class="form-label">{t.admin.cms.fieldTitle}</label>
           <input class="form-input" name="title" required />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldSlug}</label>
+          <label class="form-label">{t.admin.cms.fieldSlug}</label>
           <input class="form-input" name="slug" required placeholder="jak-vybrat-refurbished-telefon" />
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">{s.fieldExcerpt}</label>
+        <label class="form-label">{t.admin.cms.fieldExcerpt}</label>
         <textarea class="form-input" name="excerpt" rows="2"></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">{s.fieldContent}</label>
+        <label class="form-label">{t.admin.cms.fieldContent}</label>
         <textarea class="form-input" name="content" rows="10"></textarea>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldContentFormat}</label>
+          <label class="form-label">{t.admin.cms.fieldContentFormat}</label>
           <select class="form-input" name="content_format">
             <option value="markdown">{t.admin.settings.formatMarkdown}</option>
             <option value="html">{t.admin.settings.formatHtml}</option>
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldStatus}</label>
+          <label class="form-label">{t.admin.cms.fieldStatus}</label>
           <select class="form-input" name="status">
-            <option value="draft">{s.statusDraft}</option>
-            <option value="published">{s.statusPublished}</option>
+            <option value="draft">{t.admin.cms.statusDraft}</option>
+            <option value="published">{t.admin.cms.statusPublished}</option>
           </select>
         </div>
       </div>
       <div class="form-row">
-        <ImagePicker name="featured_image_url" label={s.fieldFeaturedImage} value={null} media={media} />
+        <ImagePicker name="featured_image_url" label={t.admin.cms.fieldFeaturedImage} value={null} media={media} />
         <div class="form-group">
-          <label class="form-label">{s.fieldAuthor}</label>
+          <label class="form-label">{t.admin.cms.fieldAuthor}</label>
           <input class="form-input" name="author_name" />
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldSeoTitle}</label>
+          <label class="form-label">{t.admin.cms.fieldSeoTitle}</label>
           <input class="form-input" name="seo_title" />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.fieldSeoDescription}</label>
+          <label class="form-label">{t.admin.cms.fieldSeoDescription}</label>
           <input class="form-input" name="seo_description" />
         </div>
       </div>
       <div class="form-actions">
         <a href="/admin/cms/blog" class="btn btn-ghost">{t.common.cancel}</a>
-        <button type="submit" class="btn btn-primary">{s.createBtnPost}</button>
+        <button type="submit" class="btn btn-primary">{t.admin.cms.createBtnPost}</button>
       </div>
     </form>
   </div>

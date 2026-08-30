@@ -22,7 +22,6 @@ const { permissions, partyId, parties } = ctx;
 const partySlug = parties.find((p) => p.id === partyId)?.slug;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redirect("/admin");
 const t = useT(Astro);
-const s = t.admin.settings;
 
 let error = "";
 
@@ -55,28 +54,28 @@ const editId = Astro.url.searchParams.get("edit");
 const editing = editId ? badges.find((b) => b.id === editId) ?? null : null;
 const kinds: FooterBadgeKind[] = ["shipping", "payment", "social", "store_feature"];
 const kindLabels: Record<FooterBadgeKind, string> = {
-  shipping: s.kindShipping, payment: s.kindPayment, social: s.kindSocial, store_feature: s.kindStoreFeature,
+  shipping: t.admin.settings.kindShipping, payment: t.admin.settings.kindPayment, social: t.admin.settings.kindSocial, store_feature: t.admin.settings.kindStoreFeature,
 };
 ---
 
-<CmsLayout title={s.tabBadges} userPermissions={permissions} currentPath="/admin/settings/badges" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.settings.tabBadges} userPermissions={permissions} currentPath="/admin/settings/badges" parties={ctx.parties} partyId={ctx.partyId}>
   <SettingsTabs active="badges" partySlug={partySlug} />
   {error && <div class="alert-error">{error}</div>}
-  <p class="content-hint">{s.badgesHint}</p>
+  <p class="content-hint">{t.admin.settings.badgesHint}</p>
 
   <div class="card" style="max-width:640px;margin-bottom:24px">
-    <h2 class="section-title">{editing ? t.common.edit : s.addBadgeBtn}</h2>
+    <h2 class="section-title">{editing ? t.common.edit : t.admin.settings.addBadgeBtn}</h2>
     <form method="POST" class="badge-form">
       {editing && <input type="hidden" name="id" value={editing.id} />}
       <div class="form-group">
-        <label class="form-label">{s.fieldKind}</label>
+        <label class="form-label">{t.admin.settings.fieldKind}</label>
         <select class="form-input" name="kind">
           {kinds.map((k) => <option value={k} selected={editing ? editing.kind === k : k === "payment"}>{kindLabels[k]}</option>)}
         </select>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldIcon}</label>
+          <label class="form-label">{t.admin.settings.fieldIcon}</label>
           <input class="form-input" name="icon" value={editing?.icon ?? ""} placeholder="💳" />
         </div>
         <div class="form-group">
@@ -90,17 +89,17 @@ const kindLabels: Record<FooterBadgeKind, string> = {
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldSortOrder}</label>
+          <label class="form-label">{t.admin.settings.fieldSortOrder}</label>
           <input class="form-input" type="number" name="sort_order" value={editing?.sort_order ?? 0} />
         </div>
         <div class="form-check" style="align-self:end">
           <input type="checkbox" name="is_visible" id="badge_visible" checked={editing ? editing.is_visible : true} />
-          <label for="badge_visible">{s.fieldVisible}</label>
+          <label for="badge_visible">{t.admin.settings.fieldVisible}</label>
         </div>
       </div>
       <div class="form-actions">
         {editing && <a href="/admin/settings/badges" class="btn btn-ghost">{t.common.cancel}</a>}
-        <button type="submit" class="btn btn-primary">{editing ? s.saveSlideBtn : s.addBadgeBtn}</button>
+        <button type="submit" class="btn btn-primary">{editing ? t.admin.settings.saveSlideBtn : t.admin.settings.addBadgeBtn}</button>
       </div>
     </form>
   </div>
@@ -110,7 +109,7 @@ const kindLabels: Record<FooterBadgeKind, string> = {
       <div class="group-title">{kindLabels[k]}</div>
       <table class="data-table">
         <thead>
-          <tr><th>{s.fieldIcon}</th><th>{t.admin.cms.fieldLabel}</th><th>{s.colOrder}</th><th>{s.colVisible}</th><th>{s.colActions}</th></tr>
+          <tr><th>{t.admin.settings.fieldIcon}</th><th>{t.admin.cms.fieldLabel}</th><th>{t.admin.settings.colOrder}</th><th>{t.admin.settings.colVisible}</th><th>{t.admin.settings.colActions}</th></tr>
         </thead>
         <tbody>
           {badges.filter((b) => b.kind === k).map((b) => (
@@ -130,7 +129,7 @@ const kindLabels: Record<FooterBadgeKind, string> = {
             </tr>
           ))}
           {badges.filter((b) => b.kind === k).length === 0 && (
-            <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">{s.noBadges}</td></tr>
+            <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">{t.admin.settings.noBadges}</td></tr>
           )}
         </tbody>
       </table>

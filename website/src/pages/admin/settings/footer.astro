@@ -24,7 +24,6 @@ const { permissions, partyId, parties } = ctx;
 const partySlug = parties.find((p) => p.id === partyId)?.slug;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redirect("/admin");
 const t = useT(Astro);
-const s = t.admin.settings;
 
 let error = "";
 
@@ -58,11 +57,11 @@ const editId = Astro.url.searchParams.get("edit");
 const editing = editId ? links.find((l) => l.id === editId) ?? null : null;
 
 const systemColumnLabels: Record<SystemFooterColumn, string> = {
-  shop: s.columnShop,
-  information: s.columnInformation,
-  purchase_info: s.columnPurchaseInfo,
-  customer_service: s.columnCustomerService,
-  custom: s.columnCustom,
+  shop: t.admin.settings.columnShop,
+  information: t.admin.settings.columnInformation,
+  purchase_info: t.admin.settings.columnPurchaseInfo,
+  customer_service: t.admin.settings.columnCustomerService,
+  custom: t.admin.settings.columnCustom,
 };
 const isSystemColumn = (key: string): key is SystemFooterColumn =>
   (SYSTEM_FOOTER_COLUMNS as readonly string[]).includes(key);
@@ -75,23 +74,23 @@ const columnOptions = [
 ];
 ---
 
-<CmsLayout title={s.title} userPermissions={permissions} currentPath="/admin/settings/footer" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.settings.title} userPermissions={permissions} currentPath="/admin/settings/footer" parties={ctx.parties} partyId={ctx.partyId}>
   <SettingsTabs active="footer" partySlug={partySlug} />
   {error && <div class="alert-error">{error}</div>}
-  <p class="content-hint">{s.footerLinksHint}</p>
+  <p class="content-hint">{t.admin.settings.footerLinksHint}</p>
 
   <div class="card" style="max-width:640px;margin-bottom:24px">
-    <h2 class="section-title">{editing ? t.common.edit : s.addLinkBtn}</h2>
+    <h2 class="section-title">{editing ? t.common.edit : t.admin.settings.addLinkBtn}</h2>
     <form method="POST" class="link-form">
       {editing && <input type="hidden" name="id" value={editing.id} />}
       <div class="form-group">
-        <label class="form-label">{s.fieldColumn}</label>
+        <label class="form-label">{t.admin.settings.fieldColumn}</label>
         <CreatableCombobox
           name="column_key"
           value={editing?.column_key ?? "shop"}
           options={columnOptions}
           required
-          createLabel={s.columnCreateLabel}
+          createLabel={t.admin.settings.columnCreateLabel}
         />
       </div>
       <div class="form-row">
@@ -114,17 +113,17 @@ const columnOptions = [
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">{s.fieldSortOrder}</label>
+          <label class="form-label">{t.admin.settings.fieldSortOrder}</label>
           <input class="form-input" type="number" name="sort_order" value={editing?.sort_order ?? 0} />
         </div>
         <div class="form-check" style="align-self:end">
           <input type="checkbox" name="is_visible" id="link_visible" checked={editing ? editing.is_visible : true} />
-          <label for="link_visible">{s.fieldVisible}</label>
+          <label for="link_visible">{t.admin.settings.fieldVisible}</label>
         </div>
       </div>
       <div class="form-actions">
         {editing && <a href="/admin/settings/footer" class="btn btn-ghost">{t.common.cancel}</a>}
-        <button type="submit" class="btn btn-primary">{editing ? s.saveSlideBtn : s.addLinkBtn}</button>
+        <button type="submit" class="btn btn-primary">{editing ? t.admin.settings.saveSlideBtn : t.admin.settings.addLinkBtn}</button>
       </div>
     </form>
   </div>
@@ -132,7 +131,7 @@ const columnOptions = [
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>
-        <tr><th>{s.fieldColumn}</th><th>{t.admin.cms.fieldLabel}</th><th>{t.admin.cms.fieldUrl}</th><th>{s.colOrder}</th><th>{s.colVisible}</th><th>{s.colActions}</th></tr>
+        <tr><th>{t.admin.settings.fieldColumn}</th><th>{t.admin.cms.fieldLabel}</th><th>{t.admin.cms.fieldUrl}</th><th>{t.admin.settings.colOrder}</th><th>{t.admin.settings.colVisible}</th><th>{t.admin.settings.colActions}</th></tr>
       </thead>
       <tbody>
         {links.map((l) => (
@@ -153,7 +152,7 @@ const columnOptions = [
           </tr>
         ))}
         {links.length === 0 && (
-          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{s.noLinks}</td></tr>
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.settings.noLinks}</td></tr>
         )}
       </tbody>
     </table>
