@@ -14,21 +14,20 @@ import {
 } from "@shared/constants/sellerMode";
 
 const t = useT(Astro);
-const e = t.landing.employmentPage;
 const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 const limitFmt = NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK.toLocaleString("cs-CZ");
-const warningText = e.warningText.replace("{limit}", limitFmt).replace("{years}", String(NO_ICO_WITHHOLDING_EXPIRY_YEARS));
+const warningText = t.landing.employmentPage.warningText.replace("{limit}", limitFmt).replace("{years}", String(NO_ICO_WITHHOLDING_EXPIRY_YEARS));
 ---
 
-<LandingLayout title={`${e.title} — Mamtodoma`} description={e.sub}>
-  <PageHero eyebrow={e.eyebrow} title={e.title} lead={e.sub} image="/img/payment.jpg" imageAlt="" />
+<LandingLayout title={`${t.landing.employmentPage.title} — Mamtodoma`} description={t.landing.employmentPage.sub}>
+  <PageHero eyebrow={t.landing.employmentPage.eyebrow} title={t.landing.employmentPage.title} lead={t.landing.employmentPage.sub} image="/img/payment.jpg" imageAlt="" />
 
   <section class="landing" style="padding-top:0">
     <div class="container-lg employment-grid">
       <div>
-        <h2 class="section-title">{e.stepsTitle}</h2>
+        <h2 class="section-title">{t.landing.employmentPage.stepsTitle}</h2>
         <ol class="employment-steps" data-reveal-group>
-          {e.steps.map((step) => (
+          {t.landing.employmentPage.steps.map((step) => (
             <li data-reveal>
               <span class="employment-step-num font-display">{step.number}</span>
               <div>
@@ -41,24 +40,24 @@ const warningText = e.warningText.replace("{limit}", limitFmt).replace("{years}"
       </div>
 
       <div class="employment-card">
-        <h3 class="font-display">{e.statsTitle}</h3>
+        <h3 class="font-display">{t.landing.employmentPage.statsTitle}</h3>
         <dl>
-          <div><dt>{e.deductionLabel}</dt><dd>{employmentPct} %</dd></div>
-          <div><dt>{e.limitLabel}</dt><dd>{limitFmt} Kč</dd></div>
-          <div><dt>{e.holdLabel}</dt><dd>{PAYOUT_HOLD_DAYS} {e.daysUnit}</dd></div>
+          <div><dt>{t.landing.employmentPage.deductionLabel}</dt><dd>{employmentPct} %</dd></div>
+          <div><dt>{t.landing.employmentPage.limitLabel}</dt><dd>{limitFmt} Kč</dd></div>
+          <div><dt>{t.landing.employmentPage.holdLabel}</dt><dd>{PAYOUT_HOLD_DAYS} {t.landing.employmentPage.daysUnit}</dd></div>
         </dl>
-        <h4>{e.suitableTitle}</h4>
+        <h4>{t.landing.employmentPage.suitableTitle}</h4>
         <ul class="employment-suitable">
-          {e.suitableFor.map((item) => <li>{item}</li>)}
+          {t.landing.employmentPage.suitableFor.map((item) => <li>{item}</li>)}
         </ul>
       </div>
     </div>
 
     <div class="container-lg">
       <div class="employment-warning">
-        <strong>{e.warningTitle}</strong>
+        <strong>{t.landing.employmentPage.warningTitle}</strong>
         <p>{warningText}</p>
-        <p class="employment-tax-note">{e.taxNote}</p>
+        <p class="employment-tax-note">{t.landing.employmentPage.taxNote}</p>
       </div>
     </div>
   </section>

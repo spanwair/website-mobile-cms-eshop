@@ -24,7 +24,6 @@ const { permissions } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_AUDIT)) return Astro.redirect("/admin");
 const t = useT(Astro);
 const lang = getLang(Astro);
-const b = t.admin.billing;
 
 const partyIds = ctx.parties.map((p) => p.id);
 
@@ -83,14 +82,14 @@ const rows = (partyRows ?? []).map((party) => {
 });
 ---
 
-<CmsLayout title={b.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
-  <p class="content-hint">{b.hint}</p>
+<CmsLayout title={t.admin.billing.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+  <p class="content-hint">{t.admin.billing.hint}</p>
 
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>
         <tr>
-          <th>{b.colParty}</th><th>{b.colMode}</th><th>{b.colThisMonth}</th><th>{b.colOutstanding}</th><th>{b.colActions}</th>
+          <th>{t.admin.billing.colParty}</th><th>{t.admin.billing.colMode}</th><th>{t.admin.billing.colThisMonth}</th><th>{t.admin.billing.colOutstanding}</th><th>{t.admin.billing.colActions}</th>
         </tr>
       </thead>
       <tbody>
@@ -99,53 +98,53 @@ const rows = (partyRows ?? []).map((party) => {
             <td style="font-weight:600">{party.name}</td>
             <td>
               <span class={`badge ${isCommission ? "badge-pending" : "badge-active"}`}>
-                {isCommission ? b.modeCommission : b.modeOwnCompany}
+                {isCommission ? t.admin.billing.modeCommission : t.admin.billing.modeOwnCompany}
               </span>
             </td>
             <td>
               {isCommission ? (
                 <div>
-                  <div class="progress-line">{fmt(ledger?.payoutThisMonth ?? 0)} {b.of} {fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK)}</div>
+                  <div class="progress-line">{fmt(ledger?.payoutThisMonth ?? 0)} {t.admin.billing.of} {fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK)}</div>
                   <div class="cap-bar"><div class="cap-bar-fill" style={`width:${Math.min(((ledger?.payoutThisMonth ?? 0) / NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK) * 100, 100)}%`}></div></div>
                   {(ledger?.withheldThisMonth ?? 0) > 0 && (
-                    <div class="withheld-note">{b.withheldLabel}: {fmt(ledger!.withheldThisMonth)}</div>
+                    <div class="withheld-note">{t.admin.billing.withheldLabel}: {fmt(ledger!.withheldThisMonth)}</div>
                   )}
                 </div>
               ) : fee?.thisMonth ? (
                 <div>
-                  <div class="progress-line">{fmt(Number(fee.thisMonth.fee_amount))} {b.of} {fmt(MONTHLY_COMMISSION_CAP_CZK)}</div>
+                  <div class="progress-line">{fmt(Number(fee.thisMonth.fee_amount))} {t.admin.billing.of} {fmt(MONTHLY_COMMISSION_CAP_CZK)}</div>
                   <span class={`badge ${fee.thisMonth.status === "paid" ? "badge-active" : "badge-pending"}`}>
-                    {fee.thisMonth.status === "paid" ? b.statusPaid : b.statusUnpaid}
+                    {fee.thisMonth.status === "paid" ? t.admin.billing.statusPaid : t.admin.billing.statusUnpaid}
                   </span>
                 </div>
               ) : (
-                <span class="muted">{b.noActivityYet}</span>
+                <span class="muted">{t.admin.billing.noActivityYet}</span>
               )}
             </td>
             <td>
               {isCommission ? (
                 (ledger?.eligibleCount ?? 0) > 0 ? (
-                  <span class="outstanding">{fmt(ledger!.eligibleTotal)} <span class="muted">({ledger!.eligibleCount} {b.readyToPay})</span></span>
+                  <span class="outstanding">{fmt(ledger!.eligibleTotal)} <span class="muted">({ledger!.eligibleCount} {t.admin.billing.readyToPay})</span></span>
                 ) : (
-                  <span class="muted">{b.nothingDue}</span>
+                  <span class="muted">{t.admin.billing.nothingDue}</span>
                 )
               ) : (fee?.unpaidCount ?? 0) > 0 ? (
-                <span class="outstanding">{fmt(fee!.unpaidTotal)} <span class="muted">({fee!.unpaidCount} {b.unpaidMonths})</span></span>
+                <span class="outstanding">{fmt(fee!.unpaidTotal)} <span class="muted">({fee!.unpaidCount} {t.admin.billing.unpaidMonths})</span></span>
               ) : (
-                <span class="muted">{b.nothingDue}</span>
+                <span class="muted">{t.admin.billing.nothingDue}</span>
               )}
             </td>
             <td>
               <form method="POST" action="/api/switch-party">
                 <input type="hidden" name="partyId" value={party.id} />
                 <input type="hidden" name="redirect" value="/admin/payouts" />
-                <button type="submit" class="btn btn-secondary" style="padding:4px 10px;font-size:12px">{b.resolveBtn}</button>
+                <button type="submit" class="btn btn-secondary" style="padding:4px 10px;font-size:12px">{t.admin.billing.resolveBtn}</button>
               </form>
             </td>
           </tr>
         ))}
         {rows.length === 0 && (
-          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{b.noParties}</td></tr>
+          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.billing.noParties}</td></tr>
         )}
       </tbody>
     </table>

@@ -17,7 +17,6 @@ if (!ctx) return Astro.redirect("/");
 if (!ctx.isOwner) return Astro.redirect("/admin");
 
 const t = useT(Astro);
-const s = t.admin.settings;
 
 let success = "";
 let error = "";
@@ -39,7 +38,7 @@ if (Astro.request.method === "POST") {
     sender_email: (form.get("sender_email") as string) || null,
   });
   if (result.error) error = result.error.message;
-  else success = s.shippingSaved;
+  else success = t.admin.settings.shippingSaved;
 }
 
 const configs = await fetchAllShippingConfigs(supabase);
@@ -49,8 +48,8 @@ const mockActive = (code: "ppl" | "packeta") =>
     : !import.meta.env.PACKETA_API_PASSWORD;
 ---
 
-<CmsLayout title={s.shippingTitle} userPermissions={ctx.permissions} currentPath="/admin/settings/shipping" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
-  <p class="owner-notice">{s.shippingOwnerOnlyNotice}</p>
+<CmsLayout title={t.admin.settings.shippingTitle} userPermissions={ctx.permissions} currentPath="/admin/settings/shipping" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
+  <p class="owner-notice">{t.admin.settings.shippingOwnerOnlyNotice}</p>
   {success && <div class="alert-success">{success}</div>}
   {error && <div class="alert-error">{error}</div>}
 
@@ -59,55 +58,55 @@ const mockActive = (code: "ppl" | "packeta") =>
       <form method="POST" class="card provider-card">
         <input type="hidden" name="code" value={cfg.code} />
         <h2 class="section-title">{cfg.display_name}</h2>
-        {mockActive(cfg.code) && <p class="mock-notice">{s.shippingMockNotice}</p>}
+        {mockActive(cfg.code) && <p class="mock-notice">{t.admin.settings.shippingMockNotice}</p>}
 
         <label class="checkbox-row">
           <input type="checkbox" name="enabled" checked={cfg.enabled} />
-          {s.shippingEnableProvider}
+          {t.admin.settings.shippingEnableProvider}
         </label>
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">{s.shippingBasePrice}</label>
+            <label class="form-label">{t.admin.settings.shippingBasePrice}</label>
             <input class="form-input" type="number" step="0.01" min="0" name="base_price" value={cfg.base_price} />
           </div>
           <div class="form-group">
-            <label class="form-label">{s.shippingFreeAbove}</label>
+            <label class="form-label">{t.admin.settings.shippingFreeAbove}</label>
             <input class="form-input" type="number" step="0.01" min="0" name="free_above_amount" value={cfg.free_above_amount ?? ""} />
           </div>
         </div>
 
-        <h3 class="subsection-title">{s.shippingSenderSection}</h3>
+        <h3 class="subsection-title">{t.admin.settings.shippingSenderSection}</h3>
         <div class="form-group">
-          <label class="form-label">{s.shippingSenderName}</label>
+          <label class="form-label">{t.admin.settings.shippingSenderName}</label>
           <input class="form-input" name="sender_name" value={cfg.sender_name} required />
         </div>
         <div class="form-group">
-          <label class="form-label">{s.shippingSenderStreet}</label>
+          <label class="form-label">{t.admin.settings.shippingSenderStreet}</label>
           <input class="form-input" name="sender_street" value={cfg.sender_street} required />
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">{s.shippingSenderCity}</label>
+            <label class="form-label">{t.admin.settings.shippingSenderCity}</label>
             <input class="form-input" name="sender_city" value={cfg.sender_city} required />
           </div>
           <div class="form-group">
-            <label class="form-label">{s.shippingSenderZip}</label>
+            <label class="form-label">{t.admin.settings.shippingSenderZip}</label>
             <input class="form-input" name="sender_postal_code" value={cfg.sender_postal_code} required />
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">{s.shippingSenderCountry}</label>
+            <label class="form-label">{t.admin.settings.shippingSenderCountry}</label>
             <input class="form-input" name="sender_country_code" value={cfg.sender_country_code} maxlength="2" style="max-width:80px" required />
           </div>
           <div class="form-group">
-            <label class="form-label">{s.shippingSenderPhone}</label>
+            <label class="form-label">{t.admin.settings.shippingSenderPhone}</label>
             <input class="form-input" name="sender_phone" value={cfg.sender_phone ?? ""} />
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">{s.shippingSenderEmail}</label>
+          <label class="form-label">{t.admin.settings.shippingSenderEmail}</label>
           <input class="form-input" type="email" name="sender_email" value={cfg.sender_email ?? ""} />
         </div>
 

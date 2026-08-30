@@ -300,24 +300,23 @@ export async function sendMonthlyFeeNotice(opts: {
 }): Promise<void> {
   const lang = opts.lang ?? 'cs';
   const t = getT(lang);
-  const e = t.email.monthlyFeeNotice;
   const monthLabel = new Date(opts.periodMonth).toLocaleDateString(lang === 'en' ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long' });
 
   const html = `
-    <h1>${e.headingPrefix}${opts.partyName}</h1>
-    <p>${e.intro}${monthLabel}:</p>
+    <h1>${t.email.monthlyFeeNotice.headingPrefix}${opts.partyName}</h1>
+    <p>${t.email.monthlyFeeNotice.intro}${monthLabel}:</p>
     <table cellpadding="8" cellspacing="0" style="width:100%;max-width:420px">
-      <tr><td>${e.turnoverLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.turnoverAmount, lang, opts.currency)}</strong></td></tr>
-      <tr><td>${e.feeLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.feeAmount, lang, opts.currency)}</strong></td></tr>
+      <tr><td>${t.email.monthlyFeeNotice.turnoverLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.turnoverAmount, lang, opts.currency)}</strong></td></tr>
+      <tr><td>${t.email.monthlyFeeNotice.feeLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.feeAmount, lang, opts.currency)}</strong></td></tr>
     </table>
-    <p>${e.paymentInstructions}</p>
+    <p>${t.email.monthlyFeeNotice.paymentInstructions}</p>
   `;
 
   if (!import.meta.env.RESEND_API_KEY) {
-    console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${e.subjectPrefix}${monthLabel} | FEE: ${opts.feeAmount}\n`);
+    console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${t.email.monthlyFeeNotice.subjectPrefix}${monthLabel} | FEE: ${opts.feeAmount}\n`);
     return;
   }
-  await sendEmail({ to: opts.to, subject: `${e.subjectPrefix}${monthLabel}`, html });
+  await sendEmail({ to: opts.to, subject: `${t.email.monthlyFeeNotice.subjectPrefix}${monthLabel}`, html });
 }
 
 // Sent to a smalljobs_commission (no-IČO) party's billing_email the moment an order's payout
@@ -335,19 +334,18 @@ export async function sendPayoutLimitReached(opts: {
 }): Promise<void> {
   const lang = opts.lang ?? 'cs';
   const t = getT(lang);
-  const e = t.email.payoutLimitReached;
 
   const html = `
-    <h1>${e.headingPrefix}${opts.partyName}</h1>
-    <p>${e.introPrefix}${formatPrice(opts.payoutLimit, lang, opts.currency)}${e.introSuffix}</p>
-    <p>${e.explanation.replace('{years}', String(opts.expiryYears))}</p>
+    <h1>${t.email.payoutLimitReached.headingPrefix}${opts.partyName}</h1>
+    <p>${t.email.payoutLimitReached.introPrefix}${formatPrice(opts.payoutLimit, lang, opts.currency)}${t.email.payoutLimitReached.introSuffix}</p>
+    <p>${t.email.payoutLimitReached.explanation.replace('{years}', String(opts.expiryYears))}</p>
   `;
 
   if (!import.meta.env.RESEND_API_KEY) {
-    console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${e.subject}\n`);
+    console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${t.email.payoutLimitReached.subject}\n`);
     return;
   }
-  await sendEmail({ to: opts.to, subject: e.subject, html });
+  await sendEmail({ to: opts.to, subject: t.email.payoutLimitReached.subject, html });
 }
 
 export async function sendAbandonedCartRecovery(opts: {
