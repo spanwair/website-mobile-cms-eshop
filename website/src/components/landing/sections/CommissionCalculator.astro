@@ -47,19 +47,22 @@ const employmentDeductionLabel = c.employmentDeductionLabel.replace("{rate}", St
       data-payout-limit={NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK}
       data-badge-percentage={c.badgePercentage.replace("{rate}", String(commissionPct))}
       data-badge-flat={c.badgeFlatFee.replace("{cap}", fmt(MONTHLY_COMMISSION_CAP_CZK))}
-      data-badge-ico={c.badgeIcoRequired}
+        data-badge-ico={c.badgeIcoRequired}
       data-savings-template={c.savingsNote}
     >
       <label class="calc-label" for="calc-input">{c.sliderLabel}</label>
-      <input id="calc-input" type="range" min="0" max="300000" step="5000" value="60000" class="calc-slider" />
+      <input id="calc-input" type="range" min="0" max="50000" step="500" value="10000" class="calc-slider" />
       <div class="calc-price-row">
         <div class="calc-price" id="calc-price-display">60 000 Kč</div>
         <span class="badge badge-active" id="calc-badge">{c.badgePercentage.replace("{rate}", String(commissionPct))}</span>
       </div>
 
       <label class="calc-toggle">
-        <input type="checkbox" id="calc-employment-toggle" />
-        {c.employmentToggleLabel}
+        <span class="calc-toggle-label">{c.employmentToggleLabel}</span>
+        <span class="calc-switch">
+          <input type="checkbox" id="calc-employment-toggle" class="calc-switch-input">
+          <span class="calc-switch-track"><span class="calc-switch-thumb"></span></span>
+        </span>
       </label>
 
       <div class="calc-split" id="calc-split-commission">
@@ -209,10 +212,21 @@ const employmentDeductionLabel = c.employmentDeductionLabel.replace("{rate}", St
   .calc-slider { width: 100%; margin-bottom: 16px; accent-color: var(--landing-mint); }
   .calc-price-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px; }
   .calc-price { font-family: var(--font-display); font-size: 40px; }
-  .calc-toggle {
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    font-size: 13px; color: var(--landing-dark-text-muted); margin-bottom: 20px; cursor: pointer;
-  }
+    .calc-toggle {
+      display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+      font-size: 13px; color: var(--landing-dark-text-muted); margin-bottom: 20px; cursor: pointer;
+    }
+    .calc-switch { position: relative; display: inline-flex; flex: none; }
+    .calc-switch-input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+    .calc-switch-track {
+      display: inline-flex; align-items: center; padding: 2px; box-sizing: border-box;
+      width: 38px; height: 22px; border-radius: 999px;
+      background: var(--landing-dark-text-muted); opacity: 0.5; transition: background .2s ease, opacity .2s ease;
+    }
+    .calc-switch-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s ease; }
+    .calc-switch-input:checked + .calc-switch-track { background: var(--landing-mint); opacity: 1; }
+    .calc-switch-input:checked + .calc-switch-track .calc-switch-thumb { transform: translateX(16px); }
+    .calc-switch-input:focus-visible + .calc-switch-track { outline: 2px solid var(--landing-mint); outline-offset: 2px; }
   .calc-split { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); }
   .calc-split--hidden { display: none; }
   .calc-split-item { display: flex; flex-direction: column; gap: 4px; }
