@@ -44,6 +44,14 @@ function buildMockLabelPdf(text: string): Uint8Array {
 
 let mockCounter = 0;
 
+// Simulates real carrier progress so the delivery-status cron (and Playwright) have
+// something to observe without real PPL/Packeta credentials: each shipment advances one
+// step per getStatus() call — Created -> In Transit -> Delivered — then stays Delivered.
+// Module-level state is fine here: within a single dev/prod server process this persists
+// across requests exactly like PPL/Packeta's real "poll until it changes" behavior would.
+const mockStatusProgress: Record<string, number> = {};
+const MOCK_STATUS_STEPS = ["Created", "In Transit", "Delivered"];
+
 export function createMockProvider(code: ShippingProviderCode): ShippingProvider {
   return {
     code,
@@ -62,7 +70,10 @@ export function createMockProvider(code: ShippingProviderCode): ShippingProvider
       return { pdfBytes: buildMockLabelPdf(`MOCK LABEL ${providerShipmentId}`) };
     },
     async getStatus(shipment: ShipmentIdentity): Promise<ShipmentStatusResult> {
-      return { status: "created", raw: { mock: true, ...shipment } };
+      const key = shipment.providerShipmentId;
+      const step = Math.min(mockStatusProgress[key] ?? 0, MOCK_STATUS_STEPS.length - 1);
+      mockStatusProgress[key] = step + 1;
+      return { status: MOCK_STATUS_STEPS[step], raw: { mock: true, ...shipment } };
     },
     async cancelShipment(shipment: ShipmentIdentity): Promise<void> {
       // No real carrier to cancel against in mock mode.

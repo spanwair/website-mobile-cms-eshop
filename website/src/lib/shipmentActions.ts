@@ -3,19 +3,118 @@ import type { Database } from "@shared/supabase/types";
 import { getShippingProvider } from "./integrations/shipping";
 import { fetchShipmentByOrderId, updateShipmentRecord } from "@shared/services/shipmentService";
 import type { ShippingProviderCode } from "@shared/constants/shipping";
+import { PAYMENT_METHOD } from "@shared/constants/payment";
+import { classifyCarrierStatus } from "@shared/utils/shipmentStatus";
+import { SHIPMENT_STATUS } from "@shared/constants/shipping";
 
 type AdminClient = SupabaseClient<Database>;
 
-// Manual "Refresh status" action in admin — both carriers are poll-only (no webhooks
-// in either official doc set), so this is the only way status ever updates post-creation.
-export async function refreshShipmentStatus(adminClient: AdminClient, orderId: string): Promise<{ error: string | null }> {
+// Books the real shipment with the carrier (PPL or Packeta) for an order whose
+// order_shipments row is still "pending" — i.e. only the DB placeholder created at
+// checkout exists so far, no provider_shipment_id yet. Mirrors createReturnShipmentForOrder's
+// structure but forward-direction (our sender -> the customer), and passes codAmount for
+// 'cod' orders so the carrier collects the order total from the recipient on handover.
+export async function createShipmentForOrder(adminClient: AdminClient, orderId: string): Promise<{ error: string | null }> {
+  const shipment = await fetchShipmentByOrderId(adminClient, orderId);
+  if (!shipment) return { error: "No shipment on this order" };
+
+  try {
+    const { data: order } = await adminClient
+      .from("orders")
+      .select("order_number, total_amount, currency, payment_method, customer_id, shipping_address:shipping_address_id(*)")
+      .eq("id", orderId)
+      .single();
+    const address = (order as any)?.shipping_address;
+    if (!order || !address) throw new Error("Order or shipping address missing");
+
+    const { data: customer } = await adminClient.from("customers").select("email, phone").eq("id", order.customer_id).maybeSingle();
+
+    const { data: senderConfig } = await adminClient
+      .from("shipping_provider_configs")
+      .select("sender_name, sender_street, sender_city, sender_postal_code, sender_country_code, sender_phone, sender_email")
+      .eq("code", shipment.provider)
+      .single();
+    if (!senderConfig) throw new Error("No sender address configured for this carrier");
+
+    const provider = getShippingProvider(shipment.provider as ShippingProviderCode);
+    const result = await provider.createShipment({
+      referenceNumber: order.order_number,
+      sender: {
+        name: senderConfig.sender_name,
+        phone: senderConfig.sender_phone ?? undefined,
+        email: senderConfig.sender_email ?? undefined,
+        street: senderConfig.sender_street,
+        city: senderConfig.sender_city,
+        zip: senderConfig.sender_postal_code,
+        countryCode: senderConfig.sender_country_code,
+      },
+      recipient: {
+        name: `${address.first_name} ${address.last_name}`,
+        phone: customer?.phone ?? undefined,
+        email: customer?.email ?? undefined,
+        street: address.line1,
+        city: address.city,
+        zip: address.postal_code,
+        countryCode: address.country_code,
+      },
+      pickupPointId: shipment.pickup_point_id,
+      codAmount: order.payment_method === PAYMENT_METHOD.COD ? Number(order.total_amount) : undefined,
+      weightKg: shipment.weight_kg,
+      valueAmount: Number(order.total_amount),
+      currency: order.currency,
+    });
+
+    const consignmentCode = await provider.getConsignmentCode(result.providerShipmentId);
+
+    let labelStoragePath: string | null = null;
+    try {
+      const label = await provider.getLabel(result.providerShipmentId);
+      labelStoragePath = `${shipment.party_id}/${orderId}/label.pdf`;
+      await adminClient.storage
+        .from("shipping-labels")
+        .upload(labelStoragePath, label.pdfBytes, { contentType: "application/pdf", upsert: true });
+    } catch {
+      labelStoragePath = null;
+    }
+
+    await updateShipmentRecord(adminClient, orderId, {
+      status: "created",
+      provider_shipment_id: result.providerShipmentId,
+      tracking_number: result.trackingNumber,
+      consignment_code: consignmentCode,
+      label_storage_path: labelStoragePath,
+      is_mock: result.isMock,
+      last_status_raw: { fetchedAt: new Date().toISOString(), ...result } as any,
+      error_message: null,
+    });
+    return { error: null };
+  } catch (err) {
+    await updateShipmentRecord(adminClient, orderId, { status: "failed", error_message: (err as Error).message });
+    return { error: (err as Error).message };
+  }
+}
+
+// Manual "Refresh status" action in admin, and the shared body of the cron poller
+// (website/src/pages/api/cron/refresh-shipment-statuses.ts) — both carriers are poll-only
+// (no webhooks in either official doc set), so polling is the only way status ever updates
+// post-creation. Returns the classified status (if the carrier's raw text matched a known
+// transition) so callers can react to e.g. a shipment turning "delivered".
+export async function refreshShipmentStatus(
+  adminClient: AdminClient,
+  orderId: string
+): Promise<{ error: string | null; classifiedStatus?: (typeof SHIPMENT_STATUS)[keyof typeof SHIPMENT_STATUS] | null }> {
   const shipment = await fetchShipmentByOrderId(adminClient, orderId);
   if (!shipment?.provider_shipment_id) return { error: "No shipment to refresh" };
   try {
     const provider = getShippingProvider(shipment.provider as ShippingProviderCode);
     const result = await provider.getStatus({ providerShipmentId: shipment.provider_shipment_id, trackingNumber: shipment.tracking_number });
-    await updateShipmentRecord(adminClient, orderId, { last_status_raw: { fetchedAt: new Date().toISOString(), ...result } as any });
-    return { error: null };
+    const classifiedStatus = classifyCarrierStatus(result.status);
+    const updates: Database["public"]["Tables"]["order_shipments"]["Update"] = {
+      last_status_raw: { fetchedAt: new Date().toISOString(), ...result } as any,
+    };
+    if (classifiedStatus && classifiedStatus !== shipment.status) updates.status = classifiedStatus;
+    await updateShipmentRecord(adminClient, orderId, updates);
+    return { error: null, classifiedStatus };
   } catch (err) {
     return { error: (err as Error).message };
   }

@@ -1,6 +1,12 @@
-import React, { useState } from "react";
-import { TextInput, View, Text, StyleSheet, type TextInputProps } from "react-native";
 import { colors } from "@shared/constants/theme";
+import React, { useState } from "react";
+import {
+  TextInput,
+  View,
+  Text,
+  StyleSheet,
+  type TextInputProps,
+} from "react-native";
 
 interface Props extends TextInputProps {
   label?: string;
@@ -14,7 +20,11 @@ export function Input({ label, error, className, ...props }: Props) {
     <View style={styles.wrap}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <TextInput
-        style={[styles.input, focused && styles.focused, error ? styles.inputError : null]}
+        style={[
+          styles.input,
+          focused && styles.focused,
+          error ? styles.inputError : null,
+        ]}
         placeholderTextColor={colors.textPlaceholder}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
@@ -29,9 +39,9 @@ const styles = StyleSheet.create({
   wrap: { marginBottom: 12 },
   label: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.textMuted,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.6,
     marginBottom: 6,
   },

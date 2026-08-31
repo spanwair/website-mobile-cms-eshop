@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { useTranslation } from "react-i18next";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { supabase } from "@mobile/supabase/client";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { colors, shadow } from "@shared/constants/theme";
 import { fetchItems } from "@shared/services/itemService";
 import { fetchAllUsers } from "@shared/services/profileService";
-import { colors, shadow } from "@shared/constants/theme";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+
 import { ScreenContainer } from "../../components/layout/ScreenContainer";
 import type { AdminStackParamList } from "../../navigation/types";
 
@@ -15,7 +16,12 @@ type Nav = NativeStackNavigationProp<AdminStackParamList, "AdminDashboard">;
 export function AdminDashboardScreen() {
   const nav = useNavigation<Nav>();
   const { t } = useTranslation();
-  const [counts, setCounts] = useState({ users: 0, total: 0, active: 0, inactive: 0 });
+  const [counts, setCounts] = useState({
+    users: 0,
+    total: 0,
+    active: 0,
+    inactive: 0,
+  });
 
   useEffect(() => {
     Promise.all([
@@ -24,7 +30,12 @@ export function AdminDashboardScreen() {
       fetchItems(supabase, 1, 1, "inactive"),
       fetchAllUsers(supabase),
     ]).then(([all, active, inactive, users]) => {
-      setCounts({ users: users.length, total: all.total, active: active.total, inactive: inactive.total });
+      setCounts({
+        users: users.length,
+        total: all.total,
+        active: active.total,
+        inactive: inactive.total,
+      });
     });
   }, []);
 

@@ -1,9 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@mobile/supabase/client";
-import {
-  fetchProfile,
-  updateProfile,
-} from "@shared/services/profileService";
+import { fetchProfile, updateProfile } from "@shared/services/profileService";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const PROFILE_KEY = ["profile"] as const;
 

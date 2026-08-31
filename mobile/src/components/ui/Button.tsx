@@ -1,6 +1,11 @@
-import React from "react";
-import { TouchableOpacity, Text, ActivityIndicator, View, StyleSheet } from "react-native";
 import { colors } from "@shared/constants/theme";
+import React from "react";
+import {
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
 
 interface Props {
   label: string;
@@ -43,7 +48,11 @@ const STYLES = {
     spinnerColor: colors.white,
   },
   secondary: {
-    btn: { backgroundColor: colors.white, borderWidth: 1.5, borderColor: colors.accent },
+    btn: {
+      backgroundColor: colors.white,
+      borderWidth: 1.5,
+      borderColor: colors.accent,
+    },
     text: { color: colors.accent },
     spinnerColor: colors.accent,
   },
@@ -53,7 +62,7 @@ const STYLES = {
     spinnerColor: colors.white,
   },
   ghost: {
-    btn: { backgroundColor: 'transparent' },
+    btn: { backgroundColor: "transparent" },
     text: { color: colors.textMuted },
     spinnerColor: colors.textMuted,
   },
@@ -63,13 +72,13 @@ const styles = StyleSheet.create({
   base: {
     height: 52,
     borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 32,
   },
   label: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   dim: { opacity: 0.5 },
 });

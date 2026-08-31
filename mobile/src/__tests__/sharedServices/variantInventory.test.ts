@@ -1,6 +1,6 @@
-import { fetchOutOfStockMap } from "@shared/services/searchService";
-import { fetchInventoryRowsByProduct } from "@shared/services/inventoryService";
 import { addToCart } from "@shared/services/cartService";
+import { fetchInventoryRowsByProduct } from "@shared/services/inventoryService";
+import { fetchOutOfStockMap } from "@shared/services/searchService";
 
 // Minimal chainable stand-in for the Supabase query builder: every filter method returns
 // itself, and it resolves to `result` whether awaited directly or via .maybeSingle()/.single().
@@ -48,10 +48,19 @@ describe("fetchOutOfStockMap", () => {
 
 describe("fetchInventoryRowsByProduct", () => {
   const baseRow = {
-    id: "inv-x", party_id: "party-1", product_id: "prod-1", warehouse_id: "wh-1",
-    qty_on_hand: 10, qty_reserved: 0, qty_incoming: 0, low_stock_threshold: 5,
-    max_threshold: null, track_inventory: true, is_overstock: null,
-    created_at: "", updated_at: "",
+    id: "inv-x",
+    party_id: "party-1",
+    product_id: "prod-1",
+    warehouse_id: "wh-1",
+    qty_on_hand: 10,
+    qty_reserved: 0,
+    qty_incoming: 0,
+    low_stock_threshold: 5,
+    max_threshold: null,
+    track_inventory: true,
+    is_overstock: null,
+    created_at: "",
+    updated_at: "",
   };
 
   it("returns only variant rows when the product has variants, with the variant name attached", async () => {
@@ -59,9 +68,26 @@ describe("fetchInventoryRowsByProduct", () => {
       from: () =>
         makeQuery({
           data: [
-            { ...baseRow, id: "inv-product-level", variant_id: null, product_variants: null },
-            { ...baseRow, id: "inv-red", variant_id: "v-red", qty_on_hand: 4, product_variants: { name: "Red" } },
-            { ...baseRow, id: "inv-blue", variant_id: "v-blue", qty_on_hand: 6, product_variants: { name: "Blue" } },
+            {
+              ...baseRow,
+              id: "inv-product-level",
+              variant_id: null,
+              product_variants: null,
+            },
+            {
+              ...baseRow,
+              id: "inv-red",
+              variant_id: "v-red",
+              qty_on_hand: 4,
+              product_variants: { name: "Red" },
+            },
+            {
+              ...baseRow,
+              id: "inv-blue",
+              variant_id: "v-blue",
+              qty_on_hand: 6,
+              product_variants: { name: "Blue" },
+            },
           ],
         }),
     };
@@ -77,7 +103,14 @@ describe("fetchInventoryRowsByProduct", () => {
     const client: any = {
       from: () =>
         makeQuery({
-          data: [{ ...baseRow, id: "inv-product-level", variant_id: null, product_variants: null }],
+          data: [
+            {
+              ...baseRow,
+              id: "inv-product-level",
+              variant_id: null,
+              product_variants: null,
+            },
+          ],
         }),
     };
 
@@ -90,9 +123,12 @@ describe("fetchInventoryRowsByProduct", () => {
 });
 
 describe("addToCart variant matching", () => {
-  function makeCartClient(opts: { availableData: unknown; existingData?: unknown }) {
-    const eqCalls: Array<{ table: string; column: string; value: unknown }> = [];
-    const isCalls: Array<{ table: string; column: string; value: unknown }> = [];
+  function makeCartClient(opts: {
+    availableData: unknown;
+    existingData?: unknown;
+  }) {
+    const eqCalls: { table: string; column: string; value: unknown }[] = [];
+    const isCalls: { table: string; column: string; value: unknown }[] = [];
     let currentTable = "";
 
     const client: any = {
@@ -111,7 +147,11 @@ describe("addToCart variant matching", () => {
           },
           insert: () => Promise.resolve({ error: null }),
           maybeSingle: () =>
-            Promise.resolve(isInventoryQuery ? { data: opts.availableData } : { data: opts.existingData ?? null }),
+            Promise.resolve(
+              isInventoryQuery
+                ? { data: opts.availableData }
+                : { data: opts.existingData ?? null },
+            ),
         };
         return query;
       },
@@ -126,8 +166,19 @@ describe("addToCart variant matching", () => {
 
     await addToCart(client, "cart-1", "prod-1", 1, 10, "v-red");
 
-    expect(eqCalls.some((c) => c.table === "inventory_items" && c.column === "variant_id" && c.value === "v-red")).toBe(true);
-    expect(isCalls.some((c) => c.table === "inventory_items" && c.column === "variant_id")).toBe(false);
+    expect(
+      eqCalls.some(
+        (c) =>
+          c.table === "inventory_items" &&
+          c.column === "variant_id" &&
+          c.value === "v-red",
+      ),
+    ).toBe(true);
+    expect(
+      isCalls.some(
+        (c) => c.table === "inventory_items" && c.column === "variant_id",
+      ),
+    ).toBe(false);
   });
 
   it("checks stock by variant_id IS NULL when no variant is specified", async () => {
@@ -137,7 +188,14 @@ describe("addToCart variant matching", () => {
 
     await addToCart(client, "cart-1", "prod-1", 1, 10);
 
-    expect(isCalls.some((c) => c.table === "inventory_items" && c.column === "variant_id" && c.value === null)).toBe(true);
+    expect(
+      isCalls.some(
+        (c) =>
+          c.table === "inventory_items" &&
+          c.column === "variant_id" &&
+          c.value === null,
+      ),
+    ).toBe(true);
   });
 
   it("rejects a quantity that exceeds the selected variant's available stock", async () => {
@@ -153,7 +211,11 @@ describe("addToCart variant matching", () => {
 
   it("allows adding an on-demand item (track_inventory=false) past its qty_on_hand", async () => {
     const { client } = makeCartClient({
-      availableData: { qty_on_hand: 0, qty_reserved: 0, track_inventory: false },
+      availableData: {
+        qty_on_hand: 0,
+        qty_reserved: 0,
+        track_inventory: false,
+      },
     });
 
     const result = await addToCart(client, "cart-1", "prod-1", 25, 10, "v-red");

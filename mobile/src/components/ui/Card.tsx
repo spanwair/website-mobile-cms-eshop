@@ -1,6 +1,6 @@
+import { colors, shadow } from "@shared/constants/theme";
 import React from "react";
 import { View, StyleSheet, type ViewStyle } from "react-native";
-import { colors, shadow } from "@shared/constants/theme";
 
 interface Props {
   children: React.ReactNode;
@@ -9,11 +9,7 @@ interface Props {
 }
 
 export function Card({ children, style, className }: Props) {
-  return (
-    <View style={[styles.card, shadow.sm, style]}>
-      {children}
-    </View>
-  );
+  return <View style={[styles.card, shadow.sm, style]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({

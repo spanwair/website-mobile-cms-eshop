@@ -55,6 +55,17 @@ enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
 
+# Custom bilingual templates (branch on .Data.lang, set via inviteUserByEmail/signInWithOtp
+# metadata) — without content_path here, GoTrue silently falls back to its untranslated
+# default template and these files are never actually rendered.
+[auth.email.template.invite]
+subject = "Invitation / Pozvánka"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.magic_link]
+subject = "Your sign-in link / Váš přihlašovací odkaz"
+content_path = "./supabase/templates/magic_link.html"
+
 [auth.sms]
 enable_signup = true
 enable_confirmations = false
@@ -110,8 +121,8 @@ redirect_uri = ""
 
 [auth.external.google]
 enabled = true
-client_id = "REDACTED_GOOGLE_CLIENT_ID"
-secret = "REDACTED_GOOGLE_CLIENT_SECRET"
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_CLIENT_SECRET)"
 redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"
 
 [auth.external.kakao]

@@ -3,6 +3,7 @@ import Layout from "../../components/layout/Layout.astro";
 import CheckoutAddressForm from "../../components/shop/CheckoutAddressForm.astro";
 import CheckoutOrderSummary from "../../components/shop/CheckoutOrderSummary.astro";
 import ShippingProviderSelector from "../../components/shop/ShippingProviderSelector.astro";
+import PaymentProviderSelector from "../../components/shop/PaymentProviderSelector.astro";
 import { createSupabase, createAdminClient } from "../../lib/supabase";
 import { getOrCreateGuestCartId } from "../../lib/guestCart";
 import { clearCart, calcCartTotal, type CartIdentity } from "@shared/services/cartService";
@@ -11,6 +12,10 @@ import { fetchEnabledShippingConfigs, computeShippingCost } from "@shared/servic
 import { createShipmentRecord } from "@shared/services/shipmentService";
 import { computeItemTax, computeOrderTax } from "@shared/utils/tax";
 import { startOrderCheckout } from "../../lib/checkoutFlow";
+import { sendOrderConfirmation } from "../../lib/integrations/email";
+import { PAYMENT_METHOD, COD_FEE_CZK } from "@shared/constants/payment";
+import { SELLER_MODE } from "@shared/constants/sellerMode";
+import { sellerOfRecordInfo } from "@shared/constants/company";
 import { useT, getLang } from "../../lib/i18n";
 
 const { partySlug } = Astro.params;
@@ -64,6 +69,7 @@ if (Astro.request.method === "POST") {
   const pickupPointName = (form.get("pickup_point_name") as string) || null;
   const pickupPointAddress = (form.get("pickup_point_address") as string) || null;
   const email = (session?.user.email ?? (form.get("email") as string))?.trim();
+  const paymentMethod = ((form.get("payment_method") as string) || PAYMENT_METHOD.STRIPE) as "stripe" | "cod";
 
   try {
     if (!email) throw new Error(t.shop.emailLabel);
@@ -71,6 +77,7 @@ if (Astro.request.method === "POST") {
     if (!shippingConfig) throw new Error("Invalid shipping method");
     if (deliveryType === "pickup" && !pickupPointId) throw new Error(t.shop.pickupPointRequired);
     const shippingCost = computeShippingCost(shippingConfig, subtotal);
+    const paymentFee = paymentMethod === PAYMENT_METHOD.COD ? COD_FEE_CZK : 0;
     let { data: customer } = await adminClient
       .from("customers")
       .select("id")
@@ -132,7 +139,9 @@ if (Astro.request.method === "POST") {
       subtotal,
       tax_amount: computeOrderTax(taxItems, sellerMode),
       shipping_amount: shippingCost,
-      total_amount: subtotal + shippingCost,
+      payment_method: paymentMethod,
+      payment_fee: paymentFee,
+      total_amount: subtotal + shippingCost + paymentFee,
       currency: "CZK",
     });
     if (orderErr || !order) throw new Error(orderErr?.message ?? "Order creation failed");
@@ -179,6 +188,31 @@ if (Astro.request.method === "POST") {
     // adminClient — a guest cart has no anon RLS grant to clear via `supabase`
     await clearCart(adminClient, cart.id);
 
+    if (paymentMethod === PAYMENT_METHOD.COD) {
+      // No online payment step — the carrier collects payment_fee + total_amount from the
+      // customer on handover, so the order is confirmed immediately. payment_status stays
+      // 'unpaid' until the delivery-status cron (api/cron/refresh-shipment-statuses) sees
+      // the carrier report the shipment delivered.
+      // The order is already committed and the cart already cleared at this point — a
+      // transient email-provider failure must not surface as a checkout error (matches
+      // confirmStripeSession's own email try/catch in lib/checkoutFlow.ts).
+      try {
+        await sendOrderConfirmation({
+          to: email,
+          customerName: `${firstName} ${lastName}`,
+          orderNumber: order.order_number,
+          orderTotal: order.total_amount,
+          items: items.map((i: any) => ({ title: i.product?.title ?? "Product", quantity: i.quantity, price: Number(i.unit_price) })),
+          currency: order.currency,
+          lang,
+          sellerOfRecord: sellerMode === SELLER_MODE.SMALLJOBS_COMMISSION ? sellerOfRecordInfo(lang) : undefined,
+        });
+      } catch (emailErr) {
+        console.error("COD order confirmation email failed:", (emailErr as Error).message);
+      }
+      return Astro.redirect(`${linkBase}/order-confirmation?order=${order.order_number}`);
+    }
+
     const { url: sessionUrl, error: sessionError } = await startOrderCheckout({
       items,
       orderId: order.id,
@@ -195,6 +229,11 @@ if (Astro.request.method === "POST") {
     checkoutError = e?.message ?? "Checkout failed. Please try again.";
   }
 }
+
+// Matches the defaults baked into ShippingProviderSelector (first config checked) and
+// PaymentProviderSelector (Stripe checked) so the summary is correct before any JS runs.
+const defaultShippingConfig = shippingConfigs[0];
+const defaultShippingCost = defaultShippingConfig ? computeShippingCost(defaultShippingConfig, subtotal) : 0;
 ---
 
 <Layout title={t.shop.checkoutTitle}>
@@ -206,9 +245,18 @@ if (Astro.request.method === "POST") {
     <div class="checkout-layout">
       <div class="checkout-form-col">
         <ShippingProviderSelector configs={shippingConfigs} subtotal={subtotal} currency={storeParty.config?.currency_code} />
+        <PaymentProviderSelector currency={storeParty.config?.currency_code} />
         <CheckoutAddressForm cancelHref={`${linkBase}/cart`} sessionEmail={session?.user.email ?? null} />
       </div>
-      <CheckoutOrderSummary items={items} subtotal={subtotal} currency={storeParty.config?.currency_code} />
+      <CheckoutOrderSummary
+        items={items}
+        subtotal={subtotal}
+        currency={storeParty.config?.currency_code}
+        shippingCost={defaultShippingCost}
+        shippingLabel={defaultShippingConfig?.display_name}
+        paymentFee={0}
+        paymentLabel={t.shop.paymentMethodStripe}
+      />
     </div>
   </div>
 </Layout>

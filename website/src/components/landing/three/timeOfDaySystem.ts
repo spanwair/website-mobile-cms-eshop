@@ -62,7 +62,7 @@ export class TimeOfDaySystem {
     // Day: 0 -> 0.75 (75% of cycle)
     // Night: 0.75 -> 1.0 (25% of cycle)
     
-    let t = cyclePos; 
+    const t = cyclePos;
     // We want smooth transitions. 
     // Let's define keyframes:
     // 0.0 - 0.3: Full Day
@@ -75,8 +75,8 @@ export class TimeOfDaySystem {
     // Day Phase: 0.0 to 0.75
     // Night Phase: 0.75 to 1.0
     
-    let sunAngle = 0;
-    let nightFactor = 0; // 0 = day, 1 = full night
+    let sunAngle: number;
+    let nightFactor: number; // 0 = day, 1 = full night
 
     if (t < 0.6) {
       // Daytime (High sun)

@@ -60,7 +60,7 @@ export async function createParty(
 export async function updateParty(
   client: Client,
   partyId: string,
-  updates: Partial<Pick<Party, "name" | "slug" | "company_name" | "company_ico" | "vat_number" | "billing_email" | "logo_url" | "settings" | "status">>
+  updates: Partial<Pick<Party, "name" | "slug" | "company_name" | "company_ico" | "vat_number" | "billing_email" | "logo_url" | "settings" | "status" | "lang">>
 ): Promise<{ error: Error | null }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await client.from("parties").update(updates as any).eq("id", partyId);

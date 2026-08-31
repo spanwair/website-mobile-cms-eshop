@@ -1,11 +1,12 @@
 import React from "react";
-import { View, Text } from "react-native";
 import { useTranslation } from "react-i18next";
-import { useAuthStore } from "../../lib/store/auth";
-import { useProfile } from "../../lib/query/hooks/useProfile";
-import { useItems } from "../../lib/query/hooks/useItems";
+import { View, Text } from "react-native";
+
 import { ScreenContainer } from "../../components/layout/ScreenContainer";
 import { Card } from "../../components/ui/Card";
+import { useItems } from "../../lib/query/hooks/useItems";
+import { useProfile } from "../../lib/query/hooks/useProfile";
+import { useAuthStore } from "../../lib/store/auth";
 
 export function HomeScreen() {
   const { t } = useTranslation();
@@ -17,8 +18,14 @@ export function HomeScreen() {
 
   const stats = [
     { label: t("home.statItems"), value: String(items?.length ?? 0) },
-    { label: t("home.statActive"), value: String(items?.filter((i) => i.status === "active").length ?? 0) },
-    { label: t("home.statDraft"), value: String(items?.filter((i) => i.status === "draft").length ?? 0) },
+    {
+      label: t("home.statActive"),
+      value: String(items?.filter((i) => i.status === "active").length ?? 0),
+    },
+    {
+      label: t("home.statDraft"),
+      value: String(items?.filter((i) => i.status === "draft").length ?? 0),
+    },
   ];
 
   return (

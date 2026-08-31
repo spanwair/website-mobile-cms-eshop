@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { Text, ActivityIndicator, StyleSheet } from "react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useTranslation } from "react-i18next";
 import { supabase } from "@mobile/supabase/client";
-import { fetchItem } from "@shared/services/itemService";
-import { formatDate } from "@shared/utils/format";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { colors } from "@shared/constants/theme";
+import { fetchItem } from "@shared/services/itemService";
+import type { Item } from "@shared/types";
+import { formatDate } from "@shared/utils/format";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Text, ActivityIndicator, StyleSheet } from "react-native";
+
 import { ScreenContainer } from "../../components/layout/ScreenContainer";
 import { Card } from "../../components/ui/Card";
-import type { Item } from "@shared/types";
 import type { ItemsStackParamList } from "../../navigation/types";
 
 type Props = NativeStackScreenProps<ItemsStackParamList, "ItemDetail">;
@@ -25,19 +26,30 @@ export function ItemDetailScreen({ route }: Props) {
     });
   }, [route.params.id]);
 
-  if (loading) return <ActivityIndicator style={styles.spinner} size="large" color={colors.primary} />;
+  if (loading)
+    return (
+      <ActivityIndicator
+        style={styles.spinner}
+        size="large"
+        color={colors.primary}
+      />
+    );
   if (!item) return <Text style={styles.notFound}>{t("items.notFound")}</Text>;
 
   return (
     <ScreenContainer>
       <Text style={styles.title}>{item.title}</Text>
-      {item.description ? <Text style={styles.desc}>{item.description}</Text> : null}
+      {item.description ? (
+        <Text style={styles.desc}>{item.description}</Text>
+      ) : null}
       <Card style={styles.meta}>
         <Text style={styles.metaRow}>
-          <Text style={styles.metaKey}>{t("items.statusLabel")}: </Text>{item.status}
+          <Text style={styles.metaKey}>{t("items.statusLabel")}: </Text>
+          {item.status}
         </Text>
         <Text style={styles.metaRow}>
-          <Text style={styles.metaKey}>{t("items.createdLabel")}: </Text>{formatDate(item.created_at)}
+          <Text style={styles.metaKey}>{t("items.createdLabel")}: </Text>
+          {formatDate(item.created_at)}
         </Text>
       </Card>
     </ScreenContainer>
@@ -46,9 +58,25 @@ export function ItemDetailScreen({ route }: Props) {
 
 const styles = StyleSheet.create({
   spinner: { flex: 1, backgroundColor: colors.bg },
-  notFound: { flex: 1, textAlign: "center", color: colors.textMuted, paddingTop: 48 },
-  title: { fontSize: 26, fontWeight: "800", color: colors.textPrimary, marginBottom: 12, letterSpacing: -0.4 },
-  desc: { fontSize: 15, color: colors.textSecondary, lineHeight: 24, marginBottom: 20 },
+  notFound: {
+    flex: 1,
+    textAlign: "center",
+    color: colors.textMuted,
+    paddingTop: 48,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: colors.textPrimary,
+    marginBottom: 12,
+    letterSpacing: -0.4,
+  },
+  desc: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    lineHeight: 24,
+    marginBottom: 20,
+  },
   meta: { gap: 8 },
   metaRow: { fontSize: 14, color: colors.textSecondary },
   metaKey: { fontWeight: "700", color: colors.textMuted },

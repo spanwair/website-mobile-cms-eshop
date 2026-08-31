@@ -49,6 +49,7 @@ export interface Party {
   settings: Record<string, unknown>;
   status: PartyStatus;
   seller_mode: SellerMode;
+  lang: "cs" | "en";
   terms_accepted_at: string | null;
   terms_version: string | null;
   created_at: string;
@@ -374,6 +375,8 @@ export interface Order {
   order_number: string;
   status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded";
   payment_status: "unpaid" | "paid" | "partially_paid" | "refunded" | "failed";
+  payment_method: "stripe" | "cod";
+  payment_fee: number;
   subtotal: number;
   discount_amount: number;
   tax_amount: number;

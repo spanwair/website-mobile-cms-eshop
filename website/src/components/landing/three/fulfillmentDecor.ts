@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { buildTree, buildGround } from "./actors/props";
 import { buildWarehouse, buildOffice, buildStore } from "./actors/buildings";
 import { buildMountain, buildCabin, buildLake, buildBoat, MOUNTAIN_FOOTPRINT } from "./actors/nature";
-import type { CityGrid, InteriorCell, CellBounds } from "./cityGrid";
+import type { CityGrid, InteriorCell } from "./cityGrid";
 
 // A boat orbiting the lake on its own fixed-radius ellipse. Different boats
 // get different radii (concentric rings) so their paths can never cross,

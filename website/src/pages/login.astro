@@ -193,7 +193,7 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: name, display_name: name } },
+          options: { data: { full_name: name, display_name: name, lang: d.lang ?? 'cs' } },
         });
 
         if (error) {

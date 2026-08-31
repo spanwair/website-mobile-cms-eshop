@@ -9,7 +9,7 @@ interface Props {
   variantName?: string | null;
 }
 
-const { images, productId, variantId = null, variantName = null } = Astro.props;
+const { images, variantId = null, variantName = null } = Astro.props;
 const t = useT(Astro);
 
 // Simple products (no variants, variantId null) keep exactly the old single-group behavior.

@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Switch, Alert } from "react-native";
 import { useTranslation } from "react-i18next";
+import { Text, TouchableOpacity, Switch, Alert } from "react-native";
+
 import { ScreenContainer } from "../../components/layout/ScreenContainer";
 import { useAuthStore } from "../../lib/store/auth";
 import { useAppTheme } from "../../lib/theme";
@@ -22,8 +23,18 @@ function SettingsRow({
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
     >
-      <Text className={`text-base ${destructive ? "text-red-500" : "text-white"}`}>{label}</Text>
-      {right ?? <Text className={`text-lg ${destructive ? "text-red-500" : "text-[#808099]"}`}>›</Text>}
+      <Text
+        className={`text-base ${destructive ? "text-red-500" : "text-white"}`}
+      >
+        {label}
+      </Text>
+      {right ?? (
+        <Text
+          className={`text-lg ${destructive ? "text-red-500" : "text-[#808099]"}`}
+        >
+          ›
+        </Text>
+      )}
     </TouchableOpacity>
   );
 }

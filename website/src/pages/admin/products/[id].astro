@@ -59,9 +59,7 @@ if (Astro.request.method === "POST") {
       if (imgResult.error) { error = imgResult.error.message; break; }
     }
     if (!error) return Astro.redirect(`/admin/products/${id}${formVariantId ? `?variant=${formVariantId}` : ""}`);
-  }
-
-  if (action === "upload_video") {
+  } else if (action === "upload_video") {
     const files = form.getAll("video") as File[];
     const ts = Date.now();
     for (let i = 0; i < files.length; i++) {
@@ -77,19 +75,13 @@ if (Astro.request.method === "POST") {
       if (vidResult.error) { error = vidResult.error.message; break; }
     }
     if (!error) return Astro.redirect(`/admin/products/${id}${formVariantId ? `?variant=${formVariantId}` : ""}`);
-  }
-
-  if (action === "delete_image") {
+  } else if (action === "delete_image") {
     await deleteProductImage(supabase, form.get("image_id") as string);
     return Astro.redirect(`/admin/products/${id}${formVariantId ? `?variant=${formVariantId}` : ""}`);
-  }
-
-  if (action === "set_primary") {
+  } else if (action === "set_primary") {
     await setPrimaryImage(supabase, id!, form.get("image_id") as string);
     return Astro.redirect(`/admin/products/${id}${formVariantId ? `?variant=${formVariantId}` : ""}`);
-  }
-
-  if (action === "move_variant") {
+  } else if (action === "move_variant") {
     const variantId = form.get("variant_id") as string;
     const direction = form.get("direction") as string;
     const { data: rows } = await supabase
@@ -107,9 +99,7 @@ if (Astro.request.method === "POST") {
       ]);
     }
     return Astro.redirect(`/admin/products/${id}`);
-  }
-
-  if (action === "adjust_inventory" && hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY)) {
+  } else if (action === "adjust_inventory" && hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY)) {
     const inventoryItemId = form.get("inventory_item_id") as string;
     const quantity = parseInt(form.get("quantity") as string, 10);
     const type = form.get("type") as "adjustment" | "purchase" | "return" | "damage";
@@ -123,9 +113,7 @@ if (Astro.request.method === "POST") {
       created_by: session.user.id,
     });
     return Astro.redirect(`/admin/products/${id}`);
-  }
-
-  if (action === "add_variant" || action === "update_variant") {
+  } else if (action === "add_variant" || action === "update_variant") {
     const price = form.get("price") as string;
     const input = {
       product_id: id!,
@@ -138,14 +126,10 @@ if (Astro.request.method === "POST") {
       ? await updateProductVariant(supabase, form.get("variant_id") as string, input)
       : await addProductVariant(supabase, input);
     if (result.error) { error = result.error.message; } else { return Astro.redirect(`/admin/products/${id}`); }
-  }
-
-  if (action === "delete_variant") {
+  } else if (action === "delete_variant") {
     await deleteProductVariant(supabase, form.get("variant_id") as string);
     return Astro.redirect(`/admin/products/${id}`);
-  }
-
-  if (action === "set_on_demand" && hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY)) {
+  } else if (action === "set_on_demand" && hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY)) {
     const inventoryItemId = form.get("inventory_item_id") as string;
     const onDemand = form.get("on_demand") === "on";
     const result = await setTrackInventory(supabase, inventoryItemId, !onDemand);
@@ -154,9 +138,7 @@ if (Astro.request.method === "POST") {
     } else {
       return Astro.redirect(`/admin/products/${id}`);
     }
-  }
-
-  if (action === "update_thresholds" && hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY)) {
+  } else if (action === "update_thresholds" && hasPermission(permissions, PERMISSIONS.MANAGE_INVENTORY)) {
     const inventoryItemId = form.get("inventory_item_id") as string;
     const lowStockValue = form.get("low_stock_threshold") as string;
     const maxThresholdValue = form.get("max_threshold") as string;
@@ -172,26 +154,26 @@ if (Astro.request.method === "POST") {
     } else {
       return Astro.redirect(`/admin/products/${id}`);
     }
-  }
-
-  const result = await updateProduct(supabase, id!, {
-    title: form.get("title") as string,
-    slug: form.get("slug") as string,
-    sku: (form.get("sku") as string) || null,
-    barcode: (form.get("barcode") as string) || null,
-    price: parseFloat(form.get("price") as string) || 0,
-    cost_price: parseFloat(form.get("cost_price") as string) || 0,
-    discount_price: form.get("discount_price") ? parseFloat(form.get("discount_price") as string) : null,
-    status: (form.get("status") as "draft" | "active" | "inactive") ?? "draft",
-    description: (form.get("description") as string) || null,
-    is_featured: form.get("is_featured") === "on",
-    condition_id: (form.get("condition_id") as string) || null,
-  });
-  if (result.error) {
-    error = result.error.message;
   } else {
-    await setProductCategories(supabase, id!, form.getAll("category_ids[]") as string[]);
-    return Astro.redirect("/admin/products");
+    const result = await updateProduct(supabase, id!, {
+      title: form.get("title") as string,
+      slug: form.get("slug") as string,
+      sku: (form.get("sku") as string) || null,
+      barcode: (form.get("barcode") as string) || null,
+      price: parseFloat(form.get("price") as string) || 0,
+      cost_price: parseFloat(form.get("cost_price") as string) || 0,
+      discount_price: form.get("discount_price") ? parseFloat(form.get("discount_price") as string) : null,
+      status: (form.get("status") as "draft" | "active" | "inactive") ?? "draft",
+      description: (form.get("description") as string) || null,
+      is_featured: form.get("is_featured") === "on",
+      condition_id: (form.get("condition_id") as string) || null,
+    });
+    if (result.error) {
+      error = result.error.message;
+    } else {
+      await setProductCategories(supabase, id!, form.getAll("category_ids[]") as string[]);
+      return Astro.redirect("/admin/products");
+    }
   }
 }
 

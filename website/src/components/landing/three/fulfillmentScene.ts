@@ -5,7 +5,7 @@ import { buildPerson, type Person } from "./actors/person";
 import { buildCityGrid } from "./cityGrid";
 import { placeCampusAndNature } from "./fulfillmentDecor";
 import { laneSample, loopSample, driveAlong, walkAlong, orient, wrapLaneSample, type Lane, type Loop } from "./pathSample";
-import { TimeOfDaySystem, createStreetlights, type Streetlight } from "./timeOfDaySystem";
+import { TimeOfDaySystem, createStreetlights } from "./timeOfDaySystem";
 
 const HALF = 7.5;
 // Only the outer 2 streets per axis — no street cuts through the middle of
@@ -233,7 +233,6 @@ export function mountFulfillmentScene(canvas: HTMLCanvasElement) {
         const distSq = relVec.lengthSq();
         
         if (distSq <= FOLLOW_RADIUS * FOLLOW_RADIUS) {
-          const dist = Math.sqrt(distSq);
           const ahead = relVec.dot(me.dir);
           
           // Only brake for cars actually in front of us

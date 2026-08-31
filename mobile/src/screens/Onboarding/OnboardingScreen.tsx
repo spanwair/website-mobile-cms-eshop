@@ -1,13 +1,15 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useTranslation } from "react-i18next";
+
 import { setItem, getItem } from "../../lib/storage";
 
 const ONBOARDING_KEY = "onboarding_done";
 
 export const markOnboardingDone = () => setItem(ONBOARDING_KEY, true);
-export const hasSeenOnboarding = () => getItem<boolean>(ONBOARDING_KEY) === true;
+export const hasSeenOnboarding = () =>
+  getItem<boolean>(ONBOARDING_KEY) === true;
 
 interface Props {
   onDone: () => void;
@@ -18,9 +20,21 @@ export function OnboardingScreen({ onDone }: Props) {
   const [index, setIndex] = React.useState(0);
 
   const slides = [
-    { emoji: "🚀", title: t("onboarding.slide1Title"), body: t("onboarding.slide1Body") },
-    { emoji: "⚡", title: t("onboarding.slide2Title"), body: t("onboarding.slide2Body") },
-    { emoji: "🔒", title: t("onboarding.slide3Title"), body: t("onboarding.slide3Body") },
+    {
+      emoji: "🚀",
+      title: t("onboarding.slide1Title"),
+      body: t("onboarding.slide1Body"),
+    },
+    {
+      emoji: "⚡",
+      title: t("onboarding.slide2Title"),
+      body: t("onboarding.slide2Body"),
+    },
+    {
+      emoji: "🔒",
+      title: t("onboarding.slide3Title"),
+      body: t("onboarding.slide3Body"),
+    },
   ];
 
   const slide = slides[index];
@@ -80,7 +94,9 @@ export function OnboardingScreen({ onDone }: Props) {
             onPress={handleSkip}
             activeOpacity={0.7}
           >
-            <Text className="text-[#808099] text-sm">{t("onboarding.skip")}</Text>
+            <Text className="text-[#808099] text-sm">
+              {t("onboarding.skip")}
+            </Text>
           </TouchableOpacity>
         ) : null}
       </View>

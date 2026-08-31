@@ -1,13 +1,25 @@
-import React, { useCallback, useState } from "react";
-import { FlatList, Text, TouchableOpacity, Alert, StyleSheet, RefreshControl } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { useTranslation } from "react-i18next";
 import { supabase } from "@mobile/supabase/client";
-import { fetchItems, updateItem, deleteItem } from "@shared/services/itemService";
-import { formatRelative } from "@shared/utils/format";
+import { useFocusEffect } from "@react-navigation/native";
 import { colors } from "@shared/constants/theme";
-import { Card } from "../../components/ui/Card";
+import {
+  fetchItems,
+  updateItem,
+  deleteItem,
+} from "@shared/services/itemService";
 import type { Item } from "@shared/types";
+import { formatRelative } from "@shared/utils/format";
+import React, { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  FlatList,
+  Text,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+  RefreshControl,
+} from "react-native";
+
+import { Card } from "../../components/ui/Card";
 
 export function AdminItemsScreen() {
   const { t } = useTranslation();
@@ -21,7 +33,11 @@ export function AdminItemsScreen() {
     setLoading(false);
   }, []);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   function confirmDelete(item: Item) {
     Alert.alert(
@@ -42,9 +58,12 @@ export function AdminItemsScreen() {
   }
 
   async function toggleStatus(item: Item) {
-    const next: Item["status"] = item.status === "active" ? "inactive" : "active";
+    const next: Item["status"] =
+      item.status === "active" ? "inactive" : "active";
     await updateItem(supabase, item.id, { status: next });
-    setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, status: next } : i));
+    setItems((prev) =>
+      prev.map((i) => (i.id === item.id ? { ...i, status: next } : i)),
+    );
   }
 
   return (
@@ -53,18 +72,36 @@ export function AdminItemsScreen() {
       contentContainerStyle={styles.content}
       data={items}
       keyExtractor={(item) => item.id}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}
-      ListEmptyComponent={<Text style={styles.empty}>{t("items.noItems")}</Text>}
+      refreshControl={
+        <RefreshControl
+          refreshing={loading}
+          onRefresh={load}
+          tintColor={colors.primary}
+        />
+      }
+      ListEmptyComponent={
+        <Text style={styles.empty}>{t("items.noItems")}</Text>
+      }
       renderItem={({ item }) => (
         <Card style={styles.card}>
           <Text style={styles.cardTitle}>{item.title}</Text>
-          <Text style={styles.cardMeta}>{item.status.toUpperCase()} · {formatRelative(item.created_at)}</Text>
-          <TouchableOpacity onPress={() => toggleStatus(item)} activeOpacity={0.8}>
+          <Text style={styles.cardMeta}>
+            {item.status.toUpperCase()} · {formatRelative(item.created_at)}
+          </Text>
+          <TouchableOpacity
+            onPress={() => toggleStatus(item)}
+            activeOpacity={0.8}
+          >
             <Text style={styles.action}>
-              {item.status === "active" ? t("admin.deactivate") : t("admin.activate")}
+              {item.status === "active"
+                ? t("admin.deactivate")
+                : t("admin.activate")}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => confirmDelete(item)} activeOpacity={0.8}>
+          <TouchableOpacity
+            onPress={() => confirmDelete(item)}
+            activeOpacity={0.8}
+          >
             <Text style={styles.danger}>{t("common.delete")}</Text>
           </TouchableOpacity>
         </Card>

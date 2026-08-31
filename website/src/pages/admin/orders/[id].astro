@@ -7,8 +7,7 @@ import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT, getLang } from "@/lib/i18n";
 import type { Order } from "@shared/types/index";
 import { formatPrice } from "@shared/utils/format";
-import { createShipmentForOrder } from "@/lib/checkoutFlow";
-import { refreshShipmentStatus, cancelShipmentForOrder, createReturnShipmentForOrder } from "@/lib/shipmentActions";
+import { refreshShipmentStatus, cancelShipmentForOrder, createReturnShipmentForOrder, createShipmentForOrder } from "@/lib/shipmentActions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -40,7 +39,8 @@ if (Astro.request.method === "POST") {
     const result = await updateOrder(supabase, id!, { tracking_number: form.get("tracking_number") as string });
     if (result.error) error = result.error.message;
   } else if (action === "create_shipment") {
-    await createShipmentForOrder(createAdminClient(), id!);
+    const result = await createShipmentForOrder(createAdminClient(), id!);
+    if (result.error) error = result.error;
   } else if (action === "refresh_shipment") {
     const result = await refreshShipmentStatus(createAdminClient(), id!);
     if (result.error) error = result.error;
@@ -129,7 +129,13 @@ const PAYMENT_LABELS: Record<string, string> = { paid: t.admin.orders.paymentPai
       <div class="card">
         <h2 class="section-title">{t.admin.orders.sectionStatus}</h2>
         <span class={`badge ${statusClass(order.status)}`} style="font-size:13px;margin-bottom:12px;display:inline-block">{STATUS_LABELS[order.status] ?? order.status}</span>
-        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">{t.admin.orders.payment}: <strong>{PAYMENT_LABELS[order.payment_status] ?? order.payment_status}</strong></p>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px">
+          {t.admin.orders.payment}: <strong>{PAYMENT_LABELS[order.payment_status] ?? order.payment_status}</strong>
+          {" "}({order.payment_method === "cod" ? t.shop.paymentMethodCod : t.shop.paymentMethodStripe})
+        </p>
+        {order.payment_fee > 0 && (
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">{t.shop.codFee}: <strong>{formatPrice(order.payment_fee, lang, order.currency)}</strong></p>
+        )}
         {nextStatuses.length > 0 && (
           <form method="POST" class="status-form">
             <input type="hidden" name="action" value="status" />

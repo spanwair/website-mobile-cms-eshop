@@ -1226,6 +1226,65 @@ export type Database = {
           },
         ]
       }
+      monthly_platform_fees: {
+        Row: {
+          created_at: string
+          currency: string
+          fee_amount: number
+          fee_rate: number
+          id: string
+          notified_at: string | null
+          paid_at: string | null
+          paid_by: string | null
+          party_id: string
+          payment_reference: string | null
+          period_month: string
+          status: string
+          turnover_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          fee_amount: number
+          fee_rate: number
+          id?: string
+          notified_at?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          party_id: string
+          payment_reference?: string | null
+          period_month: string
+          status?: string
+          turnover_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          fee_amount?: number
+          fee_rate?: number
+          id?: string
+          notified_at?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          party_id?: string
+          payment_reference?: string | null
+          period_month?: string
+          status?: string
+          turnover_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_platform_fees_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nav_items: {
         Row: {
           category_id: string | null
@@ -1384,6 +1443,8 @@ export type Database = {
           tax_amount: number
           tax_rate: number
           updated_at: string
+          withheld_amount: number
+          withheld_expires_at: string | null
         }
         Insert: {
           commission_amount: number
@@ -1405,6 +1466,8 @@ export type Database = {
           tax_amount?: number
           tax_rate?: number
           updated_at?: string
+          withheld_amount?: number
+          withheld_expires_at?: string | null
         }
         Update: {
           commission_amount?: number
@@ -1426,6 +1489,8 @@ export type Database = {
           tax_amount?: number
           tax_rate?: number
           updated_at?: string
+          withheld_amount?: number
+          withheld_expires_at?: string | null
         }
         Relationships: [
           {
@@ -1511,6 +1576,105 @@ export type Database = {
           },
         ]
       }
+      order_shipments: {
+        Row: {
+          cancelled_at: string | null
+          consignment_code: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          is_mock: boolean
+          label_storage_path: string | null
+          last_status_raw: Json | null
+          order_id: string
+          party_id: string
+          pickup_point_address: string | null
+          pickup_point_id: string | null
+          pickup_point_name: string | null
+          provider: string
+          provider_shipment_id: string | null
+          return_created_at: string | null
+          return_label_storage_path: string | null
+          return_password: string | null
+          return_provider_shipment_id: string | null
+          return_tracking_number: string | null
+          shipping_cost: number
+          status: string
+          tracking_number: string | null
+          updated_at: string
+          weight_kg: number
+        }
+        Insert: {
+          cancelled_at?: string | null
+          consignment_code?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          is_mock?: boolean
+          label_storage_path?: string | null
+          last_status_raw?: Json | null
+          order_id: string
+          party_id: string
+          pickup_point_address?: string | null
+          pickup_point_id?: string | null
+          pickup_point_name?: string | null
+          provider: string
+          provider_shipment_id?: string | null
+          return_created_at?: string | null
+          return_label_storage_path?: string | null
+          return_password?: string | null
+          return_provider_shipment_id?: string | null
+          return_tracking_number?: string | null
+          shipping_cost?: number
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string
+          weight_kg?: number
+        }
+        Update: {
+          cancelled_at?: string | null
+          consignment_code?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          is_mock?: boolean
+          label_storage_path?: string | null
+          last_status_raw?: Json | null
+          order_id?: string
+          party_id?: string
+          pickup_point_address?: string | null
+          pickup_point_id?: string | null
+          pickup_point_name?: string | null
+          provider?: string
+          provider_shipment_id?: string | null
+          return_created_at?: string | null
+          return_label_storage_path?: string | null
+          return_password?: string | null
+          return_provider_shipment_id?: string | null
+          return_tracking_number?: string | null
+          shipping_cost?: number
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string
+          weight_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_shipments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_shipments_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_status_history: {
         Row: {
           changed_by: string | null
@@ -1563,6 +1727,8 @@ export type Database = {
           order_number: string
           paid_at: string | null
           party_id: string
+          payment_fee: number
+          payment_method: string
           payment_status: string
           shipped_at: string | null
           shipping_address_id: string | null
@@ -1587,6 +1753,8 @@ export type Database = {
           order_number: string
           paid_at?: string | null
           party_id: string
+          payment_fee?: number
+          payment_method?: string
           payment_status?: string
           shipped_at?: string | null
           shipping_address_id?: string | null
@@ -1611,6 +1779,8 @@ export type Database = {
           order_number?: string
           paid_at?: string | null
           party_id?: string
+          payment_fee?: number
+          payment_method?: string
           payment_status?: string
           shipped_at?: string | null
           shipping_address_id?: string | null
@@ -1660,6 +1830,7 @@ export type Database = {
           company_name: string | null
           created_at: string
           id: string
+          lang: string
           logo_url: string | null
           name: string
           seller_mode: string
@@ -1677,6 +1848,7 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           id?: string
+          lang?: string
           logo_url?: string | null
           name: string
           seller_mode?: string
@@ -1694,6 +1866,7 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           id?: string
+          lang?: string
           logo_url?: string | null
           name?: string
           seller_mode?: string
@@ -2534,6 +2707,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shipping_provider_configs: {
+        Row: {
+          base_price: number
+          code: string
+          created_at: string
+          display_name: string
+          enabled: boolean
+          free_above_amount: number | null
+          id: string
+          sender_city: string
+          sender_country_code: string
+          sender_email: string | null
+          sender_name: string
+          sender_phone: string | null
+          sender_postal_code: string
+          sender_street: string
+          updated_at: string
+        }
+        Insert: {
+          base_price?: number
+          code: string
+          created_at?: string
+          display_name: string
+          enabled?: boolean
+          free_above_amount?: number | null
+          id?: string
+          sender_city?: string
+          sender_country_code?: string
+          sender_email?: string | null
+          sender_name?: string
+          sender_phone?: string | null
+          sender_postal_code?: string
+          sender_street?: string
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          code?: string
+          created_at?: string
+          display_name?: string
+          enabled?: boolean
+          free_above_amount?: number | null
+          id?: string
+          sender_city?: string
+          sender_country_code?: string
+          sender_email?: string | null
+          sender_name?: string
+          sender_phone?: string | null
+          sender_postal_code?: string
+          sender_street?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       stock_movements: {
         Row: {

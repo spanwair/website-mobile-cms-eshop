@@ -21,6 +21,7 @@ dist/
 # Misc
 .DS_Store
 *.pem
+*.code-workspace
 
 # Debug
 npm-debug.log*
@@ -30,9 +31,12 @@ yarn-error.log*
 # Local env files
 .env
 .env.local
+.env.development
 .env.development.local
 .env.test.local
+.env.production
 .env.production.local
+mobile/.env.development
 
 # Vercel
 .vercel

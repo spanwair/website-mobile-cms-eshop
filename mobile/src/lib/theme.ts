@@ -1,5 +1,6 @@
-import { useColorScheme } from "react-native";
 import { useState } from "react";
+import { useColorScheme } from "react-native";
+
 import { getItem, setItem } from "./storage";
 
 const THEME_KEY = "app_theme";
@@ -9,11 +10,10 @@ export type ColorScheme = "light" | "dark" | "system";
 export function useAppTheme() {
   const systemScheme = useColorScheme();
   const [saved, setSaved] = useState<ColorScheme>(
-    () => getItem<ColorScheme>(THEME_KEY) ?? "system"
+    () => getItem<ColorScheme>(THEME_KEY) ?? "system",
   );
 
-  const activeScheme =
-    saved === "system" ? (systemScheme ?? "dark") : saved;
+  const activeScheme = saved === "system" ? (systemScheme ?? "dark") : saved;
 
   function setTheme(scheme: ColorScheme) {
     setSaved(scheme);

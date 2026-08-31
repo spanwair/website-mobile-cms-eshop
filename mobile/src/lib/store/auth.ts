@@ -1,6 +1,7 @@
-import { create } from "zustand";
-import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@mobile/supabase/client";
+import type { Session, User } from "@supabase/supabase-js";
+import { create } from "zustand";
+
 import { createSelectors } from "./utils";
 
 type AuthState = {
@@ -27,7 +28,9 @@ const _useAuthStore = create<AuthState>((set) => ({
     set({ session: null, user: null, status: "unauthenticated" });
   },
   deleteAccount: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const { error } = await supabase.functions.invoke("delete-account", {
       headers: { Authorization: `Bearer ${session?.access_token}` },
     });

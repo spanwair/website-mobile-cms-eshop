@@ -1,13 +1,20 @@
-import React from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
-import { FlashList } from "@shopify/flash-list";
 import { useNavigation } from "@react-navigation/native";
-import { useTranslation } from "react-i18next";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useItems } from "../../lib/query/hooks/useItems";
-import { formatRelative } from "@shared/utils/format";
-import { Card } from "../../components/ui/Card";
 import type { Item } from "@shared/types";
+import { formatRelative } from "@shared/utils/format";
+import { FlashList } from "@shopify/flash-list";
+import React from "react";
+import { useTranslation } from "react-i18next";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
+
+import { Card } from "../../components/ui/Card";
+import { useItems } from "../../lib/query/hooks/useItems";
 import type { ItemsStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<ItemsStackParamList, "ItemsList">;
@@ -39,7 +46,11 @@ export function ItemsListScreen() {
       contentContainerStyle={{ padding: 16 }}
       ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
       refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#FF5E1A" />
+        <RefreshControl
+          refreshing={isRefetching}
+          onRefresh={refetch}
+          tintColor="#FF5E1A"
+        />
       }
       ListEmptyComponent={
         <Text className="text-center text-text-muted-dark mt-12 text-[15px]">
@@ -54,7 +65,10 @@ export function ItemsListScreen() {
           <Card className="gap-2">
             <Text className="text-base font-bold text-white">{item.title}</Text>
             {item.description ? (
-              <Text className="text-sm text-text-secondary-dark leading-5" numberOfLines={2}>
+              <Text
+                className="text-sm text-text-secondary-dark leading-5"
+                numberOfLines={2}
+              >
                 {item.description}
               </Text>
             ) : null}

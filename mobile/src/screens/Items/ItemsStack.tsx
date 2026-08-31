@@ -1,9 +1,10 @@
-import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useTranslation } from "react-i18next";
 import { colors } from "@shared/constants/theme";
-import { ItemsListScreen } from "./ItemsListScreen";
+import React from "react";
+import { useTranslation } from "react-i18next";
+
 import { ItemDetailScreen } from "./ItemDetailScreen";
+import { ItemsListScreen } from "./ItemsListScreen";
 import type { ItemsStackParamList } from "../../navigation/types";
 
 const Stack = createNativeStackNavigator<ItemsStackParamList>();

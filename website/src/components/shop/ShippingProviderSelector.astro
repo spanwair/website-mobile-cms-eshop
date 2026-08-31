@@ -45,7 +45,7 @@ const MOCK_POINTS: Record<string, { id: string; name: string; address: string }[
       const logo = PROVIDER_LOGOS[cfg.code];
       return (
         <label class="provider-option">
-          <input type="radio" name="shipping_provider" value={cfg.code} data-cost={cost} form="checkout-form" checked={i === 0} class="styled-radio" required />
+          <input type="radio" name="shipping_provider" value={cfg.code} data-cost={cost} data-label={cfg.display_name} form="checkout-form" checked={i === 0} class="styled-radio" required />
           {logo && <img src={logo} alt={cfg.display_name} class="provider-logo" />}
           <span class="provider-name">{cfg.display_name}</span>
           <span class="provider-price">{cost === 0 ? t.shop.freeShipping : formatPrice(cost, lang, currency)}</span>

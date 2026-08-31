@@ -1,15 +1,24 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Alert, Image, TextInput, StyleSheet } from "react-native";
+import { ROLE_LABEL } from "@shared/constants/permissions";
+import { colors } from "@shared/constants/theme";
 import * as ImagePicker from "expo-image-picker";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuthStore } from "../../lib/store/auth";
-import { useProfile, useUpdateProfile } from "../../lib/query/hooks/useProfile";
-import { toast } from "../../lib/toast";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  Image,
+  TextInput,
+  StyleSheet,
+} from "react-native";
+
 import { ScreenContainer } from "../../components/layout/ScreenContainer";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
-import { colors } from "@shared/constants/theme";
-import { ROLE_LABEL } from "@shared/constants/permissions";
+import { useProfile, useUpdateProfile } from "../../lib/query/hooks/useProfile";
+import { useAuthStore } from "../../lib/store/auth";
+import { toast } from "../../lib/toast";
 
 export function ProfileScreen() {
   const { t } = useTranslation();
@@ -43,19 +52,27 @@ export function ProfileScreen() {
   }
 
   async function handlePickAvatar() {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: "images", quality: 0.7 });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      quality: 0.7,
+    });
     if (result.canceled || !result.assets[0]) return;
     toast.info(t("profile.avatarUploadSoon"));
   }
 
-  const initial = (profile?.display_name ?? user?.email ?? "?")[0].toUpperCase();
+  const initial = (profile?.display_name ??
+    user?.email ??
+    "?")[0].toUpperCase();
 
   return (
     <ScreenContainer title={t("profile.title")}>
       <View style={styles.avatarRow}>
         <TouchableOpacity onPress={handlePickAvatar} activeOpacity={0.8}>
           {profile?.avatar_url ? (
-            <Image source={{ uri: profile.avatar_url }} style={styles.avatarImg} />
+            <Image
+              source={{ uri: profile.avatar_url }}
+              style={styles.avatarImg}
+            />
           ) : (
             <View style={styles.avatarCircle}>
               <Text style={styles.avatarInitial}>{initial}</Text>
@@ -63,10 +80,13 @@ export function ProfileScreen() {
           )}
         </TouchableOpacity>
         <View style={styles.avatarMeta}>
-          <Text style={styles.fullName}>{profile?.display_name ?? t("profile.unknown")}</Text>
+          <Text style={styles.fullName}>
+            {profile?.display_name ?? t("profile.unknown")}
+          </Text>
           <Text style={styles.email}>{user?.email}</Text>
           <Text style={styles.role}>
-            {ROLE_LABEL[profile?.role as keyof typeof ROLE_LABEL] ?? t("profile.role.user")}
+            {ROLE_LABEL[profile?.role as keyof typeof ROLE_LABEL] ??
+              t("profile.role.user")}
           </Text>
         </View>
       </View>
@@ -83,33 +103,59 @@ export function ProfileScreen() {
               autoFocus
             />
             <View style={styles.editRow}>
-              <Button label={t("common.save")} onPress={handleSave} loading={updateProfile.isPending} className="flex-1" />
-              <Button label={t("common.cancel")} onPress={() => setEditing(false)} variant="ghost" className="flex-1" />
+              <Button
+                label={t("common.save")}
+                onPress={handleSave}
+                loading={updateProfile.isPending}
+                className="flex-1"
+              />
+              <Button
+                label={t("common.cancel")}
+                onPress={() => setEditing(false)}
+                variant="ghost"
+                className="flex-1"
+              />
             </View>
           </>
         ) : (
           <>
             <Text style={styles.fieldLabel}>{t("profile.displayName")}</Text>
-            <Text style={styles.fieldValue}>{profile?.display_name ?? t("profile.notSet")}</Text>
+            <Text style={styles.fieldValue}>
+              {profile?.display_name ?? t("profile.notSet")}
+            </Text>
             <TouchableOpacity
-              onPress={() => { setDisplayName(profile?.display_name ?? ""); setEditing(true); }}
+              onPress={() => {
+                setDisplayName(profile?.display_name ?? "");
+                setEditing(true);
+              }}
               activeOpacity={0.8}
             >
-              <Text style={styles.editLink}>{t("profile.editProfileArrow")}</Text>
+              <Text style={styles.editLink}>
+                {t("profile.editProfileArrow")}
+              </Text>
             </TouchableOpacity>
           </>
         )}
       </Card>
 
       <View style={styles.signOutWrap}>
-        <Button label={t("nav.signOut")} onPress={handleSignOut} variant="secondary" />
+        <Button
+          label={t("nav.signOut")}
+          onPress={handleSignOut}
+          variant="secondary"
+        />
       </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  avatarRow: { flexDirection: "row", alignItems: "center", gap: 16, marginBottom: 24 },
+  avatarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    marginBottom: 24,
+  },
   avatarImg: { width: 80, height: 80, borderRadius: 40 },
   avatarCircle: {
     width: 80,
@@ -123,9 +169,23 @@ const styles = StyleSheet.create({
   avatarMeta: { flex: 1, gap: 2 },
   fullName: { fontSize: 20, fontWeight: "800", color: colors.text },
   email: { fontSize: 13, color: colors.textMuted },
-  role: { fontSize: 12, fontWeight: "700", color: colors.accent, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 },
+  role: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.accent,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 2,
+  },
   card: { marginBottom: 20 },
-  fieldLabel: { fontSize: 12, fontWeight: "700", color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 6,
+  },
   fieldInput: {
     backgroundColor: colors.subtle,
     borderWidth: 1.5,

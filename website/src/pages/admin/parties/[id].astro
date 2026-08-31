@@ -54,6 +54,7 @@ if (Astro.request.method === "POST") {
       } else if (!isOwner && current?.status === "pending_approval" && submittedStatus === "active") {
         error = t.admin.parties.errorPendingApprovalOrg;
       } else {
+        const submittedLang = form.get("lang") as string;
         const result = await updateParty(supabase, id!, {
           name: form.get("name") as string,
           company_name: (form.get("company_name") as string) || undefined,
@@ -61,6 +62,7 @@ if (Astro.request.method === "POST") {
           vat_number: (form.get("vat_number") as string) || undefined,
           billing_email: (form.get("billing_email") as string) || undefined,
           status: submittedStatus,
+          lang: submittedLang === "en" ? "en" : "cs",
         });
         if (result.error) { error = result.error.message; }
         else { success = t.admin.parties.updatedSuccess; }
@@ -270,6 +272,14 @@ function roleName(roleId: string) {
               <label class="form-label">{t.admin.parties.fieldBillingEmail}</label>
               <input class="form-input" type="email" name="billing_email" value={party.billing_email ?? ""} />
             </div>
+            <div class="form-group">
+              <label class="form-label">{t.admin.parties.fieldLang}</label>
+              <select class="form-input" name="lang">
+                <option value="cs" selected={party.lang === "cs"}>{t.settings.labelCs}</option>
+                <option value="en" selected={party.lang === "en"}>{t.settings.labelEn}</option>
+              </select>
+              <p class="section-note" style="margin:2px 0 0">{t.admin.parties.fieldLangNote}</p>
+            </div>
             <div class="form-row-inline">
               <label class="form-label">{t.admin.parties.fieldSlug}</label>
               <code>{party.slug}</code>
@@ -417,6 +427,7 @@ document.querySelectorAll('.system-role-select').forEach(sel => {
   .form-group { display:flex; flex-direction:column; gap:4px; }
   .form-label { font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
   .form-row-inline { display:flex; justify-content:space-between; align-items:center; font-size:14px; padding:4px 0; border-bottom:1px solid var(--border-default); }
+  .section-note { font-size:12px; color:var(--text-muted); line-height:1.4; }
   .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
   .form-check input { width:auto; }
   .form-meta { display:flex; justify-content:space-between; font-size:13px; color:var(--text-muted); }

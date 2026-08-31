@@ -1,6 +1,6 @@
+import { colors } from "@shared/constants/theme";
 import React from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
-import { colors } from "@shared/constants/theme";
 
 export function LoadingScreen() {
   return (
@@ -14,7 +14,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

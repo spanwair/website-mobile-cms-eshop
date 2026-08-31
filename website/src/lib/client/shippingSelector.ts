@@ -1,5 +1,4 @@
-import { formatPrice } from "@shared/utils/format";
-import type { AppLanguage } from "@shared/i18n/getT";
+import { recomputeCheckoutSummary } from "./checkoutSummary";
 
 // Drives the provider radio -> delivery-type radio -> pickup-point widget cascade in
 // ShippingProviderSelector.astro. Mock mode (no real widget scripts) renders a plain
@@ -9,12 +8,6 @@ export function initShippingSelector() {
   const rootEl = document.getElementById("shipping-selector");
   if (!rootEl) return;
   const root = rootEl;
-
-  const subtotal = Number(root.dataset.subtotal ?? 0);
-  const currency = root.dataset.currency || undefined;
-  const lang = (root.dataset.lang as AppLanguage) || "cs";
-  const shippingPriceEl = document.getElementById("summary-shipping-price");
-  const grandTotalEl = document.getElementById("summary-grand-total");
 
   const providerRadios = root.querySelectorAll<HTMLInputElement>('input[name="shipping_provider"]');
   const deliveryTypeBlock = root.querySelector<HTMLElement>("[data-delivery-type-block]");
@@ -54,10 +47,7 @@ export function initShippingSelector() {
     });
     if (deliveryType === "home") setPickupPoint("", "", "");
 
-    const checkedRadio = Array.from(providerRadios).find((r) => r.checked);
-    const cost = checkedRadio ? Number(checkedRadio.dataset.cost ?? 0) : 0;
-    if (shippingPriceEl) shippingPriceEl.textContent = formatPrice(cost, lang, currency);
-    if (grandTotalEl) grandTotalEl.textContent = formatPrice(subtotal + cost, lang, currency);
+    recomputeCheckoutSummary();
   }
 
   providerRadios.forEach((r) => r.addEventListener("change", refresh));

@@ -65,7 +65,7 @@ export const POST: APIRoute = async ({ request }) => {
       sellerOfRecord: sellingParty?.seller_mode === SELLER_MODE.SMALLJOBS_COMMISSION ? sellerOfRecordInfo(lang) : undefined,
     });
 
-    if (payoutLimitReached) await notifyPayoutLimitReachedIfNeeded(adminClient, order.party_id, lang);
+    if (payoutLimitReached) await notifyPayoutLimitReachedIfNeeded(adminClient, order.party_id);
   });
 
   return new Response(JSON.stringify({ received: true }), {

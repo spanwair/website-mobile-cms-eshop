@@ -6,6 +6,7 @@ export interface NewMonthlyFee {
   partyId: string;
   partyName: string;
   billingEmail: string | null;
+  lang: "cs" | "en";
   periodMonth: string;
   turnoverAmount: number;
   feeAmount: number;
@@ -31,7 +32,7 @@ export async function computeMonthlyFeesForPeriod(
 
   const { data: parties, error: partiesErr } = await client
     .from("parties")
-    .select("id, name, billing_email")
+    .select("id, name, billing_email, lang")
     .eq("seller_mode", SELLER_MODE.OWN_COMPANY)
     .eq("status", "active");
   if (partiesErr) return { error: new Error(partiesErr.message), created: [] };
@@ -87,6 +88,7 @@ export async function computeMonthlyFeesForPeriod(
       partyId: row.party_id,
       partyName: party?.name ?? "",
       billingEmail: party?.billing_email ?? null,
+      lang: party?.lang === "en" ? "en" : "cs",
       periodMonth: row.period_month,
       turnoverAmount: Number(row.turnover_amount),
       feeAmount: Number(row.fee_amount),

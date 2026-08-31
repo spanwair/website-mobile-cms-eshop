@@ -39,6 +39,7 @@ export const POST: APIRoute = async ({ request }) => {
         turnoverAmount: fee.turnoverAmount,
         feeAmount: fee.feeAmount,
         currency: fee.currency,
+        lang: fee.lang,
       });
       await adminClient.from("monthly_platform_fees").update({ notified_at: new Date().toISOString() }).eq("id", fee.id);
       notified.push(fee.partyId);

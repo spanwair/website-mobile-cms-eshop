@@ -1,0 +1,75 @@
+---
+import { useT, getLang } from "../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
+import { PAYMENT_METHOD, COD_FEE_CZK } from "@shared/constants/payment";
+
+interface Props {
+  currency?: string;
+}
+const { currency } = Astro.props;
+const t = useT(Astro);
+const lang = getLang(Astro);
+---
+
+<div class="payment-selector card" id="payment-selector">
+  <h2 class="section-title">{t.shop.paymentMethod}</h2>
+
+  <div class="provider-list">
+    <label class="provider-option">
+      <input type="radio" name="payment_method" value={PAYMENT_METHOD.STRIPE} data-cost={0} data-label={t.shop.paymentMethodStripe} form="checkout-form" checked class="styled-radio" required />
+      <span class="provider-name">{t.shop.paymentMethodStripe}</span>
+      <span class="provider-price">{t.shop.free}</span>
+    </label>
+    <label class="provider-option">
+      <input type="radio" name="payment_method" value={PAYMENT_METHOD.COD} data-cost={COD_FEE_CZK} data-label={t.shop.paymentMethodCod} form="checkout-form" class="styled-radio" required />
+      <span class="provider-name">
+        {t.shop.paymentMethodCod}
+        <span class="provider-hint">{t.shop.paymentMethodCodHint}</span>
+      </span>
+      <span class="provider-price">{formatPrice(COD_FEE_CZK, lang, currency)}</span>
+    </label>
+  </div>
+</div>
+
+<script>
+  import { initPaymentSelector } from "../../lib/client/paymentSelector";
+  initPaymentSelector();
+</script>
+
+<style>
+  .section-title { font-size:18px; font-weight:700; margin:0 0 16px; }
+  .payment-selector { display:flex; flex-direction:column; gap:16px; }
+
+  .provider-list { display:flex; flex-direction:column; gap:10px; }
+
+  .provider-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+  }
+  .provider-option:hover { border-color: var(--primary); }
+  .provider-option:has(input:checked) {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 6%, transparent);
+    box-shadow: 0 0 0 1px var(--primary);
+  }
+
+  .styled-radio {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--primary);
+  }
+
+  .provider-name { flex: 1; font-size: 14px; font-weight: 600; display:flex; flex-direction:column; gap:2px; }
+  .provider-hint { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+  .provider-price { font-size: 14px; font-weight: 700; color: var(--primary); white-space: nowrap; }
+</style>

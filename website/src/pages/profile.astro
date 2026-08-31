@@ -3,7 +3,7 @@ import LandingLayout from "../components/landing/LandingLayout.astro";
 import { createSupabase, createAdminClient } from "../lib/supabase";
 import { fetchProfile, updateProfile } from "@shared/services/profileService";
 import { useT } from "../lib/i18n";
-import { ROLE, ROLE_LABEL } from "@shared/constants/permissions";
+import { ROLE } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
