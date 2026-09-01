@@ -145,7 +145,7 @@ function statusClass(s: string) {
                     </button>
                   </form>
                 )}
-                {shipment?.provider_shipment_id && !["in_transit", "delivered", "returned", "cancelled"].includes(shipment.status) && (
+                {shipment?.provider_shipment_id && (
                   <form method="POST">
                     <input type="hidden" name="action" value="refresh_shipment" />
                     <input type="hidden" name="orderId" value={o.id} />

@@ -17,7 +17,7 @@ const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
-const { permissions } = ctx;
+const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_ORDERS)) return Astro.redirect("/admin");
 const t = useT(Astro);
 const lang = getLang(Astro);
@@ -38,18 +38,26 @@ if (Astro.request.method === "POST") {
   } else if (action === "tracking") {
     const result = await updateOrder(supabase, id!, { tracking_number: form.get("tracking_number") as string });
     if (result.error) error = result.error.message;
-  } else if (action === "create_shipment") {
-    const result = await createShipmentForOrder(createAdminClient(), id!);
-    if (result.error) error = result.error;
-  } else if (action === "refresh_shipment") {
-    const result = await refreshShipmentStatus(createAdminClient(), id!);
-    if (result.error) error = result.error;
-  } else if (action === "cancel_shipment") {
-    const result = await cancelShipmentForOrder(createAdminClient(), id!);
-    if (result.error) error = result.error;
-  } else if (action === "create_return_shipment") {
-    const result = await createReturnShipmentForOrder(createAdminClient(), id!);
-    if (result.error) error = result.error;
+  } else if (["create_shipment", "refresh_shipment", "cancel_shipment", "create_return_shipment"].includes(action)) {
+    // These four bypass RLS via the admin client, so ownership must be checked here
+    // rather than relied on further down - mirrors the same guard in admin/orders/index.astro.
+    const { data: ownedOrder } = await supabase.from("orders").select("id").eq("id", id).eq("party_id", partyId).maybeSingle();
+    if (ownedOrder) {
+      const adminClient = createAdminClient();
+      if (action === "create_shipment") {
+        const result = await createShipmentForOrder(adminClient, id!);
+        if (result.error) error = result.error;
+      } else if (action === "refresh_shipment") {
+        const result = await refreshShipmentStatus(adminClient, id!);
+        if (result.error) error = result.error;
+      } else if (action === "cancel_shipment") {
+        const result = await cancelShipmentForOrder(adminClient, id!);
+        if (result.error) error = result.error;
+      } else if (action === "create_return_shipment") {
+        const result = await createReturnShipmentForOrder(adminClient, id!);
+        if (result.error) error = result.error;
+      }
+    }
   }
   if (!error) return Astro.redirect(`/admin/orders/${id}`);
 }
