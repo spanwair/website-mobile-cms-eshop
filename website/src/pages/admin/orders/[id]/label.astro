@@ -33,7 +33,7 @@ const labelSrc = `/api/shipping-label/${order.id}${isReturn ? "?type=return" : "
 <CmsLayout title={t.admin.orders.labelPreviewTitle} userPermissions={ctx.permissions} currentPath="/admin/orders" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="preview-header">
     <a href={`/admin/orders/${order.id}`} class="back-link">{t.admin.orders.labelPreviewBack}</a>
-    <h1 class="preview-title">{t.admin.orders.labelPreviewTitle} — {order.order_number}</h1>
+    <h1 class="preview-title">{t.admin.orders.labelPreviewTitle} - {order.order_number}</h1>
   </div>
   <iframe title={t.admin.orders.labelPreviewTitle} src={labelSrc} class="label-frame"></iframe>
 </CmsLayout>
