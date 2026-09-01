@@ -133,7 +133,7 @@ test.describe("31 — Shipping providers (PPL + Packeta, mock mode)", () => {
     await expect(buyerPage.locator(".provider-option").filter({ hasText: "Zásilkovna" })).toContainText("79");
   });
 
-  test("31-04 PPL pickup-point checkout: select provider, mock pickup point, pay, land on confirmation with tracking + label", async () => {
+  test("31-04 PPL pickup-point checkout: select provider, mock pickup point, pay, land on order confirmation", async () => {
     await buyerPage.locator('input[name="shipping_provider"][value="ppl"]').check();
     await buyerPage.locator('input[name="delivery_type"][value="pickup"]').check();
     await expect(buyerPage.locator('[data-pickup-block="ppl"]')).toBeVisible();
@@ -158,9 +158,10 @@ test.describe("31 — Shipping providers (PPL + Packeta, mock mode)", () => {
     pplOrderNumber = url.searchParams.get("order") ?? "";
     expect(pplOrderNumber).toMatch(/^ORD-/);
 
-    await expect(buyerPage.getByText("TESTOVACÍ REŽIM").or(buyerPage.getByText("TEST MODE"))).toBeVisible();
-    await expect(buyerPage.locator(".tracking-line")).toContainText("PPL");
-    await expect(buyerPage.getByRole("link", { name: /Stáhnout štítek|Download label/ })).toBeVisible();
+    // Checkout only inserts the order_shipments "pending" placeholder (provider + pickup
+    // point) - the real PPL booking (tracking number, label) happens later when an admin
+    // processes the order, so neither should be visible on confirmation yet.
+    await expect(buyerPage.locator(".shipment-info")).not.toBeVisible();
   });
 
   test("31-05 PPL order total is subtotal + configured shipping price", async () => {
@@ -172,7 +173,24 @@ test.describe("31 — Shipping providers (PPL + Packeta, mock mode)", () => {
     expect(result).toContain((PROD_PICKUP.price + 99).toFixed(2));
   });
 
-  test("31-06 label download link returns a real PDF", async () => {
+  test("31-06 admin books the PPL shipment from the order detail page", async () => {
+    const orderIdResult = psql(`SELECT id FROM public.orders WHERE order_number = '${pplOrderNumber}';`);
+    const orderId = orderIdResult.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)?.[0];
+    expect(orderId).toBeTruthy();
+
+    await ownerPage.goto(`${BASE}/admin/orders/${orderId}`);
+    await ownerPage.waitForLoadState("networkidle");
+    await ownerPage.locator('form:has(input[value="create_shipment"]) button[type="submit"]').click();
+    await ownerPage.waitForLoadState("networkidle");
+    await screenshot(ownerPage, "31-06-admin-created-shipment");
+
+    await expect(ownerPage.locator(".alert-error")).not.toBeVisible();
+    await expect(ownerPage.getByText("PPL", { exact: true })).toBeVisible();
+    await expect(ownerPage.getByText("TESTOVACÍ REŽIM").or(ownerPage.getByText("TEST MODE"))).toBeVisible();
+    await expect(ownerPage.getByRole("link", { name: /Stáhnout štítek|Download label|Náhled štítku|Preview label/ })).toBeVisible();
+  });
+
+  test("31-07 label download link returns a real PDF", async () => {
     const orderIdResult = psql(`SELECT id FROM public.orders WHERE order_number = '${pplOrderNumber}';`);
     const orderId = orderIdResult.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)?.[0];
     expect(orderId).toBeTruthy();
@@ -182,33 +200,29 @@ test.describe("31 — Shipping providers (PPL + Packeta, mock mode)", () => {
     expect(resp.headers()["content-type"]).toContain("application/pdf");
   });
 
-  test("31-07 admin order detail shows the shipment card with provider, tracking, TEST MODE badge, and working label link", async () => {
+  test("31-08 admin can refresh the PPL shipment status without error", async () => {
     const orderIdResult = psql(`SELECT id FROM public.orders WHERE order_number = '${pplOrderNumber}';`);
     const orderId = orderIdResult.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)?.[0];
 
     await ownerPage.goto(`${BASE}/admin/orders/${orderId}`);
     await ownerPage.waitForLoadState("networkidle");
-    await screenshot(ownerPage, "31-07-admin-shipment-card");
-
-    await expect(ownerPage.getByText("PPL", { exact: true })).toBeVisible();
-    await expect(ownerPage.getByText("TESTOVACÍ REŽIM").or(ownerPage.getByText("TEST MODE"))).toBeVisible();
-    await expect(ownerPage.getByRole("link", { name: /Stáhnout štítek|Download label/ })).toBeVisible();
 
     // Refresh status must not error even though the mock provider has no real tracking API.
     await ownerPage.locator('form:has(input[value="refresh_shipment"]) button[type="submit"]').click();
     await ownerPage.waitForLoadState("networkidle");
+    await screenshot(ownerPage, "31-08-admin-refresh-shipment");
     await expect(ownerPage.locator(".alert-error")).not.toBeVisible();
   });
 
-  test("31-08 orders list shows a provider/status badge for the shipped order", async () => {
+  test("31-09 orders list shows a provider/status badge for the shipped order", async () => {
     await ownerPage.goto(`${BASE}/admin/orders`);
     await ownerPage.waitForLoadState("networkidle");
-    await screenshot(ownerPage, "31-08-orders-list-badge");
+    await screenshot(ownerPage, "31-09-orders-list-badge");
     const row = ownerPage.locator("tr", { hasText: pplOrderNumber });
     await expect(row.getByText("PPL", { exact: false })).toBeVisible();
   });
 
-  test("31-09 Packeta home-delivery checkout (no pickup point) also completes correctly", async () => {
+  test("31-10 Packeta home-delivery checkout (no pickup point) also completes correctly", async () => {
     seedCart(CART_HOME, PROD_HOME.id, PROD_HOME.price);
     await buyerPage.goto(`${BASE}/shop/checkout`);
     await buyerPage.waitForLoadState("networkidle");
@@ -224,15 +238,32 @@ test.describe("31 — Shipping providers (PPL + Packeta, mock mode)", () => {
     await buyerPage.locator("form.address-form button[type='submit']").click();
 
     await payWithTestCard(buyerPage);
-    await screenshot(buyerPage, "31-09-packeta-home-confirmation");
+    await screenshot(buyerPage, "31-10-packeta-home-confirmation");
 
     const url = new URL(buyerPage.url());
     packetaOrderNumber = url.searchParams.get("order") ?? "";
     expect(packetaOrderNumber).toMatch(/^ORD-/);
-    await expect(buyerPage.locator(".tracking-line")).toContainText(/^Sledovací číslo: Z|^Tracking number: Z/);
+    // Same as PPL - checkout only records the pending placeholder, the real Packeta booking
+    // (and its Z-prefixed tracking number) only exists after an admin creates the shipment.
+    await expect(buyerPage.locator(".shipment-info")).not.toBeVisible();
   });
 
-  test("31-10 Packeta shipment row has no pickup point recorded (home delivery)", async () => {
+  test("31-11 admin books the Packeta shipment from the order detail page", async () => {
+    const orderIdResult = psql(`SELECT id FROM public.orders WHERE order_number = '${packetaOrderNumber}';`);
+    const orderId = orderIdResult.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)?.[0];
+    expect(orderId).toBeTruthy();
+
+    await ownerPage.goto(`${BASE}/admin/orders/${orderId}`);
+    await ownerPage.waitForLoadState("networkidle");
+    await ownerPage.locator('form:has(input[value="create_shipment"]) button[type="submit"]').click();
+    await ownerPage.waitForLoadState("networkidle");
+    await screenshot(ownerPage, "31-11-admin-created-packeta-shipment");
+
+    await expect(ownerPage.locator(".alert-error")).not.toBeVisible();
+    await expect(ownerPage.locator("text=/Sledovací číslo: Z|Tracking number: Z/")).toBeVisible();
+  });
+
+  test("31-12 Packeta shipment row has no pickup point recorded (home delivery)", async () => {
     const result = psql(
       `SELECT provider, pickup_point_id, shipping_cost FROM public.order_shipments os
        JOIN public.orders o ON o.id = os.order_id WHERE o.order_number = '${packetaOrderNumber}';`
