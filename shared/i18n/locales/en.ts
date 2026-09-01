@@ -482,6 +482,9 @@ export const en = {
       returnPassword: "Return drop-off password",
       shipmentConsignmentCode: "Z-BOX drop-off code",
       shipmentConsignmentHint: "Enter this code on any Z-BOX keypad, then select box size (1=S, 2=M, 3=L) to drop off the parcel.",
+      shipmentPreviewLabel: "Preview label",
+      labelPreviewTitle: "Shipping label preview",
+      labelPreviewBack: "← Back to order",
     },
     customers: {
       title: "Customers",

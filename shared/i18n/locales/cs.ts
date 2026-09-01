@@ -484,6 +484,9 @@ export const cs: Translations = {
       returnPassword: "Heslo pro podání vratné zásilky",
       shipmentConsignmentCode: "Kód pro podání do Z-BOXu",
       shipmentConsignmentHint: "Zadejte tento kód na klávesnici kteréhokoli Z-BOXu, poté zvolte velikost boxu (1=S, 2=M, 3=L) a zásilku vložte.",
+      shipmentPreviewLabel: "Náhled štítku",
+      labelPreviewTitle: "Náhled přepravního štítku",
+      labelPreviewBack: "← Zpět na objednávku",
     },
     customers: {
       title: "Zákazníci",
