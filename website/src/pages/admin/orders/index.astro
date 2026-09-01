@@ -1,12 +1,13 @@
 ---
 import CmsLayout from "@/components/cms/CmsLayout.astro";
-import { createSupabase } from "@/lib/supabase";
+import { createSupabase, createAdminClient } from "@/lib/supabase";
 import { fetchOrders } from "@shared/services/orderService";
 import { requireAdminCtx } from "@/lib/admin";
 import { useT, getLang } from "@/lib/i18n";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import type { Order } from "@shared/types/index";
 import { formatPrice } from "@shared/utils/format";
+import { createShipmentForOrder, refreshShipmentStatus, cancelShipmentForOrder } from "@/lib/shipmentActions";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -18,6 +19,22 @@ if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_ORDERS)) return Astro.redirect("/admin");
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = form.get("action") as string;
+  const orderId = form.get("orderId") as string;
+
+  const { data: ownedOrder } = await supabase.from("orders").select("id").eq("id", orderId).eq("party_id", partyId).maybeSingle();
+  if (ownedOrder) {
+    const adminClient = createAdminClient();
+    if (action === "create_shipment") await createShipmentForOrder(adminClient, orderId);
+    else if (action === "refresh_shipment") await refreshShipmentStatus(adminClient, orderId);
+    else if (action === "cancel_shipment") await cancelShipmentForOrder(adminClient, orderId);
+  }
+  return Astro.redirect(Astro.url.pathname + Astro.url.search);
+}
+
 const t = useT(Astro);
 const lang = getLang(Astro);
 
@@ -31,8 +48,21 @@ const orders = ordersResult.data;
 const total = ordersResult.total;
 
 const { data: shipmentRows } = orders.length
-  ? await supabase.from("order_shipments").select("order_id, provider, status").in("order_id", orders.map((o) => o.id))
-  : { data: [] as { order_id: string; provider: string; status: string }[] };
+  ? await supabase
+      .from("order_shipments")
+      .select("order_id, provider, status, provider_shipment_id, tracking_number, label_storage_path, is_mock")
+      .in("order_id", orders.map((o) => o.id))
+  : {
+      data: [] as {
+        order_id: string;
+        provider: string;
+        status: string;
+        provider_shipment_id: string | null;
+        tracking_number: string | null;
+        label_storage_path: string | null;
+        is_mock: boolean;
+      }[],
+    };
 const shipmentByOrder = new Map((shipmentRows ?? []).map((s) => [s.order_id, s]));
 
 const totalPages = Math.ceil(total / pageSize);
@@ -76,6 +106,7 @@ function statusClass(s: string) {
   </div>
 
   <div class="card" style="padding:0;overflow:hidden;margin-top:16px">
+    <div style="overflow-x:auto">
     <table class="data-table">
       <thead>
         <tr><th>{t.admin.orders.colNumber}</th><th>{t.admin.orders.colStatus}</th><th>{t.admin.orders.colPayment}</th><th>{t.admin.orders.sectionShipment}</th><th>{t.admin.orders.colTotal}</th><th>{t.admin.orders.colDate}</th><th>{t.admin.orders.colActions}</th></tr>
@@ -90,14 +121,51 @@ function statusClass(s: string) {
             <td><span class={`badge ${o.payment_status === "paid" ? "badge-active" : "badge-draft"}`}>{PAYMENT_LABELS[o.payment_status] ?? o.payment_status}</span></td>
             <td>
               {shipment ? (
-                <span class="badge badge-inactive" style="font-size:11px">{shipment.provider.toUpperCase()} · {shipment.status}</span>
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <span class="badge badge-inactive" style="font-size:11px">
+                    {shipment.provider.toUpperCase()} · {shipment.status}{shipment.is_mock ? " · TEST" : ""}
+                  </span>
+                  {shipment.tracking_number && <span style="font-size:12px;font-weight:600">{shipment.tracking_number}</span>}
+                </div>
               ) : (
                 <span style="color:var(--text-muted);font-size:12px">—</span>
               )}
             </td>
             <td>{formatPrice(o.total_amount, lang, o.currency)}</td>
             <td style="color:var(--text-muted);font-size:13px">{new Date(o.created_at).toLocaleDateString(lang)}</td>
-            <td><a href={`/admin/orders/${o.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.orders.detail}</a></td>
+            <td>
+              <div class="list-shipment-actions">
+                <a href={`/admin/orders/${o.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.orders.detail}</a>
+                {shipment && (shipment.status === "pending" || shipment.status === "failed") && (
+                  <form method="POST">
+                    <input type="hidden" name="action" value="create_shipment" />
+                    <input type="hidden" name="orderId" value={o.id} />
+                    <button type="submit" class="btn btn-primary" style="padding:6px 12px;font-size:12px">
+                      {shipment.status === "failed" ? t.admin.orders.shipmentRetry : t.admin.orders.shipmentCreate}
+                    </button>
+                  </form>
+                )}
+                {shipment?.provider_shipment_id && !["in_transit", "delivered", "returned", "cancelled"].includes(shipment.status) && (
+                  <form method="POST">
+                    <input type="hidden" name="action" value="refresh_shipment" />
+                    <input type="hidden" name="orderId" value={o.id} />
+                    <button type="submit" class="btn btn-ghost" style="padding:6px 12px;font-size:12px">{t.admin.orders.shipmentRefresh}</button>
+                  </form>
+                )}
+                {shipment?.provider_shipment_id && !["in_transit", "delivered", "returned", "cancelled"].includes(shipment.status) && (
+                  <form method="POST">
+                    <input type="hidden" name="action" value="cancel_shipment" />
+                    <input type="hidden" name="orderId" value={o.id} />
+                    <button type="submit" class="btn btn-ghost" style="padding:6px 12px;font-size:12px;color:var(--error)">{t.admin.orders.shipmentCancel}</button>
+                  </form>
+                )}
+                {shipment?.label_storage_path && (
+                  <a href={`/admin/orders/${o.id}/label`} target="_blank" class="btn btn-secondary" style="padding:6px 12px;font-size:12px">
+                    {t.admin.orders.shipmentPreviewLabel}
+                  </a>
+                )}
+              </div>
+            </td>
           </tr>
           );
         })}
@@ -106,6 +174,7 @@ function statusClass(s: string) {
         )}
       </tbody>
     </table>
+    </div>
   </div>
 
   {totalPages > 1 && (
@@ -122,6 +191,8 @@ function statusClass(s: string) {
   .tab { padding:10px 16px; font-size:13px; font-weight:600; color:var(--text-muted); border-bottom:2px solid transparent; margin-bottom:-2px; text-decoration:none; transition:color 0.15s, border-color 0.15s; }
   .tab:hover { color:var(--text-primary); text-decoration:none; }
   .tab--active { color:var(--accent-primary); border-bottom-color:var(--accent-primary); }
+  .list-shipment-actions { display:flex; flex-direction:column; gap:6px; align-items:flex-start; }
+  .list-shipment-actions form { display:contents; }
   .pagination { display:flex; align-items:center; gap:12px; margin-top:16px; }
   .page-info { font-size:13px; color:var(--text-muted); }
 </style>

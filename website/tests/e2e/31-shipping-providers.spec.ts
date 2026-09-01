@@ -219,7 +219,7 @@ test.describe("31 — Shipping providers (PPL + Packeta, mock mode)", () => {
     await ownerPage.waitForLoadState("networkidle");
     await screenshot(ownerPage, "31-09-orders-list-badge");
     const row = ownerPage.locator("tr", { hasText: pplOrderNumber });
-    await expect(row.getByText("PPL", { exact: false })).toBeVisible();
+    await expect(row.locator(".badge-inactive")).toContainText("PPL");
   });
 
   test("31-10 Packeta home-delivery checkout (no pickup point) also completes correctly", async () => {
