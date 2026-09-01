@@ -271,4 +271,60 @@ test.describe("31 — Shipping providers (PPL + Packeta, mock mode)", () => {
     expect(result).toContain("packeta");
     expect(result).toContain("79.00");
   });
+
+  test("31-13 orders list shows tracking number and inline shipment actions for the PPL order", async () => {
+    await ownerPage.goto(`${BASE}/admin/orders`);
+    await ownerPage.waitForLoadState("networkidle");
+    const row = ownerPage.locator("tr", { hasText: pplOrderNumber });
+    await screenshot(ownerPage, "31-13-orders-list-inline-actions");
+
+    const trackingResult = psql(
+      `SELECT os.tracking_number FROM public.order_shipments os JOIN public.orders o ON o.id = os.order_id WHERE o.order_number = '${pplOrderNumber}';`
+    );
+    // psql's default tabular output wraps the value between a header and a "(1 row)"
+    // footer, so pluck the mock provider's PPL<digits> tracking number directly rather
+    // than relying on line position (the previously-generic ".split('\n').pop()" grabbed
+    // the "(1 row)" footer line instead of the value).
+    const trackingNumber = trackingResult.match(/PPL\d+/)?.[0] ?? "";
+    expect(trackingNumber.length).toBeGreaterThan(0);
+
+    await expect(row).toContainText(trackingNumber);
+    await expect(row.getByRole("link", { name: /Náhled štítku|Preview label/ })).toBeVisible();
+    await expect(row.getByRole("button", { name: /Aktualizovat stav|Refresh status/ })).toBeVisible();
+    await expect(row.getByRole("button", { name: /Zrušit zásilku|Cancel shipment/ })).toBeVisible();
+  });
+
+  test("31-14 inline 'refresh status' button in the orders list works without leaving the list", async () => {
+    const row = ownerPage.locator("tr", { hasText: pplOrderNumber });
+    await row.getByRole("button", { name: /Aktualizovat stav|Refresh status/ }).click();
+    await ownerPage.waitForLoadState("networkidle");
+    await screenshot(ownerPage, "31-14-orders-list-after-refresh");
+    // Must redirect back to the same list URL, not to the order detail page.
+    expect(ownerPage.url()).toContain("/admin/orders");
+    expect(ownerPage.url()).not.toContain(pplOrderNumber);
+  });
+
+  test("31-15 label preview page embeds the PDF via iframe", async () => {
+    const orderIdResult = psql(`SELECT id FROM public.orders WHERE order_number = '${pplOrderNumber}';`);
+    const orderId = orderIdResult.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)?.[0];
+
+    await ownerPage.goto(`${BASE}/admin/orders/${orderId}/label`);
+    await ownerPage.waitForLoadState("networkidle");
+    await screenshot(ownerPage, "31-15-label-preview-page");
+
+    await expect(ownerPage.locator("iframe.label-frame")).toHaveAttribute("src", `/api/shipping-label/${orderId}`);
+    await expect(ownerPage.getByRole("link", { name: /Zpět na objednávku|Back to order/ })).toBeVisible();
+  });
+
+  test("31-16 user without admin access cannot reach the label preview page", async ({ browser }: { browser: Browser }) => {
+    const orderIdResult = psql(`SELECT id FROM public.orders WHERE order_number = '${pplOrderNumber}';`);
+    const orderId = orderIdResult.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)?.[0];
+
+    const page = await browser.newPage();
+    await loginAs(page, USER.email, USER.password);
+    await page.goto(`${BASE}/admin/orders/${orderId}/label`);
+    await page.waitForLoadState("networkidle");
+    expect(page.url()).not.toContain("/label");
+    await page.close();
+  });
 });
