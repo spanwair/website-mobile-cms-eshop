@@ -470,7 +470,6 @@ export const cs: Translations = {
       shipmentStatusLabel: "Stav zásilky",
       shipmentTracking: "Sledovací číslo",
       shipmentPickupPoint: "Výdejní místo",
-      shipmentDownloadLabel: "Stáhnout štítek",
       shipmentCreate: "Vytvořit zásilku",
       shipmentRetry: "Zkusit znovu",
       shipmentRefresh: "Aktualizovat stav",

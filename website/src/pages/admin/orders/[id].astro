@@ -200,7 +200,7 @@ const PAYMENT_LABELS: Record<string, string> = { paid: t.admin.orders.paymentPai
 
           <div class="shipment-actions">
             {order.shipment.label_storage_path && (
-              <a href={`/api/shipping-label/${order.id}`} target="_blank" class="btn btn-secondary" style="font-size:13px">{t.admin.orders.shipmentDownloadLabel}</a>
+              <a href={`/admin/orders/${order.id}/label`} target="_blank" class="btn btn-secondary" style="font-size:13px">{t.admin.orders.shipmentPreviewLabel}</a>
             )}
             {(order.shipment.status === "pending" || order.shipment.status === "failed") && (
               <form method="POST"><input type="hidden" name="action" value="create_shipment" />
@@ -239,7 +239,7 @@ const PAYMENT_LABELS: Record<string, string> = { paid: t.admin.orders.paymentPai
                 <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px">{t.admin.orders.returnPassword}: <strong>{order.shipment.return_password}</strong></p>
               )}
               {order.shipment.return_label_storage_path && (
-                <a href={`/api/shipping-label/${order.id}?type=return`} target="_blank" class="btn btn-secondary" style="font-size:13px">{t.admin.orders.shipmentDownloadLabel}</a>
+                <a href={`/admin/orders/${order.id}/label?type=return`} target="_blank" class="btn btn-secondary" style="font-size:13px">{t.admin.orders.shipmentPreviewLabel}</a>
               )}
             </>
           ) : (

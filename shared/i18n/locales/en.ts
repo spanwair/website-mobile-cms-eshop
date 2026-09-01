@@ -468,7 +468,6 @@ export const en = {
       shipmentStatusLabel: "Shipment status",
       shipmentTracking: "Tracking number",
       shipmentPickupPoint: "Pickup point",
-      shipmentDownloadLabel: "Download label",
       shipmentCreate: "Create shipment",
       shipmentRetry: "Retry",
       shipmentRefresh: "Refresh status",
