@@ -141,6 +141,17 @@ export default async function globalSetup() {
     ${defaultRole}
   `);
 
+  // store_configs would normally be auto-created by the create_default_store_config trigger,
+  // but session_replication_role = replica above disables all triggers while seeding — without
+  // this, list_active_stores()/list_landing_featured_stores() (INNER JOIN store_configs) would
+  // silently never return this org, breaking the /shop "Stores" directory for it.
+  psql(`
+    ${replica}
+    INSERT INTO public.store_configs (party_id, brand_name)
+    VALUES ('${PARTY_ID}', 'Test Organisation');
+    ${defaultRole}
+  `);
+
   // Seed global Super Admin role (full permissions) for test party memberships
   psql(`
     ${replica}
@@ -289,6 +300,14 @@ export default async function globalSetup() {
     ${replica}
     INSERT INTO public.parties (id, name, slug, status)
     VALUES ('${PARTY2_ID}', 'Other Organisation', 'other-organisation', 'active');
+    ${defaultRole}
+  `);
+
+  // Same store_configs gap as PARTY_ID above — the auto-create trigger doesn't fire under replica.
+  psql(`
+    ${replica}
+    INSERT INTO public.store_configs (party_id, brand_name)
+    VALUES ('${PARTY2_ID}', 'Other Organisation');
     ${defaultRole}
   `);
 

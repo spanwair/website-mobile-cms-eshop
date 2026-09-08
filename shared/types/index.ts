@@ -145,6 +145,10 @@ export interface StoreConfig {
   store_photo_url: string | null;
   footer_theme: 'light' | 'dark';
   footer_newsletter_enabled: boolean;
+  landing_featured: boolean;
+  landing_sort_order: number;
+  landing_description: string | null;
+  landing_screenshot_url: string | null;
   created_at: string;
   updated_at: string;
 }

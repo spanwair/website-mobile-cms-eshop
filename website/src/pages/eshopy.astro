@@ -1,0 +1,17 @@
+---
+import LandingLayout from "../components/landing/LandingLayout.astro";
+import RealEshopsShowcase from "../components/landing/sections/RealEshopsShowcase.astro";
+import FinalCta from "../components/landing/sections/FinalCta.astro";
+import { useT } from "../lib/i18n";
+import { createSupabase } from "../lib/supabase";
+import { listLandingFeaturedStores } from "@shared/services/storeConfigService";
+
+const t = useT(Astro);
+const supabase = createSupabase(Astro);
+const featuredStores = await listLandingFeaturedStores(supabase);
+---
+
+<LandingLayout title={`${t.landing.realEshops.title} - Mamtodoma`} description={t.landing.realEshops.sub}>
+  <RealEshopsShowcase stores={featuredStores} showCreateCard />
+  <FinalCta />
+</LandingLayout>

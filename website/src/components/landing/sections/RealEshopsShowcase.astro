@@ -1,0 +1,85 @@
+---
+import { useT } from "@/lib/i18n";
+import type { LandingFeaturedStore } from "@shared/services/storeConfigService";
+
+interface Props {
+  stores: LandingFeaturedStore[];
+  showCreateCard?: boolean;
+}
+const { stores, showCreateCard = false } = Astro.props;
+const t = useT(Astro);
+---
+
+{stores.length > 0 && (
+  <section class="landing" id="real-eshops">
+    <div class="container-lg">
+      <p class="section-eyebrow">{t.landing.realEshops.eyebrow}</p>
+      <h2 class="section-title">{t.landing.realEshops.title}</h2>
+      <p class="section-sub" style="margin-bottom:40px">{t.landing.realEshops.sub}</p>
+
+      <div class="eshops-grid" data-reveal-group>
+        {stores.map((store) => {
+          const name = store.brand_name ?? store.slug;
+          const desc = store.landing_description ?? store.tagline ?? "";
+          const alt = t.landing.realEshops.screenshotAlt.replace("{name}", name);
+          return (
+            <a href={`/eshop-${store.slug}`} class="card karta eshop-card" data-reveal target="_blank" rel="noopener">
+              <div class="eshop-card-shot">
+                {store.landing_screenshot_url ? (
+                  <img src={store.landing_screenshot_url} alt={alt} loading="lazy" />
+                ) : (
+                  <div class="eshop-card-shot-placeholder">{name[0]?.toUpperCase()}</div>
+                )}
+              </div>
+              <div class="eshop-card-body">
+                <h3 class="eshop-card-name">{name}</h3>
+                {desc && <p class="eshop-card-desc">{desc}</p>}
+                <span class="btn btn-primary eshop-card-cta">{t.landing.realEshops.visitCta}</span>
+              </div>
+            </a>
+          );
+        })}
+        {showCreateCard && (
+          <a href="/#hero" class="card karta eshop-card eshop-card--create" data-reveal>
+            <div class="eshop-card-shot eshop-card-shot--create">
+              <span class="eshop-card-plus" aria-hidden="true">+</span>
+            </div>
+            <div class="eshop-card-body">
+              <h3 class="eshop-card-name">{t.landing.realEshops.createCardTitle}</h3>
+              <p class="eshop-card-desc">{t.landing.realEshops.createCardDesc}</p>
+              <span class="btn btn-primary eshop-card-cta">{t.landing.realEshops.createCardCta}</span>
+            </div>
+          </a>
+        )}
+      </div>
+    </div>
+  </section>
+)}
+
+<style>
+  /* Flexbox with a fixed flex-basis (not the shared .grid-auto, which is CSS grid with
+     auto-fit + 1fr) - grid's auto-fill still reserves empty implicit tracks up to the
+     container width, which defeats justify-content:center and stretches a lone card's
+     screenshot area to the full row. Flex-basis + no grow gives predictable card sizing
+     and true centering regardless of how many eshops are featured. */
+  .eshops-grid { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; }
+  .eshop-card { display: flex; flex-direction: column; flex: 0 1 340px; padding: 0; overflow: hidden; text-decoration: none; color: inherit; }
+  .eshop-card-shot { aspect-ratio: 4 / 3; background: var(--bg-subtle); overflow: hidden; }
+  .eshop-card-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .eshop-card-shot-placeholder {
+    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover));
+    color: #fff; font-size: 40px; font-weight: 800;
+  }
+  .eshop-card-body { padding: var(--space-5); display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .eshop-card-name { font-size: 17px; font-weight: 700; margin: 0; }
+  .eshop-card-desc { color: var(--text-muted); font-size: 14px; line-height: 1.5; flex: 1; margin: 0; }
+  .eshop-card-cta { align-self: flex-start; margin-top: 8px; }
+
+  .eshop-card--create .eshop-card-shot--create {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-subtle);
+    border-bottom: 2px dashed var(--border-default);
+  }
+  .eshop-card-plus { font-size: 56px; font-weight: 300; line-height: 1; color: var(--accent-primary); }
+</style>
