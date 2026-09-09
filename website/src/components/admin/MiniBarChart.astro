@@ -1,0 +1,41 @@
+---
+interface Point { label: string; value: number; display: string }
+interface Props { points: Point[]; color?: string; height?: number }
+const { points, color = "var(--accent-primary)", height = 120 } = Astro.props;
+
+const max = Math.max(...points.map((p) => p.value), 1);
+const gap = 6;
+const barW = 26;
+const labelH = 18;
+const chartH = height - labelH;
+const width = points.length * (barW + gap) + gap;
+const minBar = 2;
+---
+
+{points.length === 0 ? (
+  <div class="mini-empty">–</div>
+) : (
+  <div class="mini-scroll">
+    <svg class="mini-chart" viewBox={`0 0 ${width} ${height}`} width={width} height={height} role="img">
+      {points.map((p, i) => {
+        const h = p.value > 0 ? Math.max((p.value / max) * chartH, minBar) : 0;
+        const x = gap + i * (barW + gap);
+        const y = chartH - h;
+        return (
+          <g>
+            <title>{`${p.label}: ${p.display}`}</title>
+            <rect x={x} y={y} width={barW} height={h} rx="3" fill={color} opacity={p.value > 0 ? 1 : 0.15} />
+            <text x={x + barW / 2} y={height - 5} text-anchor="middle" class="mini-label">{p.label}</text>
+          </g>
+        );
+      })}
+    </svg>
+  </div>
+)}
+
+<style>
+  .mini-scroll { overflow-x: auto; }
+  .mini-chart { display: block; max-width: 100%; height: auto; }
+  .mini-label { font-size: 10px; fill: var(--text-muted); }
+  .mini-empty { height: 120px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
+</style>

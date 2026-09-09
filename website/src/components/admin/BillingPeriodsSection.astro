@@ -1,0 +1,94 @@
+---
+import type { BillingPeriodRow } from "@shared/services/billingPeriodService";
+import { useT, getLang } from "../../lib/i18n";
+
+interface Props {
+  periods: BillingPeriodRow[];
+  canWrite: boolean;
+}
+
+const { periods, canWrite } = Astro.props;
+const t = useT(Astro);
+const lang = getLang(Astro);
+const bt = t.admin.reports.billingPeriods;
+
+function fmt(n: number) {
+  return n.toLocaleString(lang === "en" ? "en-US" : "cs-CZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " Kč";
+}
+
+function periodLabel(periodStart: string) {
+  return new Date(`${periodStart}T00:00:00Z`).toLocaleDateString(lang === "en" ? "en-US" : "cs-CZ", {
+    year: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  });
+}
+
+const feeModeLabel: Record<string, string> = {
+  percentage: bt.feeModePercentage,
+  fixed: bt.feeModeFixed,
+  ledger: bt.feeModeLedger,
+};
+---
+
+<div class="card" data-section="billing-periods" style="grid-column: 1 / -1; margin-top:24px">
+  <div class="bp-header">
+    <div>
+      <h2 class="section-title" style="margin-bottom:4px">{bt.title}</h2>
+      <p class="bp-hint">{bt.hint}</p>
+    </div>
+    <a class="btn btn-secondary" href="/admin/reports/billing-periods.csv">{bt.exportCsvBtn}</a>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>{bt.colPeriod}</th><th>{bt.colGross}</th><th>{bt.colRealCosts}</th><th>{bt.colNetRevenue}</th>
+        <th>{bt.colFeeMode}</th><th>{bt.colFeeAmount}</th><th>{bt.colNetPayout}</th><th>{bt.colStatus}</th>
+        <th>{bt.colPaid}</th>
+        {canWrite && <th>{bt.colActions}</th>}
+      </tr>
+    </thead>
+    <tbody>
+      {periods.map((p) => (
+        <tr>
+          <td style="text-transform:capitalize">{periodLabel(p.periodStart)}</td>
+          <td>{fmt(p.grossRevenue)}</td>
+          <td>{fmt(p.realCosts)}</td>
+          <td>{fmt(p.netRevenue)}</td>
+          <td>
+            <span>{feeModeLabel[p.feeMode] ?? p.feeMode}</span>
+            {p.feeMode === "ledger" && <div class="bp-note">{bt.ledgerNote}</div>}
+          </td>
+          <td style="font-weight:600">{fmt(p.feeAmount)}</td>
+          <td style="font-weight:600">{fmt(p.netPayout)}</td>
+          <td><span class={`badge ${p.status === "finalized" ? "badge-active" : "badge-pending"}`}>{p.status === "finalized" ? bt.statusFinalized : bt.statusDraft}</span></td>
+          <td>
+            <span class={`badge ${p.feePaidAt ? "badge-active" : "badge-danger"}`}>{p.feePaidAt ? bt.paidYes : bt.paidNo}</span>
+            {!p.feePaidAt && p.feeAmount > 0 && (
+              <a class="btn btn-secondary" href="/admin/payouts" style="display:inline-block;margin-top:4px;padding:2px 8px;font-size:11px">{bt.payLink}</a>
+            )}
+          </td>
+          {canWrite && (
+            <td>
+              <form method="POST" onsubmit={`return confirm('${bt.recomputeConfirm}')`}>
+                <input type="hidden" name="action" value="recompute_period" />
+                <input type="hidden" name="period_start" value={p.periodStart} />
+                <button type="submit" class="btn btn-secondary" style="padding:4px 8px;font-size:12px">{bt.recomputeBtn}</button>
+              </form>
+            </td>
+          )}
+        </tr>
+      ))}
+      {periods.length === 0 && (
+        <tr><td colspan={canWrite ? 10 : 9} style="text-align:center;padding:32px;color:var(--text-muted)">{bt.noPeriods}</td></tr>
+      )}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .bp-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:16px; flex-wrap:wrap; }
+  .bp-hint { font-size:13px; color:var(--text-muted); max-width:640px; line-height:1.5; }
+  .bp-note { font-size:11px; color:var(--text-muted); margin-top:2px; max-width:220px; }
+</style>

@@ -1,0 +1,37 @@
+---
+interface Row { title: string; units: number; display: string }
+interface Props { rows: Row[]; unitsLabel: string }
+const { rows, unitsLabel } = Astro.props;
+const max = Math.max(...rows.map((r) => r.units), 1);
+---
+
+{rows.length === 0 ? (
+  <div class="tp-empty">–</div>
+) : (
+  <div class="tp-list">
+    {rows.map((r) => (
+      <div class="tp-row">
+        <div class="tp-head">
+          <span class="tp-title" title={r.title}>{r.title}</span>
+          <span class="tp-val">{r.display}</span>
+        </div>
+        <div class="tp-track">
+          <div class="tp-bar" style={`width:${Math.max((r.units / max) * 100, 4)}%`} />
+        </div>
+        <span class="tp-units">{r.units} {unitsLabel}</span>
+      </div>
+    ))}
+  </div>
+)}
+
+<style>
+  .tp-list { display: flex; flex-direction: column; gap: 10px; }
+  .tp-row { display: flex; flex-direction: column; gap: 3px; }
+  .tp-head { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+  .tp-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tp-val { color: var(--text-muted); white-space: nowrap; }
+  .tp-track { height: 8px; background: var(--bg-subtle); border-radius: 4px; overflow: hidden; }
+  .tp-bar { height: 100%; background: var(--accent-primary); border-radius: 4px; }
+  .tp-units { font-size: 11px; color: var(--text-muted); }
+  .tp-empty { height: 120px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
+</style>

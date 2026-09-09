@@ -1,12 +1,17 @@
 ---
 import CmsLayout from "@/components/cms/CmsLayout.astro";
-import { createSupabase } from "@/lib/supabase";
+import BillingPeriodsSection from "@/components/admin/BillingPeriodsSection.astro";
+import MiniBarChart from "@/components/admin/MiniBarChart.astro";
+import TopProductsBars from "@/components/admin/TopProductsBars.astro";
+import { createSupabase, createAdminClient } from "@/lib/supabase";
 import { fetchOrders } from "@shared/services/orderService";
 import { fetchProducts } from "@shared/services/productService";
+import { fetchMonthlySeries, fetchTopProducts, fetchCustomerStats } from "@shared/services/reportsAnalytics";
 import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT, getLang } from "@/lib/i18n";
 import { formatPrice } from "@shared/utils/format";
+import { listBillingPeriods, recomputeBillingPeriod } from "@shared/services/billingPeriodService";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -18,8 +23,29 @@ if (!ctx) return Astro.redirect("/");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_REPORTS)) return Astro.redirect("/admin");
+const canManageBilling = hasPermission(permissions, PERMISSIONS.MANAGE_AUDIT);
 const t = useT(Astro);
 const lang = getLang(Astro);
+
+// Billing-period writes (recompute / fee_mode) always go through the service-role client, same
+// privilege boundary as the monthly-fee cron -- only reached at all when the viewer holds
+// MANAGE_AUDIT, so a report-only viewer never triggers a write even indirectly.
+if (Astro.request.method === "POST" && canManageBilling) {
+  const form = await Astro.request.formData();
+  const action = form.get("action");
+  const periodStart = form.get("period_start") as string;
+  const adminClient = createAdminClient();
+  if (action === "recompute_period" && periodStart) {
+    const [y, m] = periodStart.split("-").map(Number);
+    await recomputeBillingPeriod(adminClient, partyId, y, m - 1, { forceRecompute: true });
+  }
+}
+
+if (canManageBilling) {
+  const now = new Date();
+  await recomputeBillingPeriod(createAdminClient(), partyId, now.getUTCFullYear(), now.getUTCMonth());
+}
+const billingPeriods = await listBillingPeriods(supabase, partyId, 13);
 
 const now = new Date();
 const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -39,8 +65,18 @@ const yearRevenue = yOrders.data.reduce((s, o) => s + o.total_amount, 0);
 const totalProducts = tProds.total;
 const activeProducts = aProds.total;
 
+const monthly = await fetchMonthlySeries(supabase, partyId, 12);
+const topProducts = await fetchTopProducts(supabase, partyId, 12, 5);
+const customerStats = await fetchCustomerStats(supabase, partyId, 12);
+const monthLabel = (iso: string) => `${Number(iso.slice(5, 7))}.`;
+const revenuePoints = monthly.map((p) => ({ label: monthLabel(p.month), value: p.revenue, display: formatPrice(p.revenue, lang) }));
+const ordersPoints = monthly.map((p) => ({ label: monthLabel(p.month), value: p.orders, display: String(p.orders) }));
+const topRows = topProducts.map((tp) => ({ title: tp.title, units: tp.units, display: formatPrice(tp.revenue, lang) }));
+const customerPoints = customerStats.monthly.map((m) => ({ label: monthLabel(m.month), value: m.count, display: String(m.count) }));
+
 const reports = [
   {
+    key: "revenue",
     title: t.admin.reports.revenueTitle,
     description: t.admin.reports.revenueDesc,
     stats: [
@@ -49,6 +85,7 @@ const reports = [
     ],
   },
   {
+    key: "orders",
     title: t.admin.reports.ordersTitle,
     description: t.admin.reports.ordersDesc,
     stats: [
@@ -57,6 +94,7 @@ const reports = [
     ],
   },
   {
+    key: "products",
     title: t.admin.reports.productsTitle,
     description: t.admin.reports.productsDesc,
     stats: [
@@ -65,9 +103,13 @@ const reports = [
     ],
   },
   {
+    key: "customers",
     title: t.admin.reports.customersTitle,
     description: t.admin.reports.customersDesc,
-    stats: [],
+    stats: [
+      { label: t.admin.reports.customersRegistered, value: customerStats.registered },
+      { label: t.admin.reports.customersGuests, value: customerStats.guests },
+    ],
   },
 ];
 ---
@@ -88,13 +130,29 @@ const reports = [
             ))}
           </div>
         )}
-        <div class="chart-placeholder">{t.admin.reports.chartSoon}</div>
+        <div class="report-chart">
+          {(r.key === "revenue" || r.key === "orders") && (
+            <>
+              <MiniBarChart points={r.key === "revenue" ? revenuePoints : ordersPoints} color={r.key === "orders" ? "var(--info, #6366f1)" : "var(--accent-primary)"} />
+              <span class="chart-caption">{t.admin.reports.last12m}</span>
+            </>
+          )}
+          {r.key === "products" && <TopProductsBars rows={topRows} unitsLabel={t.admin.reports.unitsSold} />}
+          {r.key === "customers" && (
+            <>
+              <MiniBarChart points={customerPoints} color="var(--accent-primary)" />
+              <span class="chart-caption">{t.admin.reports.newCustomers12m}</span>
+            </>
+          )}
+        </div>
         <div class="report-actions">
-          <button class="btn btn-secondary" disabled>{t.admin.reports.exportCsv}</button>
+          <a class="btn btn-secondary" href={`/admin/reports/export.csv?type=${r.key}`}>{t.admin.reports.exportCsv}</a>
         </div>
       </div>
     ))}
   </div>
+
+  <BillingPeriodsSection periods={billingPeriods} canWrite={canManageBilling} />
 </CmsLayout>
 
 <style>
@@ -106,6 +164,8 @@ const reports = [
   .report-stat { display:flex; flex-direction:column; gap:2px; }
   .report-stat-num { font-size:22px; font-weight:800; color:var(--text-primary); }
   .report-stat-label { font-size:12px; color:var(--text-muted); font-weight:500; }
+  .report-chart { min-height:120px; display:flex; flex-direction:column; gap:4px; }
+  .chart-caption { font-size:11px; color:var(--text-muted); }
   .chart-placeholder { height:120px; background:var(--bg-subtle); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:13px; }
   .report-actions { display:flex; justify-content:flex-end; }
 </style>

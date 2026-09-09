@@ -1,0 +1,79 @@
+---
+import type { BillingPeriodRow } from "@shared/services/billingPeriodService";
+import { useT, getLang } from "../../lib/i18n";
+
+interface Props {
+  periods: BillingPeriodRow[];
+  canManual: boolean;
+}
+const { periods, canManual } = Astro.props;
+const t = useT(Astro);
+const lang = getLang(Astro);
+const pt = t.admin.payouts;
+
+function fmt(n: number) {
+  return n.toLocaleString(lang === "en" ? "en-US" : "cs-CZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " Kč";
+}
+function periodLabel(periodStart: string) {
+  return new Date(`${periodStart}T00:00:00Z`).toLocaleDateString(lang === "en" ? "en-US" : "cs-CZ", { year: "numeric", month: "long", timeZone: "UTC" });
+}
+
+const totals = periods.reduce(
+  (acc, p) => {
+    if (p.feePaidAt) acc.paid += p.feeAmount;
+    else acc.unpaid += p.feeAmount;
+    return acc;
+  },
+  { unpaid: 0, paid: 0 }
+);
+---
+
+<div class="summary-row">
+  <div class="summary-tile"><span>{pt.summaryUnpaid}</span><strong>{fmt(totals.unpaid)}</strong></div>
+  <div class="summary-tile"><span>{pt.summaryPaidFees}</span><strong>{fmt(totals.paid)}</strong></div>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>{pt.colPeriod}</th><th>{pt.colTurnover}</th><th>{pt.colFee}</th><th>{pt.colStatus}</th><th>{pt.colActions}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {periods.map((p) => (
+        <tr>
+          <td style="text-transform:capitalize">{periodLabel(p.periodStart)}</td>
+          <td>{fmt(p.grossRevenue)}</td>
+          <td style="font-weight:600">{fmt(p.feeAmount)}</td>
+          <td><span class={`badge ${p.feePaidAt ? "badge-active" : "badge-pending"}`}>{p.feePaidAt ? pt.statusPaidFee : pt.statusUnpaid}</span></td>
+          <td>
+            {p.feePaidAt ? (
+              <span style="font-size:11px;color:var(--text-muted)">{pt.paidByLabel}: {new Date(p.feePaidAt).toLocaleDateString(lang === "en" ? "en-US" : "cs-CZ")}</span>
+            ) : p.feeAmount > 0 ? (
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                <form method="POST">
+                  <input type="hidden" name="action" value="pay_fee_online" />
+                  <input type="hidden" name="period_start" value={p.periodStart} />
+                  <button type="submit" class="btn btn-primary" style="padding:4px 10px;font-size:12px">{pt.payOnlineBtn}</button>
+                </form>
+                {canManual && (
+                  <form method="POST" onsubmit={`return confirm('${pt.markFeePaidConfirm}')`}>
+                    <input type="hidden" name="action" value="mark_fee_paid_manual" />
+                    <input type="hidden" name="period_start" value={p.periodStart} />
+                    <button type="submit" class="btn btn-secondary" style="padding:4px 10px;font-size:12px">{pt.markFeePaidBtn}</button>
+                  </form>
+                )}
+              </div>
+            ) : (
+              <span style="color:var(--text-muted)">—</span>
+            )}
+          </td>
+        </tr>
+      ))}
+      {periods.length === 0 && (
+        <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{pt.noFees}</td></tr>
+      )}
+    </tbody>
+  </table>
+</div>
