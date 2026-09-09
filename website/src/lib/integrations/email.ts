@@ -319,6 +319,46 @@ export async function sendMonthlyFeeNotice(opts: {
   await sendEmail({ to: opts.to, subject: `${t.email.monthlyFeeNotice.subjectPrefix}${monthLabel}`, html });
 }
 
+// Sent by /api/cron/auto-fee-tier the moment an own_company party's fee_mode actually changes
+// (never on a month where it stays the same) -- previousFeeMode/newFeeMode are always
+// 'percentage' or 'fixed', decided by shared/utils/billingFeeCalc.ts decideAutoFeeMode.
+export async function sendFeeTierChangeNotice(opts: {
+  to: string;
+  partyName: string;
+  periodStart: string; // "YYYY-MM-DD", first day of the evaluated (just-closed) month
+  previousFeeMode: "percentage" | "fixed";
+  newFeeMode: "percentage" | "fixed";
+  grossRevenueAmount: number;
+  thresholdAmount: number;
+  currency?: string;
+  lang?: AppLanguage;
+}): Promise<void> {
+  const lang = opts.lang ?? 'cs';
+  const t = getT(lang);
+  const monthLabel = new Date(opts.periodStart).toLocaleDateString(lang === 'en' ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long' });
+  const ft = t.email.feeTierChange;
+  const toFixed = opts.newFeeMode === 'fixed';
+  const modeLabel = (mode: "percentage" | "fixed") => (mode === 'fixed' ? ft.modeFixed : ft.modePercentage);
+
+  const html = `
+    <h1>${toFixed ? ft.headingToFixed : ft.headingToPercentage}${opts.partyName}</h1>
+    <p>${ft.intro}${monthLabel}:</p>
+    <table cellpadding="8" cellspacing="0" style="width:100%;max-width:460px">
+      <tr><td>${ft.revenueLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.grossRevenueAmount, lang, opts.currency)}</strong></td></tr>
+      <tr><td>${ft.thresholdLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.thresholdAmount, lang, opts.currency)}</strong></td></tr>
+      <tr><td>${ft.previousModeLabel}</td><td style="text-align:right">${modeLabel(opts.previousFeeMode)}</td></tr>
+      <tr><td>${ft.newModeLabel}</td><td style="text-align:right"><strong>${modeLabel(opts.newFeeMode)}</strong></td></tr>
+    </table>
+    <p>${toFixed ? ft.explanationToFixed : ft.explanationToPercentage}</p>
+  `;
+
+  if (!import.meta.env.RESEND_API_KEY) {
+    console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${ft.subjectPrefix}${monthLabel} | MODE: ${opts.previousFeeMode} -> ${opts.newFeeMode}\n`);
+    return;
+  }
+  await sendEmail({ to: opts.to, subject: `${ft.subjectPrefix}${monthLabel}`, html });
+}
+
 // Sent to a smalljobs_commission (no-IČO) party's billing_email the moment an order's payout
 // crosses the monthly payout limit (see commissionLedgerService.ts payoutLimitReached) — the
 // 30% deduction keeps applying to every sale, but the remaining net for the rest of the

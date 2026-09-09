@@ -652,7 +652,8 @@ export type NotificationType =
   | "failed_payment"
   | "new_registration"
   | "system_alert"
-  | "role_invitation";
+  | "role_invitation"
+  | "fee_tier_change";
 
 export interface Notification {
   id: string;
