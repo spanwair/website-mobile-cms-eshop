@@ -79,11 +79,11 @@ export async function fetchShopData(supabase: SupabaseClient, params: ShopQueryP
   // Condition can live directly on a simple product, or only on its variants (e.g. same model
   // sold in multiple grades as distinct variants) — match either so the filter works for both.
   if (conditionCode) {
-    const { data: cond } = await supabase
-      .from("product_conditions")
-      .select("id")
-      .eq("code", conditionCode)
-      .maybeSingle();
+    // product_conditions.code is only unique per party (UNIQUE(party_id, code)), so scope the
+    // lookup to this storefront's party - otherwise it could match another eshop's condition.
+    let condQuery = supabase.from("product_conditions").select("id").eq("code", conditionCode);
+    if (partyId) condQuery = condQuery.eq("party_id", partyId);
+    const { data: cond } = await condQuery.maybeSingle();
     if (cond) {
       const [{ data: directProducts }, { data: variantMatches }] = await Promise.all([
         supabase.from("products").select("id").eq("condition_id", cond.id),
