@@ -103,6 +103,7 @@ export const en = {
     passwordMode: "Sign in with password",
     welcomeBack: "Welcome back",
     signInSubtitle: "Sign in to your account",
+    illustrationTagline: "Run your online store from anywhere",
     createAccount: "Create account",
     createAccountSubtitle: "Register today",
     fullName: "Full name",

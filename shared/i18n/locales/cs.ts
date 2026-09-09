@@ -105,6 +105,7 @@ export const cs: Translations = {
     passwordMode: "Přihlásit se heslem",
     welcomeBack: "Vítejte zpět",
     signInSubtitle: "Přihlaste se ke svému účtu",
+    illustrationTagline: "Spravujte svůj e-shop odkudkoli",
     createAccount: "Vytvořit účet",
     createAccountSubtitle: "Zaregistrujte se ještě dnes",
     fullName: "Celé jméno",

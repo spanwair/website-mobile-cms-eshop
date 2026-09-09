@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import "../styles/landing.css";
+import LandingFooter from "../components/landing/LandingFooter.astro";
 import { createSupabase } from "../lib/supabase";
 import { useT, getLang } from "../lib/i18n";
 
@@ -18,16 +19,25 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="/favicon.png" />
-    <title>{t.auth.signIn} — Mamtodoma</title>
+    <title>{t.auth.signIn} - Mamtodoma</title>
   </head>
   <body class="auth-body">
+    <main class="auth-main">
     <div class="auth-blob auth-blob--a"></div>
     <div class="auth-blob auth-blob--b"></div>
-
     <div class="auth-shell">
       <div class="auth-illustration">
         <a href="/" class="auth-brand">mamtodoma.cz</a>
-        <canvas id="auth-scene" class="auth-canvas" aria-hidden="true"></canvas>
+        <p class="auth-tagline">{t.auth.illustrationTagline}</p>
+
+        <div id="auth-carousel" class="auth-carousel" aria-hidden="true">
+          <img class="auth-carousel-slide is-active" src="/img/hero-eshop.jpg" alt="" width="1600" height="1068" loading="eager" />
+          <img class="auth-carousel-slide" src="/img/template-store.jpg" alt="" width="1200" height="800" loading="lazy" />
+          <img class="auth-carousel-slide" src="/img/product-shoes.jpg" alt="" width="1200" height="800" loading="lazy" />
+          <img class="auth-carousel-slide" src="/img/product-headphones.jpg" alt="" width="1200" height="800" loading="lazy" />
+          <img class="auth-carousel-slide" src="/img/product-watch.jpg" alt="" width="800" height="581" loading="lazy" />
+          <div class="auth-carousel-overlay"></div>
+        </div>
       </div>
 
       <div
@@ -106,11 +116,24 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
         </div>
       </div>
     </div>
+    </main>
+
+    <div class="landing"><LandingFooter /></div>
 
     <script>
-      import { mountAccentScene } from "../components/landing/three/aiScene";
-      const canvas = document.getElementById("auth-scene") as HTMLCanvasElement | null;
-      if (canvas) mountAccentScene(canvas, { accent: 0x4f46e5 });
+      const carousel = document.getElementById("auth-carousel");
+      if (carousel) {
+        const slides = Array.from(carousel.querySelectorAll<HTMLImageElement>(".auth-carousel-slide"));
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (slides.length > 1 && !reduceMotion) {
+          let active = 0;
+          setInterval(() => {
+            slides[active].classList.remove("is-active");
+            active = (active + 1) % slides.length;
+            slides[active].classList.add("is-active");
+          }, 4500);
+        }
+      }
     </script>
 
     <script>
@@ -235,8 +258,12 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
 
     <style>
       .auth-body {
-        min-height: 100vh; display: flex; align-items: center; justify-content: center;
-        background: var(--bg-subtle); padding: var(--space-6) var(--space-4);
+        min-height: 100vh; display: flex; flex-direction: column;
+        background: var(--bg-subtle);
+      }
+      .auth-main {
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        padding: var(--space-6) var(--space-4);
         position: relative; overflow: hidden;
       }
       .auth-blob {
@@ -251,11 +278,22 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
         border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden;
       }
       .auth-illustration {
-        position: relative; background: var(--landing-gradient-hero, linear-gradient(180deg, #111827 0%, #0B0F1A 100%));
-        padding: var(--space-6); display: flex; flex-direction: column;
+        position: relative; background: #111827;
+        padding: var(--space-6); display: flex; flex-direction: column; overflow: hidden;
       }
-      .auth-brand { color: #fff; font-weight: 800; font-size: 18px; position: relative; z-index: 1; }
-      .auth-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .auth-brand { color: #fff; font-weight: 800; font-size: 18px; position: relative; z-index: 2; }
+      .auth-tagline { color: rgba(255,255,255,0.72); font-size: 13px; margin-top: 4px; position: relative; z-index: 2; }
+
+      .auth-carousel { position: absolute; inset: 0; z-index: 0; }
+      .auth-carousel-slide {
+        position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+        opacity: 0; transition: opacity 1.1s ease;
+      }
+      .auth-carousel-slide.is-active { opacity: 1; }
+      .auth-carousel-overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(180deg, rgba(17,24,39,0.35) 0%, rgba(11,15,26,0.55) 55%, rgba(11,15,26,0.85) 100%);
+      }
 
       .auth-panel { padding: var(--space-7) var(--space-6); }
       .auth-title { font-size: 28px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; }
@@ -278,6 +316,14 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
       .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border-default); }
       .social-btn--wide { width: 100%; border-radius: var(--radius-sm); gap: var(--space-2); font-size: 14px; font-weight: 600; color: var(--text-primary); }
       .google-icon { font-size: 15px; font-weight: 900; }
+
+      @media (min-width: 1024px) {
+        .auth-main { padding: var(--space-8) var(--space-4); }
+        .auth-shell { max-width: 1080px; }
+        .auth-illustration { padding: var(--space-7); }
+        .auth-panel { padding: var(--space-8) var(--space-7); }
+        .auth-title { font-size: 32px; }
+      }
 
       @media (max-width: 760px) {
         .auth-shell { grid-template-columns: 1fr; }
