@@ -300,7 +300,12 @@ export async function sendMonthlyFeeNotice(opts: {
 }): Promise<void> {
   const lang = opts.lang ?? 'cs';
   const t = getT(lang);
-  const monthLabel = new Date(opts.periodMonth).toLocaleDateString(lang === 'en' ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long' });
+  // timeZone: 'UTC' is required here -- periodMonth is a UTC date-only string ("YYYY-MM-DD",
+  // midnight UTC on the 1st). Without it, toLocaleDateString renders in the server's local
+  // timezone, which can roll a UTC month boundary back into the PREVIOUS month (e.g. any
+  // timezone behind UTC on the 1st at 00:00) -- a bod 6 audit finding, fixed for both monthly-
+  // fee and fee-tier-change emails (see sendFeeTierChangeNotice below).
+  const monthLabel = new Date(opts.periodMonth).toLocaleDateString(lang === 'en' ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long', timeZone: 'UTC' });
 
   const html = `
     <h1>${t.email.monthlyFeeNotice.headingPrefix}${opts.partyName}</h1>
@@ -335,7 +340,7 @@ export async function sendFeeTierChangeNotice(opts: {
 }): Promise<void> {
   const lang = opts.lang ?? 'cs';
   const t = getT(lang);
-  const monthLabel = new Date(opts.periodStart).toLocaleDateString(lang === 'en' ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long' });
+  const monthLabel = new Date(opts.periodStart).toLocaleDateString(lang === 'en' ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long', timeZone: 'UTC' });
   const ft = t.email.feeTierChange;
   const toFixed = opts.newFeeMode === 'fixed';
   const modeLabel = (mode: "percentage" | "fixed") => (mode === 'fixed' ? ft.modeFixed : ft.modePercentage);
