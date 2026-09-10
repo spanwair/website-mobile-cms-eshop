@@ -19,7 +19,9 @@ import type {
 } from "./types";
 import { toPplAddress, toCodVarSym } from "./pplHelpers";
 
-function getConfig() {
+// Exported so the pickup-point validator (widgetValidate.ts) reuses the exact same
+// credential resolution and OAuth flow instead of duplicating it.
+export function getConfig() {
   const clientId = import.meta.env.PPL_CLIENT_ID;
   const clientSecret = import.meta.env.PPL_CLIENT_SECRET;
   // Confirmed sandbox base via live network trace of sandbox.ppl.cz: api-sandbox.dhl.com/ecs/ppl/sandbox.
@@ -28,7 +30,7 @@ function getConfig() {
   return { clientId, clientSecret, baseUrl };
 }
 
-async function getAccessToken(): Promise<string> {
+export async function getAccessToken(): Promise<string> {
   const { clientId, clientSecret, baseUrl } = getConfig();
   const res = await fetch(`${baseUrl}/login/getAccessToken`, {
     method: "POST",

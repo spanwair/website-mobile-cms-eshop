@@ -1557,6 +1557,7 @@ export const cs: Translations = {
     pickupPointChosen: "Vybrané výdejní místo:",
     changePickupPoint: "Změnit",
     pickupPointRequired: "Vyberte prosím výdejní místo.",
+    pickupPointInvalid: "Vybrané výdejní místo už není dostupné. Vyberte prosím jiné.",
     shipping: "Doprava",
     freeShipping: "Zdarma",
     free: "Zdarma",

@@ -10,6 +10,7 @@ import { clearCart, calcCartTotal, type CartIdentity } from "@shared/services/ca
 import { createOrder, addOrderItemsOrRollback } from "@shared/services/orderService";
 import { fetchEnabledShippingConfigs, computeShippingCost } from "@shared/services/shippingConfigService";
 import { createShipmentRecord } from "@shared/services/shipmentService";
+import { verifyPickupPoint } from "../../lib/integrations/shipping/widgetValidate";
 import { computeItemTax, computeOrderTax } from "@shared/utils/tax";
 import { startOrderCheckout } from "../../lib/checkoutFlow";
 import { sendOrderConfirmation } from "../../lib/integrations/email";
@@ -76,6 +77,10 @@ if (Astro.request.method === "POST") {
     const shippingConfig = shippingConfigs.find((c) => c.code === shippingProviderCode);
     if (!shippingConfig) throw new Error("Invalid shipping method");
     if (deliveryType === "pickup" && !pickupPointId) throw new Error(t.shop.pickupPointRequired);
+    if (deliveryType === "pickup" && pickupPointId) {
+      const check = await verifyPickupPoint(shippingProviderCode as "ppl" | "packeta", pickupPointId, countryCode);
+      if (!check.ok) throw new Error(t.shop.pickupPointInvalid);
+    }
     const shippingCost = computeShippingCost(shippingConfig, subtotal);
     const paymentFee = paymentMethod === PAYMENT_METHOD.COD ? COD_FEE_CZK : 0;
     let { data: customer } = await adminClient

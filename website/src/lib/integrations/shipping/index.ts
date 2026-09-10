@@ -8,9 +8,17 @@ import { createMockProvider } from "./mock";
 // so this factory falls back to the mock provider whenever the required secret is
 // missing. The mock path is never silent — CreateShipmentResult.isMock is persisted
 // on order_shipments.is_mock and surfaced as a "TEST MODE" badge in admin.
+//
+// PPL_LIVE_BOOKING gates REAL, billable shipment creation separately from having the
+// CPL API creds. The creds are also used read-only (pickup-point map/validation via
+// GET /accessPoint), which is free and safe, so dev can hold real creds for the map
+// while booking stays on the mock provider. Only when PPL_LIVE_BOOKING="true" does
+// createShipment/getLabel/cancel/return hit the live carrier — set that in prod only.
 export function getShippingProvider(code: ShippingProviderCode): ShippingProvider {
   if (code === "ppl") {
-    return import.meta.env.PPL_CLIENT_ID && import.meta.env.PPL_CLIENT_SECRET ? createPplProvider() : createMockProvider("ppl");
+    const hasCreds = Boolean(import.meta.env.PPL_CLIENT_ID && import.meta.env.PPL_CLIENT_SECRET);
+    const liveBooking = import.meta.env.PPL_LIVE_BOOKING === "true";
+    return hasCreds && liveBooking ? createPplProvider() : createMockProvider("ppl");
   }
   return import.meta.env.PACKETA_API_PASSWORD ? createPacketaProvider() : createMockProvider("packeta");
 }

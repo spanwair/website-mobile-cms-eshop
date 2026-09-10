@@ -1555,6 +1555,7 @@ export const en = {
     pickupPointChosen: "Selected pickup point:",
     changePickupPoint: "Change",
     pickupPointRequired: "Please choose a pickup point.",
+    pickupPointInvalid: "The selected pickup point is no longer available. Please choose another.",
     shipping: "Shipping",
     freeShipping: "Free",
     free: "Free",
