@@ -2853,6 +2853,10 @@ export type Database = {
           hero_format: string
           homepage_layout: Json
           id: string
+          landing_description: string | null
+          landing_featured: boolean
+          landing_screenshot_url: string | null
+          landing_sort_order: number
           logo_url: string | null
           party_id: string
           product_card_variant: string
@@ -2894,6 +2898,10 @@ export type Database = {
           hero_format?: string
           homepage_layout?: Json
           id?: string
+          landing_description?: string | null
+          landing_featured?: boolean
+          landing_screenshot_url?: string | null
+          landing_sort_order?: number
           logo_url?: string | null
           party_id: string
           product_card_variant?: string
@@ -2935,6 +2943,10 @@ export type Database = {
           hero_format?: string
           homepage_layout?: Json
           id?: string
+          landing_description?: string | null
+          landing_featured?: boolean
+          landing_screenshot_url?: string | null
+          landing_sort_order?: number
           logo_url?: string | null
           party_id?: string
           product_card_variant?: string
@@ -3368,6 +3380,18 @@ export type Database = {
         Args: never
         Returns: {
           brand_name: string
+          logo_url: string
+          party_id: string
+          slug: string
+          tagline: string
+        }[]
+      }
+      list_landing_featured_stores: {
+        Args: never
+        Returns: {
+          brand_name: string
+          landing_description: string
+          landing_screenshot_url: string
           logo_url: string
           party_id: string
           slug: string

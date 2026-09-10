@@ -249,3 +249,15 @@ INSERT INTO blog_posts (party_id, title, slug, excerpt, content, featured_image_
 \else
 \echo 'Org "Kytka z Beskyd" already exists — skipping (org seed is idempotent, run catalog/legal seeds separately if needed).'
 \endif
+
+-- Runs unconditionally (outside the \if above) so it also backfills orgs seeded before the
+-- landing-featured columns existed. Screenshot lives in the store-media bucket alongside this
+-- org's other photos (never committed to the repo) - upload it with scripts/upload-kytka-media.sh
+-- or a storefront capture before running this seed on a fresh environment.
+UPDATE store_configs SET
+  landing_featured = true,
+  landing_sort_order = 1,
+  landing_description = 'Ruční věnce a sušené květinové dekorace z Beskyd - každý kus je jedinečný, s expresním dodáním do druhého dne.',
+  landing_screenshot_url = :'media_base' || '/landing-screenshot.jpg'
+FROM parties
+WHERE parties.id = store_configs.party_id AND parties.slug = 'kytka-z-beskyd';

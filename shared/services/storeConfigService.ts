@@ -142,3 +142,22 @@ export async function listActiveStores(client: Client): Promise<ActiveStore[]> {
   if (error || !data) return [];
   return data as ActiveStore[];
 }
+
+export interface LandingFeaturedStore {
+  party_id: string;
+  slug: string;
+  brand_name: string | null;
+  tagline: string | null;
+  landing_description: string | null;
+  landing_screenshot_url: string | null;
+  logo_url: string | null;
+}
+
+// Powers the landing page's "real eshops" showcase - a curated subset of listActiveStores,
+// scoped to store_configs.landing_featured so new orgs don't show up in marketing until
+// someone opts them in. Same anon-read gap as listActiveStores.
+export async function listLandingFeaturedStores(client: Client): Promise<LandingFeaturedStore[]> {
+  const { data, error } = await client.rpc("list_landing_featured_stores");
+  if (error || !data) return [];
+  return data as LandingFeaturedStore[];
+}

@@ -5,15 +5,24 @@ import LogoMarquee from "../components/landing/LogoMarquee.astro";
 import FoundingSellers from "../components/landing/sections/FoundingSellers.astro";
 import Features from "../components/landing/sections/Features.astro";
 import HowItWorks from "../components/landing/sections/HowItWorks.astro";
-import TemplatesShowcase from "../components/landing/sections/TemplatesShowcase.astro";
+import RealEshopsShowcase from "../components/landing/sections/RealEshopsShowcase.astro";
+import CreateOwnEshopCta from "../components/landing/sections/CreateOwnEshopCta.astro";
+// TemplatesShowcase temporarily unlisted while real eshops are promoted instead (product
+// decision 2026-09-03) - component and its i18n copy are untouched, just not rendered here.
+// Restore by uncommenting this import and its usage below.
+// import TemplatesShowcase from "../components/landing/sections/TemplatesShowcase.astro";
 import AICapabilities from "../components/landing/sections/AICapabilities.astro";
 import CommissionCalculator from "../components/landing/sections/CommissionCalculator.astro";
 import NoCompanySelling from "../components/landing/sections/NoCompanySelling.astro";
 import ExampleScenarios from "../components/landing/sections/ExampleScenarios.astro";
 import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
+import { createSupabase } from "../lib/supabase";
+import { listLandingFeaturedStores } from "@shared/services/storeConfigService";
 
 const t = useT(Astro);
+const supabase = createSupabase(Astro);
+const featuredStores = await listLandingFeaturedStores(supabase);
 ---
 
 <LandingLayout title={t.landing.meta.defaultTitle} description={t.landing.meta.defaultDescription}>
@@ -22,7 +31,9 @@ const t = useT(Astro);
   <FoundingSellers />
   <Features />
   <HowItWorks />
-  <TemplatesShowcase />
+  <RealEshopsShowcase stores={featuredStores} />
+  <CreateOwnEshopCta />
+  <!-- <TemplatesShowcase /> -->
   <AICapabilities />
   <CommissionCalculator />
   <NoCompanySelling />

@@ -145,6 +145,10 @@ export interface StoreConfig {
   store_photo_url: string | null;
   footer_theme: 'light' | 'dark';
   footer_newsletter_enabled: boolean;
+  landing_featured: boolean;
+  landing_sort_order: number;
+  landing_description: string | null;
+  landing_screenshot_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -648,7 +652,8 @@ export type NotificationType =
   | "failed_payment"
   | "new_registration"
   | "system_alert"
-  | "role_invitation";
+  | "role_invitation"
+  | "fee_tier_change";
 
 export interface Notification {
   id: string;

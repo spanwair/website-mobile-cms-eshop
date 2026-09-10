@@ -30,6 +30,8 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
   buyback_content: null, buyback_format: "markdown",
   store_address: null, store_map_url: null, store_photo_url: null,
   footer_theme: "light", footer_newsletter_enabled: true,
+  landing_featured: false, landing_sort_order: 0,
+  landing_description: null, landing_screenshot_url: null,
   created_at: "", updated_at: "",
 };
 

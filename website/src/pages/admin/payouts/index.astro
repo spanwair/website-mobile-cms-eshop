@@ -1,10 +1,13 @@
 ---
 import CmsLayout from "@/components/cms/CmsLayout.astro";
-import { createSupabase } from "@/lib/supabase";
+import PlatformFeeHistory from "@/components/admin/PlatformFeeHistory.astro";
+import { createSupabase, createAdminClient } from "@/lib/supabase";
 import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT, getLang } from "@/lib/i18n";
 import { SELLER_MODE, NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK } from "@shared/constants/sellerMode";
+import { listBillingPeriods, markBillingPeriodFeePaid } from "@shared/services/billingPeriodService";
+import { createCheckoutSession, retrieveCheckoutSession } from "@/lib/integrations/stripe";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -39,19 +42,53 @@ if (Astro.request.method === "POST") {
     else success = t.admin.payouts.markPaidBtn;
   }
 
-  if (action === "mark_fee_paid") {
-    const feeId = form.get("fee_id") as string;
-    const paymentReference = (form.get("payment_reference") as string)?.trim() || null;
-    const { error: updateErr } = await supabase
-      .from("monthly_platform_fees")
-      .update({ status: "paid", paid_at: new Date().toISOString(), paid_by: session.user.id, payment_reference: paymentReference })
-      .eq("id", feeId)
-      .eq("party_id", partyId)
-      .eq("status", "unpaid");
+  // Confirming an offline payment as received is the platform's call, never the organization's
+  // own - only the global owner may mark a fee paid without an actual online payment.
+  if (action === "mark_fee_paid_manual" && ctx.isOwner) {
+    const periodStart = form.get("period_start") as string;
+    const { error: updateErr } = await markBillingPeriodFeePaid(createAdminClient(), partyId, periodStart, true);
     if (updateErr) error = updateErr.message;
     else success = t.admin.payouts.markFeePaidBtn;
   }
+
+  if (action === "pay_fee_online") {
+    const periodStart = form.get("period_start") as string;
+    const { data: row } = await supabase
+      .from("eshop_billing_periods")
+      .select("fee_amount")
+      .eq("party_id", partyId)
+      .eq("period_start", periodStart)
+      .maybeSingle();
+    if (row && Number(row.fee_amount) > 0) {
+      const origin = Astro.url.origin;
+      const { url, error: payErr } = await createCheckoutSession({
+        lineItems: [{ name: `${t.admin.payouts.colFee} ${periodStart}`, amount: Number(row.fee_amount), quantity: 1 }],
+        orderId: `fee-${partyId}-${periodStart}`,
+        successUrl: `${origin}/admin/payouts?paid_period=${periodStart}&sid={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${origin}/admin/payouts?pay_cancelled=1`,
+        currency: "czk",
+      });
+      if (url) return Astro.redirect(url);
+      error = payErr ?? "Payment could not be started.";
+    }
+  }
 }
+
+// Stripe return: verify the checkout session actually paid, then record it against the period.
+const paidPeriod = Astro.url.searchParams.get("paid_period");
+const sid = Astro.url.searchParams.get("sid");
+if (paidPeriod && sid) {
+  try {
+    const checkout = await retrieveCheckoutSession(sid);
+    if (checkout.payment_status === "paid") {
+      await markBillingPeriodFeePaid(createAdminClient(), partyId, paidPeriod, true);
+      success = t.admin.payouts.paySuccess;
+    }
+  } catch (e) {
+    error = (e as Error).message;
+  }
+}
+if (Astro.url.searchParams.get("pay_cancelled")) success = t.admin.payouts.payCancelled;
 
 const { data: party } = await supabase.from("parties").select("seller_mode").eq("id", partyId).single();
 const isCommissionMode = party?.seller_mode === SELLER_MODE.SMALLJOBS_COMMISSION;
@@ -81,8 +118,7 @@ const statusBadgeClass: Record<string, string> = {
   reversed: "badge-error",
 };
 
-let fees: any[] = [];
-let feeTotals = { unpaid: 0, paid: 0 };
+let billingPeriods: import("@shared/services/billingPeriodService").BillingPeriodRow[] = [];
 
 if (isCommissionMode) {
   const { data: entriesRaw } = await supabase
@@ -114,26 +150,7 @@ if (isCommissionMode) {
     .gte("created_at", monthStart);
   payoutThisMonth = (monthRows ?? []).reduce((sum, r) => sum + Number(r.net_payable), 0);
 } else {
-  const { data: feesRaw } = await supabase
-    .from("monthly_platform_fees")
-    .select("*")
-    .eq("party_id", partyId)
-    .order("period_month", { ascending: false })
-    .limit(24);
-  fees = feesRaw ?? [];
-
-  feeTotals = fees.reduce(
-    (acc, f) => {
-      if (f.status === "unpaid") acc.unpaid += Number(f.fee_amount);
-      if (f.status === "paid") acc.paid += Number(f.fee_amount);
-      return acc;
-    },
-    { unpaid: 0, paid: 0 }
-  );
-}
-
-function periodLabel(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString(lang === "en" ? "en-US" : "cs-CZ", { year: "numeric", month: "long" });
+  billingPeriods = await listBillingPeriods(supabase, partyId, 24);
 }
 ---
 
@@ -207,48 +224,7 @@ function periodLabel(dateStr: string) {
       </div>
     </>
   ) : (
-    <>
-      <div class="summary-row">
-        <div class="summary-tile"><span>{t.admin.payouts.summaryUnpaid}</span><strong>{fmt(feeTotals.unpaid)}</strong></div>
-        <div class="summary-tile"><span>{t.admin.payouts.summaryPaidFees}</span><strong>{fmt(feeTotals.paid)}</strong></div>
-      </div>
-
-      <div class="card" style="padding:0;overflow:hidden">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>{t.admin.payouts.colPeriod}</th><th>{t.admin.payouts.colTurnover}</th><th>{t.admin.payouts.colFee}</th><th>{t.admin.payouts.colStatus}</th><th>{t.admin.payouts.colActions}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {fees.map((f) => (
-              <tr>
-                <td style="text-transform:capitalize">{periodLabel(f.period_month)}</td>
-                <td>{fmt(Number(f.turnover_amount))}</td>
-                <td style="font-weight:600">{fmt(Number(f.fee_amount))}</td>
-                <td><span class={`badge ${f.status === "paid" ? "badge-active" : "badge-pending"}`}>{f.status === "paid" ? t.admin.payouts.statusPaidFee : t.admin.payouts.statusUnpaid}</span></td>
-                <td>
-                  {f.status === "unpaid" && (
-                    <form method="POST" onsubmit={`return confirm('${t.admin.payouts.markFeePaidConfirm}')`} style="display:flex;gap:6px;align-items:center">
-                      <input type="hidden" name="action" value="mark_fee_paid" />
-                      <input type="hidden" name="fee_id" value={f.id} />
-                      <input class="form-input" name="payment_reference" placeholder={t.admin.payouts.fieldFeeReference} style="width:140px;padding:4px 8px;font-size:12px" />
-                      <button type="submit" class="btn btn-primary" style="padding:4px 10px;font-size:12px">{t.admin.payouts.markFeePaidBtn}</button>
-                    </form>
-                  )}
-                  {f.status === "paid" && f.paid_at && (
-                    <span style="font-size:11px;color:var(--text-muted)">{t.admin.payouts.paidByLabel}: {new Date(f.paid_at).toLocaleDateString(lang)}</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {fees.length === 0 && (
-              <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.payouts.noFees}</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </>
+    <PlatformFeeHistory periods={billingPeriods} canManual={ctx.isOwner} />
   )}
 </CmsLayout>
 

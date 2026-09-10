@@ -1,0 +1,22 @@
+---
+import { useT } from "@/lib/i18n";
+const t = useT(Astro);
+---
+
+<section class="landing landing--dark" id="create-own-eshop">
+  <div class="container-lg create-eshop-inner">
+    <p class="section-eyebrow section-eyebrow--center">{t.landing.createOwnEshop.eyebrow}</p>
+    <h2 class="section-title section-title--center" style="max-width:640px">{t.landing.createOwnEshop.title}</h2>
+    <p class="section-sub section-sub--center" style="margin-bottom:32px">{t.landing.createOwnEshop.sub}</p>
+
+    <div class="create-eshop-buttons">
+      <a href="#hero" class="btn btn-primary btn-lg">{t.landing.createOwnEshop.primaryCta}</a>
+      <a href="/pricing" class="btn btn-outline-light btn-lg">{t.landing.createOwnEshop.secondaryCta}</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .create-eshop-inner { text-align: center; }
+  .create-eshop-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+</style>

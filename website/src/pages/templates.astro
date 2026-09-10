@@ -6,6 +6,11 @@ import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
 
 const t = useT(Astro);
+
+// Templates page temporarily removed from the live site while real eshops are promoted
+// instead (product decision 2026-09-03) - only eshops are active now. The showcase markup
+// below is kept intact; restore the page by deleting this redirect.
+return Astro.redirect("/");
 ---
 
 <LandingLayout title={`${t.landing.templatesPage.title} — Mamtodoma`} description={t.landing.templatesPage.sub}>

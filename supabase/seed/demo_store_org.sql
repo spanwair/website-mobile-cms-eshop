@@ -35,7 +35,9 @@ UPDATE store_configs SET
   homepage_layout = '["hero","benefits","categories","featured_products","condition_explainer","buyback_promo","blog_preview","newsletter"]',
   enable_reviews = true, enable_wishlists = true,
   contact_phone = '+420 222 333 444', contact_email = 'podpora@repasado.cz',
-  business_hours = 'Po-Pá: 9:00 - 18:00', currency_code = 'CZK'
+  business_hours = 'Po-Pá: 9:00 - 18:00', currency_code = 'CZK',
+  landing_featured = true, landing_sort_order = 2,
+  landing_description = 'Repasované Apple produkty se zárukou 12 měsíců - ušetřete a nakupujte udržitelně.'
 WHERE party_id = 'a0000000-0000-0000-0000-000000000001';
 
 UPDATE store_configs SET
