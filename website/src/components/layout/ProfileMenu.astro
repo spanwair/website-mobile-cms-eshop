@@ -17,6 +17,7 @@ const t = useT(Astro);
     <span class="nav-chevron">▾</span>
   </button>
   <div class="dropdown" id="profile-dropdown">
+    {!isAdmin && <a href="/dashboard" class="dropdown-item">{t.nav.account}</a>}
     <a href="/profile" class="dropdown-item">{t.nav.profile}</a>
     <a href="/settings" class="dropdown-item">{t.nav.settings}</a>
     {isAdmin && <a href="/admin" class="dropdown-item">{t.nav.admin}</a>}

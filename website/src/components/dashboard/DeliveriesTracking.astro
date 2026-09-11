@@ -1,0 +1,60 @@
+---
+import { useT } from "../../lib/i18n";
+import { formatDate } from "@shared/utils/format";
+import type { AppLanguage } from "@shared/i18n/getT";
+import type { Order } from "@shared/types";
+import type { DeliveryShipment } from "@shared/services/customerDashboardService";
+
+interface Props {
+  deliveries: Order[];
+  shipments: Record<string, DeliveryShipment>;
+  shopHref: string;
+  lang: AppLanguage;
+}
+const { deliveries, shipments, lang } = Astro.props;
+const t = useT(Astro);
+const carrierLabels: Record<string, string> = { ppl: "PPL", packeta: "Zásilkovna / Packeta" };
+---
+
+<section class="card dash-card">
+  <h2 class="dash-card-title">{t.dashboard.deliveries.title}</h2>
+
+  {deliveries.length === 0 ? (
+    <p class="dash-muted">{t.dashboard.deliveries.empty}</p>
+  ) : (
+    <ul class="track-list">
+      {deliveries.map((o) => {
+        const ship = shipments[o.id];
+        const tracking = ship?.tracking_number ?? o.tracking_number;
+        const carrier = ship?.provider ? (carrierLabels[ship.provider] ?? ship.provider) : null;
+        return (
+          <li class="track-item">
+            <div class="track-head">
+              <span class="mono">{o.order_number}</span>
+              <span class="track-date">{formatDate(o.shipped_at ?? o.created_at, lang)}</span>
+            </div>
+            <div class="track-meta">
+              {carrier && <span class="track-chip">{t.dashboard.deliveries.carrier}: <strong>{carrier}</strong></span>}
+              {ship?.pickup_point_name && <span class="track-chip">{t.dashboard.deliveries.pickupPoint}: <strong>{ship.pickup_point_name}</strong></span>}
+              {tracking && <span class="track-chip">{t.dashboard.deliveries.trackingNumber}: <strong class="mono">{tracking}</strong></span>}
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  )}
+</section>
+
+<style>
+  .dash-card { padding: 24px; }
+  .dash-card-title { font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0 0 16px; }
+  .dash-muted { font-size: 14px; color: var(--text-muted); margin: 0; }
+  .track-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .track-item { border: 1px solid var(--border); border-radius: var(--radius-lg, 12px); padding: 14px 16px; }
+  .track-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .track-date { font-size: 12.5px; color: var(--text-muted); }
+  .track-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+  .track-chip { font-size: 12.5px; color: var(--text-secondary); background: var(--bg-subtle); border-radius: 8px; padding: 4px 10px; }
+  .track-chip strong { color: var(--text-primary); }
+  .mono { font-variant-numeric: tabular-nums; font-weight: 700; }
+</style>

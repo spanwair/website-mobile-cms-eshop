@@ -1,5 +1,6 @@
 ---
 import { createSupabase, createAdminClient } from "../../lib/supabase";
+import { ROLE } from "@shared/constants/permissions";
 
 const supabase = createSupabase(Astro);
 const code = Astro.url.searchParams.get("code");
@@ -60,17 +61,45 @@ if (userId) {
     );
   }
 
+  // Storefront customer classification for the Google OAuth path. Email/OTP signups already
+  // carry `signup_party_id` in user_metadata and are classified USER by handle_new_user(); OAuth
+  // can't set metadata, so a brand-new Google account defaults to the organic ADMIN(4) role. When
+  // `sp` is present in the callback URL we reclassify it as a customer of that eshop — but only a
+  // truly fresh account: role is still the organic default, no party role was ever assigned, and
+  // no home eshop is recorded yet. This never touches a real admin/owner or eshop_admin.
+  const spParam = Astro.url.searchParams.get("sp");
+  if (spParam) {
+    const { data: prof } = await adminClient
+      .from("profiles")
+      .select("role, signup_party_id")
+      .eq("id", userId)
+      .single();
+    const { count: partyRoleCount } = await adminClient
+      .from("user_party_roles")
+      .select("user_id", { count: "exact", head: true })
+      .eq("user_id", userId);
+    if (prof && prof.role === ROLE.ADMIN && !prof.signup_party_id && !partyRoleCount) {
+      await adminClient
+        .from("profiles")
+        .update({ role: ROLE.USER, signup_party_id: spParam })
+        .eq("id", userId);
+    }
+  }
+
+  const { data: roleRow } = await supabase.from("profiles").select("role").eq("id", userId).single();
+  const currentRole = roleRow?.role ?? ROLE.USER;
+
   // Invite, or a brand-new user arriving via magic link (invite→signup flow), still has no
   // password set — send them to set-password first (which then forwards to /admin).
   if (type === "invite" || (type === "magiclink" && isNewUser)) {
     redirectTo = "/auth/set-password";
   } else {
     // Every other successfully authenticated user (email confirmation, magic-link sign-in,
-    // Google OAuth, returning login) goes into the admin area. A party-less ADMIN is routed on
-    // through setup → onboarding (register your company); an invited/assigned user lands on
-    // their dashboard. An explicit redirect (e.g. an eshop storefront) still wins. Never drop
-    // an authenticated user on the marketing homepage.
-    redirectTo = safeRedirect ?? "/admin";
+    // Google OAuth, returning login). An explicit redirect (e.g. an eshop storefront) always
+    // wins. Otherwise route by role: a seller/staff account (>= eshop_admin) goes to the admin
+    // area (a party-less ADMIN is routed on through setup → onboarding), while a plain customer
+    // goes to their account dashboard. Never drop an authenticated user on the marketing homepage.
+    redirectTo = safeRedirect ?? (currentRole >= ROLE.ESHOP_ADMIN ? "/admin" : "/dashboard");
   }
 }
 

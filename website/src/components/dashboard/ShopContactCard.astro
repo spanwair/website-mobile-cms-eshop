@@ -1,0 +1,61 @@
+---
+import { useT } from "../../lib/i18n";
+import type { StoreConfig } from "@shared/types";
+
+interface Props {
+  storeConfig: StoreConfig | null;
+  shopHref: string;
+}
+const { storeConfig, shopHref } = Astro.props;
+const t = useT(Astro);
+const phone = storeConfig?.contact_phone ?? null;
+const email = storeConfig?.contact_email ?? null;
+const hours = storeConfig?.business_hours ?? null;
+const hasContact = Boolean(phone || email || hours);
+---
+
+<section class="card contact-card">
+  <h2 class="dash-card-title">{t.dashboard.contact.title}</h2>
+  <p class="contact-sub">{t.dashboard.contact.subtitle}</p>
+
+  {hasContact ? (
+    <dl class="contact-list">
+      {phone && (
+        <div class="contact-row">
+          <dt>{t.dashboard.contact.phone}</dt>
+          <dd><a href={`tel:${phone}`}>{phone}</a></dd>
+        </div>
+      )}
+      {email && (
+        <div class="contact-row">
+          <dt>{t.dashboard.contact.email}</dt>
+          <dd><a href={`mailto:${email}`}>{email}</a></dd>
+        </div>
+      )}
+      {hours && (
+        <div class="contact-row">
+          <dt>{t.dashboard.contact.hours}</dt>
+          <dd>{hours}</dd>
+        </div>
+      )}
+    </dl>
+  ) : (
+    <p class="dash-muted">{t.dashboard.contact.none}</p>
+  )}
+
+  <a href={shopHref} class="btn btn-outline contact-visit">{t.dashboard.contact.visitShop} →</a>
+</section>
+
+<style>
+  .contact-card { padding: 24px; position: sticky; top: 90px; }
+  .dash-card-title { font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0 0 6px; }
+  .contact-sub { font-size: 13px; color: var(--text-muted); margin: 0 0 16px; }
+  .dash-muted { font-size: 14px; color: var(--text-muted); margin: 0 0 16px; }
+  .contact-list { margin: 0 0 16px; display: flex; flex-direction: column; gap: 12px; }
+  .contact-row { display: flex; flex-direction: column; gap: 2px; }
+  .contact-row dt { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+  .contact-row dd { margin: 0; font-size: 14px; color: var(--text-primary); }
+  .contact-row a { color: var(--accent-primary); text-decoration: none; }
+  .contact-row a:hover { text-decoration: underline; }
+  .contact-visit { width: 100%; }
+</style>

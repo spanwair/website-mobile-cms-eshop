@@ -2441,6 +2441,7 @@ export type Database = {
           last_login_at: string | null
           phone: string | null
           role: number
+          signup_party_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2457,6 +2458,7 @@ export type Database = {
           last_login_at?: string | null
           phone?: string | null
           role?: number
+          signup_party_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2473,9 +2475,18 @@ export type Database = {
           last_login_at?: string | null
           phone?: string | null
           role?: number
+          signup_party_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_signup_party_id_fkey"
+            columns: ["signup_party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       promotions: {
         Row: {

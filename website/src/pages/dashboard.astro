@@ -1,0 +1,86 @@
+---
+import LandingLayout from "../components/landing/LandingLayout.astro";
+import { createSupabase, createAdminClient } from "../lib/supabase";
+import { fetchStoreConfig } from "@shared/services/storeConfigService";
+import { fetchParty } from "@shared/services/partyService";
+import { fetchCustomerAccount } from "@shared/services/customerDashboardService";
+import { ROLE } from "@shared/constants/permissions";
+import { useT, getLang } from "../lib/i18n";
+import AccountHeader from "../components/dashboard/AccountHeader.astro";
+import AccountKpis from "../components/dashboard/AccountKpis.astro";
+import OrdersList from "../components/dashboard/OrdersList.astro";
+import DeliveriesTracking from "../components/dashboard/DeliveriesTracking.astro";
+import ReturnsList from "../components/dashboard/ReturnsList.astro";
+import ShopContactCard from "../components/dashboard/ShopContactCard.astro";
+import StartYourEshopCta from "../components/dashboard/StartYourEshopCta.astro";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login?redirect=/dashboard");
+
+const t = useT(Astro);
+const lang = getLang(Astro);
+const userId = session.user.id;
+const userEmail = session.user.email ?? "";
+
+const admin = createAdminClient();
+
+const { data: profile } = await admin
+  .from("profiles")
+  .select("role, display_name, signup_party_id")
+  .eq("id", userId)
+  .single();
+
+// Sellers/staff belong in the admin panel, not the customer account dashboard.
+if ((profile?.role ?? ROLE.USER) >= ROLE.ESHOP_ADMIN) return Astro.redirect("/admin");
+
+// Home eshop = the party they registered at. Fall back to their most recent customer row for
+// accounts created before signup origin was recorded.
+let homePartyId = profile?.signup_party_id ?? null;
+if (!homePartyId) {
+  const { data: recent } = await admin
+    .from("customers")
+    .select("party_id, created_at")
+    .or(`user_id.eq.${userId},email.eq.${userEmail}`)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  homePartyId = recent?.party_id ?? null;
+}
+
+const party = homePartyId ? await fetchParty(admin, homePartyId) : null;
+const storeConfig = homePartyId ? await fetchStoreConfig(admin, homePartyId) : null;
+const account = await fetchCustomerAccount(admin, { userId, email: userEmail, partyId: homePartyId ?? "" });
+
+const brandName = storeConfig?.brand_name ?? party?.name ?? "";
+const shopHref = party ? `/eshop-${party.slug}` : "/shop";
+const displayName = profile?.display_name ?? userEmail.split("@")[0] ?? "";
+const logoUrl = storeConfig?.logo_url ?? party?.logo_url ?? null;
+---
+
+<LandingLayout title={`${t.dashboard.welcomeBack}${brandName ? ` — ${brandName}` : ""}`} description={t.dashboard.subtitleGeneric}>
+  <section class="landing">
+    <div class="container-lg dash">
+      <AccountHeader displayName={displayName} brandName={brandName} shopHref={shopHref} logoUrl={logoUrl} />
+      <AccountKpis kpis={account.kpis} lang={lang} />
+      <div class="dash-grid">
+        <div class="dash-main">
+          <OrdersList orders={account.orders} shopHref={shopHref} lang={lang} />
+          <DeliveriesTracking deliveries={account.deliveries} shipments={account.shipments} shopHref={shopHref} lang={lang} />
+          <ReturnsList returns={account.returns} lang={lang} />
+        </div>
+        <aside class="dash-side">
+          <ShopContactCard storeConfig={storeConfig} shopHref={shopHref} />
+        </aside>
+      </div>
+      <StartYourEshopCta />
+    </div>
+  </section>
+</LandingLayout>
+
+<style>
+  .dash { max-width: 1080px; margin-inline: auto; }
+  .dash-grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 24px; }
+  @media (min-width: 900px) { .dash-grid { grid-template-columns: 2fr 1fr; align-items: start; } }
+  .dash-main { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+</style>
