@@ -216,7 +216,10 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: name, display_name: name, lang: d.lang ?? 'cs' } },
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            data: { full_name: name, display_name: name, lang: d.lang ?? 'cs' },
+          },
         });
 
         if (error) {
@@ -244,14 +247,15 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
           return;
         }
 
+        // With email confirmation enabled, signUp returns no session — the account is
+        // inactive until the emailed link is clicked. Forward to a dedicated "check your
+        // email" page rather than logging them in. Only if confirmation is disabled (session
+        // present) do we go straight in.
         if (data.session) {
           window.location.href = "/";
         } else {
-          const el = document.getElementById("success-su")!;
-          el.textContent = d.successSignup!;
-          el.classList.remove("hidden");
-          btn.disabled = false;
-          btn.textContent = d.create!;
+          try { sessionStorage.setItem("pendingConfirmEmail", email); } catch { /* ignore */ }
+          window.location.href = "/auth/confirm-email";
         }
       });
     </script>

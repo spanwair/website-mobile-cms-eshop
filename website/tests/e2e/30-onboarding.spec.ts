@@ -22,6 +22,15 @@ async function signUp(page: Page, name: string, email: string) {
   await page.fill("#su-password", PASSWORD);
   await page.fill("#su-confirm", PASSWORD);
   await page.click("#signup-btn");
+  // Email confirmation is required: signup creates no session and lands on the
+  // confirm-email page. Email delivery isn't driven in-process, so confirm the address
+  // directly, then sign in through the UI as a real confirmed user would.
+  await page.waitForURL(`${BASE}/auth/confirm-email`, { timeout: 15000 });
+  psql(`${replica} UPDATE auth.users SET email_confirmed_at = now() WHERE email = '${email}'; ${defaultRole}`);
+  await page.goto(`${BASE}/login`);
+  await page.fill("#si-email", email);
+  await page.fill("#si-password", PASSWORD);
+  await page.click("#signin-btn");
   await page.waitForURL(`${BASE}/`, { timeout: 15000 });
 }
 

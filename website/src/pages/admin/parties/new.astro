@@ -61,7 +61,11 @@ if (Astro.request.method === "POST") {
       vat_number: (form.get("vat_number") as string) || undefined,
       billing_email: (form.get("billing_email") as string) || undefined,
       seller_mode: hasIco ? "own_company" : "smalljobs_commission",
-      status: hasIco ? "active" : "pending_approval",
+      // Every new org — IČO or not — starts pending_approval and stays hidden from the
+      // storefront (shopQueries filters status='active') until an owner reviews and
+      // activates it. Only an owner can make that transition (enforced by the
+      // enforce_party_approval_transition DB trigger).
+      status: "pending_approval",
       terms_accepted_at: nowIso,
       terms_version: CURRENT_PLATFORM_TERMS_VERSION,
     });
