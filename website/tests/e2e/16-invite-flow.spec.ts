@@ -191,8 +191,8 @@ test.describe("16 — Invite flow: invite → accept → set-password → login"
     // and the magic link goes straight to / (no set-password needed).
 
     // Step 1: Invite the user (trigger creates their profile), then confirm email via admin API.
-    // Local Supabase has enable_confirmations=false, so signUp only returns user_already_exists
-    // for *confirmed* users (not for invited/unconfirmed ones).
+    // signUp only returns user_already_exists for *confirmed* users (unconfirmed/new emails
+    // get an obfuscated fake-success), so we confirm the invite first to hit that branch.
     await sendInviteEmail();
     await waitForEmail(INVITE_EMAIL, "invited");
     await clearMailbox();

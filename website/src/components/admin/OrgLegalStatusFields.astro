@@ -24,22 +24,30 @@ const { t, hasIcoValue } = Astro.props;
   </div>
 </div>
 
-<div id="ico-fields" data-ico-panel="yes">
+<div
+  id="ico-fields"
+  data-ico-panel="yes"
+  data-ares-searching={t.admin.parties.onboarding.aresSearching}
+  data-ares-notfound={t.admin.parties.onboarding.aresNotFound}
+  data-ares-found={t.admin.parties.onboarding.aresFoundPrefix}
+>
   <p class="mode-hint">{t.admin.parties.onboarding.icoHint}</p>
   <div class="form-row">
-    <div class="form-group">
+    <div class="form-group ares-name-group">
       <label class="form-label">{t.admin.parties.fieldCompany}</label>
-      <input class="form-input" name="company_name" placeholder={t.admin.parties.fieldCompanyPlaceholder} />
+      <input class="form-input" name="company_name" placeholder={t.admin.parties.fieldCompanyPlaceholder} autocomplete="off" data-ares-name />
+      <ul class="ares-suggest hidden" data-ares-suggest></ul>
     </div>
     <div class="form-group">
       <label class="form-label">{t.admin.parties.onboarding.fieldIco}</label>
-      <input class="form-input" name="company_ico" placeholder={t.admin.parties.onboarding.fieldIcoPlaceholder} data-required-in-panel="yes" />
+      <input class="form-input" name="company_ico" placeholder={t.admin.parties.onboarding.fieldIcoPlaceholder} data-required-in-panel="yes" inputmode="numeric" data-ares-ico />
+      <p class="ares-status hidden" data-ares-status></p>
     </div>
   </div>
   <div class="form-row">
     <div class="form-group">
       <label class="form-label">{t.admin.parties.fieldVat}</label>
-      <input class="form-input" name="vat_number" placeholder={t.admin.parties.fieldVatPlaceholder} />
+      <input class="form-input" name="vat_number" placeholder={t.admin.parties.fieldVatPlaceholder} data-ares-vat />
     </div>
     <div class="form-group">
       <label class="form-label">{t.admin.parties.fieldBillingEmail}</label>
@@ -127,6 +135,76 @@ const { t, hasIcoValue } = Astro.props;
   }
   radios.forEach((r) => r.addEventListener("change", sync));
   sync();
+
+  // --- ARES autofill (own-company panel): IČO -> company name/DIČ, and name -> suggestions ---
+  const aresPanel = document.getElementById("ico-fields");
+  if (aresPanel) {
+    const labels = aresPanel.dataset;
+    const icoEl = aresPanel.querySelector<HTMLInputElement>("[data-ares-ico]");
+    const nameEl = aresPanel.querySelector<HTMLInputElement>("[data-ares-name]");
+    const vatEl = aresPanel.querySelector<HTMLInputElement>("[data-ares-vat]");
+    const statusEl = aresPanel.querySelector<HTMLElement>("[data-ares-status]");
+    const suggestEl = aresPanel.querySelector<HTMLUListElement>("[data-ares-suggest]");
+
+    const setStatus = (text: string, kind: "muted" | "ok" | "warn") => {
+      if (!statusEl) return;
+      statusEl.textContent = text;
+      statusEl.className = text ? `ares-status ares-status--${kind}` : "ares-status hidden";
+    };
+
+    let icoTimer: ReturnType<typeof setTimeout>;
+    const lookupIco = async () => {
+      const ico = (icoEl?.value ?? "").replace(/\s/g, "");
+      if (!/^\d{8}$/.test(ico)) { setStatus("", "muted"); return; }
+      setStatus(labels.aresSearching ?? "…", "muted");
+      try {
+        const d = await (await fetch(`/api/ares?ico=${ico}`)).json();
+        if (d.found) {
+          if (nameEl) nameEl.value = d.name;
+          if (vatEl && d.dic) vatEl.value = d.dic;
+          setStatus(`${labels.aresFound ?? ""} ${d.name}`.trim(), "ok");
+        } else {
+          setStatus(labels.aresNotfound ?? "", "warn");
+        }
+      } catch { setStatus("", "muted"); }
+    };
+    icoEl?.addEventListener("blur", lookupIco);
+    icoEl?.addEventListener("input", () => { clearTimeout(icoTimer); icoTimer = setTimeout(lookupIco, 600); });
+
+    const closeSuggest = () => { if (suggestEl) { suggestEl.innerHTML = ""; suggestEl.classList.add("hidden"); } };
+    let nameTimer: ReturnType<typeof setTimeout>;
+    const searchName = async () => {
+      const q = (nameEl?.value ?? "").trim();
+      if (q.length < 2 || !suggestEl) { closeSuggest(); return; }
+      try {
+        const d = await (await fetch(`/api/ares?q=${encodeURIComponent(q)}`)).json();
+        const results: Array<{ ico: string; name: string; dic: string; city: string }> = d.results ?? [];
+        if (!results.length) { closeSuggest(); return; }
+        suggestEl.innerHTML = "";
+        for (const res of results) {
+          const li = document.createElement("li");
+          li.className = "ares-suggest-item";
+          const nm = document.createElement("span"); nm.className = "ares-suggest-name"; nm.textContent = res.name;
+          const meta = document.createElement("span"); meta.className = "ares-suggest-meta";
+          meta.textContent = `IČO ${res.ico}${res.city ? " · " + res.city : ""}`;
+          li.append(nm, meta);
+          // mousedown (not click) so it fires before the input's blur closes the list
+          li.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            if (nameEl) nameEl.value = res.name;
+            if (icoEl) icoEl.value = res.ico;
+            if (vatEl && res.dic) vatEl.value = res.dic;
+            setStatus(`${labels.aresFound ?? ""} ${res.name}`.trim(), "ok");
+            closeSuggest();
+          });
+          suggestEl.appendChild(li);
+        }
+        suggestEl.classList.remove("hidden");
+      } catch { closeSuggest(); }
+    };
+    nameEl?.addEventListener("input", () => { clearTimeout(nameTimer); nameTimer = setTimeout(searchName, 350); });
+    nameEl?.addEventListener("blur", () => setTimeout(closeSuggest, 150));
+  }
 </script>
 
 <style>
@@ -140,4 +218,20 @@ const { t, hasIcoValue } = Astro.props;
   .terms-box summary { cursor:pointer; font-weight:600; }
   .terms-box h3 { font-size:13px; margin:10px 0 6px; }
   .terms-paragraph { color:var(--text-muted); line-height:1.6; margin:0 0 8px; }
+  .ares-name-group { position:relative; }
+  .ares-suggest {
+    position:absolute; left:0; right:0; top:100%; z-index:20; margin:4px 0 0; padding:4px;
+    list-style:none; background:var(--bg-page); border:1px solid var(--border-default);
+    border-radius:8px; box-shadow:var(--shadow-lg); max-height:260px; overflow:auto;
+  }
+  /* Suggestion rows are created in JS, so they don't get Astro's scope attribute —
+     target them as :global descendants of the scoped .ares-suggest container. */
+  .ares-suggest :global(.ares-suggest-item) { display:flex; flex-direction:column; gap:2px; padding:8px 10px; border-radius:6px; cursor:pointer; }
+  .ares-suggest :global(.ares-suggest-item:hover) { background:var(--bg-subtle); }
+  .ares-suggest :global(.ares-suggest-name) { font-size:13px; font-weight:600; color:var(--text-primary); }
+  .ares-suggest :global(.ares-suggest-meta) { font-size:12px; color:var(--text-muted); }
+  .ares-status { font-size:12px; margin:4px 0 0; }
+  .ares-status--muted { color:var(--text-muted); }
+  .ares-status--ok { color:var(--success); }
+  .ares-status--warn { color:var(--text-muted); }
 </style>

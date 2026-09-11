@@ -53,6 +53,10 @@ enable_manual_linking = false
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
+# Email/password signups must confirm their address before they get a session — signUp()
+# returns session=null until the emailed link is clicked (handled by /auth/callback).
+# Google OAuth and invited users are unaffected (already verified via provider/invite link).
+# Prod: enable the equivalent "Confirm email" toggle in the Supabase dashboard Auth settings.
 enable_confirmations = true
 
 # Custom bilingual templates (branch on .Data.lang, set via inviteUserByEmail/signInWithOtp

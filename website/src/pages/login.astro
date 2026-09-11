@@ -253,16 +253,17 @@ const redirectTo = rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.st
           return;
         }
 
+        // With email confirmation enabled, signUp returns no session — the account is
+        // inactive until the emailed link is clicked. Forward to a dedicated "check your
+        // email" page rather than logging them in. Only if confirmation is disabled (session
+        // present) do we go straight in.
         if (data.session) {
           // Auto-confirm environments return a session straight from signUp (no email step).
           // Send a brand-new account into the admin area → onboarding, never the homepage.
           window.location.href = redirectPath || "/admin";
         } else {
-          const el = document.getElementById("success-su")!;
-          el.textContent = d.successSignup!;
-          el.classList.remove("hidden");
-          btn.disabled = false;
-          btn.textContent = d.create!;
+          try { sessionStorage.setItem("pendingConfirmEmail", email); } catch { /* ignore */ }
+          window.location.href = "/auth/confirm-email";
         }
       });
     </script>
