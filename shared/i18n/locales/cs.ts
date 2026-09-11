@@ -2,6 +2,7 @@ import type { Translations } from "./en";
 
 export const cs: Translations = {
   common: {
+    slugAutoHint: "Nechte prázdné pro automatické vygenerování. Kdykoli můžete změnit.",
     cancel: "Zrušit",
     save: "Uložit",
     error: "Chyba",
@@ -117,9 +118,9 @@ export const cs: Translations = {
     errorPasswordTooShort: "Heslo musí mít alespoň 8 znaků.",
     errorAlreadyRegistered: "Účet s tímto e-mailem již existuje. Přihlaste se.",
     errorPasswordMismatch: "Hesla se neshodují.",
-    successSignUp: "Zkontrolujte e-mail — poslali jsme vám potvrzovací odkaz.",
+    successSignUp: "Zkontrolujte e-mail. Poslali jsme vám potvrzovací odkaz.",
     backToSignIn: "Zpět na přihlášení",
-    confirmationBody: "Zkontrolujte e-mail — přišel vám potvrzovací odkaz.\nPokud již máte účet, přihlaste se.",
+    confirmationBody: "Zkontrolujte e-mail. Přišel vám potvrzovací odkaz.\nPokud již máte účet, přihlaste se.",
     brandName: "Template",
     tagline: "Váš reklamní slogan",
     setPasswordTitle: "Nastavit heslo",
@@ -351,7 +352,7 @@ export const cs: Translations = {
       back: "← Zpět na produkty",
       fieldTitle: "Název *",
       fieldTitlePlaceholder: "Název produktu",
-      fieldSlug: "Slug *",
+      fieldSlug: "Slug",
       fieldSlugPlaceholder: "nazev-produktu",
       fieldSku: "SKU",
       fieldBarcode: "Čárový kód",
@@ -407,7 +408,7 @@ export const cs: Translations = {
       back: "← Zpět na kategorie",
       fieldName: "Název *",
       fieldNamePlaceholder: "Název kategorie",
-      fieldSlug: "Slug *",
+      fieldSlug: "Slug",
       fieldSlugPlaceholder: "nazev-kategorie",
       fieldParent: "Nadřazená kategorie",
       noParentOption: "— Žádná (nejvyšší úroveň) —",

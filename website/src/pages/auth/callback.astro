@@ -26,7 +26,9 @@ if (code) {
   }
 }
 
-let redirectTo = "/";
+const rawRedirect = Astro.url.searchParams.get("redirect");
+const safeRedirect = rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : null;
+let redirectTo = safeRedirect ?? "/";
 
 if (userId) {
   const googleName = userMeta["full_name"] ?? userMeta["name"] ?? null;
@@ -63,6 +65,11 @@ if (userId) {
   // Google OAuth and regular signup confirmation: skip set-password.
   if (type === "invite" || (type === "magiclink" && isNewUser)) {
     redirectTo = "/auth/set-password";
+  } else if (isNewUser) {
+    // Just-verified self-registration (email confirm or first Google sign-in) → into the admin
+    // area, which routes a party-less ADMIN on through setup → onboarding (create your first
+    // eshop). Never drop a freshly verified account on the marketing homepage.
+    redirectTo = safeRedirect ?? "/admin";
   }
 }
 

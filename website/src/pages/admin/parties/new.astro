@@ -1,7 +1,9 @@
 ---
 import CmsLayout from "@/components/cms/CmsLayout.astro";
 import OrgLegalStatusFields from "@/components/admin/OrgLegalStatusFields.astro";
+import SlugInput from "@/components/cms/SlugInput.astro";
 import { createSupabase } from "@/lib/supabase";
+import { resolveSlug } from "@shared/utils/slug";
 import { createParty } from "@shared/services/partyService";
 import { acceptCommissionaireAgreement } from "@shared/services/commissionaireService";
 import { requireAdminCtx } from "@/lib/admin";
@@ -32,7 +34,7 @@ if (Astro.request.method === "POST") {
   hasIcoValue = (form.get("has_ico") as string) === "no" ? "no" : "yes";
   const hasIco = hasIcoValue === "yes";
   const name = (form.get("name") as string)?.trim();
-  const slug = (form.get("slug") as string)?.trim();
+  const slug = resolveSlug(form.get("slug") as string, name ?? "");
   const privacyAccepted = form.get("privacy_accepted") === "on";
   const termsAccepted = form.get("terms_accepted") === "on";
 
@@ -109,10 +111,7 @@ if (Astro.request.method === "POST") {
           <label class="form-label">{t.admin.parties.fieldName} *</label>
           <input class="form-input" name="name" required placeholder={t.admin.parties.fieldNamePlaceholder} />
         </div>
-        <div class="form-group">
-          <label class="form-label">{t.admin.parties.fieldSlug} *</label>
-          <input class="form-input" name="slug" required placeholder={t.admin.parties.fieldSlugPlaceholder} />
-        </div>
+        <SlugInput sourceName="name" label={t.admin.parties.fieldSlug} placeholder={t.admin.parties.fieldSlugPlaceholder} hint={t.common.slugAutoHint} />
       </div>
 
       <OrgLegalStatusFields t={t} hasIcoValue={hasIcoValue} />

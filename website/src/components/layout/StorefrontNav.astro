@@ -106,7 +106,7 @@ const showWishlist = storeConfig?.enable_wishlists ?? true;
           </div>
         </div>
       ) : (
-        <a href={`/login?redirect=${currentPath}`} class="icon-link">
+        <a href={`/login?redirect=${encodeURIComponent(currentPath)}`} class="icon-link">
           <span class="icon-glyph">👤</span>
           <span class="icon-label">{t.nav.signIn}</span>
         </a>

@@ -1,10 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
 import type { StoreMedia } from "../types";
+import { SLUG_RE, slugify } from "../utils/slug";
 
 type Client = SupabaseClient<Database>;
-
-const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export async function fetchStoreMedia(client: Client, partyId: string): Promise<StoreMedia[]> {
   const { data, error } = await client
@@ -41,10 +40,6 @@ export async function deleteStoreMedia(client: Client, partyId: string, mediaId:
   return { error: error ? new Error(error.message) : null };
 }
 
-function slugify(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "media";
-}
-
 // Single upload path shared by the manual-slug settings form and the drag-and-drop media
 // picker modal — storage upload + DB row insert always happen together, so this is the only
 // place either caller needs to know the storage bucket name or path shape.
@@ -55,8 +50,8 @@ export async function uploadStoreMedia(
   input: { slug?: string; alt?: string | null } = {}
 ): Promise<{ data: StoreMedia | null; error: Error | null }> {
   const ext = file.name.split(".").pop() ?? "bin";
-  let slug = input.slug?.trim() || slugify(file.name.replace(/\.[^.]+$/, ""));
-  if (!SLUG_RE.test(slug)) slug = slugify(slug);
+  let slug = input.slug?.trim() || slugify(file.name.replace(/\.[^.]+$/, "")) || "media";
+  if (!SLUG_RE.test(slug)) slug = slugify(slug) || "media";
 
   const path = `${partyId}/${slug}-${Date.now()}.${ext}`;
   const buf = await file.arrayBuffer();

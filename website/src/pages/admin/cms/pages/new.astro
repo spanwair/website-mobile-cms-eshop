@@ -1,6 +1,8 @@
 ---
 import CmsLayout from "@/components/cms/CmsLayout.astro";
+import SlugInput from "@/components/cms/SlugInput.astro";
 import { createSupabase } from "@/lib/supabase";
+import { resolveSlug } from "@shared/utils/slug";
 import { createContentPage } from "@shared/services/contentPageService";
 import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
@@ -24,7 +26,7 @@ if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const result = await createContentPage(supabase, {
     party_id: partyId,
-    slug: (form.get("slug") as string).trim(),
+    slug: resolveSlug(form.get("slug") as string, form.get("title") as string),
     title: (form.get("title") as string).trim(),
     template: (form.get("template") as "default" | "about" | "contact" | "faq") ?? "default",
     body: (form.get("body") as string) || null,
@@ -54,10 +56,7 @@ const prefillTitle = Astro.url.searchParams.get("title") ?? "";
           <label class="form-label">{t.admin.cms.fieldTitle}</label>
           <input class="form-input" name="title" required value={prefillTitle} />
         </div>
-        <div class="form-group">
-          <label class="form-label">{t.admin.cms.fieldSlug}</label>
-          <input class="form-input" name="slug" required placeholder="o-nas" value={prefillSlug} />
-        </div>
+        <SlugInput sourceName="title" label={t.admin.cms.fieldSlug} value={prefillSlug} placeholder="o-nas" hint={t.common.slugAutoHint} />
       </div>
       <div class="form-group">
         <label class="form-label">{t.admin.cms.fieldTemplate}</label>

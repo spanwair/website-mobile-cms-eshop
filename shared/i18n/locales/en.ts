@@ -1,5 +1,6 @@
 export const en = {
   common: {
+    slugAutoHint: "Leave empty to generate automatically. You can change it anytime.",
     cancel: "Cancel",
     save: "Save",
     error: "Error",
@@ -349,7 +350,7 @@ export const en = {
       back: "← Back to products",
       fieldTitle: "Name *",
       fieldTitlePlaceholder: "Product name",
-      fieldSlug: "Slug *",
+      fieldSlug: "Slug",
       fieldSlugPlaceholder: "product-slug",
       fieldSku: "SKU",
       fieldBarcode: "Barcode",
@@ -405,7 +406,7 @@ export const en = {
       back: "← Back to categories",
       fieldName: "Name *",
       fieldNamePlaceholder: "Category name",
-      fieldSlug: "Slug *",
+      fieldSlug: "Slug",
       fieldSlugPlaceholder: "category-slug",
       fieldParent: "Parent category",
       noParentOption: "— None (top-level) —",

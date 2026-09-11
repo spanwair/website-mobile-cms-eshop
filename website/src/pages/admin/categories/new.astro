@@ -1,6 +1,8 @@
 ---
 import CmsLayout from "@/components/cms/CmsLayout.astro";
 import ImagePicker from "@/components/cms/ImagePicker.astro";
+import SlugInput from "@/components/cms/SlugInput.astro";
+import { resolveSlug } from "@shared/utils/slug";
 import { createSupabase } from "@/lib/supabase";
 import { createCategory, fetchCategories } from "@shared/services/categoryService";
 import { fetchStoreMedia } from "@shared/services/storeMediaService";
@@ -30,7 +32,7 @@ if (Astro.request.method === "POST") {
   const result = await createCategory(supabase, {
     party_id: selectedPartyId,
     name: form.get("name") as string,
-    slug: form.get("slug") as string,
+    slug: resolveSlug(form.get("slug") as string, form.get("name") as string),
     parent_id: (form.get("parent_id") as string) || null,
     icon: (form.get("icon") as string) || null,
     image_url: (form.get("image_url") as string) || null,
@@ -68,10 +70,7 @@ const media = await fetchStoreMedia(supabase, selectedPartyId!);
         <label class="form-label">{t.admin.categories.fieldName}</label>
         <input class="form-input" name="name" required placeholder={t.admin.categories.fieldNamePlaceholder} />
       </div>
-      <div class="form-group">
-        <label class="form-label">{t.admin.categories.fieldSlug}</label>
-        <input class="form-input" name="slug" required placeholder={t.admin.categories.fieldSlugPlaceholder} />
-      </div>
+      <SlugInput sourceName="name" label={t.admin.categories.fieldSlug} placeholder={t.admin.categories.fieldSlugPlaceholder} hint={t.common.slugAutoHint} />
       <div class="form-group">
         <label class="form-label">{t.admin.categories.fieldParent}</label>
         <select class="form-input" name="parent_id">

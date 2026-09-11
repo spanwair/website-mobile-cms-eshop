@@ -10,7 +10,7 @@ const { stores, showCreateCard = false } = Astro.props;
 const t = useT(Astro);
 ---
 
-{stores.length > 0 && (
+{(stores.length > 0 || showCreateCard) && (
   <section class="landing" id="real-eshops">
     <div class="container-lg">
       <p class="section-eyebrow">{t.landing.realEshops.eyebrow}</p>
@@ -40,7 +40,7 @@ const t = useT(Astro);
           );
         })}
         {showCreateCard && (
-          <a href="/#hero" class="card karta eshop-card eshop-card--create" data-reveal>
+          <a href="/login?mode=signup" class="card karta eshop-card eshop-card--create" data-reveal>
             <div class="eshop-card-shot eshop-card-shot--create">
               <span class="eshop-card-plus" aria-hidden="true">+</span>
             </div>

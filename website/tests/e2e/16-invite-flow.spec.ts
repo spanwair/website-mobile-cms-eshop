@@ -167,9 +167,9 @@ test.describe("16 — Invite flow: invite → accept → set-password → login"
     await screenshot(page, "16-01-set-password-filled");
     await page.click("#setpw-btn");
 
-    // Should redirect to / after setting password
-    await page.waitForURL(`${BASE}/`, { timeout: 20000 });
-    await screenshot(page, "16-01-home-after-invite");
+    // Should redirect into the admin area after setting password (invited user)
+    await page.waitForURL(/\/admin/, { timeout: 20000 });
+    await screenshot(page, "16-01-admin-after-invite");
 
     // Sign out
     await page.goto(`${BASE}/auth/signout`);

@@ -11,6 +11,8 @@ if (session) return Astro.redirect("/");
 const t = useT(Astro);
 const lang = getLang(Astro);
 const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" : "signin";
+const rawRedirect = Astro.url.searchParams.get("redirect");
+const redirectTo = rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "";
 ---
 
 <!doctype html>
@@ -52,6 +54,7 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
         data-err-already={t.auth.errorAlreadyRegistered}
         data-success-signup={t.auth.successSignUp}
         data-lang={lang}
+        data-redirect={redirectTo}
       >
         <div id="mode-signin" class:list={[{ hidden: initialMode === "signup" }]}>
           <h1 class="auth-title">{t.auth.welcomeBack}</h1>
@@ -146,6 +149,9 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
       const panel = document.querySelector(".auth-panel") as HTMLElement;
       const d = panel.dataset;
 
+      const redirectPath = (d.redirect && d.redirect.startsWith("/") && !d.redirect.startsWith("//")) ? d.redirect : "";
+      const callbackUrl = `${window.location.origin}/auth/callback${redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : ""}`;
+
       const modeSignin = document.getElementById("mode-signin")!;
       const modeSignup = document.getElementById("mode-signup")!;
 
@@ -178,7 +184,7 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
       async function googleSignIn() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
-          options: { redirectTo: `${window.location.origin}/auth/callback` },
+          options: { redirectTo: callbackUrl },
         });
         if (error) showError("error-si", error.message);
       }
@@ -194,7 +200,7 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
         btn.disabled = true; btn.textContent = d.signingIn!;
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) { showError("error-si", error.message); btn.disabled = false; btn.textContent = d.signIn!; }
-        else { window.location.href = "/"; }
+        else { window.location.href = redirectPath || "/"; }
       });
 
       document.getElementById("signup-form")!.addEventListener("submit", async (e) => {
@@ -216,7 +222,10 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: name, display_name: name, lang: d.lang ?? 'cs' } },
+          options: {
+            emailRedirectTo: callbackUrl,
+            data: { full_name: name, display_name: name, lang: d.lang ?? 'cs' },
+          },
         });
 
         if (error) {
@@ -225,7 +234,7 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
               email,
               options: {
                 shouldCreateUser: false,
-                emailRedirectTo: `${window.location.origin}/auth/callback`,
+                emailRedirectTo: callbackUrl,
                 data: { lang: d.lang ?? 'cs' },
               },
             });
@@ -245,7 +254,9 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
         }
 
         if (data.session) {
-          window.location.href = "/";
+          // Auto-confirm environments return a session straight from signUp (no email step).
+          // Send a brand-new account into the admin area → onboarding, never the homepage.
+          window.location.href = redirectPath || "/admin";
         } else {
           const el = document.getElementById("success-su")!;
           el.textContent = d.successSignup!;
