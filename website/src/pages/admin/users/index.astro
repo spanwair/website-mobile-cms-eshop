@@ -13,7 +13,7 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/");
+if (!ctx) return Astro.redirect("/dashboard");
 const { permissions, role: myRole } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_USERS)) return Astro.redirect("/admin");
 const t = useT(Astro);

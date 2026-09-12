@@ -1,122 +1,17 @@
 ---
 import LandingLayout from "../components/landing/LandingLayout.astro";
-import { createSupabase, createAdminClient } from "../lib/supabase";
-import { fetchProfile, updateProfile } from "@shared/services/profileService";
+import ProfilePanel from "../components/account/ProfilePanel.astro";
+import { runProfilePage } from "../lib/accountForms";
 import { useT } from "../lib/i18n";
-import { ROLE } from "@shared/constants/permissions";
 
-const supabase = createSupabase(Astro);
-const { data: { session } } = await supabase.auth.getSession();
-if (!session) return Astro.redirect("/login");
+const result = await runProfilePage(Astro);
+if (result.redirect) return Astro.redirect(result.redirect);
 
 const t = useT(Astro);
-let profile = await fetchProfile(supabase, session.user.id, session.user.email ?? "");
-let saved = false;
-let saveError: string | null = null;
-
-if (Astro.request.method === "POST") {
-  const form = await Astro.request.formData();
-  const action = form.get("_action") as string | null;
-
-  if (action === "delete_account") {
-    const admin = createAdminClient();
-    const { error } = await admin.auth.admin.deleteUser(session.user.id);
-    if (error) {
-      saveError = error.message;
-    } else {
-      await supabase.auth.signOut();
-      return Astro.redirect("/login");
-    }
-  } else {
-    const displayName = form.get("display_name") as string;
-    const { error } = await updateProfile(supabase, session.user.id, { display_name: displayName });
-    if (error) saveError = error.message;
-    else { saved = true; profile = await fetchProfile(supabase, session.user.id, session.user.email ?? ""); }
-  }
-}
-
-function roleLabel(role: number | null) {
-  if (role === ROLE.OWNER)       return t.profile.role.owner;
-  if (role === ROLE.ADMIN)       return t.profile.role.admin;
-  if (role === ROLE.ESHOP_ADMIN) return t.profile.role.eshop_admin;
-  return t.profile.role.user;
-}
 ---
 
 <LandingLayout title={`${t.profile.title} — Mamtodoma`} description={t.landing.meta.defaultDescription}>
   <section class="landing">
-    <div class="container-lg profile-content">
-      <h1 class="section-title">{t.profile.title}</h1>
-
-      <div class="card profile-card">
-        <div class="avatar">
-          {profile?.avatar_url
-            ? <img src={profile.avatar_url} alt="Avatar" class="avatar-img" />
-            : <span class="avatar-initial">{(profile?.display_name ?? session.user.email ?? "?")[0].toUpperCase()}</span>
-          }
-        </div>
-        <div class="profile-info">
-          <span class="profile-name">{profile?.display_name ?? t.common.unnamed}</span>
-          <span class="profile-email">{session.user.email}</span>
-          <span class="profile-role">{roleLabel(profile?.role ?? null)}</span>
-        </div>
-      </div>
-
-      <div class="card edit-card">
-        <h2 class="card-title">{t.profile.editProfile}</h2>
-        {saved && <p class="success-msg">{t.settings.saved}</p>}
-        {saveError && <p class="error-msg">{saveError}</p>}
-        <form method="POST" class="edit-form">
-          <div class="form-group">
-            <label class="form-label" for="display_name">{t.profile.displayName}</label>
-            <input id="display_name" name="display_name" type="text" class="form-input" value={profile?.display_name ?? ""} placeholder={t.settings.displayNamePlaceholder} />
-          </div>
-          <button type="submit" class="btn btn-primary">{t.common.saveChanges}</button>
-        </form>
-      </div>
-
-      <div class="bottom-actions">
-        <form method="POST" action="/auth/signout">
-          <button type="submit" class="btn btn-ghost">{t.profile.signOut} →</button>
-        </form>
-
-        <form method="POST" id="delete-form">
-          <input type="hidden" name="_action" value="delete_account" />
-          <button
-            type="button"
-            class="btn btn-danger"
-            data-confirm={t.profile.deleteConfirm}
-            id="delete-btn"
-          >{t.profile.deleteAccount}</button>
-        </form>
-      </div>
-    </div>
+    <ProfilePanel profile={result.profile} email={result.email} saved={result.saved} saveError={result.saveError} />
   </section>
 </LandingLayout>
-
-<script>
-  document.getElementById("delete-btn")?.addEventListener("click", () => {
-    const msg = (document.getElementById("delete-btn") as HTMLElement).dataset.confirm ?? "Are you sure?";
-    if (confirm(msg)) {
-      (document.getElementById("delete-form") as HTMLFormElement).submit();
-    }
-  });
-</script>
-
-<style>
-  .profile-content { max-width: 680px; margin-inline: auto; }
-  .profile-card { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
-  .avatar { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: var(--accent-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .avatar-img { width: 100%; height: 100%; object-fit: cover; }
-  .avatar-initial { font-size: 28px; font-weight: 900; color: #fff; }
-  .profile-info { display: flex; flex-direction: column; gap: 4px; }
-  .profile-name { font-size: 20px; font-weight: 800; color: var(--text-primary); }
-  .profile-email { font-size: 13px; color: var(--text-muted); }
-  .profile-role { font-size: 11px; font-weight: 700; color: var(--accent-primary); text-transform: uppercase; letter-spacing: 0.6px; }
-  .edit-card { margin-bottom: 24px; }
-  .card-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 20px; }
-  .edit-form { display: flex; flex-direction: column; gap: 16px; }
-  .success-msg { color: var(--success); font-size: 14px; margin-bottom: 12px; }
-  .error-msg { color: var(--error); font-size: 14px; margin-bottom: 12px; }
-  .bottom-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
-</style>

@@ -2,8 +2,8 @@
 import { useT } from "../../lib/i18n";
 
 // A customer is a role=1 USER and cannot create an org in place. This block only *invites* them to
-// start selling and links to the public pricing/onboarding pitch — no silent role change. The
-// commitment to become a seller happens through that flow, not from this dashboard.
+// start selling and links to the platform root ("/" — localhost or mamtodoma.cz depending on host),
+// where the seller onboarding pitch lives — no silent role change.
 const t = useT(Astro);
 ---
 
@@ -14,7 +14,7 @@ const t = useT(Astro);
   <div class="eshop-cta-body">
     <h2 class="eshop-cta-title">{t.dashboard.cta.title}</h2>
     <p class="eshop-cta-text">{t.dashboard.cta.body}</p>
-    <a href="/pricing" class="btn btn-primary">{t.dashboard.cta.button}</a>
+    <a href="/" class="btn btn-primary">{t.dashboard.cta.button}</a>
   </div>
 </aside>
 

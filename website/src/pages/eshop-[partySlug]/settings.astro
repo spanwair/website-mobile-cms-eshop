@@ -1,0 +1,33 @@
+---
+import Layout from "../../components/layout/Layout.astro";
+import SettingsPanel from "../../components/account/SettingsPanel.astro";
+import { runSettingsPage } from "../../lib/accountForms";
+import { useT } from "../../lib/i18n";
+
+const storeParty = Astro.locals.storeParty;
+if (!storeParty) return Astro.redirect("/shop");
+
+// Keep the post-save language redirect inside this store's route family.
+const basePath = `/eshop-${Astro.params.partySlug}`;
+const result = await runSettingsPage(Astro, basePath);
+if (result.redirect) return Astro.redirect(result.redirect);
+
+const t = useT(Astro);
+---
+
+<Layout title={t.settings.title}>
+  <div class="account-page">
+    <SettingsPanel
+      displayName={result.displayName}
+      email={result.email}
+      currentLang={result.currentLang}
+      hasEmailAuth={result.hasEmailAuth}
+      success={result.success}
+      error={result.error}
+    />
+  </div>
+</Layout>
+
+<style>
+  .account-page { padding: 32px 24px; }
+</style>
