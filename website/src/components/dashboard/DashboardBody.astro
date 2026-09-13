@@ -1,0 +1,46 @@
+---
+import { getLang } from "../../lib/i18n";
+import AccountHeader from "./AccountHeader.astro";
+import AccountKpis from "./AccountKpis.astro";
+import OrdersList from "./OrdersList.astro";
+import DeliveriesTracking from "./DeliveriesTracking.astro";
+import ReturnsList from "./ReturnsList.astro";
+import ShopContactCard from "./ShopContactCard.astro";
+import StartYourEshopCta from "./StartYourEshopCta.astro";
+import type { CustomerAccount } from "@shared/services/customerDashboardService";
+import type { StoreConfig } from "@shared/types";
+
+interface Props {
+  displayName: string;
+  brandName: string;
+  shopHref: string;
+  logoUrl: string | null;
+  storeConfig: StoreConfig | null;
+  account: CustomerAccount;
+}
+const { displayName, brandName, shopHref, logoUrl, storeConfig, account } = Astro.props;
+const lang = getLang(Astro);
+---
+
+<div class="container-lg dash">
+  <AccountHeader displayName={displayName} brandName={brandName} shopHref={shopHref} logoUrl={logoUrl} />
+  <AccountKpis kpis={account.kpis} lang={lang} />
+  <div class="dash-grid">
+    <div class="dash-main">
+      <OrdersList orders={account.orders} shopHref={shopHref} lang={lang} />
+      <DeliveriesTracking deliveries={account.deliveries} shipments={account.shipments} shopHref={shopHref} lang={lang} />
+      <ReturnsList returns={account.returns} lang={lang} />
+    </div>
+    <aside class="dash-side">
+      <ShopContactCard storeConfig={storeConfig} shopHref={shopHref} />
+    </aside>
+  </div>
+  <StartYourEshopCta />
+</div>
+
+<style>
+  .dash { max-width: 1080px; margin-inline: auto; }
+  .dash-grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 24px; }
+  @media (min-width: 900px) { .dash-grid { grid-template-columns: 2fr 1fr; align-items: start; } }
+  .dash-main { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+</style>

@@ -4,9 +4,10 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro build && wrangler dev",
-    "deploy": "astro build && wrangler deploy",
+    "build:docs": "bash ../scripts/build-docs.sh",
+    "build": "pnpm run build:docs && astro build",
+    "preview": "pnpm run build && wrangler dev",
+    "deploy": "pnpm run build && wrangler deploy",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.astro",
     "test:e2e": "playwright test"

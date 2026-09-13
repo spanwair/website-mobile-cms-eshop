@@ -1,95 +1,87 @@
 ---
-title: Inventory
-description: How to track stock levels, make adjustments, and monitor low-stock items.
+title: Skladové zásoby
+description: Sledujte zásoby pro každou variantu produktu, nastavte limity nízkých a maximálních zásob a zaznamenávejte pohyby zásob
 ---
 
-Inventory tracks how many units of each product are physically available, reserved for orders, and available to sell. Every stock change is recorded as a movement so you have a full audit trail.
+Skladové zásoby sledují úrovně zásob pro každý prodejný předmět.
+Protože je [produkt](/docs/admin/products) vždy skupinou variant, pro každou variantu existuje přesně jeden řádek skladových zásob (`inventory_items`), a štítek zásob v obchodě, který zákazník vidí, je odvozen z těchto čísel, nikdy není ručně zadán.
+Můžete upravit stejná čísla uvnitř editoru produktu, ale tato stránka vám poskytuje celý katalog najednou.
 
-## Permission required
+## Vyžadováno oprávnění
 
-| Permission bit | Name | Who has it by default |
+| Permission bit | Name | Kdo ho má výchozí |
 |---|---|---|
-| 64 | MANAGE_INVENTORY | Owner, Admin, Eshop Admin (with this bit) |
+| 64 | MANAGE_INVENTORY | Vlastník, Administrátor, Eshop Administrátor (s tímto bitem) |
 
-## Inventory list (`/admin/inventory`)
+Bez `MANAGE_INVENTORY` vás systém přesměruje na `/admin`.
+Eshop administrátor bez organizace je poslán na `/admin/setup` (vlastník: `/admin/parties/new`).
 
-### Filters
+## Seznam skladových zásob (`/admin/inventory`)
 
-| Toggle | Shows |
+Řádky jsou paginované po 30 a lze je zúžit pomocí tří filtrovacích záložek, každá zobrazuje aktuální počet:
+
+| Tab | Zobrazuje |
 |---|---|
-| All | Every inventory item |
-| Low Stock | Only items where `qty_on_hand` is at or below `low_stock_threshold` |
+| Všechny | Každý sledovaný předmět (`inventoryResult.total`). |
+| Nízké zásoby | Předměty, kde `qty_on_hand <= low_stock_threshold` a stále nad nulou. |
+| Vyprodáno | Předměty, kde `qty_on_hand <= 0`. |
 
-Low stock items display the quantity in **red**.
+### Sloupce
 
-### Table columns
-
-| Column | Description |
+| Sloupec | Popis |
 |---|---|
-| Product | The product this inventory item belongs to |
-| Variant | Product variant (e.g. size, color) if applicable |
-| Qty on hand | Units physically in stock |
-| Qty reserved | Units allocated to confirmed/processing orders (not yet shipped) |
-| Qty available | `qty_on_hand − qty_reserved` — what can actually be sold right now |
-| Low stock threshold | Alert level — when `qty_on_hand` drops to or below this, item shows in Low Stock filter |
+| Produkt | Název, odkazující na `/admin/products/{id}`. Pokud chybí název, použije se zkrácený ID. |
+| Varianta | Název varianty, nebo pomlčka pro produkty s jednou variantou. |
+| Na skladě | `qty_on_hand`. Změní se na červenou, když je předmět na nebo pod jeho limitem nízkých zásob. |
+| Rezervováno | `qty_reserved` - jednotky držené otevřenými objednávkami/košíky. |
+| Dostupné | `qty_available` - prodejná hodnota (na skladě minus rezervováno). |
+| Limity | Skládané limity Min (nízké zásoby) a Max; červený odznak "Nízké zásoby" se objeví při překročení. |
+| Aktualizovat limity | Inline formulář (viz níže). |
+| Upravit | Inline formulář pro pohyb zásob (viz níže). |
 
-## Understanding the three quantities
+### Formulář pro aktualizaci limitů
 
-```
-qty_on_hand = qty_reserved + qty_available
-```
+Dva numerické vstupy (Min / Max) plus **Použít**.
+Odesílá `action=update_thresholds` a volá `updateThresholds`.
+Hodnota `0` nebo prázdná hodnota je uložena jako `null` (což znamená "žádný limit"), takže sloupec Min zobrazuje pomlčku namísto nuly.
 
-- **On hand**: physical count of units in your warehouse
-- **Reserved**: units "held" for orders that have been confirmed but not yet shipped — the customer has paid, the item is committed
-- **Available**: what's actually free to sell to new customers
+- **Min (`low_stock_threshold`)** - bod, kdy se předmět počítá jako nízké zásoby a objeví se červený odznak.
+- **Max (`max_threshold`)** - cílová horní hranice, užitečná pro plánování doplňování zásob.
 
-When a new order is confirmed, `qty_reserved` increases. When the order ships, `qty_reserved` decreases and `qty_on_hand` decreases (the item left the warehouse).
+### Formulář pro úpravu zásob
 
-## Adjusting stock
+Znakovaná kvantita, typ pohybu, volitelný poznámka, poté **Použít**.
+Odesílá na `updateStock`, který zapisuje jak novou `qty_on_hand`, tak řádek v `stock_movements` s časovým razítkem `created_by`.
 
-Each row has an inline form. To adjust:
+| Typ pohybu | Znamená |
+|---|---|
+| adjustment | Korekce |
+| purchase | Nákup |
+| return | Vrácení |
+| damage | Poškození |
 
-1. Enter the **quantity** as a signed integer:
-   - Positive number (e.g. `+50`) to add stock
-   - Negative number (e.g. `-3`) to reduce stock
-2. Select the **movement type** (see below)
-3. Add an optional **note** (e.g. "Restock from supplier ABC, invoice #1234")
-4. Click **Apply**
+Zadejte kladné číslo k přidání jednotek, záporné číslo k jejich odebrání.
 
-The adjustment records a new entry in `stock_movements` and updates `qty_on_hand` immediately.
+### Na objednávku (vždy skladem)
 
-### Movement types
+Některé produkty jsou vyráběny na objednávku a nikdy by neměly zobrazovat "vyprodáno" - příkladem jsou kytky z Beskyd's "Na zakázku".
+Pro tyto produkty otevřete položku v [editoru produktu](/docs/admin/products) a zaškrtněte **Na objednávku**, což nastaví `inventory_items.track_inventory = false`.
+Neposledované položky zobrazí v obchodě odznak "na objednávku" namísto počtu zásob a nejsou filtrovány pro anonymní zákazníky.
 
-| Type | When to use | Effect |
-|---|---|---|
-| `purchase` | New stock arrived from supplier | Increases `qty_on_hand` |
-| `adjustment` | Manual correction (count discrepancy, data fix) | Increases or decreases depending on signed quantity |
-| `return` | Customer return restocked (usually done automatically via [Returns](/admin/returns)) | Increases `qty_on_hand` |
-| `damage` | Items damaged/expired/lost and written off | Decreases `qty_on_hand` |
+## Prázdný stav a paginace
 
-## What happens when stock hits 0
+Když žádný řádek neodpovídá aktuální záložce, zobrazí se centrovaný řádek "Žádné zásoby".
+Odkazy Předchozí / Další a indikátor "Strana X z Y" se objeví, když je více než jedna stránka; aktivní filtr je zachován napříč stránkami.
 
-When `qty_available = 0`:
-- The product is shown as "out of stock" on the eshop
-- Customers cannot add it to their cart
-- Existing reserved quantities (from confirmed orders) are not affected
+## Data a úložiště (cloud)
 
-When `qty_on_hand = 0`:
-- All of the above, plus reserved stock becomes a problem — orders may be stuck without product to ship
+- **Tabulky:** `inventory_items` (`product_id`, `variant_id`, `variant_name`, `qty_on_hand`, `qty_reserved`, `qty_available`, `low_stock_threshold`, `max_threshold`, `track_inventory`), `stock_movements` (`inventory_item_id`, `party_id`, `quantity`, `type`, `note`, `created_by`).
+- **Služby:** `fetchInventory`, `updateStock`, `updateThresholds` (`inventoryService`).
+- **Spouštěče:** Řádky skladových zásob jsou automaticky vytvářeny pro každý produkt/variantu (`create_default_inventory_item` / `ensure_variant_inventory_item`).
+- Všechny dotazy jsou omezeny na `ctx.partyId`.
 
-Keep an eye on the Low Stock filter to restock before hitting zero.
+## Související stránky
 
-## Setting up inventory for a new product
-
-When you create a product in [Products](/admin/products), an inventory item is not created automatically. To set up inventory:
-
-1. Go to `/admin/inventory`
-2. Find the product's inventory row (created automatically by a DB trigger when a product is saved, or check with your Owner if the row is missing)
-3. Make a `purchase` adjustment with your initial stock quantity
-4. Set the `low_stock_threshold` to your reorder point
-
-## Related pages
-
-- [Products](/admin/products) — products that have inventory items
-- [Orders](/admin/orders) — confirmed orders increase `qty_reserved`
-- [Returns & Refunds](/admin/returns) — completed returns with `restock = true` automatically add back to inventory
+- [Produkty](/docs/admin/products) - stejné ovládací prvky pro úpravu/limity/na objednávku se nacházejí v editoru produktu pro každou variantu
+- [Objednávky](/docs/admin/orders) - otevřené objednávky řídí množství Rezervováno; vrácení mohou zde generovat pohyb "vrácení"
+- [Vrácení](/docs/admin/returns) - doplňování zásob vráceného předmětu je místo, kde typicky vzniká pohyb "vrácení"

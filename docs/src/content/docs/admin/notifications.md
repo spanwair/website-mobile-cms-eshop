@@ -1,51 +1,55 @@
 ---
-title: Notifications
-description: How to view and manage your admin notification inbox.
+title: Oznámení
+description: Vždy viditelná schránka oznámení pro uživatele v panelu administrátora
 ---
 
-Notifications are internal alerts delivered to your admin account. They cover system events, order updates, and low-stock alerts. All admin roles can access notifications — no specific permission bit is required beyond being an admin.
+Oznámení na `/admin/notifications` je vaše osobní schránka v panelu administrátora.
+Seznamuje systémové zprávy určené vašemu účtu, jako jsou pozvánky a změny stavu.
+Je to jediná stránka administrátora, která je vždy dostupná, proto [nástěnka](/docs/admin/dashboard) přesměrovává sem, když uživatel nemá oprávnění k nástěnce.
 
-## Permission required
+## Požadované oprávnění
 
-Accessible to all admin roles (Owner, Admin, Eshop Admin). No specific permission bit needed.
+Žádné.
+Stránka má bit oprávnění `0`, takže její položka v bočním panelu je vždy vykreslena pro jakéhokoli administrátora a žádná kontrola oprávnění neblokuje tělo stránky.
+Jediné požadavky na přístup jsou platná přihlašovací relace a kontext administrátora.
 
-## Notification list (`/admin/notifications`)
-
-The page shows all notifications sent to your account in a table:
-
-| Column | Description |
+| Podmínka | Přesměrování |
 |---|---|
-| Timestamp | When the notification was created |
-| Type | Machine-readable event type (e.g. `order_update`, `low_stock`, `system_alert`) |
-| Title | Headline of the notification |
-| Message | Full notification body |
-| Status | Read / Unread badge |
+| Žádná přihlašovací relace | `/login` |
+| `requireAdminCtx` vrátí `null` | `/dashboard` |
+| Jinak | Vykreslí schránku |
 
-Unread notifications are displayed in **bold**. Click a notification row to mark it as read.
+## Tabulka oznámení
 
-## Notification types
+Oznámení jsou uvedena od nejnovějších informací.
 
-| Type | Triggered by |
+| Sloupec | Popis |
 |---|---|
-| `system_alert` | System-level events (e.g. maintenance, configuration changes) |
-| `order_update` | Order status changes (e.g. new order placed, order shipped) |
-| `low_stock` | Inventory item drops to or below its low-stock threshold |
-| Custom types | Any notification sent programmatically by your app or Edge Functions |
+| Časové razítko | Kdy bylo oznámení vytvořeno, zobrazeno jako plné lokální datum a čas v malém ztlumeném textu |
+| Typ | Typ oznámení systému, zobrazený v monospaced písmu (např. typ pozvánky nebo schválení) |
+| Název | Název oznámení, nebo pomlčka, pokud není žádný |
+| Zpráva | Text těla oznámení v ztlumeném typu, nebo pomlčka, pokud není žádný |
+| Stav | Odznak s textem **Nepřečtené** (zelená) nebo **Přečtené** (šedá) |
 
-## Reading notifications
+Nepřečtené řádky jsou vykresleny v tučném písmu, aby přitáhly pozornost.
+Na této stránce neexistuje filtr, vyhledávání, paginace ani ovládání pro označení jako přečtené; je to přímý seznam pouze pro čtení.
+Pokud nemáte žádná oznámení, tabulku vyplní centrován zprávový prázdný stav.
 
-Notifications are personal — each admin sees only their own notifications. There is no shared inbox.
+## Rozsah
 
-Marking a notification as read is done by clicking the row. There is no bulk "mark all as read" button in the current version.
+Tato schránka je **pro uživatele, ne pro organizaci**.
+Seznam pochází z volání `fetchUserNotifications` s vaším vlastním uživatelským ID, takže změna aktivní organizace neovlivní to, co zde vidíte.
+Oznámení vás sledují napříč každou organizací, příslušné k ní.
 
-## What to do with notifications
+## Data a úložiště (cloud)
 
-- **Order updates**: Navigate to [Orders](/admin/orders) to process the order
-- **Low stock alerts**: Go to [Inventory](/admin/inventory) to restock the item
-- **System alerts**: Review the message and take the indicated action or contact your Owner
+- Čte tabulku `notifications` filtrovanou pro přihlášeného uživatele, pomocí `fetchUserNotifications`.
+  Zobrazené sloupce: `created_at`, `type`, `title`, `body` a `read_at` (který řídí odznak přečtené/nepřečtené a tučné stylizace).
+- Čte `profiles` a `parties` pouze prostřednictvím `requireAdminCtx` pro okolní rozložení.
+- Stránka nic nepisuje.
 
-## Related pages
+## Související stránky
 
-- [Orders](/admin/orders) — process orders mentioned in order_update notifications
-- [Inventory](/admin/inventory) — restock items mentioned in low_stock notifications
-- [Audit Log](/admin/audit) — full history of data changes (requires MANAGE_AUDIT permission)
+- [Nástěnka](/docs/admin/dashboard) - přesměrovává sem pro administrátory, kteří nemají bit VIEW_DASHBOARD
+- [Organizace](/docs/admin/parties) - pozvánky, které generují oznámení, pocházejí odtud
+- [Protokol auditu](/docs/admin/audit) - záznam o aktivitě celé organizace, odlišný od této schránky pro uživatele

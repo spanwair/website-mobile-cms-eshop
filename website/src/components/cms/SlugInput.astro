@@ -1,0 +1,52 @@
+---
+interface Props {
+  sourceName: string;
+  label: string;
+  name?: string;
+  value?: string | null;
+  placeholder?: string;
+  hint?: string;
+}
+const { sourceName, label, name = "slug", value = null, placeholder = "", hint } = Astro.props;
+---
+<div class="form-group" data-slug-input data-source={sourceName}>
+  <label class="form-label">{label}</label>
+  <input
+    class="form-input"
+    name={name}
+    value={value ?? ""}
+    placeholder={placeholder}
+    pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+    autocapitalize="off"
+    autocomplete="off"
+    spellcheck="false"
+    data-slug-field
+  />
+  {hint && <p class="slug-hint">{hint}</p>}
+</div>
+
+<script>
+  import { slugify } from "@shared/utils/slug";
+
+  function init(root: HTMLElement) {
+    const field = root.querySelector<HTMLInputElement>("[data-slug-field]");
+    const form = field?.closest("form");
+    const source = form?.querySelector<HTMLInputElement>(`[name="${root.dataset.source}"]`);
+    if (!field || !source) return;
+
+    let userEdited = field.value.trim().length > 0;
+    field.addEventListener("input", () => {
+      userEdited = field.value.trim().length > 0;
+    });
+    source.addEventListener("input", () => {
+      if (userEdited) return;
+      field.value = slugify(source.value);
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-slug-input]").forEach(init);
+</script>
+
+<style>
+  .slug-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+</style>

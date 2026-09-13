@@ -1,50 +1,50 @@
 ---
-title: Overview
-description: What this platform is and how it fits together.
+title: Přehled
+description: Co tato platforma je a jak se vše dohromady skládá.
 ---
 
-## What you get out of the box
+## Co dostanete "z krabice"
 
-This platform is a **ready-to-use e-commerce backend** built for small-to-medium businesses. It comes with:
+Tato platforma je **hotový backend pro e-commerce**, navržený pro malé a střední podniky. Obsahuje:
 
-- A **web admin panel** to manage your entire shop from a browser
-- A **React Native mobile app** your customers can install on Android or iOS
-- A **PostgreSQL database** (hosted on Supabase) for all your data
-- **Role-based access control** so your team only sees what they need to
-- **Automated E2E tests** that verify everything works before you deploy
+- **Webový panel administrátora** pro správu vašeho celého obchodu přímo z prohlížeče
+- **Mobilní aplikace React Native**, kterou si mohou vaši zákazníci nainstalovat na Androidu nebo iOS
+- **Databáze PostgreSQL** (hostovaná na Supabase) pro všechna vaše data
+- **Kontrolu přístupu založenou na rolech**, takže váš tým vidí pouze to, co potřebuje
+- **Automatizované E2E testy**, které ověřují, že vše funguje před nasazením
 
-## The three parts
+## Tři části
 
-### 1. Admin Website (`/website`)
-Built with [Astro 5](https://astro.build/) in SSR mode. This is where you manage everything:
-- Add and edit products
-- Process orders
-- Manage customers
-- Set up discount rules and coupons
-- Control who has access to what
+### 1. Webová stránka administrátora (`/website`)
+Postavená pomocí [Astro 5](https://astro.build/) v režimu SSR. Zde spravujete vše:
+- Přidávání a úprava produktů
+- Zpracování objednávek
+- Správa zákazníků
+- Nastavení pravidel pro slevy a kupóny
+- Kontrola, kdo má přístup k čem
 
-The admin panel lives at `/admin` and is protected — only users with the right role can access it.
+Panel administrátora se nachází na `/admin` a je chráněný - přístup mají pouze uživatelé s pravou *role*.
 
-### 2. Mobile App (`/mobile`)
-Built with React Native 0.83 + Expo 55. Your customers use this to browse your shop, place orders, and manage their account. Builds to an Android APK and iOS app.
+### 2. Mobilní aplikace (`/mobile`)
+Postavená pomocí React Native 0.83 + Expo 55. Vaši zákazníci ji používají k procházení vašeho obchodu, vytváření objednávek a správě svého účtu. Kompiluje se do Android APK a iOS aplikace.
 
-### 3. Shared Code (`/shared`)
-Logic that runs on both the website and the mobile app lives here — things like:
-- Database service functions (fetching products, updating orders…)
-- TypeScript types
-- Translation strings (Czech + English)
-- Permission checking utilities
+### 3. Sdílený kód (`/shared`)
+Logika, která běží jak na webové stránce, tak na mobilní aplikaci, se nachází zde - například:
+- Funkce služeb databáze (získávání produktů, aktualizace objednávek…)
+- Typy TypeScriptu
+- Překladové řetězce (česky + anglicky)
+- Užitečné funkce pro kontrolu oprávnění
 
-This means you only write it once and it works everywhere.
+To znamená, že to napíšete jednou a funguje všude.
 
-## Technology stack
+## Technologieový stack
 
-| Layer | Technology | Why |
+| Vrstva | Technologie | Proč |
 |-------|-----------|-----|
-| Website | Astro 5 SSR | Fast, server-rendered, minimal JS |
-| Mobile | React Native + Expo | One codebase for Android + iOS |
-| Database | Supabase (PostgreSQL) | Managed hosting, built-in auth, RLS |
-| Auth | Magic link + Google OAuth | Passwordless option available |
-| Package manager | pnpm | Fast, disk-efficient |
-| Types | TypeScript strict mode | Catch errors before they hit production |
-| Tests | Playwright (E2E) + Jest | Full coverage from browser to unit |
+| Webová stránka | Astro 5 SSR | Rychlý, serverově vykreslený, minimální JS |
+| Mobilní | React Native + Expo | Jeden kód pro Android + iOS |
+| Databáze | Supabase (PostgreSQL) | Správně hostovaný, vestavěná autentizace, RLS |
+| Autentizace | Magic link + Google OAuth | Dostupné bez hesla |
+| Správce paketů | pnpm | Rychlý, efektivní pro disk |
+| Typy | TypeScript strict mode | Zachytí chyby před nasazením do produkce |
+| Testy | Playwright (E2E) + Jest | Plné pokrytí od prohlížeče po jednotkové testy |

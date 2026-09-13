@@ -1,0 +1,71 @@
+---
+import { useT } from "../../lib/i18n";
+import { formatPrice, formatDate } from "@shared/utils/format";
+import type { AppLanguage } from "@shared/i18n/getT";
+import type { Order } from "@shared/types";
+
+interface Props {
+  orders: Order[];
+  shopHref: string;
+  lang: AppLanguage;
+}
+const { orders, shopHref, lang } = Astro.props;
+const t = useT(Astro);
+const statusLabels = t.dashboard.statusLabels as Record<string, string>;
+const paymentLabels = t.dashboard.paymentLabels as Record<string, string>;
+---
+
+<section class="card dash-card">
+  <h2 class="dash-card-title">{t.dashboard.orders.title}</h2>
+
+  {orders.length === 0 ? (
+    <div class="dash-empty">
+      <p>{t.dashboard.orders.empty}</p>
+      <a href={shopHref} class="btn btn-primary">{t.dashboard.orders.startShopping}</a>
+    </div>
+  ) : (
+    <div class="orders-scroll">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>{t.dashboard.orders.number}</th>
+            <th>{t.dashboard.orders.date}</th>
+            <th>{t.dashboard.orders.status}</th>
+            <th>{t.dashboard.orders.payment}</th>
+            <th class="ta-right">{t.dashboard.orders.total}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((o) => (
+            <tr>
+              <td class="mono">{o.order_number}</td>
+              <td>{formatDate(o.created_at, lang)}</td>
+              <td><span class={`badge badge--${o.status}`}>{statusLabels[o.status] ?? o.status}</span></td>
+              <td><span class={`badge badge--pay-${o.payment_status}`}>{paymentLabels[o.payment_status] ?? o.payment_status}</span></td>
+              <td class="ta-right total">{formatPrice(Number(o.total_amount), lang, o.currency)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</section>
+
+<style>
+  .dash-card { padding: 24px; }
+  .dash-card-title { font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0 0 16px; }
+  .dash-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; color: var(--text-muted); }
+  .orders-scroll { overflow-x: auto; }
+  .orders-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .orders-table th { text-align: left; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .orders-table td { padding: 12px; border-bottom: 1px solid var(--border); color: var(--text-primary); white-space: nowrap; }
+  .orders-table tr:last-child td { border-bottom: none; }
+  .ta-right { text-align: right; }
+  .mono { font-variant-numeric: tabular-nums; font-weight: 700; }
+  .total { font-weight: 800; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; background: var(--bg-subtle); color: var(--text-secondary); }
+  .badge--shipped, .badge--pay-paid { background: color-mix(in srgb, #16a34a 16%, transparent); color: #15803d; }
+  .badge--delivered { background: color-mix(in srgb, #2563eb 16%, transparent); color: #1d4ed8; }
+  .badge--cancelled, .badge--refunded, .badge--pay-failed { background: color-mix(in srgb, #dc2626 14%, transparent); color: #b91c1c; }
+  .badge--pay-unpaid { background: color-mix(in srgb, #f59e0b 18%, transparent); color: #b45309; }
+</style>

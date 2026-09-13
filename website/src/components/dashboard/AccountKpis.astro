@@ -1,0 +1,41 @@
+---
+import { useT } from "../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
+import type { AppLanguage } from "@shared/i18n/getT";
+
+interface Props {
+  kpis: { totalSpent: number; orderCount: number; inTransit: number; returnCount: number; currency: string };
+  lang: AppLanguage;
+}
+const { kpis, lang } = Astro.props;
+const t = useT(Astro);
+
+const tiles = [
+  { label: t.dashboard.kpi.spent, value: formatPrice(kpis.totalSpent, lang, kpis.currency), icon: "💰" },
+  { label: t.dashboard.kpi.orders, value: String(kpis.orderCount), icon: "📦" },
+  { label: t.dashboard.kpi.inTransit, value: String(kpis.inTransit), icon: "🚚" },
+  { label: t.dashboard.kpi.returns, value: String(kpis.returnCount), icon: "↩️" },
+];
+---
+
+<div class="kpi-row">
+  {tiles.map((tile) => (
+    <div class="kpi-tile">
+      <span class="kpi-icon" aria-hidden="true">{tile.icon}</span>
+      <span class="kpi-value">{tile.value}</span>
+      <span class="kpi-label">{tile.label}</span>
+    </div>
+  ))}
+</div>
+
+<style>
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 24px; }
+  .kpi-tile {
+    background: var(--bg-page); border: 1px solid var(--border); border-radius: var(--radius-lg, 12px);
+    padding: 18px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .kpi-icon { font-size: 20px; }
+  .kpi-value { font-size: 24px; font-weight: 900; color: var(--text-primary); line-height: 1.1; }
+  .kpi-label { font-size: 12.5px; font-weight: 600; color: var(--text-muted); }
+  @media (max-width: 720px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+</style>

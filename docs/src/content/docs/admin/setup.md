@@ -1,49 +1,53 @@
 ---
-title: First-Time Setup
-description: What to do when you first log in as an admin and see the setup page.
+title: Nastavení (čekání na organizaci)
+description: Stránka čekání, kterou vidí administrátor e-obchodu, než mu bude přidělena organizace.
 ---
 
-When you log in as an admin for the first time and have not yet been assigned to an organization, you land on `/admin/setup`. This page guides you through what to do next.
+`/admin/setup` je stránka čekání.
+Je to místo, kam přistoupí [Administrátor e-obchodu](/docs/admin/users), když má jeho účet administrátorský přístup, ale ještě mu nebyla přidělena žádná organizace.
+Každá jiná administrátorská role je přesměrována jinde, než se tato stránka vůbec vykreslí, takže v praxi ji vidí pouze pozvaný administrátor e-obchodu, který stále čeká na přidání do skupiny.
 
-## What this page means
+## Požadované oprávnění
 
-The setup page appears when:
-- You have an admin role but have not been added to any organization (party) yet
-- Your organization assignment is pending
+Žádný bit oprávnění není vyžadován.
+Stránka se vykreslí s `userPermissions={0}`, takže boční panel zobrazuje pouze vždy viditelné položky.
+Přístup je zcela určen níže uvedenou řetězovou reakcí přesměrování založenou na roli, nikoli bitem oprávnění.
 
-It does **not** mean something is broken — it just means your account isn't connected to an organization yet.
+## Kdo se dostane na tuto stránku
 
-## What to do if you're stuck here
+Stránka spustí [`requireAdminCtx`](/docs/admin/parties) a poté aplikuje přísnou řetězovou reakci přesměrování.
+Pořadí je důležité a pouze poslední případ dosáhne viditelné karty.
 
-**If you are an Eshop Admin or regular Admin:**
-1. Contact your Owner (the person who set up the CMS)
-2. Ask them to add you to your organization via [Organizations → your org → Invite Member](/admin/parties)
-3. Once they add you, refresh the page — you will be redirected to the [Dashboard](/admin/dashboard) automatically
+| Podmínka | Přesměrování | Proč |
+|---|---|---|
+| Žádná přihlašovací relace | `/login` | Musí být přihlášen |
+| `requireAdminCtx` vrátí `null` (role pod Administrátorem e-obchodu) | `/dashboard` | Čistí zákazníci nemají administrátorský panel |
+| `ctx.partyId` je nastaven (jakákoliv dostupná organizace) | `/admin` | Už je nakonfigurováno, přejděte přímo na nástěnku |
+| Vlastník bez skupiny | `/admin/parties/new` | Vlastník musí vytvořit první organizaci |
+| Samozapsaný administrátor (role = ADMIN) bez skupiny | `/admin/onboarding` | Administrátoři пройdou [úvodní průvodce](/docs/admin/onboarding) namísto toho, aby zde skončili |
+| Administrátor e-obchodu bez skupiny | Vykreslí kartu níže | Toto je jediná role, která skutečně musí čekat na pozvání |
 
-**If you are an Owner:**
-You are automatically redirected to [Create Organization](/admin/parties/new) to set up your first organization. Owners must create at least one organization before the CMS is usable.
+## Karty čekání
 
-## Owner: creating your first organization
+Když se karta vykreslí, zobrazuje:
 
-1. You will be redirected to `/admin/parties/new` automatically.
-2. Fill in your organization details:
-   - **Name** (required) — your organization's display name
-   - **Slug** (required) — URL-safe identifier
-   - **Company name** — legal business name
-   - **VAT number** — for invoicing
-   - **Billing email** — where billing notifications go
-3. Click **Save**. The system automatically creates a **Super Admin** role for your organization.
-4. You are now in the [Organizations](/admin/parties) list. Click your new organization to invite team members.
+- Velký ikona budovy.
+- Nadpis a vysvětlující text, který uživateli sděluje, že jeho účet ještě není propojen s organizací.
+- Jednáct tlačítko **Přejít domů**, které se vrací k kořenu webu `/`.
 
-## After setup
+Zde není žádný formulář ani žádná akce.
+Uživatel nemůže udělat nic jiného než odejít, protože přidělení do organizace provádí vlastník nebo administrátor z [stránky detailů organizace](/docs/admin/parties).
+Jakmile někdo tohoto uživatele pozve do skupiny, jeho další návštěva `/admin` najde `ctx.partyId` nastavené a je poslán do panelu normálně.
 
-Once you're assigned to an organization:
-1. The setup page redirects you to the [Dashboard](/admin/dashboard)
-2. The sidebar shows all sections you have permission to access
-3. Start by setting up [Categories](/admin/categories), then [Products](/admin/products)
+## Data a úložiště (cloud)
 
-## Related pages
+- Čte `profiles.role` pro přihlášeného uživatele prostřednictvím `requireAdminCtx`.
+- Čte tabulku `parties`, aby zjistil, zda uživatel má jakoukoliv dostupnou organizaci (to vyplňuje `ctx.partyId` a `ctx.parties`).
+- Nic nezapisuje.
 
-- [Organizations](/admin/parties) — owners can add members to an org here
-- [Dashboard](/admin/dashboard) — where you land after successful setup
-- [Roles](/users/roles) — understanding the role hierarchy
+## Související stránky
+
+- [Úvodní průvodce](/docs/admin/onboarding) - kam jsou posláni samozapsaní administrátoři namísto této stránky
+- [Organizace](/docs/admin/parties) - kam vlastník nebo administrátor přidělí uživatele do skupiny, aby opustil tuto stránku
+- [Uživatelé](/docs/admin/users) - kde se mění systémové role
+- [Nástěnka](/docs/admin/dashboard) - cílová destinace, jakmile existuje organizace

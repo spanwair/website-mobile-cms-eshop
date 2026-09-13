@@ -1,0 +1,24 @@
+---
+import Layout from "../../components/layout/Layout.astro";
+import ProfilePanel from "../../components/account/ProfilePanel.astro";
+import { runProfilePage } from "../../lib/accountForms";
+import { useT } from "../../lib/i18n";
+
+const storeParty = Astro.locals.storeParty;
+if (!storeParty) return Astro.redirect("/shop");
+
+const result = await runProfilePage(Astro);
+if (result.redirect) return Astro.redirect(result.redirect);
+
+const t = useT(Astro);
+---
+
+<Layout title={t.profile.title}>
+  <div class="account-page">
+    <ProfilePanel profile={result.profile} email={result.email} saved={result.saved} saveError={result.saveError} />
+  </div>
+</Layout>
+
+<style>
+  .account-page { padding: 32px 24px; }
+</style>

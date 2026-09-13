@@ -26,6 +26,10 @@ const phone = storeConfig?.contact_phone ?? null;
 const email = storeConfig?.contact_email ?? null;
 const currency = storeConfig?.currency_code ?? "CZK";
 const showWishlist = storeConfig?.enable_wishlists ?? true;
+// Keep account links inside this store's own route family so they render with storefront chrome.
+// Only the path-based /eshop-<slug> routes have scoped account pages; the /shop directory (and any
+// non-eshop shopHref) falls back to the top-level pages.
+const accountBase = shopHref.startsWith("/eshop-") ? shopHref : "";
 ---
 
 <div class="storefront-topbar">
@@ -96,8 +100,9 @@ const showWishlist = storeConfig?.enable_wishlists ?? true;
             <span class="nav-chevron">▾</span>
           </button>
           <div class="dropdown" id="profile-dropdown">
-            <a href="/profile" class="dropdown-item">{t.nav.profile}</a>
-            <a href="/settings" class="dropdown-item">{t.nav.settings}</a>
+            {!isAdmin && <a href={`${accountBase}/dashboard`} class="dropdown-item">{t.nav.account}</a>}
+            <a href={`${accountBase}/profile`} class="dropdown-item">{t.nav.profile}</a>
+            <a href={`${accountBase}/settings`} class="dropdown-item">{t.nav.settings}</a>
             {isAdmin && <a href="/admin" class="dropdown-item">{t.nav.admin}</a>}
             <div class="dropdown-divider"></div>
             <form action="/auth/signout" method="POST">
@@ -106,7 +111,7 @@ const showWishlist = storeConfig?.enable_wishlists ?? true;
           </div>
         </div>
       ) : (
-        <a href={`/login?redirect=${currentPath}`} class="icon-link">
+        <a href={`/login?redirect=${encodeURIComponent(currentPath)}${partyId ? `&sp=${encodeURIComponent(partyId)}` : ""}`} class="icon-link">
           <span class="icon-glyph">👤</span>
           <span class="icon-label">{t.nav.signIn}</span>
         </a>

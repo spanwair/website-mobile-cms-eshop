@@ -1,0 +1,46 @@
+---
+title: Welcome to CMS Docs
+description: Everything you need to know about running this e-commerce CMS.
+template: splash
+hero:
+  tagline: A complete e-commerce platform - website, mobile app, and admin CMS in one place.
+  actions:
+    - text: Get Started
+      link: /docs/en/getting-started/overview/
+      icon: right-arrow
+      variant: primary
+    - text: Admin Guide
+      link: /docs/en/admin/dashboard/
+      icon: open-book
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What is this?
+
+This is a full-stack e-commerce template that ships three things together:
+
+| What | Where | Purpose |
+|------|-------|---------|
+| **Admin Website** | `/website` | Browser-based CMS for managing everything |
+| **Mobile App** | `/mobile` | React Native app for customers |
+| **Shared Logic** | `/shared` | Services, types, and i18n used by both |
+| **Database** | `/supabase` | PostgreSQL via Supabase - schema + migrations |
+
+<CardGrid stagger>
+  <Card title="Build & Run Your Eshop" icon="rocket">
+    A complete, page-by-page walkthrough of the whole admin - start at [Setup](/docs/en/admin/setup/) and follow the [Admin Guide](/docs/en/admin/dashboard/) through products, orders, pricing, content, and storefront settings.
+  </Card>
+  <Card title="Admin Guide" icon="setting">
+    Every admin page documented in depth - [Products](/docs/en/admin/products/), [Orders](/docs/en/admin/orders/), [Customers](/docs/en/admin/customers/), [Pricing](/docs/en/admin/pricing/), [CMS](/docs/en/admin/cms-pages/), and [Store Settings](/docs/en/admin/settings-branding/).
+  </Card>
+  <Card title="User Roles" icon="approve-check">
+    Understand who can do what in the [Roles & Permissions Guide](/docs/en/users/roles/).
+  </Card>
+  <Card title="E2E Tests" icon="rocket">
+    See how 132 automated tests keep everything working in the [Testing Guide](/docs/en/testing/e2e/).
+  </Card>
+  <Card title="Current Progress" icon="list-format">
+    Check what's done and what's coming in the [Roadmap](/docs/en/roadmap/progress/).
+  </Card>
+</CardGrid>

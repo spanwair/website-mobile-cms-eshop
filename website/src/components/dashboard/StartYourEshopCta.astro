@@ -1,0 +1,32 @@
+---
+import { useT } from "../../lib/i18n";
+
+// A customer is a role=1 USER and cannot create an org in place. This block only *invites* them to
+// start selling and links to the platform root ("/" — localhost or mamtodoma.cz depending on host),
+// where the seller onboarding pitch lives — no silent role change.
+const t = useT(Astro);
+---
+
+<aside class="eshop-cta">
+  <div class="eshop-cta-media" aria-hidden="true">
+    <img src="/img/template-store.jpg" alt="" loading="lazy" width="1200" height="800" />
+  </div>
+  <div class="eshop-cta-body">
+    <h2 class="eshop-cta-title">{t.dashboard.cta.title}</h2>
+    <p class="eshop-cta-text">{t.dashboard.cta.body}</p>
+    <a href="/" class="btn btn-primary">{t.dashboard.cta.button}</a>
+  </div>
+</aside>
+
+<style>
+  .eshop-cta {
+    display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: center;
+    margin-top: 40px; padding: 24px; border-radius: var(--radius-xl, 16px);
+    background: var(--bg-subtle); border: 1px dashed var(--border);
+  }
+  .eshop-cta-media { border-radius: var(--radius-lg, 12px); overflow: hidden; aspect-ratio: 3 / 2; }
+  .eshop-cta-media img { width: 100%; height: 100%; object-fit: cover; }
+  .eshop-cta-title { font-size: 20px; font-weight: 900; color: var(--text-primary); margin: 0 0 6px; }
+  .eshop-cta-text { font-size: 14px; color: var(--text-muted); margin: 0 0 16px; max-width: 52ch; }
+  @media (max-width: 640px) { .eshop-cta { grid-template-columns: 1fr; text-align: center; } .eshop-cta-text { margin-inline: auto; } }
+</style>

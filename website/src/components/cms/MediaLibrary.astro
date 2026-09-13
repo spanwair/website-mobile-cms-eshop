@@ -15,7 +15,8 @@ const t = useT(Astro);
     <input type="hidden" name="_action" value="upload_media" />
     <div class="form-group">
       <label class="form-label">{t.admin.settings.fieldSlug}</label>
-      <input class="form-input" name="slug" placeholder={t.admin.settings.slugPlaceholder} required pattern="[a-z0-9]+(-[a-z0-9]+)*" />
+      <input class="form-input" name="slug" placeholder={t.admin.settings.slugPlaceholder} pattern="[a-z0-9]+(-[a-z0-9]+)*" />
+      <p class="hint">{t.common.slugAutoHint}</p>
     </div>
     <div class="form-group">
       <label class="form-label">{t.admin.settings.fieldAlt}</label>

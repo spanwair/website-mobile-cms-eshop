@@ -1,0 +1,49 @@
+---
+import { useT } from "../../lib/i18n";
+import { formatPrice } from "@shared/utils/format";
+import type { AppLanguage } from "@shared/i18n/getT";
+import type { ReturnRequest } from "@shared/services/returnService";
+
+interface Props {
+  returns: ReturnRequest[];
+  lang: AppLanguage;
+}
+const { returns, lang } = Astro.props;
+const t = useT(Astro);
+---
+
+<section class="card dash-card">
+  <h2 class="dash-card-title">{t.dashboard.returns.title}</h2>
+
+  {returns.length === 0 ? (
+    <p class="dash-muted">{t.dashboard.returns.empty}</p>
+  ) : (
+    <ul class="ret-list">
+      {returns.map((r) => (
+        <li class="ret-item">
+          <div class="ret-head">
+            <span class="mono">{r.return_number}</span>
+            <span class="badge">{r.status}</span>
+          </div>
+          <p class="ret-reason">{t.dashboard.returns.reason}: {r.reason}</p>
+          {r.refund_amount != null && (
+            <p class="ret-refund">{t.dashboard.returns.refund}: <strong>{formatPrice(Number(r.refund_amount), lang)}</strong></p>
+          )}
+        </li>
+      ))}
+    </ul>
+  )}
+</section>
+
+<style>
+  .dash-card { padding: 24px; }
+  .dash-card-title { font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0 0 16px; }
+  .dash-muted { font-size: 14px; color: var(--text-muted); margin: 0; }
+  .ret-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .ret-item { border: 1px solid var(--border); border-radius: var(--radius-lg, 12px); padding: 14px 16px; }
+  .ret-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .ret-reason { font-size: 13.5px; color: var(--text-secondary); margin: 0 0 4px; }
+  .ret-refund { font-size: 13.5px; color: var(--text-primary); margin: 0; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; background: var(--bg-subtle); color: var(--text-secondary); text-transform: capitalize; }
+  .mono { font-variant-numeric: tabular-nums; font-weight: 700; }
+</style>

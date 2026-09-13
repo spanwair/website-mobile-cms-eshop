@@ -167,9 +167,9 @@ test.describe("16 — Invite flow: invite → accept → set-password → login"
     await screenshot(page, "16-01-set-password-filled");
     await page.click("#setpw-btn");
 
-    // Should redirect to / after setting password
-    await page.waitForURL(`${BASE}/`, { timeout: 20000 });
-    await screenshot(page, "16-01-home-after-invite");
+    // Should redirect into the admin area after setting password (invited user)
+    await page.waitForURL(/\/admin/, { timeout: 20000 });
+    await screenshot(page, "16-01-admin-after-invite");
 
     // Sign out
     await page.goto(`${BASE}/auth/signout`);
@@ -188,11 +188,11 @@ test.describe("16 — Invite flow: invite → accept → set-password → login"
     // When an invited user tries the signup form with their invited email:
     //   signUp → user_already_exists → signInWithOtp sends a magic link.
     // The invite trigger already created a profile row, so isNewUser=false on the callback
-    // and the magic link goes straight to / (no set-password needed).
+    // and the magic link goes straight to the admin area (no set-password needed).
 
     // Step 1: Invite the user (trigger creates their profile), then confirm email via admin API.
-    // Local Supabase has enable_confirmations=false, so signUp only returns user_already_exists
-    // for *confirmed* users (not for invited/unconfirmed ones).
+    // signUp only returns user_already_exists for *confirmed* users (unconfirmed/new emails
+    // get an obfuscated fake-success), so we confirm the invite first to hit that branch.
     await sendInviteEmail();
     await waitForEmail(INVITE_EMAIL, "invited");
     await clearMailbox();
@@ -217,11 +217,12 @@ test.describe("16 — Invite flow: invite → accept → set-password → login"
     const magicLink = extractCallbackLink(html);
     expect(magicLink).toContain("type=magiclink");
 
-    // Step 4: Click magic link → profile already exists (isNewUser=false) → /
+    // Step 4: Click magic link → profile already exists (isNewUser=false) → admin area
     await page.goto(magicLink);
-    await page.waitForURL(`${BASE}/`, { timeout: 20000 });
-    await screenshot(page, "16-02-home-via-magic-link");
-    await expect(page).toHaveURL(`${BASE}/`);
+    await page.waitForURL(/\/admin/, { timeout: 20000 });
+    await screenshot(page, "16-02-admin-via-magic-link");
+    expect(page.url()).toMatch(/\/admin/);
+    expect(page.url()).not.toContain("/auth/set-password");
   });
 
   test("16-03 invite email is styled HTML in Czech", async () => {

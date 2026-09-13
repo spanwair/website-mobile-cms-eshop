@@ -1,11 +1,11 @@
 ---
-title: Example Reference
-description: A reference page in my new Starlight docs site.
+title: Příklad referenční stránky
+description: Referenční stránka na mé nové dokumentační stránce Starlight.
 ---
 
-Reference pages are ideal for outlining how things work in terse and clear terms.
-Less concerned with telling a story or addressing a specific use case, they should give a comprehensive outline of what you're documenting.
+Referenční stránky jsou ideální pro stručné a jasné vysvětlení, jak věci fungují.
+Místo toho, aby vyprávěly příběh nebo řešily konkrétní případ použití, by měly poskytovat komplexní přehled toho, co dokumentujete.
 
-## Further reading
+## Další čtení
 
-- Read [about reference](https://diataxis.fr/reference/) in the Diátaxis framework
+- Přečtěte si [o referencích](https://diataxis.fr/reference/) ve frameworku Diátaxis

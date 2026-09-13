@@ -2,7 +2,9 @@
 import CmsLayout from "@/components/cms/CmsLayout.astro";
 import ProductImages from "@/components/cms/ProductImages.astro";
 import ProductVariants from "@/components/admin/ProductVariants.astro";
+import SlugInput from "@/components/cms/SlugInput.astro";
 import { createSupabase } from "@/lib/supabase";
+import { resolveSlug } from "@shared/utils/slug";
 import { fetchProduct, updateProduct, deleteProduct, setProductCategories } from "@shared/services/productService";
 import { addProductImage, deleteProductImage, setPrimaryImage, addProductVariant, updateProductVariant, deleteProductVariant, reorderProductVariants } from "@shared/services/productImageService";
 import { fetchCategories } from "@shared/services/categoryService";
@@ -18,7 +20,7 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/");
+if (!ctx) return Astro.redirect("/dashboard");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
 const { permissions, partyId } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_PRODUCTS)) return Astro.redirect("/admin");
@@ -157,7 +159,7 @@ if (Astro.request.method === "POST") {
   } else {
     const result = await updateProduct(supabase, id!, {
       title: form.get("title") as string,
-      slug: form.get("slug") as string,
+      slug: resolveSlug(form.get("slug") as string, form.get("title") as string),
       sku: (form.get("sku") as string) || null,
       barcode: (form.get("barcode") as string) || null,
       price: parseFloat(form.get("price") as string) || 0,
@@ -238,10 +240,7 @@ const recentMovements = inventoryItem
           <label class="form-label">{t.admin.products.fieldTitle}</label>
           <input class="form-input" name="title" required value={product.title} />
         </div>
-        <div class="form-group">
-          <label class="form-label">{t.admin.products.fieldSlug}</label>
-          <input class="form-input" name="slug" required value={product.slug} />
-        </div>
+        <SlugInput sourceName="title" label={t.admin.products.fieldSlug} value={product.slug} hint={t.common.slugAutoHint} />
       </div>
       <div class="form-row">
         <div class="form-group">

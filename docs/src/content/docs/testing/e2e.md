@@ -1,94 +1,94 @@
 ---
-title: E2E Test Suite
-description: How the 132 automated end-to-end tests work and how to run them.
+title: Sada E2E testů
+description: Jak fungují 132 automatizované end-to-end testy a jak je spustit.
 ---
 
-## What the tests do
+## Co testy dělají
 
-The E2E (end-to-end) tests use **Playwright** to open a real browser, click through every admin page, fill out forms, and verify the results. They test the entire system — from the database to the UI — in one pass.
+E2E (end-to-end) testy používají **Playwright** k otevření skutečného prohlížeče, kliknutí na každou administrátorskou stránku, vyplnění formulářů a ověření výsledků. Testují celý systém - od databáze po uživatelské rozhraní (UI) - v jednom průchodu.
 
-The tests run with a **visible browser** (headed mode) locally so you can watch them work. In CI they run headless.
+Testy se spouštějí s **viditelným prohlížečem** (headed mode) lokálně, abyste mohli sledovat jejich fungování. V CI se spouštějí bez hlavy (headless).
 
-## Running the tests
+## Spouštění testů
 
 ```bash
 cd website
 node_modules/.bin/playwright test --timeout=60000
 ```
 
-Or with the full path from the project root:
+Nebo pomocí úplné cesty z kořenového adresáře projektu:
 ```bash
 cd /path/to/website-mobile-template/website
 node_modules/.bin/playwright test
 ```
 
-## Prerequisites
+## Předpoklady
 
-Before running tests:
-1. **Local Supabase must be running**: `supabase start`
-2. **Dev server must be running**: `cd website && pnpm dev` (in a separate terminal)
-3. **Test users must exist** in the local Supabase auth
+Před spuštěním testů:
+1. **Lokální Supabase musí běžet**: `supabase start`
+2. **Dev server musí běžet**: `cd website && pnpm dev` (v samostatném terminálu)
+3. **Testovací uživatelé musí existovat** v lokální autorizaci Supabase
 
-## The global setup
+## Globální nastavení
 
-Before any test runs, `tests/e2e/global-setup.ts` runs automatically. It:
-1. Resets passwords for the three test accounts
-2. Cleans up all test data from previous runs
-3. Seeds fresh test data (organization, product, order, coupon, notification, etc.)
+Než se spustí jakýkoli test, automaticky se spustí `tests/e2e/global-setup.ts`. Tento soubor:
+1. Resetuje hesla pro tři testovací účty
+2. Vyčistí všechna testovací data z předchozích běhů
+3. Zaseje čerstvá testovací data (organizace, produkt, objednávka, kupón, oznámení atd.)
 
-This ensures each test run starts from a known state.
+Tím se zajišťuje, že každý běh testu začíná známým stavem.
 
-## Test accounts
+## Testovací účty
 
-| Email | Password | Role |
+| Email | Heslo | Role |
 |-------|----------|------|
-| `admin@test.com` | `Admin1234!` | Owner (8) |
-| `eshop@test.com` | `Eshop1234!` | Eshop Admin (2) |
-| `user@test.com` | `User1234!` | User (1) |
+| `admin@test.com` | `Admin1234!` | Vlastník (8) |
+| `eshop@test.com` | `Eshop1234!` | Administrátor e-shopu (2) |
+| `user@test.com` | `User1234!` | Uživatel (1) |
 
-## The 12 test files
+## 12 testovacích souborů
 
-| File | Tests | What it covers |
+| Soubor | Testy | Co pokrývá |
 |------|-------|---------------|
-| `01-auth.spec.ts` | 9 | Login, logout, wrong password, role-based redirect |
-| `02-parties.spec.ts` | 12 | Create/edit/delete organizations, member management |
-| `03-categories.spec.ts` | 10 | Category tree CRUD, parent-child, delete |
-| `04-products.spec.ts` | 16 | Product CRUD, search, filter, status changes |
-| `05-orders.spec.ts` | 12 | Order status transitions, customer link, tracking |
-| `06-customers.spec.ts` | 8 | Customer CRUD, search, order history |
-| `07-pricing.spec.ts` | 12 | Discount rules, coupon creation, duplicate code |
-| `08-inventory.spec.ts` | 10 | Stock adjustments, low stock filter, badge |
-| `09-users-roles.spec.ts` | 14 | Role assignment, custom role create/delete |
-| `10-audit-notifications.spec.ts` | 10 | Audit log filter, notification display |
-| `11-dashboard.spec.ts` | 8 | KPI cards, sidebar navigation |
-| `12-access-control.spec.ts` | 9 | Auth guards, role-based page access |
-| `13-new-features.spec.ts` | 17 | Categories on products, image uploads, user hierarchy visibility |
+| `01-auth.spec.ts` | 9 | Přihlášení, odhlášení, špatné heslo, přesměrování na základě role |
+| `02-parties.spec.ts` | 12 | Vytváření/editace/smazání organizací, správa členů |
+| `03-categories.spec.ts` | 10 | CRUD stromu kategorií, rodič-dítě, smazání |
+| `04-products.spec.ts` | 16 | CRUD produktů, vyhledávání, filtrování, změny stavu |
+| `05-orders.spec.ts` | 12 | Přechody stavu objednávky, odkaz na zákazníka, sledování |
+| `06-customers.spec.ts` | 8 | CRUD zákazníků, vyhledávání, historie objednávek |
+| `07-pricing.spec.ts` | 12 | Pravidla slev, vytváření kupónů, duplicitní kód |
+| `08-inventory.spec.ts` | 10 | Úpravy zásob, filtr nízkých zásob, odznak |
+| `09-users-roles.spec.ts` | 14 | Přiřazování rolí, vytváření/smazání vlastních rolí |
+| `10-audit-notifications.spec.ts` | 10 | Filtr protokolu auditu, zobrazení oznámení |
+| `11-dashboard.spec.ts` | 8 | Karty KPI, navigace v bočním panelu |
+| `12-access-control.spec.ts` | 9 | Ochranné mechanismy pro přihlašování, přístup k stránkám na základě role |
+| `13-new-features.spec.ts` | 17 | Kategorie na produktech, nahrávání obrázků, viditelnost hierarchie uživatelů |
 
-**Total: 149 tests — all passing.**
+**Celkem: 149 testů - všechny úspěšné.**
 
-## Screenshots
+## Snímky obrazovky
 
-Every test step takes a screenshot saved to `tests/screenshots/`. After a test run, you can browse these to see exactly what happened at each step.
+Každý krok testu zachytí snímek obrazovky uložený do adresáře `tests/screenshots/`. Po běhu testu můžete tyto snímky prohledat, abyste viděli přesně, co se stalo v každém kroku.
 
-## Serial mode
+## Seriální režim
 
-Tests within each spec file run **serially** (one after another, sharing a browser page). This allows tests to build on each other — e.g. test 3 creates a category, test 4 verifies it's in the list.
+Testy v rámci každého souboru specifikace se spouštějí **seriálně** (jeden po druhém, sdílejí stránku prohlížeče). To umožňuje testům stavět na sobě - například test 3 vytvoří kategorii, test 4 ji ověří v seznamu.
 
-Test files themselves also run serially (one file at a time) to avoid race conditions.
+Samotné testovací soubory se také spouštějí seriálně (jeden soubor najednou), aby se předešlo závodním stavům.
 
-## Fixing a failing test
+## Oprava selhajícího testu
 
-1. Run just the failing file: `node_modules/.bin/playwright test tests/e2e/03-categories.spec.ts`
-2. Look at the screenshot for that test in `tests/screenshots/`
-3. Check the error message — usually a locator mismatch or a timing issue
-4. Fix either the test or the underlying app bug
-5. Re-run the full suite to confirm nothing else broke
+1. Spusťte pouze selhající soubor: `node_modules/.bin/playwright test tests/e2e/03-categories.spec.ts`
+2. Podívejte se na snímek obrazovky pro tento test v adresáři `tests/screenshots/`
+3. Zkontrolujte zprávu o chybě - obvykle nesoulad lokátoru nebo problém s časováním
+4. Opravte buď test, nebo základní chybu v aplikaci
+5. Opětovně spusťte celou sadu, abyste potvrdili, že se nic jiného nezlomilo
 
-## Common test issues
+## Běžné problémy s testy
 
-| Problem | Fix |
+| Problém | Oprava |
 |---------|-----|
-| "strict mode violation: X resolved to 2 elements" | Use a more specific selector — `getByRole("cell", { name: "X", exact: true })` |
-| `selectOption({ label: /regex/ })` fails | Playwright requires a string for label — use `{ label: "Exact Label" }` or `{ index: 1 }` |
-| Czech text not matching `/english/i` | Add Czech alternative: `/english\|česky/i` or navigate by URL instead of clicking tabs |
-| "Target page... has been closed" | Previous test navigated away — add `page.goto(URL)` at the start of the affected test |
+| "strict mode violation: X resolved to 2 elements" | Použijte specifičtější selektor - `getByRole("cell", { name: "X", exact: true })` |
+| `selectOption({ label: /regex/ })` selhává | Playwright vyžaduje pro label řetězec - použijte `{ label: "Přesný label" }` nebo `{ index: 1 }` |
+| Český text neodpovídá `/english/i` | Přidejte českou alternativu: `/english\|česky/i` nebo navigujte pomocí URL místo klikání na záložky |
+| "Target page... has been closed" | Předchozí test se přesunul - přidejte `page.goto(URL)` na začátek ovlivněného testu |

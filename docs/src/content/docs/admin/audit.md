@@ -1,74 +1,56 @@
 ---
-title: Audit Log
-description: How to use the audit log to track all data changes within your organization.
+title: Protokol auditu
+description: Pouze čitelná historie akcí vytváření, aktualizace a mazání v datech vaší organizace
 ---
 
-The Audit Log records every INSERT, UPDATE, and DELETE operation on your organization's data. It is a read-only history — nothing can be deleted from the audit log. Use it for compliance, debugging, and tracking who changed what.
+Protokol auditu je pouze čitelný, chronologický záznam změn dat v vaší organizaci.
+Každé smysluplné vložení, aktualizace a mazání je zapisováno do `audit_logs`, což vám poskytuje sledovatelnost toho, kdo, co a kdy změnil.
+Bit `MANAGE_AUDIT`, který otevírá tuto stránku, umožňuje také administrátorovi upravovat nastavení stran v [Organizacích](/docs/admin/parties) a přepočítávat fakturační období v [Zprávách](/docs/admin/reports).
 
-## Permission required
+## Požadované oprávnění
 
-| Permission bit | Name | Who has it by default |
+| Bit oprávnění | Název | Kdo ho má výchozí |
 |---|---|---|
-| 4096 | MANAGE_AUDIT | Owner, Admin (with this bit) |
+| 4096 | MANAGE_AUDIT | Vlastník, Administrátor, Eshop Administrátor (s tímto bitem) |
 
-This is the highest permission bit. Typically only Owners and senior Admins have it.
+Bez `MANAGE_AUDIT` vás systém přesměruje na `/admin`.
+Eshop administrátor bez organizace je poslán na `/admin/setup` (vlastník: `/admin/parties/new`).
 
-## Audit log page (`/admin/audit`)
+## Zobrazení logů (`/admin/audit`)
 
-### Filtering
+Záznamy se načítají po 50 na stránku pomocí `fetchAuditLogs`, nejnovější jako první, omezeno na aktivní stranu, s celkovým počtem zobrazeným v pravém horním rohu.
 
-At the top of the page, a **Filter by table** dropdown lets you narrow the log to a specific database table. Select a table name (e.g. `products`, `orders`, `customers`) and only changes to that table are shown. Click **Clear** to remove the filter.
+### Filtrování tabulky
 
-### Table columns
+Rozbalovací nabídka zobrazuje všechny tabulky, které skutečně obsahují záznamy pro tuto organizaci (vygenerováno z unikátního dotazu přes `audit_logs.table_name`).
+Vyberte jednu a stiskněte **Filtrovat**, abyste se zúžili na jednu tabulku; odkaz **Vyčistit** odstraní filtr.
 
-| Column | Description |
-|---|---|
-| Timestamp | When the change was made (server time, UTC) |
-| Action | What happened — INSERT (green), UPDATE (yellow), DELETE (red) |
-| Table | Which database table was affected |
-| Record ID | The ID of the affected row (truncated for display) |
-| User ID | The Supabase auth user ID of who made the change (truncated) |
+### Sloupce
 
-## Action types
-
-| Action | Badge color | Meaning |
+| Sloupec | Zdroj | Poznámky |
 |---|---|---|
-| INSERT | Green | A new record was created |
-| UPDATE | Yellow | An existing record was modified |
-| DELETE | Red | A record was removed |
+| Časové razítko | `created_at` | Celý datum a čas v aktuální lokalitě. |
+| Akce | `action` | Odznak s barevnou kódováním: vytvoření/INSERT zelená, aktualizace/UPDATE hnědá, mazání/DELETE červená, vše ostatní šedá. Označení je lokalizované (Vytvořit / Aktualizovat / Mazat). |
+| Tabulka | `table_name` | Tabulka s monospaced písmy, nebo pomlčka. |
+| ID záznamu | `record_id` | Monospaced, zkráceno na 12 znaků. |
+| ID uživatele | `user_id` | Monospaced, zkráceno na 12 znaků - subjekty, který změnu provedl. |
 
-## Data scoping
+Klasifikátor akcí je tolerantní: odpovídá jak surovým SQL slovesům (`INSERT`/`UPDATE`/`DELETE`), tak slovesům na úrovni aplikace (`create`/`update`/`delete`).
 
-The audit log is **party-scoped** — you only see audit entries for your own organization. An admin from Organization A cannot see the audit trail of Organization B. Owners with access to multiple organizations need to switch organization context to view each org's audit log separately.
+## Prázdný stav a paginace
 
-## Common use cases
+Když se nic nenachází, zobrazí se centrový řádek „Žádné logy“.
+Odkazy Předchozí / Další a indikátor „Strana X z Y (Celkem N)“ se objeví, když je více než jedna stránka, a zachovají se filtry tabulky.
 
-**"Who deleted that product?"**
-1. Filter by table: `products`
-2. Look for action: `DELETE`
-3. Check the User ID column — match it to a user in [Users](/admin/users)
+## Data a úložiště (cloud)
 
-**"What changed on this order?"**
-1. Filter by table: `orders`
-2. Find rows with the order's Record ID
-3. Each UPDATE row represents one status or field change
+- **Tabulka:** `audit_logs` (`created_at`, `action`, `table_name`, `record_id`, `user_id`, `party_id`).
+- **Služba:** `fetchAuditLogs` (`auditService`).
+- Řádky jsou automaticky zapisovány aplikací/databází při změně záznamů; tato stránka nikdy nezapisuje, pouze čte.
+- Omezeno na `ctx.partyId`.
 
-**"Did someone change a user's role without authorization?"**
-1. Filter by table: `profiles`
-2. Look for UPDATE actions
-3. Compare timestamps to your team's working hours
+## Související stránky
 
-**Compliance audit**
-The audit log provides an immutable record of all changes for GDPR, financial, or operational audits. Export the data via the Supabase dashboard if you need a formal report.
-
-## What the audit log does NOT show
-
-- Read operations (SELECT queries) — only writes are logged
-- Changes made directly in the Supabase dashboard using the service role key (bypasses RLS and triggers)
-- Changes made before the audit triggers were installed
-
-## Related pages
-
-- [Organizations](/admin/parties) — audit log is scoped per organization
-- [Users](/admin/users) — look up who a User ID belongs to
-- [Permissions](/users/permissions) — MANAGE_AUDIT permission (bit 4096)
+- [Organizacích](/docs/admin/parties) - úprava nastavení strany vyžaduje stejný bit `MANAGE_AUDIT`
+- [Zprávách](/docs/admin/reports) - přepočítání fakturačního období je omezeno bitem `MANAGE_AUDIT`
+- [Uživatelé](/docs/admin/users) a [Role](/docs/admin/roles) - změny role a členství jsou mezi akcemi zaznamenanými zde

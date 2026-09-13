@@ -1,40 +1,40 @@
 ---
-title: Permissions System
-description: How permission bits work and which permissions control which admin pages.
+title: Systém oprávnění
+description: Jak fungují bity oprávnění a které oprávnění ovládají které administrátorské stránky.
 ---
 
-The CMS uses a **bitmask permission system**. Every permission is a power-of-2 integer. A user's effective permissions are stored as a single number — the sum (bitwise OR) of all the permissions they hold.
+CMS používá **systém oprávnění pomocí bitmasky**. Každé oprávnění je celé číslo mocniny 2. Efektivní oprávnění uživatele jsou uložena jako jedno číslo - součet (bitwise OR) všech oprávnění, která drží.
 
-## How bitmasks work
+## Jak fungují bitmasky
 
-Each permission is a unique bit:
+Každé oprávnění je unikátní bit:
 
 ```
 MANAGE_PRODUCTS   = 8    (binary: 0000 0000 0000 1000)
 MANAGE_CATEGORIES = 16   (binary: 0000 0000 0001 0000)
 ```
 
-To grant both, you store `8 | 16 = 24`. To check if a user has `MANAGE_PRODUCTS`, the system evaluates `userBitmask & 8 !== 0`. This means permissions compose freely — you can grant any combination without conflicts.
+Aby byly uděleny obě, uložíte `8 | 16 = 24`. Pro ověření, zda uživatel má `MANAGE_PRODUCTS`, systém vyhodnotí `userBitmask & 8 !== 0`. To znamená, že oprávnění lze volně kombinovat - můžete udělit jakoukoli kombinaci bez konfliktů.
 
-## All permissions
+## Všechna oprávnění
 
-| Permission | Bit | What it controls | Admin pages |
+| Oprávnění | Bit | Co ovládá | Administrátorské stránky |
 |---|---|---|---|
-| `VIEW_DASHBOARD` | 1 | Access to the admin panel at all | `/admin` |
-| `MANAGE_USERS` | 2 | View and change user roles; manage organization members | `/admin/users`, `/admin/parties` |
-| `MANAGE_ROLES` | 4 | Create and delete custom roles; assign permissions | `/admin/roles` |
-| `MANAGE_PRODUCTS` | 8 | Create, edit, delete products; upload images/videos; moderate reviews | `/admin/products`, `/admin/reviews` |
-| `MANAGE_CATEGORIES` | 16 | Create, edit, delete product categories (including hierarchy) | `/admin/categories` |
-| `MANAGE_ORDERS` | 32 | View orders, update order status, manage returns and RMAs | `/admin/orders`, `/admin/returns` |
-| `MANAGE_INVENTORY` | 64 | Adjust stock levels, record stock movements | `/admin/inventory` |
-| `MANAGE_PRICING` | 128 | Manage price lists, discount rules, and coupons | `/admin/pricing` |
-| `MANAGE_CUSTOMERS` | 256 | View and edit customer records and addresses | `/admin/customers` |
-| `MANAGE_REPORTS` | 512 | View business reports (revenue, orders, products) | `/admin/reports` |
-| `MANAGE_AUDIT` | 4096 | View the audit log; edit organization details | `/admin/audit`, `/admin/parties/{id}` |
+| `VIEW_DASHBOARD` | 1 | Přístup k administrátorskému panelu všude | `/admin` |
+| `MANAGE_USERS` | 2 | Zobrazení a změna rolí uživatelů; správa členů organizace | `/admin/users`, `/admin/parties` |
+| `MANAGE_ROLES` | 4 | Vytváření a mazání vlastních rolí; přidělování oprávnění | `/admin/roles` |
+| `MANAGE_PRODUCTS` | 8 | Vytváření, úprava, mazání produktů; nahrávání obrázků/videí; moderování recenzí | `/admin/products`, `/admin/reviews` |
+| `MANAGE_CATEGORIES` | 16 | Vytváření, úprava, mazání kategorií produktů (včetně hierarchie) | `/admin/categories` |
+| `MANAGE_ORDERS` | 32 | Zobrazení objednávek, aktualizace stavu objednávky, správa vrácení a RMA | `/admin/orders`, `/admin/returns` |
+| `MANAGE_INVENTORY` | 64 | Nastavení úrovně zásob, záznam pohybu zásob | `/admin/inventory` |
+| `MANAGE_PRICING` | 128 | Správa ceníků, pravidel slev a kupónů | `/admin/pricing` |
+| `MANAGE_CUSTOMERS` | 256 | Zobrazení a úprava záznamů a adres zákazníků | `/admin/customers` |
+| `MANAGE_REPORTS` | 512 | Zobrazení obchodních zpráv (tržby, objednávky, produkty) | `/admin/reports` |
+| `MANAGE_AUDIT` | 4096 | Zobrazení protokolu auditu; úprava detailů organizace | `/admin/audit`, `/admin/parties/{id}` |
 
-`ALL_PERMISSIONS = 65535` (`0xffff`) grants every current and future permission bit.
+`ALL_PERMISSIONS = 65535` (`0xffff`) uděluje všechny aktuální i budoucí bity oprávnění.
 
-## Checking permissions in code
+## Kontrola oprávnění v kódu
 
 ```typescript
 import { hasPermission, PERMISSIONS } from "@shared/constants/permissions";
@@ -44,39 +44,39 @@ if (hasPermission(userPermissions, PERMISSIONS.MANAGE_PRODUCTS)) {
 }
 ```
 
-## Default permissions by role
+## Výchozí oprávnění podle role
 
-| Role | Value | Default permissions |
+| Role | Hodnota | Výchozí oprávnění |
 |---|---|---|
-| **Owner** | 8 | `ALL_PERMISSIONS` (65535) + bypasses all party restrictions |
-| **Admin** | 4 | `ALL_PERMISSIONS` (65535), party-scoped for catalog mutations |
-| **Eshop Admin** | 2 | Determined by their **custom role** in the specific party — no global default |
-| **User** | 1 | `VIEW_DASHBOARD` (1) only — redirected if they reach an admin page |
+| **Vlastník** | 8 | `ALL_PERMISSIONS` (65535) + obchází všechny omezení organizace |
+| **Administrátor** | 4 | `ALL_PERMISSIONS` (65535), omezeno na organizaci pro změny katalogu |
+| **Administrátor obchodu** | 2 | Určeno jejich **vlastní rolí** v konkrétní organizaci - žádné globální výchozí nastavení |
+| **Uživatel** | 1 | Pouze `VIEW_DASHBOARD` (1) - přesměrován, pokud se dostane na administrátorskou stránku |
 
-> **Note for Eshop Admins:** Their permissions are not global. They inherit the bitmask of the custom role they were assigned when invited to an organization. An eshop admin in Party A can have completely different permissions than the same user in Party B.
+> **Poznámka pro administrátory obchodu:** Jejich oprávnění nejsou globální. Získávají bitmasku vlastní role, která jim byla přidělena při pozvání do organizace. Administrátor obchodu v organizaci A může mít zcela odlišná oprávnění než stejný uživatel v organizaci B.
 
-## The Super Admin system role
+## Role Super administrátora systému
 
-Every organization automatically gets a **Super Admin** system role with `ALL_PERMISSIONS` (65535). It cannot be edited or deleted. Assign it to a trusted org member to give them full control within that organization.
+Každá organizace automaticky získá systémovou **role Super administrátora** s `ALL_PERMISSIONS` (65535). Nemůže být upravena ani smazána. Přiřaďte ji důvěryhodnému členovi organizace, abyste mu dali plnou kontrolu v rámci této organizace.
 
-## Sidebar visibility
+## Viditelnost bočního panelu
 
-The admin sidebar automatically shows or hides sections based on the user's live permissions. If `MANAGE_PRODUCTS` is not in your bitmask, the Products link is hidden — not just greyed out, but absent entirely.
+Administrátorský boční panel automaticky zobrazuje nebo skrývá sekce na základě aktuálních oprávnění uživatele. Pokud není `MANAGE_PRODUCTS` v vaší bitmaske, odkaz na Produkty je skrytý - není jen šedý, ale zcela chybí.
 
-## Creating custom permission sets
+## Vytváření vlastních sad oprávnění
 
-Custom roles let you define exactly which permissions an Eshop Admin receives:
+Vlastní role vám umožňují přesně definovat, jaká oprávnění obdrží administrátor obchodu:
 
-1. Go to **[Admin → Roles](/admin/roles)**
-2. Click **New Role**
-3. Give it a name (e.g. "Order Manager") and an optional description
-4. Tick the permissions this role should have
-5. Save — the role is now selectable when inviting members at **[Admin → Organizations](/admin/parties)**
+1. Přejděte na **[Administrátor → Role](/docs/admin/roles)**
+2. Klikněte na **Novou roli**
+3. Dejte jí jméno (např. "Manažer objednávek") a volitelný popis
+4. Zaškrtněte oprávnění, která tato role by měla mít
+5. Uložte - role je nyní vybránelná při přidávání členů na **[Administrátor → Organizace](/docs/admin/parties)**
 
-**Example:** an "Order Fulfiller" role with only `MANAGE_ORDERS` (32) + `MANAGE_INVENTORY` (64) stores bitmask `96`. That user can process orders and adjust stock but cannot touch products, pricing, or customers.
+**Příklad:** Role "Vyplňovač objednávek" s pouze `MANAGE_ORDERS` (32) + `MANAGE_INVENTORY` (64) ukládá bitmasku `96`. Ten uživatel může zpracovávat objednávky a upravovat zásoby, ale nemůže dotýkat produktů, cen ani zákazníků.
 
-## Related
+## Související
 
-- [Role Hierarchy](/users/roles) — how Owner, Admin, Eshop Admin and User relate to each other
-- [Roles (admin page)](/admin/roles) — create and manage custom roles
-- [Users (admin page)](/admin/users) — assign roles to users in your organization
+- [Hierarchie rolí](/docs/users/roles) - jak se Vlastník, Administrátor, Administrátor obchodu a Uživatel vzájemně vztahují
+- [Role (administrátorská stránka)](/docs/admin/roles) - vytváření a správa vlastních rolí
+- [Uživatelé (administrátorská stránka)](/docs/admin/users) - přidělování rolí uživatelům v vaší organizaci

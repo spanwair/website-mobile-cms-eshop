@@ -11,6 +11,12 @@ if (session) return Astro.redirect("/");
 const t = useT(Astro);
 const lang = getLang(Astro);
 const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" : "signin";
+const rawRedirect = Astro.url.searchParams.get("redirect");
+const redirectTo = rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "";
+// `sp` (storefront party id) is set when the user reaches /login from inside a storefront. It
+// marks the signup as a customer of that eshop so handle_new_user() keeps them a plain USER and
+// records their home eshop, instead of the default organic-signup ADMIN (seller) path.
+const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
 ---
 
 <!doctype html>
@@ -52,6 +58,8 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
         data-err-already={t.auth.errorAlreadyRegistered}
         data-success-signup={t.auth.successSignUp}
         data-lang={lang}
+        data-redirect={redirectTo}
+        data-sp={signupPartyId}
       >
         <div id="mode-signin" class:list={[{ hidden: initialMode === "signup" }]}>
           <h1 class="auth-title">{t.auth.welcomeBack}</h1>
@@ -146,6 +154,17 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
       const panel = document.querySelector(".auth-panel") as HTMLElement;
       const d = panel.dataset;
 
+      const redirectPath = (d.redirect && d.redirect.startsWith("/") && !d.redirect.startsWith("//")) ? d.redirect : "";
+      const signupPartyId = d.sp || "";
+      const callbackParams = new URLSearchParams();
+      if (redirectPath) callbackParams.set("redirect", redirectPath);
+      // Carried for the OAuth path only: Google signups can't set user_metadata, so the callback
+      // reads `sp` from the URL to classify a brand-new OAuth account as a storefront customer.
+      // Email/OTP signups classify via signUp metadata (handle_new_user) and ignore this.
+      if (signupPartyId) callbackParams.set("sp", signupPartyId);
+      const callbackQuery = callbackParams.toString();
+      const callbackUrl = `${window.location.origin}/auth/callback${callbackQuery ? `?${callbackQuery}` : ""}`;
+
       const modeSignin = document.getElementById("mode-signin")!;
       const modeSignup = document.getElementById("mode-signup")!;
 
@@ -178,7 +197,7 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
       async function googleSignIn() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
-          options: { redirectTo: `${window.location.origin}/auth/callback` },
+          options: { redirectTo: callbackUrl },
         });
         if (error) showError("error-si", error.message);
       }
@@ -194,7 +213,7 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
         btn.disabled = true; btn.textContent = d.signingIn!;
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) { showError("error-si", error.message); btn.disabled = false; btn.textContent = d.signIn!; }
-        else { window.location.href = "/"; }
+        else { window.location.href = redirectPath || "/"; }
       });
 
       document.getElementById("signup-form")!.addEventListener("submit", async (e) => {
@@ -216,7 +235,10 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: name, display_name: name, lang: d.lang ?? 'cs' } },
+          options: {
+            emailRedirectTo: callbackUrl,
+            data: { full_name: name, display_name: name, lang: d.lang ?? 'cs', ...(signupPartyId ? { signup_party_id: signupPartyId } : {}) },
+          },
         });
 
         if (error) {
@@ -225,8 +247,8 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
               email,
               options: {
                 shouldCreateUser: false,
-                emailRedirectTo: `${window.location.origin}/auth/callback`,
-                data: { lang: d.lang ?? 'cs' },
+                emailRedirectTo: callbackUrl,
+                data: { lang: d.lang ?? 'cs', ...(signupPartyId ? { signup_party_id: signupPartyId } : {}) },
               },
             });
             if (!otpErr) {
@@ -244,14 +266,17 @@ const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" :
           return;
         }
 
+        // With email confirmation enabled, signUp returns no session — the account is
+        // inactive until the emailed link is clicked. Forward to a dedicated "check your
+        // email" page rather than logging them in. Only if confirmation is disabled (session
+        // present) do we go straight in.
         if (data.session) {
-          window.location.href = "/";
+          // Auto-confirm environments return a session straight from signUp (no email step).
+          // Send a brand-new account into the admin area → onboarding, never the homepage.
+          window.location.href = redirectPath || "/admin";
         } else {
-          const el = document.getElementById("success-su")!;
-          el.textContent = d.successSignup!;
-          el.classList.remove("hidden");
-          btn.disabled = false;
-          btn.textContent = d.create!;
+          try { sessionStorage.setItem("pendingConfirmEmail", email); } catch { /* ignore */ }
+          window.location.href = "/auth/confirm-email";
         }
       });
     </script>

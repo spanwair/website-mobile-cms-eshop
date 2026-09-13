@@ -1,11 +1,11 @@
 ---
-title: Complete Customer Journey
-description: Every step a customer takes from discovering the shop to becoming a loyal repeat buyer.
+title: Kompletní cesta zákazníka
+description: Každý krok, který zákazník podnikne od objevení obchodu až po stanou se loajálním opakovaným kupujícím.
 ---
 
-## The 7-Stage Customer Journey
+## Cesta zákazníka v 7 fázích
 
-Every customer goes through these stages. The CMS has features for all of them.
+Každý zákazník prochází těmito fázemi. CMS má pro ně všechny funkce.
 
 ```
 AWARENESS → BROWSING → CONSIDERATION → CHECKOUT → FULFILLMENT → POST-PURCHASE → RETENTION
@@ -13,216 +13,216 @@ AWARENESS → BROWSING → CONSIDERATION → CHECKOUT → FULFILLMENT → POST-P
 
 ---
 
-## Stage 1: Awareness
+## Fáze 1: Oznámení (Awareness)
 
-The customer finds the shop via Google, social media, or word of mouth.
+Zákazník najde obchod přes Google, sociální média nebo z ústních doporučení.
 
-**What we provide:**
-- SEO title and description on every product (`seo_title`, `seo_description` columns)
-- Clean URLs: `/shop/product-slug`
-- Public product pages accessible without login (anon RLS policies)
+**Co poskytujeme:**
+- SEO název a popis na každém produktu (`seo_title`, `seo_description` sloupce)
+- Čisté URL: `/shop/product-slug`
+- Veřejné stránky produktů dostupné bez přihlášení (anon RLS politiky)
 
-**To do before launch:**
-- Add Google Search Console
-- Set up sitemap.xml (see [SEO guide](../guides/seo))
-- Set `seo_title` and `seo_description` on all products in the admin
-
----
-
-## Stage 2: Browsing
-
-Customer lands on the shop, browses categories, searches for products.
-
-**Pages:**
-- `/shop` — product grid with category sidebar, search, price sort
-- `/shop?category=electronics` — filtered by category
-- `/shop?q=laptop` — full-text search
-
-**Features:**
-- Category tree with parent/child hierarchy
-- Price sort: newest, lowest, highest, top rated
-- Product cards show: image, name, price, sale price, star rating
+**Co udělat před spuštěním:**
+- Přidat Google Search Console
+- Nastavit sitemap.xml (viz [SEO průvodce](../guides/seo))
+- Nastavit `seo_title` a `seo_description` na všech produktech v administraci
 
 ---
 
-## Stage 3: Consideration
+## Fáze 2: Procházení (Browsing)
 
-Customer reads product details, checks reviews, adds to wishlist.
+Zákazník dorazí do obchodu, prochází kategorie a hledá produkty.
 
-**Product detail page (`/shop/[slug]`):**
-- Full image gallery with thumbnail switcher
-- Multiple images with primary flagged
-- Variants (size, color) if defined
-- Category tags (clickable, back to filtered list)
-- Brand name
-- Star ratings with count
-- Customer reviews (name, rating, title, body, verified purchase badge)
-- "Write a Review" form (any visitor, login optional)
-- Related products (same categories)
-- "Add to Cart" button
+**Stránky:**
+- `/shop` - mřížka produktů s bočním panelem kategorií, vyhledáváním, tříděním podle ceny
+- `/shop?category=electronics` - filtrováno podle kategorie
+- `/shop?q=laptop` - vyhledávání celého textu
 
-**What we know about reviews:**
-- Status: `pending` → must be approved by admin before showing
-- `is_verified` = true when the reviewer has an order for this product
-- Aggregate rating (`rating_avg`, `review_count`) auto-updated by DB trigger
+**Funkce:**
+- Strom kategorií s hierarchií rodič/dítě
+- Třídění podle ceny: nejnovější, nejnižší, nejvyšší, nejlépe hodnocený
+- Karty produktů zobrazují: obrázek, název, cenu, cenu v akci, hodnocení hvězdičkami
 
 ---
 
-## Stage 4: Checkout
+## Fáze 3: Zvažování (Consideration)
 
-Customer enters address, picks shipping method, pays.
+Zákazník čte detaily produktu, kontroluje recenze a přidává do seznamu přání.
 
-**Current state:** Checkout flow is scaffolded but requires Stripe keys to go live.
+**Stránka detailu produktu (`/shop/[slug]`):**
+- Plná galerie obrázků s přepínáním miniatury
+- Více obrázků s hlavním označením
+- Varianty (velikost, barva), pokud jsou definovány
+- Tagy kategorií (klikatelné, zpět na filtrovaný seznam)
+- Název značky
+- Hodnocení hvězdičkami s počtem
+- Recenze zákazníků (jméno, hodnocení, název, text, odznak ověřeného nákupu)
+- Formulář „Napsat recenzi“ (jakýkoli návštěvník, přihlášení je volitelné)
+- Související produkty (stejné kategorie)
+- Tlačítko „Přidat do košíku“
 
-**To activate payments:**
+**Co víme o recenzích:**
+- Stav: `pending` → musí být schválen administrátorem před zobrazením
+- `is_verified` = true, pokud recenzent má objednávku tohoto produktu
+- Souhrnné hodnocení (`rating_avg`, `review_count`) se automaticky aktualizuje spouštěčem DB
 
-1. Create a Stripe account at [stripe.com](https://stripe.com)
-2. Copy your Secret Key and Webhook Secret
-3. Add to `.env.production`:
+---
+
+## Fáze 4: Pokladna (Checkout)
+
+Zákazník zadá adresu, vybere způsob dopravy a zaplatí.
+
+**Aktuální stav:** Tok pokladny je rámcový, ale vyžaduje klíče Stripe pro spuštění.
+
+**Pro aktivaci plateb:**
+
+1. Vytvořte účet Stripe na [stripe.com](https://stripe.com)
+2. Zkopírujte svůj Secret Key a Webhook Secret
+3. Přidejte do `.env.production`:
    ```
    STRIPE_SECRET_KEY=sk_live_...
    STRIPE_WEBHOOK_SECRET=whsec_...
    ```
-4. Deploy the webhook endpoint at `/api/stripe/webhook`
-5. Register the webhook URL in the Stripe dashboard
+4. Nasazení webhook endpointu na `/api/stripe/webhook`
+5. Registrujte URL webhooku v panelu Stripe
 
-**Order flow:**
-1. Customer fills cart (`carts` + `cart_items` tables)
-2. Clicks "Checkout" → Stripe Checkout session created
-3. Stripe redirects back to `/shop/checkout/success?order_id=...`
-4. Webhook fires `checkout.session.completed` → order `payment_status` set to `paid`
-5. Order confirmation email sent via Resend
+**Tok objednávky:**
+1. Zákazník vyplní košík (`carts` + `cart_items` tabulky)
+2. Klikne na „Pokladna“ → vytvořena sesí z pokladny Stripe
+3. Stripe přesměruje zpět na `/shop/checkout/success?order_id=...`
+4. Webhook spustí `checkout.session.completed` → stav platby objednávky je nastaven na `paid`
+5. E-mail s potvrzením objednávky je odeslán přes Resend
 
 ---
 
-## Stage 5: Fulfillment
+## Fáze 5: Dodání (Fulfillment)
 
-Admin processes the order in the CMS.
+Administrátor zpracovává objednávku v CMS.
 
-**Order lifecycle in admin:**
+**Životní cyklus objednávky v administraci:**
 
-| Status | What it means | Action |
+| Stav | Co to znamená | Akce |
 |--------|--------------|--------|
-| `pending` | Order placed, payment received | Review order |
-| `confirmed` | Admin acknowledged | Start picking |
-| `processing` | Items being picked/packed | Assign picker |
-| `shipped` | Parcel sent | Enter tracking number |
-| `delivered` | Customer received it | Auto or manual |
-| `cancelled` | Cancelled before shipment | Refund if paid |
-| `refunded` | Returned and refunded | See Returns |
+| `pending` | Objednávka přijata, platba obdržena | Prohlédnout objednávku |
+| `confirmed` | Administrátor potvrdil | Začít sběr |
+| `processing` | Položky jsou sbírány/baleny | Přiřadit sběratele |
+| `shipped` | Balík odeslán | Zadat číslo sledování |
+| `delivered` | Zákazník obdržel | Automaticky nebo ručně |
+| `cancelled` | Zrušeno před odesláním | Vrácení peněz, pokud byla zaplacena |
+| `refunded` | Vráceno a vráceny peníze | Podívat se na vrácení |
 
-**Pick & Pack workflow:**
-1. Go to `/admin/orders` → click order number
-2. Change status to `confirmed`, add internal note
-3. Print the order detail page as pick slip
-4. Pick items from warehouse (scan barcode if using WMS)
-5. Pack and label the parcel
-6. Enter tracking number in the order detail
-7. Set status to `shipped` → customer gets shipping email (when email integration active)
-
----
-
-## Stage 6: Post-Purchase
-
-Customer receives the order and optionally returns it or leaves a review.
-
-### Leaving a Review
-
-- Customer visits `/shop/product-slug` → scrolls to "Write a Review"
-- Fills name, email, star rating, optional title and body
-- Review goes to `pending` status
-- Admin approves/rejects in `/admin/reviews`
-- Approved reviews appear publicly with star rating
-
-**Review email trigger** (manual for now, automatic once email is set up):
-- After delivery, send `sendReviewRequest()` email linking to product pages
-
-### Returns & Refunds
-
-Customer wants to return an item:
-
-1. Customer contacts you (or uses self-service portal once built)
-2. Admin goes to `/admin/returns` → they see all Return Requests (RMAs)
-3. Admin creates a return linked to the order and specific items
-4. Approve the return → send shipping label
-5. Receive the items → inspect condition
-6. Set `restock: true` on each item in good condition → inventory auto-restored
-7. Set resolution: `refund`, `exchange`, or `store_credit`
-8. Set `completed` → `completed_at` timestamp set automatically
-
-**Refund rules:**
-- Full refund: if item is defective, wrong, or not as described
-- Partial refund: damage or customer fault
-- Store credit: offered as an alternative to keep the sale
-- 9% of returns are fraudulent — check order history before approving
+**Pracovní postup sběru a balení:**
+1. Přejděte na `/admin/orders` → klikněte na číslo objednávky
+2. Změňte stav na `confirmed`, přidejte interní poznámku
+3. Vytiskněte stránku detailu objednávky jako nakladatelský list
+4. Sbírejte položky ze skladu (skenujte kód čárového kódu, pokud používáte WMS)
+5. Balení a označení balíku
+6. Zadejte číslo sledování do detailu objednávky
+7. Nastavte stav na `shipped` → zákazník obdrží e-mail s dopravou (pokud je aktivována integrace e-mailu)
 
 ---
 
-## Stage 7: Retention
+## Fáze 6: Po nákupu (Post-Purchase)
 
-Turn one-time buyers into loyal repeat customers.
+Zákazník obdrží objednávku a volitelně ji vrátí nebo nechá recenzi.
 
-### Loyalty Points
+### Psaní recenze
 
-Every customer has a `loyalty_points` balance. The `loyalty_transactions` table records every earn/spend event.
+- Zákazník navštíví `/shop/product-slug` → posune se dolů k „Napsat recenzi“
+- Vyplní jméno, e-mail, hodnocení hvězdičkami, volitelný název a text
+- Recenze se dostane do stavu `pending`
+- Administrátor schválí/odmítne v `/admin/reviews`
+- Schválené recenze se veřejně zobrazí s hodnocením hvězdičkami
 
-**Default rules (implement in admin):**
-- Earn 1 point per 10 Kč spent
-- 100 points = 10 Kč store credit
-- Bonus points for leaving a verified review
+**Spouštěč e-mailu pro recenze** (zatím ruční, automatický po nastavení e-mailu):
+- Po doručení odešlete e-mail `sendReviewRequest()` s odkazem na stránky produktů
 
-### Abandoned Cart Recovery
+### Vrácení a vrácení peněz
 
-When a cart hasn't been updated for 1 hour, `abandoned_at` is set automatically.
+Zákazník chce vrátit položku:
 
-**Recovery email sequence:**
-1. **1 hour**: Soft reminder — "You left something behind"
-2. **24 hours**: Highlight a product benefit
-3. **72 hours**: Offer a 10% discount coupon
+1. Zákazník se s vámi spojí (nebo použije samoobslužný portál po jeho vytvoření)
+2. Administrátor jde na `/admin/returns` → uvidí všechny žádosti o vrácení (RMA)
+3. Administrátor vytvoří vrácení propojené s objednávkou a konkrétními položkami
+4. Schvalte vrácení → odešlete štítek pro dopravu
+5. Obdržíte položky → zkontrolujte stav
+6. Nastavte `restock: true` na každé položce v dobrém stavu → skladové zásoby se automaticky obnoví
+7. Nastavte řešení: `refund`, `exchange` nebo `store_credit`
+8. Nastavte `completed` → `completed_at` časové razítko je automaticky nastaveno
 
-Use `sendAbandonedCartRecovery()` from `website/src/lib/integrations/email.ts`.
-
-### Wishlist Price Drops
-
-When a product in a customer's wishlist drops in price:
-1. Query `wishlist_items` joined to `products` where `discount_price < old_price`
-2. Send "Price drop!" notification email
-3. Set `notified_at` on the wishlist item to avoid spam
+**Pravidla pro vrácení peněz:**
+- Plné vrácení peněz: pokud je položka vadná, špatná nebo neodpovídá popisu
+- Částečné vrácení peněz: poškození nebo chyba zákazníka
+- Kredit v obchodě: nabídnut jako alternativa k zachování prodeje
+- 9 % vrácení je podvodné - zkontrolujte historii objednávky před schválením
 
 ---
 
-## What We Know About Customers
+## Fáze 7: Udržení (Retention)
 
-Every customer record (`customers` table) contains:
+Přeměňte jednorázové kupující do loajálních opakovaných zákazníků.
 
-| Field | Purpose |
+### Body lovislosti
+
+Každý zákazník má zůstatek `loyalty_points`. Tabulka `loyalty_transactions` zaznamenává každou událost získání/využení.
+
+**Výchozí pravidla (implementovat v administraci):**
+- Získejte 1 bod za každých 10 Kč utracených
+- 100 bodů = 10 Kč kredit v obchodě
+- Bonusové body za napsání ověřené recenze
+
+### Obnovení opuštěného košíku
+
+Když košík nebyl aktualizován po 1 hodině, `abandoned_at` je automaticky nastaven.
+
+**Sekvence e-mailů pro obnovení:**
+1. **1 hodina**: Jemné připomenutí - „Zanechali jste něco za sebou“
+2. **24 hodin**: Zdůraznění výhody produktu
+3. **72 hodin**: Nabídka kupónu se slevou 10 %
+
+Použijte `sendAbandonedCartRecovery()` z `website/src/lib/integrations/email.ts`.
+
+### Snížení cen v seznamu přání
+
+Když se cena produktu v seznamu přání zákazníka sníží:
+1. Dotaz na `wishlist_items` spojený s `products`, kde je `discount_price < old_price`
+2. Odeslat oznámení e-mail „Snížení ceny!“
+3. Nastavit `notified_at` na položce v seznamu přání, aby se zabránilo spamování
+
+---
+
+## Co víme o zákaznících
+
+Každý záznam zákazníka (`customers` tabulka) obsahuje:
+
+| Pole | Účel |
 |-------|---------|
-| `first_name`, `last_name` | Personalise emails |
-| `email` | All communication |
-| `phone` | SMS shipping updates |
-| `addresses[]` | Shipping + billing |
-| `is_active` | Disable without deleting |
-| `marketing_opt_in` | **GDPR required** — only email if true |
-| `gdpr_consent` + `gdpr_consent_at` | **Legal** — record when consent was given |
-| `gdpr_consent_ip` | **Legal** — IP at consent time |
-| `loyalty_points` | Current balance |
+| `first_name`, `last_name` | Personalizace e-mailů |
+| `email` | Všechna komunikace |
+| `phone` | SMS aktualizace dopravy |
+| `addresses[]` | Doprava + fakturace |
+| `is_active` | Deaktivace bez mazání |
+| `marketing_opt_in` | **Požadováno GDPR** - posílat e-mail pouze pokud je true |
+| `gdpr_consent` + `gdpr_consent_at` | **Právní** - zaznamenat, kdy byl souhlas udělen |
+| `gdpr_consent_ip` | **Právní** - IP v době souhlasu |
+| `loyalty_points` | Aktuální zůstatek |
 | `customer_group` | standard / vip / wholesale / staff |
 | `preferred_language` | cs / en |
-| `lifetime_value` | Auto-calculated from paid orders |
-| `tags[]` | Free-form segmentation |
-| `notes` | Staff-only internal notes |
-| `user_id` | Linked Supabase auth account (if registered) |
+| `lifetime_value` | Automaticky vypočítáno z zaplacených objednávek |
+| `tags[]` | Segmentace volného tvaru |
+| `notes` | Interní poznámky pouze pro personál |
+| `user_id` | Propojený účet Supabase auth (pokud je registrován) |
 
 ---
 
-## GDPR Compliance Checklist
+## Kontrolní seznam dodržování GDPR
 
-Before going live with any marketing emails:
+Před spuštěním jakýchkoli marketingových e-mailů:
 
-- [ ] `marketing_opt_in = true` before sending newsletters
-- [ ] `gdpr_consent = true` recorded at registration/checkout
-- [ ] `gdpr_consent_at` timestamped
-- [ ] Privacy policy page linked at checkout and registration
-- [ ] Cookie consent banner on first visit
-- [ ] "Delete my data" request handling (delete customer + order PII)
-- [ ] Data retention policy documented (recommend: delete inactive after 3 years)
+- [ ] `marketing_opt_in = true` před odesláním novinek
+- [ ] `gdpr_consent = true` zaznamenáno při registraci/pokladně
+- [ ] `gdpr_consent_at` s časovým razítkem
+- [ ] Stránka zásad ochrany osobních údajů je odkázána v pokladně a při registraci
+- [ ] Banner souhlasu s cookies při prvním návštěvě
+- [ ] Správa požadavku „Smažte mé údaje“ (mazání PII zákazníka + objednávky)
+- [ ] Dokumentovaná politika uchování dat (doporučení: mazat neaktivní po 3 letech)

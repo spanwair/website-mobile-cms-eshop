@@ -148,8 +148,8 @@ async function acceptInviteAndSetPassword(
   await page.fill("#sp-password", password);
   await page.fill("#sp-confirm", password);
   await page.click("#setpw-btn");
-  await page.waitForURL(`${BASE}/`, { timeout: 20000 });
-  await screenshot(page, `${testId}-home-after-set-password`);
+  await page.waitForURL(/\/admin/, { timeout: 20000 });
+  await screenshot(page, `${testId}-admin-after-set-password`);
 }
 
 // ── tests ─────────────────────────────────────────────────────────────────────
@@ -180,10 +180,9 @@ test.describe("17 — Invite → role → login verification", () => {
     // Accept invite → set-password page → fill and submit
     await acceptInviteAndSetPassword(page, callbackUrl, "Invited Admin", ADMIN_INVITE_PASSWORD, "17-01");
 
-    // After set-password, should be on the homepage and admin link visible in the dropdown
-    await page.locator("#profile-toggle").click();
-    await expect(page.locator(".dropdown-item[href='/admin']")).toBeVisible({ timeout: 5000 });
-    await screenshot(page, "17-01-admin-link-visible");
+    // After set-password, an invited user is taken straight into the admin area.
+    expect(page.url()).toMatch(/\/admin/);
+    await screenshot(page, "17-01-admin-after-invite");
 
     // DB assertion: profile.role must be 4
     const userId = await getUserId(ADMIN_INVITE_EMAIL);
@@ -222,10 +221,9 @@ test.describe("17 — Invite → role → login verification", () => {
     // Accept invite → set-password
     await acceptInviteAndSetPassword(page, callbackUrl, "Invited Eshop", ESHOP_INVITE_PASSWORD, "17-02");
 
-    // Admin link must be visible (role=2, has party membership)
-    await page.locator("#profile-toggle").click();
-    await expect(page.locator(".dropdown-item[href='/admin']")).toBeVisible({ timeout: 5000 });
-    await screenshot(page, "17-02-admin-link-visible");
+    // After set-password, an invited eshop-admin lands directly in the admin area.
+    expect(page.url()).toMatch(/\/admin/);
+    await screenshot(page, "17-02-admin-after-invite");
 
     // DB assertions
     const userId = await getUserId(ESHOP_INVITE_EMAIL);
@@ -264,26 +262,21 @@ test.describe("17 — Invite → role → login verification", () => {
 
   test("17-03 existing user with profile (Gmail simulation) → magic link callback → / not /auth/set-password → admin panel visible", async ({ page }) => {
     // Simulate Google OAuth behavior: an existing user with an admin profile logs in via a link.
-    // Since isNewUser=false and type=magiclink, callback.astro must redirect to /.
-    // The seeded ADMIN user (admin@test.com) has role=4 and a profile row.
+    // Since isNewUser=false and type=magiclink, callback.astro forwards straight into the admin
+    // area (never set-password). The seeded ADMIN user (admin@test.com) has role=4 and a profile.
 
     const magicLinkUrl = await generateMagicLinkCallbackUrl(ADMIN.email);
     expect(magicLinkUrl).toContain("token_hash=");
     expect(magicLinkUrl).toContain("type=magiclink");
 
-    // Navigate to magic link callback — must NOT go to /auth/set-password
+    // Navigate to magic link callback — lands in the admin area, NOT set-password
     await page.goto(magicLinkUrl);
-    await page.waitForURL(`${BASE}/`, { timeout: 20000 });
-    await screenshot(page, "17-03-existing-user-home");
+    await page.waitForURL(/\/admin/, { timeout: 20000 });
+    await screenshot(page, "17-03-existing-user-admin");
 
-    // Admin panel visible (ADMIN user has role=4)
-    await page.locator("#profile-toggle").click();
-    await expect(page.locator(".dropdown-item[href='/admin']")).toBeVisible({ timeout: 5000 });
-    await screenshot(page, "17-03-admin-link-visible");
-
-    // Explicitly assert NOT on set-password
+    // Explicitly assert in admin area and not on set-password
+    expect(page.url()).toMatch(/\/admin/);
     expect(page.url()).not.toContain("/auth/set-password");
-    expect(page.url()).toBe(`${BASE}/`);
   });
 
   // ── 17-04 ──────────────────────────────────────────────────────────────────

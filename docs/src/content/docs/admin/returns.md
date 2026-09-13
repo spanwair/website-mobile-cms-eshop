@@ -1,112 +1,160 @@
 ---
-title: Returns & Refunds
-description: How to process RMA (Return Merchandise Authorization) requests from customers.
+title: Vrácení
+description: Správa autorizací na vrácení zboží (RMA), záznam řešení, vrácení peněz a doplnění zásob
 ---
 
-Returns allow customers to send back products for a refund, exchange, or store credit. Every return is linked to an original [order](/admin/orders) and [customer](/admin/customers). Completed returns with restockable items automatically update [inventory](/admin/inventory).
+Sekce Vrácení spravuje autorizace na vrácení zboží (RMA) podaných vůči minulým [Objednávkám](/docs/admin/orders).
+Každé vrácení je propojeno s jeho objednávkou a se [Zákazníkem](/docs/admin/customers), který ho podal, a určuje řešení: vrácení peněz, výměna nebo kredit do obchodu.
+Vrácení sdílí stejná oprávnění jako objednávky, takže kdekoli, kdo může splňovat objednávky, může také zpracovávat vrácení.
 
-## Permission required
+## Požadované oprávnění
 
-| Permission bit | Name | Who has it by default |
+| Bit oprávnění | Název | Kdo ho má výchozí |
 |---|---|---|
-| 32 | MANAGE_ORDERS | Owner, Admin, Eshop Admin (with this bit) |
+| 32 | MANAGE_ORDERS | Vlastník, Administrátor, Administrátor Eshopu (s tímto bitem) |
 
-This is the **same permission as [Orders](/admin/orders)**.
+Obě stránky vrácení volají `requireAdminCtx`.
+Neověřený uživatel je přesměrován na `/login`.
+Uživatel bez role administrátor je přesměrován na `/dashboard`.
+Uživatel bez aktivní organizace je přesměrován na `/admin/parties/new` (vlastník) nebo `/admin/setup`.
+Chybějící bit MANAGE_ORDERS přesměruje na `/admin`.
 
-## Return list (`/admin/returns`)
+## Seznam vrácení (`/admin/returns`)
 
-Status tabs filter the list:
+Hlavička stránky zobrazuje název a počet odpovídajících vrácení.
+Seznam zobrazuje 20 vrácení na stránku pro aktivní organizaci, nejnovější nejdříve.
 
-| Tab | Shows |
+### Záložky stavu
+
+Zaoblené pilulkové záložky filtrují podle stavu.
+Aktivní pilulka je vyplněna primární barvou.
+
+| Záložka | Hodnota filtru |
 |---|---|
-| All | Every return request |
-| Pending | New requests awaiting your decision |
-| Approved | Approved — customer is sending the item back |
-| Received | Parcel arrived at your warehouse |
-| Processing | You are processing the resolution |
-| Completed | Fully resolved |
-| Rejected | Declined returns |
-| Cancelled | Cancelled before being received |
+| Všechny | (žádný filtr) |
+| Očekává | `pending` |
+| Schváleno | `approved` |
+| Obdrženo | `received` |
+| Zpracování | `processing` |
+| Dokončeno | `completed` |
+| Zamítnuto | `rejected` |
+| Zrušeno | `cancelled` |
 
-Each row shows: RMA number, order link, customer link, return reason, status badge, refund amount, and date.
+### Sloupce
 
-## Return lifecycle
-
-```
-pending → approved → received → processing → completed
-        ↘ rejected
-        ↘ cancelled
-```
-
-| Status | Your action |
+| Sloupec | Popis |
 |---|---|
-| `pending` | Review the request — approve or reject |
-| `approved` | Send the customer a return shipping label |
-| `received` | Parcel arrived — inspect items |
-| `processing` | Issue the actual refund/exchange in your payment provider |
-| `completed` | Mark done — inventory auto-restocks items with `restock = true` |
-| `rejected` | Send the customer an explanation |
-| `cancelled` | No action needed |
+| RMA | `return_number` zobrazený jako monospace kód |
+| Objednávka | Odkaz na zdrojovou objednávku; zobrazuje číslo objednávky nebo prvních 8 znaků `order_id`, pokud číslo objednávky chybí |
+| Zákazník | Odkaz na zákazníka; zobrazuje jméno a příjmení, nebo pomlčku |
+| Důvod | Čitelné označení důvodu (viz důvody níže) |
+| Stav | Odznak stavu s barevnou kódováním |
+| Vrácení peněz | `refund_amount` formátované, nebo pomlčka, pokud není nastaveno |
+| Vytvořeno | `created_at` krátký místní datum |
+| Akce | Odkaz na podrobnosti RMA |
 
-## Processing a return step by step
+### Barvy odznaků stavu
 
-1. Go to `/admin/returns` → **Pending** tab → click **Detail**.
-2. Read the customer's **reason** and **notes**.
-3. Check the **items table** — each returned item shows: product name, SKU, quantity ordered, quantity being returned, condition, and restock checkbox.
-4. Set status to **Approved** and save → contact the customer with a shipping label.
-5. When the parcel arrives at your warehouse, set status to **Received** → the `received_at` timestamp is recorded automatically.
-6. Inspect items. For items in sellable condition, ensure `restock = true` is checked.
-7. Fill in the **resolution form**:
-   - **Resolution**: `refund`, `exchange`, or `store_credit`
-   - **Refund amount**: exact amount to return
-   - **Refund method**: how to return the money (see below)
-   - **Notes**: internal notes about the decision
-8. Set status to **Processing**.
-9. Issue the refund in your payment provider (Stripe, etc.) — the system does not do this automatically.
-10. Set status to **Completed**. Items with `restock = true` are automatically added back to inventory.
-
-## Return reason labels
-
-| Reason code | Meaning |
+| Stav | Styl odznaku |
 |---|---|
-| `wrong_item` | Customer received the wrong product |
-| `damaged` | Item arrived damaged in transit |
-| `defective` | Product stopped working / manufacturing defect |
-| `not_as_described` | Product differs from what was shown on the eshop |
-| `changed_mind` | Customer changed their mind after purchase |
-| `quality_issue` | Quality below expectations |
-| `size_issue` | Size doesn't fit (typically clothing/shoes) |
-| `other` | Other reason — see customer notes |
+| pending | `badge-pending` (hnědá) |
+| approved | `badge-draft` |
+| received | `badge-draft` |
+| processing | `badge-draft` |
+| completed | `badge-active` (zelená) |
+| rejected | `badge-error` (červená) |
+| cancelled | `badge-inactive` (ztlumený) |
 
-## Resolution types
+### Důvody vrácení
 
-| Resolution | When to use | Effect |
+Důvod zákazníka je uložen jako kód a zobrazen s přátelským označením.
+
+| Kód důvodu | Označení |
+|---|---|
+| wrong_item | Nesprávný předmět |
+| damaged | Poškozený |
+| defective | Defektní |
+| not_as_described | Neobsahuje popis |
+| changed_mind | Změnil si názor |
+| quality_issue | Problém s kvalitou |
+| size_issue | Problém s velikostí |
+| other | Jiné |
+
+### Prázdný stav a paginace
+
+Když se nic nenachází, karta zobrazuje zprávu "žádná vrácení".
+Když existuje více než jedna stránka, objevují se odkazy Předchozí / Další a počítadlo "Stránka X / Y".
+
+## Podrobnosti vrácení (`/admin/returns/{id}`)
+
+Lišta nástrojů zobrazuje tlačítko zpět, číslo RMA a aktuální odznak stavu.
+Tělo je dvoukolumnový rozvrh: čtenelné podrobnosti vlevo, editovatelné formulář řešení vpravo, s volitelnou tabulkou vrácených položek níže.
+
+### Karta podrobností (pouze pro čtení)
+
+| Pole | Zdrojová sloupec |
+|---|---|
+| Objednávka | Odkaz na `/admin/orders/{order_id}` (prvních 8 znaků ID zobrazeno jako popis) |
+| Důvod | `reason` (přátelské označení) |
+| Poznámky zákazníka | `customer_notes`, nebo pomlčka |
+| Vytvořeno | `created_at`, kompletní místní datum a čas |
+| Obdrženo | `received_at`, zobrazeno pouze pokud je nastaveno |
+| Dokončeno | `completed_at`, zobrazeno pouze pokud je nastaveno |
+
+### Formulář řešení (workflow RMA)
+
+Tento formulář slouží k průchodu vrácením jeho životním cyklem a k záznamu vrácení peněz.
+Odeslání uloží všechna pole najednou pomocí `updateReturnStatus`.
+
+| Pole | Ovládací prvek | Možnosti / poznámky |
 |---|---|---|
-| `refund` | Customer wants money back | Issue refund in your payment provider |
-| `exchange` | Customer wants a different item/size | Ship replacement product |
-| `store_credit` | Customer accepts credit for future purchase | Add credit to customer account |
+| Stav | Výběr | pending, approved, rejected, received, processing, completed, cancelled |
+| Řešení | Výběr | (nenastaveno), vrácení peněz, výměna, kredit do obchodu |
+| Částka vrácení peněz | Číslo (krok 0.01) | Uloženo v `refund_amount` |
+| Metoda vrácení peněz | Výběr | (nenastaveno), original_payment, store_credit, bank_transfer |
+| Poznámky | Textové pole | Interní poznámky zaměstnanců, uloženo v `notes` |
 
-## Refund methods
+Při uložení se automaticky aplikují dva vedlejší účinky na základě zvoleného stavu:
 
-| Method | Description |
+- Nastavení stavu na `received` časově razítko `received_at` aktuálním časem.
+- Nastavení stavu na `completed` časově razítko `completed_at` aktuálním časem.
+- Jakákoli změna stavu také zaznamená `processed_by` jako váš uživatelský ID.
+
+### Správa vrácení peněz
+
+Z této stránky neprobíhá automatický pohyb peněz.
+Vrácení peněz je zaznamenáno na vrácení (`refund_amount` + `refund_method`) jako rozhodnutí a účetní záznam pro prodejce.
+Volba `original_payment` znamená, že vrácíte peníze přes původní kartu/účtování Stripe, `store_credit` zúčtuje zákazníkovi účet a `bank_transfer` je manuální mimořádný převod.
+Skutečné výplaty musí být provedeny u vašeho poskytovatele plateb nebo banky; tato stránka sleduje, co bylo dohodnuto, a označuje RMA jako dokončené.
+
+Fyzický štítek pro vrácení balíku je vytvořen z samotné objednávky, ne zde: použijte kartu pro vrácení dopravy na [stránce podrobností objednávky](/docs/admin/orders) k rezervaci zpětné dopravy.
+
+### Tabulka vrácených položek
+
+Zobrazeno, když RMA má řádky `return_items`.
+
+| Sloupec | Zdroj |
 |---|---|
-| `original_payment` | Refund to the original payment card/method |
-| `store_credit` | Issue as credit for future purchases |
-| `bank_transfer` | Manual bank transfer (for cases where original method is unavailable) |
+| Položka | `order_item.title` |
+| SKU | `order_item.sku` |
+| Počet objednaný | `order_item.quantity` |
+| Počet vrácený | `return_items.quantity` |
+| Stav | `return_items.condition` |
+| Doplnění zásob | zaškrtnutí, když je `return_items.restock` pravdivé, jinak pomlčka |
 
-## Inventory auto-restock
+Označení `restock` zaznamenává, zda by vrácená jednotka měla být opět přidána do prodejného skladu.
+Vyrovnejte skutečné úrovně zásob v [Skladové zásoby](/docs/admin/inventory) po zpracování.
 
-When you set a return to `completed`, the system checks every returned item where `restock = true` and:
-1. Increases `qty_on_hand` in [Inventory](/admin/inventory) by the returned quantity
-2. Records a `stock_movements` entry of type `return`
+## Data a úložiště (cloud)
 
-This happens automatically — you do not need to manually adjust stock.
+- `return_requests` - hlavička RMA: `return_number`, `status`, `reason`, `resolution`, `refund_amount`, `refund_method`, `notes`, `customer_notes`, `processed_by`, `received_at`, `completed_at`, `order_id`, `customer_id`, `party_id`, `created_at`.
+- `return_items` - jeden řádek na vrácenou položku: `quantity`, `condition`, `restock`, `order_item_id`, `return_request_id`.
+- Pro zobrazení spojeno: `orders` (`order_number`), `customers` (`first_name`, `last_name`, `email`) a `order_items` (`title`, `sku`, `quantity`, `unit_price`).
+- Data zpětné dopravy (sledování vrácení, heslo pro předání, štítek pro vrácení) jsou uložena v řádku `order_shipments` objednávky v sloupcích `return_*`, rezervovaná ze stránky podrobností objednávky.
 
-Set `restock = false` for items that are damaged, defective, or otherwise not resellable.
+## Související stránky
 
-## Related pages
-
-- [Orders](/admin/orders) — returns are always linked to an original order
-- [Customers](/admin/customers) — return customer record linked from the detail page
-- [Inventory](/admin/inventory) — stock levels updated automatically on completion
-- [Permissions](/users/permissions) — MANAGE_ORDERS permission (bit 32)
+- [Objednávky](/docs/admin/orders) - zdrojová objednávka a místo, kde rezervujete fyzickou vrácenou dopravu/štítek
+- [Zákazníci](/docs/admin/customers) - zákazník, který vrácení podal, a jeho historie
+- [Skladové zásoby](/docs/admin/inventory) - doplnění zásob vrácených jednotek označených kontrolou doplnění zásob
+- [Produkty](/docs/admin/products) - katalogové položky, které jsou vráceny

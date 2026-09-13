@@ -1,68 +1,74 @@
 ---
-title: Reports
-description: How to view revenue, order, product, and customer summary metrics.
+title: Zprávy
+description: Analýza příjmů, objednávek, produktů a zákazníků s exportem do CSV a měsíčními obdobími fakturace
 ---
 
-The Reports page provides a high-level summary of your organization's business performance. It shows the current month's numbers and totals for the key metrics. Data is scoped to your organization only.
+Zprávy transformují surová data z [Objednávek](/docs/admin/orders), [Produktů](/docs/admin/products) a [Zákazníků](/docs/admin/customers) do přehledných karet KPI, grafů trendu za 12 měsíců a stahovatelných CSV souborů.
+Umožňují také přístup k tabulce měsíčních **období fakturace**, která je základem pro výpisy pro daň z příjmu a pro komiseční prodejce pro [Výplaty](/docs/admin/payouts).
 
-## Permission required
+## Požadovaná oprávnění
 
-| Permission bit | Name | Who has it by default |
+| Bit oprávnění | Název | Kdo má výchozí oprávnění |
 |---|---|---|
-| 512 | MANAGE_REPORTS | Owner, Admin (with this bit) |
+| 512 | MANAGE_REPORTS | Vlastník, Administrátor, Administrátor obchodu (s tímto bitem) |
 
-## Reports page (`/admin/reports`)
+Bez `MANAGE_REPORTS` vás systém přesměruje na `/admin`.
+Akce **zápisu** období fakturace (přepočítání, režim poplatku) vyžadují navíc `MANAGE_AUDIT` (bit 4096); prohlížeč s pouze čtením vidí období, ale nemůže spustit přepočítání.
 
-The page displays four metric cards arranged in a grid:
+## Čtyři karty KPI (`/admin/reports`)
 
-### Revenue card
+Každá karta zobrazuje dvě hlavní statistiky, graf a tlačítko **Export CSV**.
 
-| Metric | Description |
-|---|---|
-| This month | Sum of all order grand totals for the current calendar month |
-| YTD | Sum of all order grand totals from January 1st to today |
+| Karta | Statistika | Graf |
+|---|---|---|
+| Příjmy | Tento měsíc, tento rok (součet `orders.total_amount`) | 12měsíční sloupcový graf příjmů (`MiniBarChart`) |
+| Objednávky | Tento měsíc, celkový počet objednávek | 12měsíční sloupcový graf počtu objednávek |
+| Produkty | Celkový počet produktů, aktivní produkty | Top 5 produktů podle příjmů (`TopProductsBars`, s prodanými jednotkami) |
+| Zákazníci | Registrování zákazníků, hostující zákazníci | 12měsíční sloupcový graf nových zákazníků |
 
-A chart placeholder is shown below the numbers. The **Export CSV** button is present but currently disabled — CSV export is a planned feature on the [roadmap](/roadmap/future).
+Série pocházejí z `fetchMonthlySeries`, `fetchTopProducts` a `fetchCustomerStats` v `reportsAnalytics`, a jsou všechny omezeny na aktivní organizaci.
 
-### Orders card
+## Export CSV (`/admin/reports/export.csv?type=`)
 
-| Metric | Description |
-|---|---|
-| This month | Total number of orders placed in the current calendar month |
-| Total | Total number of orders across all time |
+Tlačítko **Export CSV** na každé kartě volá stejný endpoint s jiným `type`. Export probíhá v rámci vlastní přihlašovací relace prohlížeče, takže RLS udržuje omezení na jeho organizaci.
 
-Chart placeholder and disabled Export CSV button — same as Revenue.
+| `type` | Soubor | Sloupce |
+|---|---|---|
+| `revenue` | `reports-revenue.csv` | `měsíc`, `příjmy` (12 měsíců) |
+| `orders` | `reports-orders.csv` | `měsíc`, `objednávky` (12 měsíců) |
+| `products` | `reports-products.csv` | `název`, `jednotky`, `příjmy` (top 50) |
+| `customers` | `reports-customers.csv` | blok celků (`celkem`, `registrováni`, `hostující`), poté prázdný řádek, poté `měsíc`, `noví_zákazníci` |
 
-### Products card
+Hodnoty jsou CSV-escapované (uvnitřní uvozovky zdvojnásobeny, pole s čárkami/novými řádky uvnitř uvozovek); peníze jsou zapsány se dvěma desetinnými místy.
 
-| Metric | Description |
-|---|---|
-| Total | Total number of products in your organization's catalog |
-| Active | Products with `status = 'active'` (visible on the eshop) |
+## Měsíční období fakturace
 
-### Customers card
+Pod kartami KPI seznam `BillingPeriodsSection` uvádí až 13 nedávných měsíčních období.
+Při načtení stránky se aktuální měsíc přepočítá automaticky; pokud máte `MANAGE_AUDIT`, akce **Přepočítat** vám umožní vynuceně přepočítat minulé období.
+Všechny zápisy fakturace probíhají přes klient role služby (stejné hranice oprávnění jako cron pro měsíční poplatek), nikdy ne přes vlastní klienta prohlížeče.
 
-Currently shows an empty placeholder. Customer metrics are on the roadmap.
+### CSV období fakturace (`/admin/reports/billing-periods.csv`)
 
-## What "this month" means
+Tento výpis pro daň z příjmu vrátí až 60 období a záměrně uvádí hrubé a čisté údaje v jednom souboru, aby nebylo nutné vyrovnávat různé stahování.
 
-"This month" always means the **current calendar month** — January 1–31, February 1–28/29, etc. It resets at midnight on the first day of each month.
+Sloupce: `period_start`, `period_end`, `seller_mode`, `gross_revenue`, `real_costs`, `net_revenue`, `fee_mode`, `fee_rate`, `fee_amount`, `net_payout`, `currency`, `status`.
 
-## Limitations of the current reports
+- **gross_revenue** - hrubý obrat (celkem přijaté).
+- **net_revenue** - po reálných nákladech.
+- **net_payout** - po poplatku platformy, pro komiseční prodejce.
+- **fee_rate** - čtyřmístná sazba, prázdná, když není poplatek.
 
-- **Charts are placeholders** — the visual graphs are not yet implemented
-- **CSV export is disabled** — downloading data requires going to the Supabase dashboard directly
-- **Customer metrics** are not yet implemented
-- **No date range selector** — you cannot currently view reports for a custom time period
+## Data a úložiště (cloud)
 
-For detailed filtering and historical data, go to:
-- [Orders](/admin/orders) — filter by status and review order-by-order
-- [Products](/admin/products) — see all products with status filters
-- [Customers](/admin/customers) — browse customer records
+- **Agregováno z:** `orders`, `order_items`, `products` a profily zákazníků.
+- **Služby:** `fetchMonthlySeries`, `fetchTopProducts`, `fetchCustomerStats` (`reportsAnalytics`); `listBillingPeriods`, `recomputeBillingPeriod` (`billingPeriodService`).
+- **Klient:** Přepočítání fakturace používá `createAdminClient()` (role služby); čtení používá klient relace.
+- **Komponenty:** `MiniBarChart`, `TopProductsBars`, `BillingPeriodsSection`.
 
-## Related pages
+## Související stránky
 
-- [Orders](/admin/orders) — detailed order data underlying the revenue and order metrics
-- [Products](/admin/products) — product count data underlying the products metric
-- [Customers](/admin/customers) — customer data (metric coming soon)
-- [Dashboard](/admin/dashboard) — similar KPIs shown at a glance on the home page
+- [Objednávky](/docs/admin/orders) - zdroj příjmů a počtu objednávek
+- [Zákazníci](/docs/admin/customers) - zdroj počtu registrovaných oproti hostujícím
+- [Fakturace](/docs/admin/billing) - aktuální období a poplatek platformy pro tuto organizaci
+- [Výplaty](/docs/admin/payouts) - výplaty pro komiseční prodejce odvozené z období fakturace
+- [Protokol auditu](/docs/admin/audit) - bit `MANAGE_AUDIT`, který odemyká i přepočítání období fakturace

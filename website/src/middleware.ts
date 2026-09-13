@@ -2,7 +2,36 @@ import { defineMiddleware } from "astro:middleware";
 import { createSupabase } from "./lib/supabase";
 import { resolvePartyIdByDomain, resolvePartyIdBySlug, fetchStoreConfig } from "@shared/services/storeConfigService";
 
+// The documentation is a Starlight site (base=/docs) published as static assets into
+// public/docs by scripts/build-docs.sh. In production Cloudflare's asset layer serves
+// /docs/** before this Worker ever runs, resolving directory index.html natively. But
+// `astro dev` does not resolve a directory index for public subfolders (only exact files),
+// so /docs/ and /docs/admin/setup/ would 404 locally. This dev-only shim reads the matching
+// index.html directly. Either way /docs is not a storefront route and must skip the
+// party/host resolution below.
+async function serveDocsIndexInDev(pathname: string): Promise<Response | null> {
+  const rel = pathname === "/docs" ? "/" : pathname.slice("/docs".length);
+  const lastSegment = rel.split("/").pop() ?? "";
+  if (lastSegment.includes(".")) return null; // a real asset file — let the static server handle it
+  const filePath = rel.endsWith("/") ? `${rel}index.html` : `${rel}/index.html`;
+  try {
+    const { readFile } = await import("node:fs/promises");
+    const html = await readFile(new URL(`../public/docs${filePath}`, import.meta.url));
+    return new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=UTF-8" } });
+  } catch {
+    return null;
+  }
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
+  if (context.url.pathname === "/docs" || context.url.pathname.startsWith("/docs/")) {
+    if (import.meta.env.DEV) {
+      const served = await serveDocsIndexInDev(context.url.pathname);
+      if (served) return served;
+    }
+    return next();
+  }
+
   const hostname = (context.request.headers.get("host") ?? "").split(":")[0];
   const appDomain = (import.meta.env.PUBLIC_APP_DOMAIN ?? "").split(":")[0];
 

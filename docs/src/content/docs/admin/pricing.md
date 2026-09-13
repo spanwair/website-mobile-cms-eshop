@@ -1,89 +1,102 @@
 ---
-title: Pricing & Coupons
-description: How to manage price lists, discount rules, and coupon codes for your eshop.
+title: Ceny
+description: Centrum cen - spravujte ceníky, pravidla pro slevy a kódy kupónů pro váš obchod
 ---
 
-The Pricing section controls three distinct tools: **Price Lists** (different prices for different customer groups), **Discounts** (automatic reductions applied at checkout), and **Coupons** (codes customers enter to get a discount). All are scoped to your organization.
+Sekce Ceny je centrem všeho, co ovlivňuje to, co zákazník platí.
+Obsahuje tři záložky, z nichž každá je podložena vlastní sadou záznamů: **ceníky** (přepisy cen produktů s omezením na měnu), **pravidla pro slevy** (opakovatelné matematické vzorce pro akci) a **kupóny** (využitelné kódy, které odkazují na pravidlo pro slevu).
+Každá záložka odkazuje na vyhrazenou stránku pro vytvoření/upravu, která je dokumentována zvlášť: [Ceníky](/docs/admin/pricing-pricelists), [Slevy](/docs/admin/pricing-discounts) a [Kupóny](/docs/admin/pricing-coupons).
 
-## Permission required
+## Oprávnění vyžadováno
 
-| Permission bit | Name | Who has it by default |
+| Bit oprávnění | Název | Kdo ho má výchozí |
 |---|---|---|
-| 128 | MANAGE_PRICING | Owner, Admin, Eshop Admin (with this bit) |
+| 128 | MANAGE_PRICING | Vlastník, Administrátor, Administrátor obchodu (s tímto bitem) |
 
-## The three pricing tools
+Centrum a každá stránka pro kupón/slevu/ceník volá `requireAdminCtx`.
+Neověřený uživatel je přesměrován na `/login`.
+Uživatel bez role administrátor je přesměrován na `/dashboard`.
+Uživatel bez aktivní organizace je přesměrován na `/admin/parties/new` (vlastník) nebo `/admin/setup`.
+Chybí bit MANAGE_PRICING, což přesměruje na `/admin`.
 
-| Tool | How it works | Applied by |
+## Centrum (`/admin/pricing`)
+
+Stránka se otevírá s třemi záložkami; parametr dotazu `?tab=` vybere, která je zobrazená (výchozí `pricelists`).
+Každá záložka zobrazuje aktuální počet svých záznamů.
+
+| Záložka | Hodnota dotazu | Zobrazuje |
 |---|---|---|
-| Price List | An alternative set of prices for specific products | Automatic, based on customer group assignment |
-| Discount Rule | An automatic reduction (% or fixed) applied at checkout | Automatic, based on conditions (date, category, etc.) |
-| Coupon | A code the customer manually enters at checkout | Customer |
+| Ceníky | `pricelists` | Tabulka ceníků |
+| Slevy | `discounts` | Tabulka pravidel pro slevy |
+| Kupóny | `coupons` | Tabulka kupónů |
 
-## Price Lists tab
+Všechny tři sadu dat se načítají společně při načtení stránky pomocí `fetchPriceLists`, `fetchDiscountRules` a `fetchCoupons`, přičemž je každá omezená na `party_id` aktivní organizace.
 
-Price lists let you offer different prices to different customer groups (e.g. wholesale buyers, VIP members).
+### Záložka Ceníky
 
-| Column | Description |
+Panel nástrojů zobrazuje počet a tlačítko "Nový ceník" odkazující na [`/admin/pricing/pricelists/new`](/docs/admin/pricing-pricelists).
+
+| Sloupec | Zdrojový sloupec |
 |---|---|
-| Name | Label for this price list (e.g. "Wholesale", "VIP") |
-| Currency | Currency for this price list |
-| Default | Badge — the default price list used when no specific list applies |
-| Active | Whether this list is currently in effect |
-| Valid from / Valid to | Optional date range for seasonal price lists |
+| Název | `name` |
+| Měna | `currency` |
+| Výchozí | Zelený odznak "Výchozí", pokud je `is_default`, jinak pomlčka |
+| Stav | Zelené `Aktivní` / ztlumený `Neaktivní` z `is_active` |
+| Platí od | Datum `valid_from`, nebo pomlčka |
+| Platí do | Datum `valid_to`, nebo pomlčka |
+| Akce | Odkaz na úpravu na `/admin/pricing/pricelists/{id}` |
 
-Price lists are currently **read-only** in the admin UI — they are managed via database migrations. Contact your developer to add or change price lists.
+Prázdný stav: řádek "žádné ceníky" se rozprostírá přes tabulku.
 
-## Discounts tab
+### Záložka Slevy
 
-Discount rules automatically reduce prices at checkout when their conditions are met.
+Panel nástrojů zobrazuje počet a tlačítko "Novou slevu" odkazující na [`/admin/pricing/discounts/new`](/docs/admin/pricing-discounts).
 
-| Column | Description |
+| Sloupec | Zdrojový sloupec |
 |---|---|
-| Name | Internal label (e.g. "Summer 10% Off") |
-| Type | `percentage` (e.g. 10% off) or `fixed` (e.g. 50 Kč off) |
-| Value | The discount amount |
-| Active | Whether this rule is currently live |
-| Starts at / Ends at | Date range when the rule is active |
+| Název | `name` |
+| Typ | Hnědý odznak s názvem typu slevy (viz níže) |
+| Hodnota | `${value}%` pro procentuální slevy, jinak `value` formátované jako měna |
+| Stav | Zelené `Aktivní` / ztlumený `Neaktivní` z `is_active` |
+| Začíná | Datum `starts_at`, nebo pomlčka |
+| Končí | Datum `ends_at`, nebo pomlčka |
+| Akce | Odkaz na úpravu na `/admin/pricing/discounts/{id}` |
 
-Discount rules are currently **read-only** in the admin UI — they are managed via database migrations. Contact your developer to create or modify discount rules.
+Názvy typů slevy: `percentage`, `fixed`, `buy_x_get_y`, `free_shipping`.
+Prázdný stav: řádek "žádné slevy".
 
-## Coupons tab
+### Záložka Kupóny
 
-Coupon codes are manageable directly in the admin UI. Customers enter the code at checkout to apply the associated discount.
+Panel nástrojů zobrazuje počet a tlačítko "Nový kupón" odkazující na [`/admin/pricing/coupons/new`](/docs/admin/pricing-coupons).
 
-### How to create a coupon
+| Sloupec | Zdrojový sloupec |
+|---|---|
+| Kód | `code` (tučné monospace) |
+| Stav | Zelené `Aktivní` / ztlumený `Neaktivní` z `is_active` |
+| Max. použití | `max_uses`, nebo "Neomezeno" při null |
+| Použito | `uses_count` |
+| Vytvořeno | Datum `created_at` |
+| Akce | Odkaz na úpravu na `/admin/pricing/coupons/{id}` |
 
-1. Go to **Admin → Pricing** and click the **Coupons** tab.
-2. Click **New Coupon**.
-3. Fill in the fields (see below).
-4. Click **Save**. The coupon is immediately active if you checked the Active box.
+Prázdný stav: řádek "žádné kupóny".
 
-### Coupon fields
+## Jak se tyto tři části spojují
 
-| Field | Required | Description |
-|---|---|---|
-| Code | Yes | The code customers type (e.g. `WELCOME10`). Must be unique within your organization. |
-| Active | Yes | Toggle — only active coupons can be used at checkout |
-| Max uses | No | Maximum total redemptions allowed. Leave blank for unlimited. |
+- **Pravidlo pro slevu** definuje matematiku akce (slevu 10 %, zdarma doprava nad určitou hranici atd.). Může být použito samostatně nebo odkazováno kupónem.
+- **Kupón** je pouze využitelný kód, který odkazuje na přesně jedno pravidlo pro slevu pomocí `discount_rule_id`. Nemůžete vytvořit kupón, dokud neexistuje alespoň jedno pravidlo pro slevu.
+- **Ceník** je samostatný mechanismus: sada cen produktů s omezením na měnu, která přepisuje výchozí cenu produktu, s možností omezení časem a označení jako výchozí.
 
-The **uses count** (how many times the coupon has been redeemed) is shown in the table and is read-only.
+## Data a úložiště (cloud)
 
-### Coupon best practices
+- `price_lists` - `name`, `currency`, `is_default`, `is_active`, `valid_from`, `valid_to`, `party_id`.
+- `discount_rules` - `name`, `type`, `value`, `min_order_amount`, `min_quantity`, `applies_to`, `applies_to_ids`, `customer_group`, `starts_at`, `ends_at`, `usage_limit`, `usage_count`, `is_active`, `party_id`.
+- `coupons` - `code`, `discount_rule_id`, `max_uses`, `uses_count`, `is_active`, `party_id`, `created_at`.
+- Všechny tři jsou čteny s filtrováním podle `party_id` (pomocí `pricingService`).
 
-- Use uppercase codes — they are easier for customers to type and copy
-- Set `max_uses` for time-sensitive promotions to prevent over-redemption
-- Deactivate (rather than delete) a coupon when a promotion ends — this preserves the history of how many times it was used
-- Codes must be unique per organization — you cannot reuse the same code twice in your org
+## Související stránky
 
-## Relationship to orders
-
-When a customer applies a coupon or when a discount rule triggers at checkout:
-- The discount amount is recorded on the [order](/admin/orders) in the `discount` field
-- The order's grand total reflects the reduced amount
-- The coupon's `uses_count` increments by 1
-
-## Related pages
-
-- [Orders](/admin/orders) — coupon discounts appear in the order totals breakdown
-- [Products](/admin/products) — price list items reference specific products
-- [Roles](/users/permissions) — MANAGE_PRICING permission (bit 128)
+- [Kupóny](/docs/admin/pricing-coupons) - vytváření a úprava využitelných kódů
+- [Slevy](/docs/admin/pricing-discounts) - vytváření a úprava pravidel pro slevy
+- [Ceníky](/docs/admin/pricing-pricelists) - vytváření a úprava přepisu cen na produkt
+- [Produkty](/docs/admin/products) - katalog, na který se ceníky a slevy odkazují
+- [Objednávky](/docs/admin/orders) - kde se sleva z vykoupeného kupónu promítne do celkové ceny objednávky

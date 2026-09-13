@@ -1,87 +1,82 @@
 ---
-title: Custom Roles
-description: How to create and manage custom permission roles for your organization.
+title: Role
+description: Vytvářejte a spravujte vlastní sadu oprávnění, které jsou přiděleny administrátorům e-shopu pro každou organizaci
 ---
 
-Custom roles let you define precisely what each team member can do in the admin panel. Every organization starts with a **Super Admin** system role (created automatically). You can create additional roles tailored to specific job functions.
+Role jsou opakovaně použitelné, pojmenované balíčky bitů oprávnění.
+Existují proto, aby administrátor e-shopu mohl získat přesně tu část panelu administrátora, kterou potřebuje - například „Sklad“ (pouze skladové zásoby) nebo „Editor obsahu“ (pouze CMS) - aniž by se dotýkal pevně daných systémových rolí.
+Vlastní role jsou přiděleny osobám pro každou organizaci na stránce [Uživatelé](/docs/admin/users) a uvnitř [Organizace](/docs/admin/parties).
 
-## Permission required
+## Požadované oprávnění
 
-| Permission bit | Name | Who has it by default |
+| Bit oprávnění | Název | Kdo ho má výchozí |
 |---|---|---|
-| 4 | MANAGE_ROLES | Owner, Admin (with this bit) |
+| 4 | MANAGE_ROLES | Vlastník, Administrátor, Administrátor e-shopu (s tímto bitem) |
 
-## Role list (`/admin/roles`)
+Bez `MANAGE_ROLES` budete přesměrováni na `/admin`.
+Administrátor e-shopu bez organizace je poslán na `/admin/setup`; vlastník bez organizace je poslán na `/admin/parties/new`.
 
-The table shows all roles belonging to your organization:
+## Seznam rolí (`/admin/roles`)
 
-| Column | Description |
+Role jsou globální (`roles.party_id = null`), takže stejnou roli lze použít ve všech organizacích na platformě.
+Seznam je načítán pomocí `fetchRoles` a zobrazuje počet v levém horním rohu plus tlačítko **Nové** v pravém horním rohu.
+
+### Filtr (na straně klienta)
+
+- **Hledat** - vyhledávání podřetězce v názvu role a popisu.
+- **Pouze mé role** - zaškrtávací políčko, které skrývá každou roli, kterou jste nevytvořili (`roles.created_by === your id`).
+
+### Sloupce
+
+| Sloupec | Popis |
 |---|---|
-| Name | Role display name (e.g. "Warehouse Staff") |
-| Description | Optional explanation of what this role is for |
-| Permissions | Chip badges showing each permission this role includes |
-| Type | `system` (cannot be deleted) or `custom` (can be deleted) |
-| Delete | Button — only shown for custom roles |
+| Název | Název role, v tučném písmu, s odznákem: „Systém“ (`is_system = true`, vestavěný a neodstraňovatelný) nebo „Vlastní“. |
+| Popis | Volný text, nebo pomlčka, když je prázdný. |
+| Oprávnění | Jedna značka na aktivní bit oprávnění, označená z sdílených konstant; „žádná oprávnění“ když je maska `0`. |
+| Akce | Tlačítko **Odstranit**, zobrazené pouze tehdy, když jste vlastník nebo tvůrce role. |
 
-## System roles vs custom roles
+### Odstraňování role
 
-| Type | Description |
-|---|---|
-| System | Created automatically (e.g. "Super Admin" created when the org is set up). Cannot be deleted or modified through the UI. |
-| Custom | Created by you. Can be deleted. |
+Odstranění odesílá zpět na stejnou stránku a volá `deleteRole`.
+Je chráněno v rozhraní: tlačítko se vykreslí pouze tehdy, když je `isOwner || r.created_by === userId`.
+JavaScriptový dialog `confirm()` chrání před náhodnými kliknutími.
 
-The **Super Admin** system role has all permissions (`ALL_PERMISSIONS`) and is assigned to the first Owner of the organization.
+## Vytváření role (`/admin/roles/new`)
 
-## Creating a custom role (`/admin/roles/new`)
+### Jak na to
 
-### How to
+1. Klikněte na **Nové** v seznamu rolí.
+2. Zadejte **Název** (povinné) a volitelný **Popis**.
+3. Zaškrtněte políčka oprávnění, která chcete, aby role poskytovala.
+4. Klikněte na **Vytvořit**.
+   Vrátíte se do seznamu rolí, kde je nová role okamžitě přidělitelná.
 
-1. Click **New Role**.
-2. Enter a **Name** (required) — describe the function, e.g. "Warehouse Staff", "Content Editor", "Finance".
-3. Optionally add a **Description** to remind yourself what this role is for.
-4. Check the **permission checkboxes** for each capability this role should have.
-5. Click **Save**.
+### Pole
 
-The role is now available in the role dropdown when [inviting members](/admin/parties) to your organization and in [Users](/admin/users) for changing existing members' roles.
-
-## Permission checkboxes
-
-Each checkbox corresponds to one permission bit:
-
-| Checkbox label | Permission bit | Grants access to |
+| Pole | Sloupec | Poznámky |
 |---|---|---|
-| View Dashboard | 1 | [Dashboard](/admin/dashboard) |
-| Manage Users | 2 | [Users](/admin/users), [Organizations](/admin/parties) |
-| Manage Roles | 4 | [Custom Roles](/admin/roles) (this page) |
-| Manage Products | 8 | [Products](/admin/products), [Reviews](/admin/reviews) |
-| Manage Categories | 16 | [Categories](/admin/categories) |
-| Manage Orders | 32 | [Orders](/admin/orders), [Returns](/admin/returns) |
-| Manage Inventory | 64 | [Inventory](/admin/inventory) |
-| Manage Pricing | 128 | [Pricing & Coupons](/admin/pricing) |
-| Manage Customers | 256 | [Customers](/admin/customers) |
-| Manage Reports | 512 | [Reports](/admin/reports) |
-| Manage Audit | 4096 | [Audit Log](/admin/audit) |
+| Název | `roles.name` | Povinné, zobrazeno v rozbalovacích menu při přidělování. |
+| Popis | `roles.description` | Volitelný pomocný text. |
+| Oprávnění | `roles.permissions` (bitmaska) | Dvoukolumnová mřížka zaškrtávacích políček; hodnota každého zaškrtávacího políčka je bit z `PERMISSIONS`. |
 
-## Recommended role configurations
+Nabízené zaškrtávací políčka oprávnění jsou:
+VIEW_DASHBOARD, MANAGE_USERS, MANAGE_ROLES, MANAGE_PRODUCTS, MANAGE_CATEGORIES, MANAGE_ORDERS, MANAGE_INVENTORY, MANAGE_PRICING, MANAGE_CUSTOMERS, MANAGE_REPORTS, MANAGE_AUDIT.
+Při odeslání server logicky spojí každou zaškrtnutou hodnotu do jednoho celého čísla uloženého v `roles.permissions`; samotné čísla pocházejí pouze z `shared/constants/permissions.ts`, nikdy nejsou hardkodována.
 
-| Role name | Suggested permissions |
-|---|---|
-| Warehouse Staff | Manage Inventory only |
-| Content Editor | Manage Products + Manage Categories |
-| Customer Support | Manage Customers + Manage Orders |
-| Shop Manager | Manage Products + Categories + Orders + Inventory + Customers + Pricing |
-| Finance | Manage Reports + View Dashboard |
-| Full Admin | All permissions |
+## Jak vlastní role se stávají účinnými oprávněními
 
-## Deleting a custom role
+Uživatel může mít v jedné organizaci několik vlastních rolí.
+Jejich účinná oprávnění v dané organizaci je bitové OR všech rolí, které tam drží, vyřešené v době běhu pomocí databázové funkce `get_user_permissions(userId, partyId)`.
+To se používá pouze pro administrátory e-shopu; administrátoři a vlastníci vždy obdrží `ALL_PERMISSIONS` bez vyhledávání.
 
-Click **Delete** on a custom role row. This removes the role definition. Any users who were assigned this role will need to be reassigned a different role via [Users](/admin/users) — otherwise they fall back to minimal access.
+## Data a úložiště (cloud)
 
-Do not delete a role that is currently in use. Check [Users](/admin/users) first to see if anyone has that role.
+- **Tabulky:** `roles` (`id`, `name`, `description`, `permissions`, `party_id` (vždy null pro vlastní role), `is_system`, `created_by`), `user_party_roles` (přiděluje roli uživateli v organizaci).
+- **Služby:** `fetchRoles`, `createRole`, `deleteRole` (`permissionsService`); RPC `get_user_permissions` pro vyřešení v době běhu.
+- **Konstanty:** `PERMISSIONS`, `hasPermission` z `shared/constants/permissions.ts`.
 
-## Related pages
+## Související stránky
 
-- [Users](/admin/users) — assign roles to team members
-- [Organizations](/admin/parties) — role dropdown in invite form uses roles from this page
-- [Permissions](/users/permissions) — detailed explanation of every permission bit
-- [Role Hierarchy](/users/roles) — Owner / Admin / Eshop Admin / User system roles
+- [Uživatelé](/docs/admin/users) - přidělit vlastní roli osobě pro jednu organizaci
+- [Organizace](/docs/admin/parties) - formulář pro pozvání na úrovni organizace také vybírá systémovou roli plus vlastní roli
+- [Systém oprávnění](/docs/users/permissions) - kompletní bitová reference

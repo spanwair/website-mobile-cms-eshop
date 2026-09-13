@@ -1,0 +1,109 @@
+---
+import "../../styles/global.css";
+import "../../styles/landing.css";
+import LandingFooter from "../../components/landing/LandingFooter.astro";
+import { createSupabase } from "../../lib/supabase";
+import { useT, getLang } from "../../lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+// A confirmed (logged-in) user has no business here.
+if (session) return Astro.redirect("/");
+const t = useT(Astro);
+const lang = getLang(Astro);
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.png" />
+    <title>{t.auth.confirmEmailTitle} - Mamtodoma</title>
+  </head>
+  <body class="auth-body">
+    <main class="auth-main">
+      <div class="auth-blob auth-blob--a"></div>
+      <div class="auth-blob auth-blob--b"></div>
+
+      <div
+        class="confirm-card"
+        data-resent={t.auth.confirmEmailResent}
+      >
+        <div class="confirm-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="34" height="34"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>
+        </div>
+        <h1 class="confirm-title">{t.auth.confirmEmailTitle}</h1>
+        <p class="confirm-body">{t.auth.confirmationBody}</p>
+        <p class="confirm-email hidden" id="pending-email"></p>
+        <p class="confirm-hint">{t.auth.confirmEmailHint}</p>
+
+        <p id="resend-ok" class="auth-success hidden"></p>
+        <div class="confirm-actions">
+          <button type="button" class="btn btn-secondary btn-block" id="resend-btn">{t.auth.confirmEmailResend}</button>
+          <a href="/login" class="btn btn-primary btn-block">{t.auth.backToSignIn}</a>
+        </div>
+      </div>
+    </main>
+
+    <div class="landing"><LandingFooter /></div>
+
+    <script>
+      import { createBrowserClient } from "@supabase/ssr";
+      const url = import.meta.env.PUBLIC_SUPABASE_URL ?? "";
+      const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? "";
+      const supabase = createBrowserClient(url, key);
+
+      const card = document.querySelector(".confirm-card") as HTMLElement;
+      let email = "";
+      try { email = sessionStorage.getItem("pendingConfirmEmail") ?? ""; } catch { /* ignore */ }
+
+      if (email) {
+        const el = document.getElementById("pending-email")!;
+        el.textContent = email;
+        el.classList.remove("hidden");
+      }
+
+      const resendBtn = document.getElementById("resend-btn") as HTMLButtonElement;
+      if (!email) resendBtn.disabled = true;
+      resendBtn.addEventListener("click", async () => {
+        if (!email) return;
+        resendBtn.disabled = true;
+        await supabase.auth.resend({
+          type: "signup",
+          email,
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        });
+        const ok = document.getElementById("resend-ok")!;
+        ok.textContent = card.dataset.resent!;
+        ok.classList.remove("hidden");
+      });
+    </script>
+
+    <style>
+      .auth-body { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg-subtle); }
+      .auth-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-6) var(--space-4); position: relative; overflow: hidden; }
+      .auth-blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.35; z-index: 0; }
+      .auth-blob--a { width: 420px; height: 420px; background: var(--accent-primary); top: -120px; left: -100px; }
+      .auth-blob--b { width: 380px; height: 380px; background: var(--success); bottom: -140px; right: -100px; }
+      .confirm-card {
+        position: relative; z-index: 1; background: var(--bg-page); border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg); padding: var(--space-7) var(--space-6); max-width: 440px; width: 100%;
+        text-align: center;
+      }
+      .confirm-icon {
+        width: 64px; height: 64px; margin: 0 auto var(--space-4); border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        background: color-mix(in srgb, var(--accent-primary) 14%, transparent); color: var(--accent-primary);
+      }
+      .confirm-title { font-size: 24px; font-weight: 800; color: var(--text-primary); margin-bottom: var(--space-2); }
+      .confirm-body { font-size: 14px; color: var(--text-muted); white-space: pre-line; margin-bottom: var(--space-2); }
+      .confirm-email { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-3); word-break: break-all; }
+      .confirm-hint { font-size: 12.5px; color: var(--text-placeholder); margin-bottom: var(--space-5); }
+      .auth-success { font-size: 13px; color: var(--success); margin-bottom: var(--space-3); }
+      .confirm-actions { display: flex; flex-direction: column; gap: var(--space-3); }
+      .btn-block { width: 100%; }
+      .hidden { display: none; }
+    </style>
+  </body>
+</html>

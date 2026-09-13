@@ -1,64 +1,93 @@
 ---
-title: Dashboard
-description: The admin dashboard gives you an at-a-glance overview of your store's key performance indicators, recent orders, and activity.
+title: Nástěnka
+description: Domovská stránka administrátora s panelovými ukazateli KPI, přehledem produktů, nedávnými objednávkami a panelem pro příjmy, vše ohraničeno podle role a oprávnění
 ---
 
-The Dashboard is the home page of your admin panel. It shows live KPIs, your five most recent orders, and a summary of recent activity. Every admin with the **VIEW_DASHBOARD** permission lands here after login.
+Nástěnka na `/admin` je vstupní stránka administrace.
+Zobrazuje soubor panelů KPI, volitelný přehled produktů, tabulku nedávných objednávek, panel příjmů a panel nedávných aktivit.
+Klíčové je, že **které z těchto bloků uvidíte závisí zcela na vašich bitech oprávnění** - stránka se sama sestaví z přesného souboru věcí, které máte oprávnění spravovat.
 
-## Permission required
+## Požadované oprávnění
 
-| Permission bit | Name | Who has it by default |
+| Bit oprávnění | Název | Kdo ho má výchozí |
 |---|---|---|
-| 1 | VIEW_DASHBOARD | Owner, Admin, Eshop Admin |
+| 1 | VIEW_DASHBOARD | Vlastník, Administrátor, Administrátor e-obchodu (s tímto bitem) |
 
-If your role does not include VIEW_DASHBOARD, you are redirected to [Notifications](/admin/notifications) instead.
+Pokud vám chybí `VIEW_DASHBOARD`, budete přesměrováni na [`/admin/notifications`](/docs/admin/notifications) namísto na `/admin`, protože oznámení je jediná stránka, na kterou může každý administrátor vždy najít.
 
-## Understanding the KPI cards
+## Řetězec přístupu a přesměrování
 
-Four cards appear at the top of the dashboard:
+Stránka tyto kontroly provádí v tomto pořadí před vykreslením jakéhokoli obsahu:
 
-| Card | What it shows |
+| Podmínka | Přesměrování |
 |---|---|
-| Total Users | Count of all profiles in your organization |
-| Active Users | Profiles where `is_active = true` |
-| Products | Total products belonging to your organization |
-| Orders | Total order count across all statuses |
-| Revenue | Sum of all order totals (all time) |
+| Žádná přihlašovací relace | `/login` |
+| `requireAdminCtx` vrátí `null` | `/dashboard` |
+| Není vlastník a chybí `ctx.partyId` | `/admin/setup` |
+| Role = ADMIN s organizací, ale 0 kategorií nebo 0 produktů | `/admin/onboarding/tutorial` (viz [Nástup](/docs/admin/onboarding)) |
+| Chybí `VIEW_DASHBOARD` | `/admin/notifications` |
 
-These numbers update on every page load — they always reflect the current state of the database.
+## Informační bannery
 
-## Recent orders table
+V závislosti na stavu se nad panely objeví jeden z několika bannerů.
 
-The table shows the **5 most recent orders** for your organization. Each row contains:
+- **Tabulky nejsou připraveny**: pokud selže sondovací dotaz proti `parties`, varovný banner vysvětluje, že databáze ještě není nastavená.
+- **Vlastník bez organizace**: banner vyzývá vlastníka k [vytvoření jeho první organizace](/docs/admin/parties).
+- **Nevlastník bez organizace**: varovný banner odkazuje na seznam [Organizací](/docs/admin/parties).
+- **Kontrola pro nástup**: pro neadministrátora, který může spravovat produkty, ale jeho organizace nemá žádné kategorie ani produkty, banner odkazuje na [návod pro nástup](/docs/admin/onboarding).
 
-| Column | Description |
-|---|---|
-| Order number | Unique identifier — click to open the full [order detail](/admin/orders) |
-| Status | Current order status (Pending, Confirmed, Processing, etc.) |
-| Total | Order grand total including tax and shipping |
-| Date | When the order was placed |
+## Panely KPI
 
-Click any row to go directly to that order's detail page.
+Řádek panelů je sestaven podmíněně.
+Každá skupina se zobrazí pouze tehdy, pokud máte odpovídající oprávnění, takže administrátor e-obchodu s omezenou vlastní rolí může vidět pouze jeden nebo dva panely.
 
-## Revenue chart
+| Panel | Zobrazuje se, když máte | Zdroj hodnoty |
+|---|---|---|
+| Celkový počet uživatelů | MANAGE_USERS (2) | Počet všech uživatelů vrácených funkcí `fetchUsersForAdmin`, omezený na vaši roli a organizaci |
+| Aktivní uživatelé | MANAGE_USERS (2) | Počet uživatelů, jejichž role je vyšší než pouhý USER |
+| Celkový počet produktů | MANAGE_PRODUCTS (8) | Celkový počet produktů pro organizaci |
+| Aktivní produkty | MANAGE_PRODUCTS (8) | Počet produktů se statusem `active` |
+| Celkový počet objednávek | MANAGE_ORDERS (32) | Celkový počet objednávek pro organizaci |
+| Příjmy (tento měsíc) | MANAGE_ORDERS (32) nebo MANAGE_REPORTS (512) | Součet `total_amount` z objednávek vytvořených od 1. dne aktuálního měsíce |
 
-The revenue chart area is currently a placeholder. Full chart functionality is on the [roadmap](/roadmap/future).
+Příjmy jsou formátovány v měně organizace.
+Pro [Kytka z Beskyd](/docs/admin/parties) to znamená CZK.
 
-## Recent activity
+## Přehled produktů
 
-The recent activity section shows a stub of the audit log. For the full audit trail, go to [Audit Log](/admin/audit) (requires MANAGE_AUDIT permission).
+Pokud můžete spravovat produkty a jsou k dispozici údaje o přehledu, pod panely se vykreslí sekce **Přehled produktů**.
+Je sestaven z `fetchProductOverview` (okno 30 dnů) plus feedu `fetchProductActivityLog` (40 nejnovějších událostí produktů) a zobrazuje agregované statistiky produktů a časovou osu nedávných aktivit.
 
-## How to use
+## Nedávné objednávky a příjmy
 
-1. Check the KPI cards each morning to spot unexpected drops in active users or orders.
-2. Use the Recent Orders table to quickly open and process orders that just came in.
-3. If a KPI looks wrong, navigate to the relevant section — [Orders](/admin/orders), [Products](/admin/products), or [Customers](/admin/customers) — to investigate.
-4. If you see "No organization yet" instead of the dashboard, ask your Owner to add you via [Organizations](/admin/parties).
+Když můžete spravovat objednávky nebo prohlížet zprávy, objeví se dvoukolumní mřížka.
 
-## Related pages
+- **Nedávné objednávky** (vyžaduje MANAGE_ORDERS): tabulka posledních 5 objednávek s sloupci Číslo objednávky (odkazuje na [detail objednávky](/docs/admin/orders)), Stav, Celkem a Datum.
+  Stav je zobrazen jako barevný odznak: čekající je jantarový, potvrzený / zaslaný / dodaný je zelený, v zpracování je návrh/šedý odznak a zrušený je červený.
+  Vrácený a jakýkoli neznámý stav se vrátí k neutrálnímu odznaku.
+  Pokud nejsou žádné objednávky, místo tabulky se zobrazí zpráva v prázdném stavu.
+- **Panel příjmů** (vyžaduje MANAGE_ORDERS nebo MANAGE_REPORTS): aktuálně je to náhranná krabice, která uvádí, že graf brzy dorazí.
 
-- [Orders](/admin/orders) — full order list and processing
-- [Products](/admin/products) — manage your product catalog
-- [Reports](/admin/reports) — revenue and order aggregations
-- [Organizations](/admin/parties) — manage your organization settings
-- [Audit Log](/admin/audit) — full activity history
+## Nedávná aktivita
+
+Pokud máte MANAGE_AUDIT (4096), na dole se vykreslí karta **Nedávná aktivita**.
+Dnes zobrazuje náhranný prázdný stav; kompletní [protokol auditu](/docs/admin/audit) je vyhrazenou stránkou pro tato data.
+
+## Data a úložiště (cloud)
+
+- `profiles` a `parties` přes `requireAdminCtx`.
+- Dotazy na počet `categories` a `products` (používá se pro přesměrování a banner nástupu).
+- `fetchUsersForAdmin` čte `profiles` (a členství) pro KPI uživatelů.
+- `fetchProducts` čte `products` pro KPI produktů.
+- `fetchOrders` čte `orders` pro tabulku nedávných objednávek a součet měsíčních příjmů.
+- `fetchProductOverview` a `fetchProductActivityLog` čtou statistiky produktů a protokol aktivit produktů.
+- Stránka nic nepisuje.
+
+## Související stránky
+
+- [Oznámení](/docs/admin/notifications) - cílová stránka při chybějícím VIEW_DASHBOARD
+- [Nástup](/docs/admin/onboarding) - kam jsou administrátoři posláni, když je jejich katalog prázdný
+- [Objednávky](/docs/admin/orders) - plná správa objednávek za tabulkou nedávných objednávek
+- [Zprávy](/docs/admin/reports) - podrobná zpráva o příjmech a prodeji
+- [Produkty](/docs/admin/products) - katalog za KPI produktů a přehledem
+- [Organizace](/docs/admin/parties) - vytvoření nebo přepnutí organizace, o kterou zprávy na nástěnce uvádí

@@ -1,18 +1,18 @@
 ---
-title: Installation
-description: How to set up the project on your machine.
+title: Instalace
+description: Jak nastavit projekt na vašem zařízení.
 ---
 
-## Prerequisites
+## Předpoklady
 
-Before you begin, install these on your machine:
+Než začnete, nainstalujte na své zařízení následující:
 
-- **Node.js** 22+ — [nodejs.org](https://nodejs.org)
-- **pnpm** 11+ — run `npm install -g pnpm`
-- **Supabase CLI** — run `brew install supabase/tap/supabase` (Mac) or see [supabase.com/docs/guides/cli](https://supabase.com/docs/guides/cli)
-- **Expo CLI** (for mobile) — run `pnpm install -g expo-cli`
+- **Node.js** 22+ - [nodejs.org](https://nodejs.org)
+- **pnpm** 11+ - spusťte `npm install -g pnpm`
+- **Supabase CLI** - spusťte `brew install supabase/tap/supabase` (Mac) nebo podívejte se na [supabase.com/docs/guides/cli](https://supabase.com/docs/guides/cli)
+- **Expo CLI** (pro mobilní) - spusťte `pnpm install -g expo-cli`
 
-## Clone and install
+## Klonujte a nainstalujte
 
 ```bash
 git clone <your-repo-url>
@@ -20,7 +20,7 @@ cd website-mobile-template
 pnpm install:all
 ```
 
-## Set up environment files
+## Nastavení souborů prostředí
 
 ```bash
 cp .env.development.example .env.development
@@ -28,46 +28,46 @@ cp .env.production.example .env.production
 cp .envrc.example .envrc
 ```
 
-Open each file and fill in your Supabase project credentials.
+Otevřete každý soubor a vyplňte své údaje projektu Supabase.
 
-## Start local Supabase
+## Spuštění lokálního Supabase
 
 ```bash
 supabase start
 ```
 
-This starts a local PostgreSQL database on port 54322 and the Supabase API on port 54321. You will see your local URLs and keys printed in the terminal.
+Toto spustí lokální databázi PostgreSQL na portu 54322 a API Supabase na portu 54321. V terminálu uvidíte své lokální URL a klíče.
 
-## Run database migrations
+## Spuštění migrací databáze
 
 ```bash
 ./scripts/db-push.sh development
 ```
 
-This applies all SQL migration files in `supabase/migrations/` to your local database.
+Toto aplikuje všechny SQL migrační soubory v `supabase/migrations/` do vaší lokální databáze.
 
-## Start the admin website
+## Spuštění administrátorského webu
 
 ```bash
 cd website && pnpm dev
 ```
 
-Open [http://localhost:4321/admin](http://localhost:4321/admin) in your browser.
+Otevřete [http://localhost:4321/admin](http://localhost:4321/admin) v prohlížeči.
 
-## Start the mobile app (optional)
+## Spuštění mobilní aplikace (volitelné)
 
 ```bash
 cd mobile && pnpm start
 ```
 
-Then press `a` to open on Android emulator or scan the QR code with Expo Go.
+Poté stiskněte `a` pro otevření na Android emulatoru nebo naskenujte QR kód pomocí Expo Go.
 
-## Default test accounts
+## Výchozí testovací účty
 
-After running migrations, you can create test accounts via Supabase Auth or the Supabase Dashboard. The first user to sign up can be promoted to Owner by running:
+Po spuštění migrací můžete vytvořit testovací účty prostřednictvím Supabase Auth nebo Supabase Dashboard. První uživatel, který se zaregistruje, může být povýšen na Vlastníka spuštěním:
 
 ```sql
 UPDATE public.profiles SET role = 8 WHERE email = 'your@email.com';
 ```
 
-in the Supabase SQL editor.
+v editoru SQL Supabase.

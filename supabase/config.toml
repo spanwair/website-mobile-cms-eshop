@@ -42,7 +42,7 @@ file_size_limit = "50MiB"
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:4321"
-additional_redirect_urls = ["https://127.0.0.1:4321"]
+additional_redirect_urls = ["https://127.0.0.1:4321", "http://127.0.0.1:4321/**", "https://127.0.0.1:4321/**"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
@@ -53,7 +53,11 @@ enable_manual_linking = false
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = false
+# Email/password signups must confirm their address before they get a session — signUp()
+# returns session=null until the emailed link is clicked (handled by /auth/callback).
+# Google OAuth and invited users are unaffected (already verified via provider/invite link).
+# Prod: enable the equivalent "Confirm email" toggle in the Supabase dashboard Auth settings.
+enable_confirmations = true
 
 # Custom bilingual templates (branch on .Data.lang, set via inviteUserByEmail/signInWithOtp
 # metadata) — without content_path here, GoTrue silently falls back to its untranslated
@@ -65,6 +69,10 @@ content_path = "./supabase/templates/invite.html"
 [auth.email.template.magic_link]
 subject = "Your sign-in link / Váš přihlašovací odkaz"
 content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.confirmation]
+subject = "Confirm your email / Potvrďte svůj e-mail"
+content_path = "./supabase/templates/confirmation.html"
 
 [auth.sms]
 enable_signup = true

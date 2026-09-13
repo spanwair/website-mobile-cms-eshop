@@ -1,21 +1,21 @@
 ---
-title: Environment Setup
-description: How to configure environment variables for development and production.
+title: Nastavení prostředí
+description: Jak nakonfigurovat proměnné prostředí pro vývoj a produkci.
 ---
 
-## Environment files
+## Soubory prostředí
 
-The project uses three environment files:
+Projekt používá tři soubory prostředí:
 
-| File | Used by | Purpose |
+| Soubor | Používá | Účel |
 |------|---------|---------|
-| `.env.development` | Website + scripts | Local Supabase keys |
-| `.env.production` | CI/CD deploy | Production Supabase keys |
-| `.envrc` | Shell (direnv) | Shell exports for scripts |
+| `.env.development` | Webové stránky + skripty | Lokální klíče Supabase |
+| `.env.production` | Nasazení CI/CD | Klíče Supabase pro produkci |
+| `.envrc` | Shell (direnv) | Exporty shellu pro skripty |
 
-**Never commit these files.** They are in `.gitignore`.
+**Nikdy tyto soubory necommitujte.** Jsou v `.gitignore`.
 
-## Required variables
+## Požadované proměnné
 
 ### `.env.development`
 
@@ -25,7 +25,7 @@ PUBLIC_SUPABASE_ANON_KEY=<your local anon key>
 SUPABASE_SERVICE_ROLE_KEY=<your local service role key>
 ```
 
-Get these from `supabase start` output or from the Supabase Dashboard → Settings → API.
+Získejte je z výstupu `supabase start` nebo z panelu Supabase → Nastavení → API.
 
 ### `.envrc`
 
@@ -35,21 +35,21 @@ export SUPABASE_PROJECT_REF_PROD=<your prod project ref>
 export SUPABASE_ACCESS_TOKEN=<your personal access token>
 ```
 
-Run `direnv allow` after creating this file.
+Spusťte `direnv allow` po vytvoření tohoto souboru.
 
-## Two Supabase projects
+## Dva projekty Supabase
 
-The project is designed with two separate Supabase instances:
+Projekt je navržen s dvěma oddělenými instancemi Supabase:
 
-| Environment | Purpose | Branch |
+| Prostředí | Účel | Hvětvík |
 |------------|---------|--------|
-| Development | Local testing, feature work | any |
-| Production | Real customers, real data | `main` only |
+| Vývoj | Lokální testování, práce na funkcích | libovolný |
+| Produkce | Skuteční zákazníci, skutečná data | pouze `main` |
 
-**Never run `db-push.sh production` from a feature branch.** The script enforces this.
+**Nikdy nevykonávejte `db-push.sh production` z větve s funkcí.** Skript to vynucuje.
 
-## Supabase local vs cloud
+## Supabase lokální vs cloud
 
-During development, `supabase start` runs everything locally — no cloud, no cost. Your database is on `localhost:54322`, the API on `localhost:54321`.
+Během vývoje spustí `supabase start` vše lokálně - žádný cloud, žádné náklady. Vaše databáze je na `localhost:54322`, API na `localhost:54321`.
 
-When you deploy to production, you use a cloud Supabase project and your environment files point to the cloud URLs.
+Když nasazujete do produkce, používáte cloudový projekt Supabase a vaše soubory prostředí ukazují na cloudové URL.

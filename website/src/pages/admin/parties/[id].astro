@@ -1,7 +1,9 @@
 ---
 import CmsLayout from "@/components/cms/CmsLayout.astro";
 import PartySellerModeCard from "@/components/admin/PartySellerModeCard.astro";
+import SlugInput from "@/components/cms/SlugInput.astro";
 import { createSupabase, createAdminClient } from "@/lib/supabase";
+import { resolveSlug } from "@shared/utils/slug";
 import { fetchParty, updateParty, fetchPartyMembers, inviteUserToParty, removeUserFromParty } from "@shared/services/partyService";
 import { fetchCommissionaireAgreement, acceptCommissionaireAgreement, revokeCommissionaireAgreement } from "@shared/services/commissionaireService";
 import { fetchRoles } from "@shared/services/permissionsService";
@@ -17,7 +19,7 @@ if (!session) return Astro.redirect("/login");
 
 const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
-if (!ctx) return Astro.redirect("/");
+if (!ctx) return Astro.redirect("/dashboard");
 const { permissions, isOwner } = ctx;
 const t = useT(Astro);
 const lang = getLang(Astro);
@@ -57,6 +59,7 @@ if (Astro.request.method === "POST") {
         const submittedLang = form.get("lang") as string;
         const result = await updateParty(supabase, id!, {
           name: form.get("name") as string,
+          slug: resolveSlug(form.get("slug") as string, form.get("name") as string),
           company_name: (form.get("company_name") as string) || undefined,
           company_ico: (form.get("company_ico") as string) || undefined,
           vat_number: (form.get("vat_number") as string) || undefined,
@@ -280,10 +283,7 @@ function roleName(roleId: string) {
               </select>
               <p class="section-note" style="margin:2px 0 0">{t.admin.parties.fieldLangNote}</p>
             </div>
-            <div class="form-row-inline">
-              <label class="form-label">{t.admin.parties.fieldSlug}</label>
-              <code>{party.slug}</code>
-            </div>
+            <SlugInput sourceName="name" label={t.admin.parties.fieldSlug} value={party.slug} hint={t.common.slugAutoHint} />
             <div class="form-group">
               <label class="form-label" for="status">{t.admin.parties.fieldStatus}</label>
               {!isOwner && party.status === 'closed' && (
