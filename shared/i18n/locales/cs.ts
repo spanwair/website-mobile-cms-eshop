@@ -2,6 +2,7 @@ import type { Translations } from "./en";
 
 export const cs: Translations = {
   common: {
+    delete2: "Delete",
     slugAutoHint: "Nechte prázdné pro automatické vygenerování. Kdykoli můžete změnit.",
     cancel: "Zrušit",
     save: "Uložit",

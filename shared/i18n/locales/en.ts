@@ -3,6 +3,7 @@ export const en = {
     slugAutoHint: "Leave empty to generate automatically. You can change it anytime.",
     cancel: "Cancel",
     save: "Save",
+    delete2: "Delete",
     error: "Error",
     ok: "OK",
     back: "Back",
