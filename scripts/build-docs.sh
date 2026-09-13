@@ -8,6 +8,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEST="$ROOT/website/public/docs"
 
 cd "$ROOT/docs"
+# docs is a standalone package (its own lockfile + node_modules), not part of a workspace, so its
+# dependencies must be installed here before building - CI only installs the website package's deps.
+pnpm install --frozen-lockfile
 pnpm build
 
 rm -rf "$DEST"

@@ -1,3 +1,5 @@
+# docs is a standalone package (not a real workspace). This file exists only to allow the
+# native build scripts that Starlight needs; pnpm v11 blocks them by default.
 allowBuilds:
-  esbuild: set this to true or false
-  sharp: set this to true or false
+  esbuild: true
+  sharp: true
