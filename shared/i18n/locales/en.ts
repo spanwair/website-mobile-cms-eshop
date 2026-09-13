@@ -1710,6 +1710,7 @@ export const en = {
       employment: "Employment",
       about: "About",
       contact: "Contact",
+      docs: "Docs",
       cta: "Start for free",
     },
     hero: {
@@ -1874,6 +1875,17 @@ export const en = {
       secondaryCta: "See pricing details",
       badges: ["0 Kč to start", "10% only on sales", "Live in minutes"],
     },
+    documentation: {
+      eyebrow: "Documentation",
+      title: "A complete guide to every part of the admin",
+      sub: "An in-depth manual for your store — from first login through products, orders and pricing to storefront design. Every admin page has its own walkthrough.",
+      items: [
+        { title: "Getting started", desc: "Setup, onboarding and a full admin overview, step by step." },
+        { title: "Catalog & sales", desc: "Products, inventory, orders, returns, coupons and price lists." },
+        { title: "Content & design", desc: "Pages, blog, navigation, branding and full storefront settings." },
+      ],
+      primaryCta: "Open the documentation",
+    },
     footer: {
       tagline: "The store is free. We only win when you sell.",
       columns: {
@@ -1884,6 +1896,7 @@ export const en = {
             { label: "Pricing", href: "/pricing" },
             { label: "Templates", href: "/templates" },
             { label: "Employment", href: "/employment" },
+            { label: "Documentation", href: "/docs" },
           ],
         },
         company: {

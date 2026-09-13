@@ -1,140 +1,140 @@
 ---
-title: Integrations Guide
-description: How to wire up Stripe payments, Resend emails, and shipping providers.
+title: Průvodce integracemi
+description: Jak připojit platby Stripe, e-maily Resend a poskytovatele dopravy.
 ---
 
-## Payments — Stripe
+## Platby - Stripe
 
-**Status in this repo:** the `stripe` package is installed, and both routes exist — `website/src/pages/api/checkout.ts` (creates the Checkout session) and `website/src/pages/api/stripe/webhook.ts` (verifies the signature, updates `orders.payment_status`, sends the confirmation email on `paid`). All that's left is dropping in your own API keys.
+**Stav v tomto repozitáři:** Balíček `stripe` je nainstalován a obě trasy existují - `website/src/pages/api/checkout.ts` (vytváří sesíli Checkout) a `website/src/pages/api/stripe/webhook.ts` (ověřuje podpis, aktualizuje `orders.payment_status`, odesílá potvrzovací e-mail při stavu `paid`). Zbývá jen vložit vaše vlastní API klíče.
 
-**Why Stripe?** PCI DSS compliant by default when using Stripe Checkout. You never touch raw card numbers — Stripe hosts the payment form.
+**Proč Stripe?** Dodržuje PCI DSS výchozí konfigurací při použití Stripe Checkout. Nikdy nezasahujete do surových číslic karet - Stripe hostuje platební formulář.
 
-### 1. Create the account and find your keys
+### 1. Vytvořte účet a najděte své klíče
 
-1. Sign up at [dashboard.stripe.com/register](https://dashboard.stripe.com/register)
-2. Every Stripe account has two parallel modes, switched with the toggle top-right of the dashboard: **Test mode** and **Live mode**. Use Test mode for everything until you're ready to take real payments.
-3. Go to **Developers → API keys** (left sidebar, or [dashboard.stripe.com/test/apikeys](https://dashboard.stripe.com/test/apikeys))
-4. You'll see two keys:
-   - **Publishable key** (`pk_test_...`) — safe to expose, not used by this template (Stripe Checkout is server-redirected, no client-side Stripe.js needed)
-   - **Secret key** (`sk_test_...`) — click **Reveal test key**, copy it
-5. Put the secret key in `.env.development`:
+1. Zaregistrujte se na [dashboard.stripe.com/register](https://dashboard.stripe.com/register)
+2. Každý účet Stripe má dva paralelní režimy, přepínané přepínačem v pravém horním rohu nástěnky: **Test mode** a **Live mode**. Používejte Test mode pro vše, dokud nejste připraveni přijímat skutečné platby.
+3. Přejděte na **Developers → API keys** (boční panel, nebo [dashboard.stripe.com/test/apikeys](https://dashboard.stripe.com/test/apikeys))
+4. Uvidíte dva klíče:
+   - **Publishable key** (`pk_test_...`) - je bezpečné ho zveřejnit, tento šablona nepoužívá (Stripe Checkout je přesměrován na server, není potřeba klient-side Stripe.js)
+   - **Secret key** (`sk_test_...`) - klikněte na **Reveal test key**, zkopírujte ho
+5. Vložte tajný klíč do `.env.development`:
 
 ```env
 STRIPE_SECRET_KEY=sk_test_...
 ```
 
-6. When you go live, repeat steps 2-5 with the toggle set to **Live mode** (keys become `sk_live_...`) and put that value in `.env.production` instead. **Never put a `sk_live_...` key in `.env.development`.**
+6. Když přejdete do produkce, opakujte kroky 2-5 s přepínačem nastaveným na **Live mode** (klíče se stanou `sk_live_...`) a vložte tuto hodnotu do `.env.production`. **Nikdy nevkládejte klíč `sk_live_...` do `.env.development`.**
 
-### 2. Get the webhook signing secret
+### 2. Získejte tajný klíč pro ověřování webhooků
 
-The webhook secret is different for local dev vs. production — each webhook *endpoint* Stripe knows about gets its own secret.
+Tajný klíč pro webhook je jiný pro lokální vývoj než pro produkci - každý *endpoint* webhook, který Stripe zná, má svůj vlastní tajný klíč.
 
-**Local development — use the Stripe CLI, not the dashboard:**
+**Lokální vývoj - použijte Stripe CLI, ne nástěnku:**
 
 ```bash
-# Install once: https://docs.stripe.com/stripe-cli
+# Nainstalujte jednou: https://docs.stripe.com/stripe-cli
 stripe login
 stripe listen --forward-to localhost:4321/api/stripe/webhook
 ```
 
-This prints `Ready! Your webhook signing secret is whsec_...` — copy that into `.env.development` as `STRIPE_WEBHOOK_SECRET`. Keep the `stripe listen` process running in a terminal while you test checkout locally; it forwards real Stripe test events to your dev server.
+Tento příkaz vypíše `Ready! Your webhook signing secret is whsec_...` - zkopírujte ho do `.env.development` jako `STRIPE_WEBHOOK_SECRET`. Udržujte proces `stripe listen` spuštěný v terminálu, zatímco testujete pokladnu lokálně; přeposílá skutečné testovací události Stripe na váš vývojový server.
 
-**Production — register the endpoint in the dashboard:**
+**Produkce - zaregistrujte endpoint v nástěnce:**
 
 1. Stripe Dashboard → **Developers → Webhooks** → **Add endpoint**
-2. Endpoint URL: `https://yourdomain.cz/api/stripe/webhook`
-3. Select events to listen for: `checkout.session.completed`, `checkout.session.async_payment_failed`, `charge.refunded`
-4. Click the created endpoint → **Signing secret** → **Reveal** → copy as `whsec_...`
-5. Put it in `.env.production` as `STRIPE_WEBHOOK_SECRET`
+2. URL endpointu: `https://yourdomain.cz/api/stripe/webhook`
+3. Vyberte události, které chcete sledovat: `checkout.session.completed`, `checkout.session.async_payment_failed`, `charge.refunded`
+4. Klikněte na vytvořený endpoint → **Signing secret** → **Reveal** → zkopírujte jako `whsec_...`
+5. Vložte ho do `.env.production` jako `STRIPE_WEBHOOK_SECRET`
 
-### 3. Already done: package + routes
+### 3. Už je hotovo: balíček + trasy
 
-`stripe` is in `website/package.json`. The two routes already exist:
+`stripe` je v `website/package.json`. Obě trasy již existují:
 
-- **`website/src/pages/api/checkout.ts`** — takes `{ lineItems, orderId, customerId?, currency? }`, calls `createCheckoutSession()`, returns `{ url }` to redirect the customer to.
-- **`website/src/pages/api/stripe/webhook.ts`** — verifies the `stripe-signature` header via `constructWebhookEvent()`, updates `orders.payment_status` via `handleWebhookEvent()`, and on `paid` fetches the order/customer/items and calls `sendOrderConfirmation()`.
+- **`website/src/pages/api/checkout.ts`** - přijímá `{ lineItems, orderId, customerId?, currency? }`, volá `createCheckoutSession()`, vrací `{ url }` pro přesměrování zákazníka.
+- **`website/src/pages/api/stripe/webhook.ts`** - ověřuje hlavičku `stripe-signature` pomocí `constructWebhookEvent()`, aktualizuje `orders.payment_status` pomocí `handleWebhookEvent()` a při stavu `paid` načte objednávku/zákazníka/položky a volá `sendOrderConfirmation()`.
 
-The webhook route reads `request.text()` (not `.json()`) — that's required so the raw bytes match what Stripe signed.
+Trasa webhooku čte `request.text()` (ne `.json()`) - je to nutné, aby surové bajty odpovídaly tomu, co Stripe podepsal.
 
-### How checkout works end-to-end
+### Jak funguje pokladna koncovým bodem
 
 ```
-Customer clicks "Pay"
-  → POST /api/checkout creates Stripe Checkout session
-  → Customer redirected to Stripe-hosted payment page (checkoutUrl)
-  → Customer pays
-  → Stripe fires webhook to /api/stripe/webhook
-  → handleWebhookEvent() sets orders.payment_status = 'paid'
-  → Confirmation email sent (wire sendOrderConfirmation() into the same webhook handler once you have order + customer data available)
+Zákazník klikne na "Zaplatit"
+  → POST /api/checkout vytvoří sesíli Stripe Checkout
+  → Zákazník je přesměrován na stránku pro platbu hostovanou Stripe (checkoutUrl)
+  → Zákazník zaplatí
+  → Stripe spustí webhook na /api/stripe/webhook
+  → handleWebhookEvent() nastaví orders.payment_status = 'paid'
+  → Odesláno potvrzovací e-mail (vložte wire sendOrderConfirmation() do stejného handleru webhooku, jakmile budete mít k dispozici data objednávky + zákazníka)
 ```
 
-### Testing it
+### Testování
 
 ```bash
-# Terminal 1
+# Terminál 1
 cd website && pnpm dev
 
-# Terminal 2 — forwards Stripe test events to your local webhook route
+# Terminál 2 - přeposílá testovací události Stripe na vaši lokální trasu webhooku
 stripe listen --forward-to localhost:4321/api/stripe/webhook
 
-# Terminal 3 — trigger a fake event without going through checkout
+# Terminál 3 - spustí falešnou událost bez procházení pokladny
 stripe trigger checkout.session.completed
 ```
 
-Use [Stripe's test card numbers](https://docs.stripe.com/testing#cards) (`4242 4242 4242 4242`, any future expiry, any CVC) on the actual hosted checkout page.
+Použijte [testovací čísla karet Stripe](https://docs.stripe.com/testing#cards) (`4242 4242 4242 4242`, jakýkoli budoucí datum expirace, jakýkoli CVC) na skutečné hostované stránce pokladny.
 
-### PCI compliance notes
+### Poznámky k PCI souladu
 
-Using Stripe Checkout: **SAQ A** level (simplest). You are NOT responsible for card data — Stripe is. Requirements:
-- Always use HTTPS (SSL)
-- Never log card numbers
-- Use Stripe's hosted checkout — never build your own payment form
+Používání Stripe Checkout: úroveň **SAQ A** (nejjednodušší). Vy neseš odpovědnost za údaje o kartě - to dělá Stripe. Požadavky:
+- Vždy používejte HTTPS (SSL)
+- Nikdy neprotiskujte čísla karet
+- Používejte hostovanou pokladnu Stripe - nikdy si nevytvářejte vlastní platební formulář
 
 ---
 
-## Transactional Email — Resend
+## Transakční e-mail - Resend
 
-**Status in this repo:** `website/src/lib/integrations/email.ts` already has `sendPartyInvitation` (wired into `/admin/parties/[id].astro`) plus `sendOrderConfirmation`, `sendShippingNotification`, `sendPasswordReset`, `sendReviewRequest`, `sendAbandonedCartRecovery` — those five are written but nothing calls them yet. If `RESEND_API_KEY` is unset, `sendPartyInvitation` logs to the console instead of sending (see `website/src/lib/integrations/email.ts:175`), so invites still work in local dev without any key.
+**Stav v tomto repozitáři:** `website/src/lib/integrations/email.ts` již obsahuje `sendPartyInvitation` (připojený k `/admin/parties/[id].astro`) plus `sendOrderConfirmation`, `sendShippingNotification`, `sendPasswordReset`, `sendReviewRequest`, `sendAbandonedCartRecovery` - tyto pět je napsáno, ale zatím nic je je nevolá. Pokud je `RESEND_API_KEY` neukázán, `sendPartyInvitation` loguje do konzole místo odeslání (viz `website/src/lib/integrations/email.ts:175`), takže pozvánky stále fungují v lokálním vývoji bez jakéhokoli klíče.
 
-**Why Resend?** Modern, developer-friendly, free tier is 100 emails/day (3,000/month). Built-in React email support.
+**Proč Resend?** Moderní, přátelský pro vývojáře, bezplatný plán je 100 e-mailů/den (3 000/měsíc). Vestavěná podpora e-mailů pro React.
 
-### 1. Create the account and find your key
+### 1. Vytvořte účet a najděte svůj klíč
 
-1. Sign up at [resend.com](https://resend.com)
-2. Go to **API Keys** (left sidebar) → **Create API Key**
-3. Give it a name (e.g. `website-dev` or `website-prod`), permission **Full access**, no domain restriction needed to start
-4. Copy the key — it's shown **once**, starting with `re_...`
+1. Zaregistrujte se na [resend.com](https://resend.com)
+2. Přejděte na **API Keys** (boční panel) → **Create API Key**
+3. Dejte mu jméno (např. `website-dev` nebo `website-prod`), oprávnění **Full access**, není nutné omezení domény na začátku
+4. Zkopírujte klíč - je zobrazen **pouze jednou**, začínající na `re_...`
 
-### 2. Sandbox mode vs. verified domain
+### 2. Sandbox režim vs. ověřená doména
 
-Until you verify a domain, your account is in **sandbox mode**:
-- You can only send emails **to the email address you signed up with**
-- `EMAIL_FROM` must be `onboarding@resend.dev` (Resend's shared sandbox sender)
+Dokud neověříte doménu, váš účet je v **sandbox režimu**:
+- Můžete posílat e-maily **pouze na e-mailovou adresu, kterou jste se zaregistrovali**
+- `EMAIL_FROM` musí být `onboarding@resend.dev` (sdílený sandbox odesílatel Resend)
 
-This is fine for local development — put this in `.env.development`:
+To je v pořádku pro lokální vývoj - vložte to do `.env.development`:
 
 ```env
 RESEND_API_KEY=re_...
 EMAIL_FROM=onboarding@resend.dev
 ```
 
-### 3. Verify your domain for production
+### 3. Ověřte svou doménu pro produkci
 
-1. Resend Dashboard → **Domains** → **Add Domain** → enter `yourdomain.cz`
-2. Resend shows you 3 DNS records to add at your domain registrar (values are unique per account, copy exactly what Resend shows — the ones below are illustrative):
+1. Resend Dashboard → **Domains** → **Add Domain** → zadejte `yourdomain.cz`
+2. Resend vám ukáže 3 DNS záznamy, které musíte přidat u vašeho doménového registrátora (hodnoty jsou jedinečné pro účet, zkopírujte přesně to, co Resend ukazuje - níže uvedené jsou pouze ilustrativní):
 
 ```
 TXT   send.yourdomain.cz            v=spf1 include:amazonses.com ~all
-CNAME resend._domainkey.yourdomain.cz   <value from Resend dashboard>
+CNAME resend._domainkey.yourdomain.cz   <hodnota z Resend dashboardu>
 TXT   _dmarc.yourdomain.cz          v=DMARC1; p=quarantine; rua=mailto:dmarc@yourdomain.cz
 ```
 
-3. Back in the Resend dashboard, click **Verify DNS Records** — propagation can take a few minutes to a few hours
-4. Once verified, status turns green and you can send from any address `@yourdomain.cz` to any recipient
+3. Návratem do Resend dashboardu klikněte na **Verify DNS Records** - šíření může trvat několik minut až několik hodin
+4. Jakmile je ověřeno, stav se změní na zelený a můžete posílat z jakékoli adresy `@yourdomain.cz` jakémukoli příjemci
 
-Without these DNS records: emails either fail to send (outside sandbox) or land in spam.
+Bez těchto DNS záznamů: e-maily buď selhávají při odesílání (mimo sandbox), nebo skončí ve spamu.
 
-5. Put the production values in `.env.production`:
+5. Vložte produkční hodnoty do `.env.production`:
 
 ```env
 RESEND_API_KEY=re_...
@@ -142,101 +142,101 @@ EMAIL_FROM=noreply@yourdomain.cz
 PUBLIC_SHOP_URL=https://yourdomain.cz
 ```
 
-### 4. Install the SDK
+### 4. Nainstalujte SDK
 
 ```bash
 cd website && pnpm add resend
 ```
 
-### Email functions available
+### Dostupné funkce e-mailu
 
-| Function | Status | Trigger point to wire up |
+| Funkce | Stav | Bod spuštění pro připojení |
 |----------|--------|---------------------------|
-| `sendPartyInvitation()` | ✅ wired | `/admin/parties/[id].astro` invite form |
-| `sendOrderConfirmation()` | ✅ wired | `website/src/pages/api/stripe/webhook.ts`, after `payment_status = 'paid'` |
-| `sendShippingNotification()` | written, not called | wherever order status is set to `shipped` (not yet built — see `/admin/orders`) |
-| `sendPasswordReset()` | written, not called | Supabase Auth already handles password reset via magic link; only needed if you build a custom reset flow |
-| `sendReviewRequest()` | written, not called | needs a scheduled job (e.g. Supabase cron / Edge Function) firing 7 days post-delivery |
-| `sendAbandonedCartRecovery()` | written, not called | needs a scheduled job checking carts with no order after N hours |
+| `sendPartyInvitation()` | ✅ připojeno | Formulář pozvánky `/admin/parties/[id].astro` |
+| `sendOrderConfirmation()` | ✅ připojeno | `website/src/pages/api/stripe/webhook.ts`, po `payment_status = 'paid'` |
+| `sendShippingNotification()` | napsáno, nevoláno | kamkoli se stav objednávky nastaví na `shipped` (nebohdy postaveno - viz `/admin/orders`) |
+| `sendPasswordReset()` | napsáno, nevoláno | Supabase Auth již řeší reset hesla pomocí kouzelného odkazu; nutné pouze, pokud vytvoříte vlastní tok resetu |
+| `sendReviewRequest()` | napsáno, nevoláno | vyžaduje plánovaný úkol (např. Supabase cron / Edge Function) spuštěný 7 dní po doručení |
+| `sendAbandonedCartRecovery()` | napsáno, nevoláno | vyžaduje plánovaný úkol kontrolující košíky bez objednávky po N hodinách |
 
-All functions are in `website/src/lib/integrations/email.ts`.
+Všechny funkce jsou v `website/src/lib/integrations/email.ts`.
 
 ---
 
-## Shipping — Czech Market
+## Doprava - Český trh
 
-For Czech e-commerce, the most important carriers are:
+Pro český e-commerce jsou nejdůležitější přepravci:
 
 ### Zásilkovna (Packeta)
 
-Most popular in Czech Republic and Slovakia. Offers pickup points (Z-BOX), home delivery, and international.
+Nejpopulárnější v České republice a Slovensku. Nabízí vyzvedací místa (Z-BOX), doručení domů a mezinárodní dopravu.
 
-- API docs: [client.packeta.com/api](https://client.packeta.com/)
-- Free to use, pay per shipment
-- Integration: send parcel data via REST API, get tracking number back
+- Dokumentace API: [client.packeta.com/api](https://client.packeta.com/)
+- Bezplatné použití, platba za zásilku
+- Integrace: odešlete data zásilky přes REST API, získáte zpět číslo sledování
 
 ```typescript
-// Future: website/src/lib/integrations/packeta.ts
+// Budoucí: website/src/lib/integrations/packeta.ts
 // POST https://www.zasilkovna.cz/api/rest
-// Creates a shipment, returns barcode/tracking
+// Vytvoří zásilku, vrátí kód čárového kódu/sledování
 ```
 
-### PPL (DHL affiliate)
+### PPL (spřízněný s DHL)
 
-Business deliveries, signature required. Good for higher-value items.
+Firemní doručení, vyžaduje podpis. Dobré pro položky s vyšší hodnotou.
 
 ### Česká pošta
 
-Standard Czech postal service. Good for small packages under 2kg.
+Standardní česká poštovní služba. Dobrá pro malé balíčky pod 2 kg.
 
-### ShipStation (international)
+### ShipStation (mezinárodní)
 
-If you ship internationally, ShipStation connects to 200+ carriers via single API.
+Pokud posíláte mezinárodně, ShipStation se připojuje k více než 200 přepravcům přes jeden API.
 
 ---
 
-## Storage — Image Capacity
+## Úložiště - Kapacita obrázků
 
-| Plan | DB Storage | File Storage | Monthly Egress |
+| Plán | Úložiště DB | Úložiště souborů | Měsíční výstup |
 |------|-----------|-------------|---------------|
 | Free | 500 MB | 1 GB | 5 GB |
-| Pro ($25/mo) | 8 GB | 100 GB | 250 GB |
+| Pro ($25/měsíc) | 8 GB | 100 GB | 250 GB |
 
-**Rule of thumb:** At 500 KB per product image × 5 images × 200 products = 500 MB. You'll hit the free storage limit at around 200 products with 5 images each.
+**Pravidlo palce:** Při 500 KB na obrázek produktu × 5 obrázků × 200 produktů = 500 MB. Dosáhnete limitu bezplatného úložiště přibližně u 200 produktů s 5 obrázky každý.
 
-**Recommendation before launch:**
-1. Compress all images before upload (target ≤ 500 KB)
-2. Use Supabase Image Transformations for thumbnails (resize on-the-fly)
-3. Upgrade to Pro once you have 150+ products
+**Doporučení před spuštěním:**
+1. Komprimujte všechny obrázky před nahráním (cíl ≤ 500 KB)
+2. Používejte Supabase Image Transformations pro miniatury (úpravte na místě)
+3. Upgradejte na Pro, jakmile budete mít 150+ produktů
 
-**Current bucket:** `product-images` — public, 5 MB max per file, image types only.
-
----
-
-## Search
-
-Currently: basic `ilike` search in PostgreSQL (works for small catalogs up to ~1000 products).
-
-**When to upgrade:**
-
-At 1000+ products, switch to one of:
-
-- **Supabase pg_search** — PostgreSQL full-text search, free, already in your DB
-- **Algolia** — instant search-as-you-type, free tier 10k records
-- **Typesense** — self-hosted alternative to Algolia, open source
+**Aktuální košík:** `product-images` - veřejný, max 5 MB na soubor, pouze typy obrázků.
 
 ---
 
-## Analytics
+## Vyhledávání
 
-**Recommended: Plausible Analytics**
+Zatím: základní vyhledávání `ilike` v PostgreSQL (funguje pro malé katalogy až do cca 1000 produktů).
 
-- Privacy-friendly (no cookies needed, GDPR compliant out of the box)
-- €9/month for unlimited sites
-- Add to `Layout.astro`:
+**Kdy upgradovat:**
+
+U 1000+ produktů přejděte na jednu z následujících možností:
+
+- **Supabase pg_search** - vyhledávání plného textu PostgreSQL, bezplatné, již v vaší DB
+- **Algolia** - okamžité vyhledávání při psaní, bezplatný plán pro 10k záznamů
+- **Typesense** - hostovaný náhrada pro Algolia, open source
+
+---
+
+## Analytika
+
+**Doporučeno: Plausible Analytics**
+
+- Šetrné k soukromí (není potřeba cookies, GDPR kompatibilní z krabice)
+- 9 €/měsíc pro neomezené stránky
+- Přidejte do `Layout.astro`:
 
 ```html
 <script defer data-domain="yourdomain.cz" src="https://plausible.io/js/plausible.js"></script>
 ```
 
-No consent banner needed for Plausible (no personal data collected).
+Pro Plausible není potřeba banner souhlasu (není sbíráno osobních údajů).

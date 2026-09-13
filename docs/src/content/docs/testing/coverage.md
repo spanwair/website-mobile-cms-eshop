@@ -1,140 +1,140 @@
 ---
-title: Test Coverage
-description: What is tested and what is not.
+title: Pokrytí testy
+description: Co je testováno a co ne.
 ---
 
-## Current coverage (149 tests, 100% passing)
+## Aktuální pokrytí (149 testů, 100 % úspěšných)
 
-### Authentication (01-auth)
-- ✅ Admin login with valid credentials
-- ✅ Wrong password shows error message
-- ✅ Non-existent email shows error message
-- ✅ Unauthenticated access to /admin redirects to /login
-- ✅ Unauthenticated access to /admin/products redirects
-- ✅ Unauthenticated access to /admin/orders redirects
-- ✅ USER role (1) blocked from /admin
-- ✅ ESHOP_ADMIN can access /admin
-- ✅ Session persists across navigation
+### Autentizace (01-auth)
+- ✅ Přihlášení administrátora s platnými údaji
+- ✅ Nesprávné heslo zobrazuje chybovou zprávu
+- ✅ Neexistující e-mail zobrazuje chybovou zprávu
+- ✅ Neověřený přístup k /admin přesměruje na /login
+- ✅ Neověřený přístup k /admin/products přesměruje
+- ✅ Neověřený přístup k /admin/orders přesměruje
+- ✅ Role USER (1) je zablokována z /admin
+- ✅ ESHOP_ADMIN může přistupovat k /admin
+- ✅ Přihlašovací relace je zachována při navigaci
 
-### Organizations / Parties (02-parties)
-- ✅ Party list loads and shows seeded organization
-- ✅ Create new party with full fields
-- ✅ Create new party with required fields only
-- ✅ Duplicate slug shows form error
-- ✅ Empty name triggers browser validation
-- ✅ Party detail page loads with all fields
-- ✅ Invite member to party
-- ✅ Duplicate invite shows error
-- ✅ Remove member with confirmation
-- ✅ Active badge visible
-- ✅ Party count updates in toolbar
-- ✅ Delete second party
+### Organizace / Strany (02-parties)
+- ✅ Seznam stran se načte a zobrazí zadaná organizace
+- ✅ Vytvoření nové strany se všemi poli
+- ✅ Vytvoření nové strany pouze s povinnými poli
+- ✅ Duplikovaný slug zobrazuje chybu formuláře
+- ✅ Prázdné jméno spouští validaci prohlížeče
+- ✅ Stránka detailu strany se načte se všemi poli
+- ✅ Pozvánka členovi do strany
+- ✅ Duplikovaná pozvánka zobrazuje chybu
+- ✅ Odstranění člena s potvrzením
+- ✅ Viditelný je aktivní odznak
+- ✅ Počet stran se aktualizuje v liště nástrojů
+- ✅ Smazání druhé strany
 
-### Categories (03-categories)
-- ✅ Category list loads
-- ✅ Create root category
-- ✅ Create child category (parent select)
-- ✅ Create category with icon and sort_order
-- ✅ Category tree shows hierarchy
-- ✅ Edit category name
-- ✅ Toggle visibility
-- ✅ Duplicate slug shows form error
-- ✅ Delete leaf category
-- ✅ Delete root category
+### Kategorie (03-categories)
+- ✅ Načítá se seznam kategorií
+- ✅ Vytvoření kořenové kategorie
+- ✅ Vytvoření dceřiné kategorie (výběr rodiče)
+- ✅ Vytvoření kategorie s ikonou a sort_order
+- ✅ Strom kategorií zobrazuje hierarchii
+- ✅ Úprava názvu kategorie
+- ✅ Přepínání viditelnosti
+- ✅ Duplikovaný slug zobrazuje chybu formuláře
+- ✅ Smazání listové kategorie
+- ✅ Smazání kořenové kategorie
 
-### Products (04-products)
-- ✅ Product list loads
-- ✅ Search by title
-- ✅ Filter by status (active / draft)
-- ✅ Create draft product
-- ✅ Create active featured product
-- ✅ Product detail pre-fills values
-- ✅ Edit product title and price
-- ✅ Change status draft→active
-- ✅ Change status active→inactive
-- ✅ Duplicate slug shows form error
-- ✅ Seed product detail page works
-- ✅ Price formatting in list
-- ✅ (+ 4 more)
+### Produkty (04-products)
+- ✅ Načítá se seznam produktů
+- ✅ Vyhledávání podle názvu
+- ✅ Filtrování podle stavu (aktivní / návrh)
+- ✅ Vytvoření produktu v návrhu
+- ✅ Vytvoření aktivního produktu s vyznačením
+- ✅ Detail produktu předvyplňuje hodnoty
+- ✅ Úprava názvu a ceny produktu
+- ✅ Změna stavu z návrh→aktivní
+- ✅ Změna stavu z aktivní→neaktivní
+- ✅ Duplikovaný slug zobrazuje chybu formuláře
+- ✅ Funguje stránka detailu produktu s danými
+- ✅ Formátování cen v seznamu
+- ✅ (+ 4 další)
 
-### Orders (05-orders) — 12 tests
-- ✅ Full status lifecycle (pending→confirmed→processing→shipped→delivered)
-- ✅ Status tab filtering
-- ✅ Order detail page
-- ✅ Customer link from order
-- ✅ Tracking number save
+### Objednávky (05-orders) - 12 testů
+- ✅ Celý životní cyklus stavu (předběžný→potvrzený→zpracování→odeslaný→doručený)
+- ✅ Filtrování záložkami stavu
+- ✅ Stránka detailu objednávky
+- ✅ Odkaz na zákazníka z objednávky
+- ✅ Uložení čísla sledování
 
-### Customers (06-customers) — 8 tests
-- ✅ List, search, detail, edit
-- ✅ Order history on customer page
-- ✅ Toggle active status
+### Zákazníci (06-customers) - 8 testů
+- ✅ Seznam, vyhledávání, detail, úprava
+- ✅ Historie objednávek na stránce zákazníka
+- ✅ Přepínání stavu aktivní
 
-### Pricing (07-pricing) — 12 tests
-- ✅ Discount rule visible with badge
-- ✅ Coupon tabs navigation
-- ✅ SEED10 coupon shows active + 0 uses
-- ✅ Create PROMO20 coupon
-- ✅ Duplicate coupon code error
+### Ceny (07-pricing) - 12 testů
+- ✅ Pravidlo slevy viditelné s odznakem
+- ✅ Navigace záložkami kupónů
+- ✅ Kupón SEED10 zobrazuje aktivní + 0 použití
+- ✅ Vytvoření kupónu PROMO20
+- ✅ Chyba duplicitního kódu kupónu
 
-### Inventory (08-inventory) — 10 tests
-- ✅ Seeded item shows qty=50
-- ✅ Stock adjustments (purchase +20, damage -5, return +3)
-- ✅ Low stock scenario (damage -60 → qty=8 < threshold=10)
-- ✅ Low stock badge appears
-- ✅ Low stock filter shows item
+### Skladové zásoby (08-inventory) - 10 testů
+- ✅ Zadaný položka zobrazuje množství=50
+- ✅ Úpravy zásob (nákup +20, poškození -5, vrácení +3)
+- ✅ Scénář nízkých zásob (poškození -60 → množství=8 < prah=10)
+- ✅ Zobrazí se odznak nízkého zásobování
+- ✅ Filtr nízkých zásob zobrazuje položku
 
-### Users & Roles (09-users-roles) — 14 tests
-- ✅ Users list with all test accounts
-- ✅ Owner badge (red)
-- ✅ "You" indicator on own row
-- ✅ Role change form on other users
-- ✅ Change user role, revert after test
-- ✅ Super Admin system role visible
-- ✅ System role has no delete button
-- ✅ Create custom role with permissions
-- ✅ Permission chips shown
-- ✅ Delete custom role
+### Uživatelé a role (09-users-roles) - 14 testů
+- ✅ Seznam uživatelů se všemi testovacími účty
+- ✅ Odznak vlastníka (červený)
+- ✅ Indikátor "Vy" na vlastní řádku
+- ✅ Formulář změny role u jiných uživatelů
+- ✅ Změna role uživatele, zvrácení po testu
+- ✅ Viditelná systémová role Super Administrátora
+- ✅ Systémová role nemá tlačítko pro smazání
+- ✅ Vytvoření vlastní role s oprávněními
+- ✅ Zobrazené odznaky oprávnění
+- ✅ Smazání vlastní role
 
-### Audit & Notifications (10-audit) — 10 tests
-- ✅ Audit log page loads
-- ✅ Filter by table dropdown
-- ✅ Total count visible
-- ✅ Notification page loads
-- ✅ Seeded notification visible
-- ✅ Unread badge
+### Protokol auditu a oznámení (10-audit) - 10 testů
+- ✅ Načítá se stránka protokolu auditu
+- ✅ Filtrování pomocí rozbalovací nabídky tabulky
+- ✅ Viditelný celkový počet
+- ✅ Načítá se stránka oznámení
+- ✅ Viditelné zadané oznámení
+- ✅ Odznak nepřečtené
 
-### Dashboard (11-dashboard) — 8 tests
-- ✅ 6 KPI cards visible with values
-- ✅ Sidebar navigation
-- ✅ Navigate to products from sidebar
-- ✅ Navigate to orders from sidebar
+### Nástěnka (11-dashboard) - 8 testů
+- ✅ Viditelné 6 karet KPI s hodnotami
+- ✅ Navigace v bočním panelu
+- ✅ Navigace na produkty z bočního panelu
+- ✅ Navigace na objednávky z bočního panelu
 
-### Access Control (12-access-control) — 9 tests
-- ✅ Unauthenticated cannot access /admin, /admin/users, /admin/inventory
-- ✅ USER (1) blocked from /admin
-- ✅ ESHOP_ADMIN can access /admin, /admin/products, /admin/orders
-- ✅ Sidebar shows correct links for role
+### Kontrola přístupu (12-access-control) - 9 testů
+- ✅ Neověřený uživatel nemůže přistupovat k /admin, /admin/users, /admin/inventory
+- ✅ Role USER (1) je zablokována z /admin
+- ✅ ESHOP_ADMIN může přistupovat k /admin, /admin/products, /admin/orders
+- ✅ Boční panel zobrazuje správné odkazy pro roli
 
-### New Features (13-new-features) — 17 tests
-- ✅ Category checkboxes shown on product edit page
-- ✅ Assign category to product, verify persists on reload
-- ✅ Unassign category, verify cleared on reload
-- ✅ Image upload form visible
-- ✅ Upload a product image (real file upload)
-- ✅ Uploaded image appears in gallery
-- ✅ First image has Set Primary button (not primary by default)
-- ✅ Set image as primary → badge appears, Set Primary button gone
-- ✅ Delete image → gallery count decreases
-- ✅ After deleting last image → grid hidden, upload form still present
-- ✅ OWNER (role=8) sees all users in admin
-- ✅ ESHOP_ADMIN does not see OWNER in users list
-- ✅ ESHOP_ADMIN sees own account
-- ✅ ESHOP_ADMIN does not see USER outside their party
+### Nové funkce (13-new-features) - 17 testů
+- ✅ Zobrazeny zaškrtávací políčka kategorií na stránce úpravy produktu
+- ✅ Přiřazení kategorie k produktu, ověření trvalosti po obnovení
+- ✅ Odstranění kategorie, ověření vymazání po obnovení
+- ✅ Viditelný je formulář pro nahrávání obrázků
+- ✅ Nahrání obrázku produktu (skutečné nahrávání souboru)
+- ✅ Nahraný obrázek se objeví v galerii
+- ✅ První obrázek má tlačítko Nastavit jako primární (neje primární výchozí)
+- ✅ Nastavit obrázek jako primární → objeví se odznak, tlačítko Nastavit jako primární zmizí
+- ✅ Smazání obrázku → počet v galerii klesá
+- ✅ Po smazání posledního obrázku → mřížka je skryta, formulář pro nahrávání je stále přítomen
+- ✅ OWNER (role=8) vidí všechny uživatele v administraci
+- ✅ ESHOP_ADMIN nevidí OWNER v seznamu uživatelů
+- ✅ ESHOP_ADMIN vidí svůj vlastní účet
+- ✅ ESHOP_ADMIN nevidí USER mimo svou organizaci
 
-## Not yet tested (future)
+## Neotestováno (budoucnost)
 
-- Order cancellation
-- Customer group pricing
-- Mobile app flows
-- API rate limiting
-- Large dataset pagination
+- Zrušení objednávky
+- Ceny pro skupinu zákazníků
+- Toky mobilní aplikace
+- Omezení rychlosti API
+- Paginační stránkování velkých datových sad

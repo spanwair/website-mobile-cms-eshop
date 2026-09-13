@@ -1,76 +1,76 @@
 ---
-title: Roadmap
-description: What's planned for future versions.
+title: Mapa cest
+description: Co je plánováno pro budoucí verze.
 ---
 
-## Near-term (next sprint)
+## Blízká budoucnost (následující sprint)
 
-### Activate integrations (ready to wire, need credentials)
-- [ ] Wire Stripe checkout (`/api/checkout` + `/api/stripe/webhook` endpoints)
-- [ ] Wire Resend emails on order status changes (confirmation, shipping, review request)
-- [ ] Abandoned cart cron job (Edge Function, fires 1h after `abandoned_at` set)
-- [ ] Customer self-service portal (`/account`, `/account/orders`, `/account/wishlist`)
+### Aktivace integrací (připraveno k propojení, vyžadují se údaje)
+- [ ] Propojení pokladny Stripe (`/api/checkout` + `/api/stripe/webhook` koncové body)
+- [ ] Propojení odesílání e-mailů Resend při změnách stavu objednávky (potvrzení, doprava, žádost o recenzi)
+- [ ] Cron úloha pro opuštěný košík (Edge Function, spouští se 1 hodinu po nastavení `abandoned_at`)
+- [ ] Portál pro sebeobsluhu zákazníka (`/account`, `/account/orders`, `/account/wishlist`)
 
-### Feature completion
-- [ ] Order cancellation button in admin UI
-- [ ] Inventory item creation UI (currently requires SQL or API)
-- [ ] Sitemap.xml generation for SEO
+### Dokončení funkcí
+- [ ] Tlačítko pro zrušení objednávky v administrátorském rozhraní
+- [ ] Rozhraní pro vytváření položek skladových zásob (aktuálně vyžaduje SQL nebo API)
+- [ ] Generování Sitemap.xml pro SEO
 
-## Medium-term
+## Střednědobá budoucnost
 
-### Payments
-- [ ] Stripe integration for card payments
-- [ ] GoPay integration (Czech market)
-- [ ] Order status auto-update on payment webhook
+### Platby
+- [ ] Integrace Stripe pro platebami kartou
+- [ ] Integrace GoPay (český trh)
+- [ ] Automatické aktualizace stavu objednávky při webhooku platby
 
-### Mobile app
-- [ ] Connect mobile screens to real Supabase data
-- [ ] Product browsing with category filter
-- [ ] Cart and checkout flow
-- [ ] Order history in mobile app
-- [ ] Push notifications for order updates
+### Mobilní aplikace
+- [ ] Propojení mobilních obrazovek s reálnými daty Supabase
+- [ ] Procházení produktů s filtrem kategorie
+- [ ] Proces košíku a pokladny
+- [ ] Historie objednávek v mobilní aplikaci
+- [ ] Push oznámení pro aktualizace objednávek
 
-### Product enhancements
-- [ ] Product variants (size/color/material combinations)
-- [ ] Bulk product import from CSV
-- [ ] Product duplication (clone a product)
-- [ ] Related products
+### Vylepšení produktů
+- [ ] Varianty produktů (kombinace velikosti/barvy/materiálu)
+- [ ] Hromadný import produktů z CSV
+- [ ] Duplikace produktů (klonování produktu)
+- [ ] Související produkty
 
-### Customer features
-- [ ] Customer registration via mobile app
-- [ ] Customer login linked to user account
-- [ ] Loyalty points / rewards
+### Funkce pro zákazníky
+- [ ] Registrace zákazníka přes mobilní aplikaci
+- [ ] Přihlášení zákazníka propojené s účtem uživatele
+- [ ] Body loajality / odměny
 
-## Long-term
+## Dlouhodobá budoucnost
 
-### Analytics
-- [ ] Sales reports with charts
-- [ ] Revenue by category
-- [ ] Customer lifetime value
-- [ ] Inventory turnover
+### Analytika
+- [ ] Prodejní zprávy s grafy
+- [ ] Tržby podle kategorie
+- [ ] Životní hodnota zákazníka
+- [ ] Otočnost skladových zásob
 
-### Multi-tenancy at scale
-- [ ] Self-service organization creation
-- [ ] Billing per organization (subscription tiers)
-- [ ] White-label option (custom domain per org)
+### Multi-tenancy na škále
+- [ ] Samobouzdělá tvorba organizace
+- [ ] Fakturace na organizaci (úrovně předplatného)
+- [ ] Možnost white-labelu (vlastní doména pro organizaci)
 
-### Integrations
-- [ ] Shipping providers (DHL, PPL, Zásilkovna)
-- [ ] Accounting software export (POHODA, FAKTUROID)
+### Integrace
+- [ ] Dopravní poskytovatelé (DHL, PPL, Zásilkovna)
+- [ ] Export do účetního softwaru (POHODA, FAKTUROID)
 - [ ] Google Shopping feed
-- [ ] Facebook Catalog integration
+- [ ] Integrace katalogu Facebook
 
-### Mobile
-- [ ] iOS App Store deployment
-- [ ] Android Play Store deployment
-- [ ] Barcode scanner for inventory
-- [ ] Offline mode for stock counts
+### Mobilní
+- [ ] Nasazení do App Store pro iOS
+- [ ] Nasazení do Play Store pro Android
+- [ ] Čarodírový skener pro skladové zásoby
+- [ ] Offline režim pro počty zásob
 
-## How to contribute
+## Jak přispět
 
-The `_project_specs/todos/` folder tracks active work:
-- `active.md` — current sprint tasks
-- `backlog.md` — approved but not started
-- `completed.md` — done work
+Složka `_project_specs/todos/` sleduje aktivní práci:
+- `active.md` - úkoly aktuálního sprintu
+- `backlog.md` - schválené, ale nezačnuté
+- `completed.md` - dokončená práce
 
-When implementing a feature, update the progress page in this documentation to reflect what changed.
+Při implementaci funkce aktualizujte stránku s pokrokem v této dokumentaci, abyste відобраzili, co se změnilo.

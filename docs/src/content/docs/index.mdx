@@ -1,43 +1,46 @@
 ---
-title: Welcome to CMS Docs
-description: Everything you need to know about running this e-commerce CMS.
+title: Vítejte v dokumentaci CMS
+description: Vše, co potřebujete vědět o provozování tohoto e-commerce CMS.
 template: splash
 hero:
-  tagline: A complete e-commerce platform — website, mobile app, and admin CMS in one place.
+  tagline: Kompletní e-commerce platforma - web, mobilní aplikace a administrátorské CMS na jednom místě.
   actions:
-    - text: Get Started
-      link: /getting-started/overview/
+    - text: Začít
+      link: /docs/getting-started/overview/
       icon: right-arrow
       variant: primary
-    - text: Admin Guide
-      link: /admin/dashboard/
+    - text: Administrátorský průvodce
+      link: /docs/admin/dashboard/
       icon: open-book
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## What is this?
+## Co je to?
 
-This is a full-stack e-commerce template that ships three things together:
+Toto je full-stack e-commerce šablona, která poskytuje tři věci:
 
-| What | Where | Purpose |
+| Co | Kde | Účel |
 |------|-------|---------|
-| **Admin Website** | `/website` | Browser-based CMS for managing everything |
-| **Mobile App** | `/mobile` | React Native app for customers |
-| **Shared Logic** | `/shared` | Services, types, and i18n used by both |
-| **Database** | `/supabase` | PostgreSQL via Supabase — schema + migrations |
+| **Administrátorský web** | `/website` | CMS založený na prohlížeči pro správu všeho |
+| **Mobilní aplikace** | `/mobile` | Aplikace pro zákazníky vytvořená v React Native |
+| **Sdílená logika** | `/shared` | Služby, typy a i18n používané oběma |
+| **Databáze** | `/supabase` | PostgreSQL přes Supabase - schéma + migrace |
 
 <CardGrid stagger>
-  <Card title="Admin Guide" icon="setting">
-    Learn how to manage products, orders, and customers in the [Admin Guide](/admin/dashboard/).
+  <Card title="Postavte a spusťte svůj e-shop" icon="rocket">
+    Kompletní průvodce krok za krokem celým administrátorem - začněte na [Nastavení](/docs/admin/setup/) a sledujte [Administrátorský průvodce](/docs/admin/dashboard/) s produkty, objednávkami, cenami, obsahem a nastavením obchodu.
   </Card>
-  <Card title="User Roles" icon="approve-check">
-    Understand who can do what in the [Roles & Permissions Guide](/users/roles/).
+  <Card title="Administrátorský průvodce" icon="setting">
+    Každá administrátorská stránka je podrobně dokumentována - [Produkty](/docs/admin/products/), [Objednávky](/docs/admin/orders/), [Zákazníci](/docs/admin/customers/), [Ceny](/docs/admin/pricing/), [CMS](/docs/admin/cms-pages/) a [Nastavení obchodu](/docs/admin/settings-branding/).
   </Card>
-  <Card title="E2E Tests" icon="rocket">
-    See how 132 automated tests keep everything working in the [Testing Guide](/testing/e2e/).
+  <Card title="Role uživatelů" icon="approve-check">
+    Pochopte, kdo může co dělat v [Průvodci rolí a oprávněními](/docs/users/roles/).
   </Card>
-  <Card title="Current Progress" icon="list-format">
-    Check what's done and what's coming in the [Roadmap](/roadmap/progress/).
+  <Card title="E2E testy" icon="rocket">
+    Podívejte se, jak 132 automatizovaných testů udržuje vše v pořádku v [Průvodci testováním](/docs/testing/e2e/).
+  </Card>
+  <Card title="Aktuální postup" icon="list-format">
+    Zkontrolujte, co je hotovo a co je v plánu v [Mapa cesty](/docs/roadmap/progress/).
   </Card>
 </CardGrid>

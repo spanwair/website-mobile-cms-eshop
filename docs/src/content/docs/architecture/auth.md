@@ -1,29 +1,29 @@
 ---
-title: Authentication & Auth Flow
-description: How login, session management, and access control work.
+title: Autentizace a tok ověřování
+description: Jak funguje přihlašování, správa relací a kontrola přístupu.
 ---
 
-## How authentication works
+## Jak funguje autentizace
 
-The platform uses **Supabase Auth** for authentication. Supabase Auth handles:
-- User accounts and passwords
-- Session tokens (JWT)
+Platforma používá pro autentizaci **Supabase Auth**. Supabase Auth zajišťuje:
+- Uživatelské účty a hesla
+- Tokeny relací (JWT)
 - OAuth (Google Sign-In)
-- Magic links (passwordless email login)
+- Magické odkazy (přihlašování e-mailem bez hesla)
 
-## Login flow
+## Tok přihlašování
 
-1. User goes to `/login`
-2. Enters email + password (or uses Google/magic link)
-3. Supabase validates credentials and returns a JWT session
-4. The session is stored in a cookie (SSR) or local storage (mobile)
-5. On the next request, the server reads the cookie, validates the JWT with Supabase, and loads the user's profile
-6. If the profile's `role >= ESHOP_ADMIN (2)`, the user can access `/admin`
-7. If the role is `USER (1)` or lower, they are redirected to `/dashboard`
+1. Uživatel se dostane na `/login`
+2. Zadává e-mail a heslo (nebo použije Google/magický odkaz)
+3. Supabase ověří údaje a vrátí JWT relaci
+4. Relace je uložena v cookie (SSR) nebo v lokálním úložišti (mobilní aplikace)
+5. Při další žádosti server přečte cookie, ověří JWT u Supabase a načte profil uživatele
+6. Pokud je `role` profilu `>= ESHOP_ADMIN (2)`, uživatel může přistupovat k `/admin`
+7. Pokud je role `USER (1)` nebo nižší, je přesměrován na `/dashboard`
 
-## Server-side auth guard
+## Ochranná vrstva autentizace na serveru
 
-Every admin page starts with:
+Každá administrátorská stránka začíná tímto kódem:
 
 ```typescript
 const { data: { session } } = await supabase.auth.getSession();
@@ -33,29 +33,29 @@ const ctx = await requireAdminCtx(supabase, session.user.id);
 if (!ctx) return Astro.redirect("/dashboard");
 ```
 
-`requireAdminCtx()` checks:
-1. The user's `role` in the `profiles` table
-2. Which party (organization) the user belongs to
-3. Their permissions for that party
+`requireAdminCtx()` kontroluje:
+1. `role` uživatele v tabulce `profiles`
+2. K jaké organizaci (party) uživatel patří
+3. Jeho oprávnění pro danou organizaci
 
-## Supabase client in SSR
+## Klient Supabase v SSR
 
-The website uses a **service-role client** for SSR operations, which bypasses Row Level Security. The access control is enforced at the application layer (the admin guard and scoped queries).
+Webová stránka používá **klient s service-role** pro operace SSR, který obchází bezpečnostní omezení na úrovni řádků (Row Level Security). Kontrola přístupu je vynucována na aplikační vrstvě (ochranná vrstva administrátora a omezené dotazy).
 
-The mobile app uses an **anon-key client** with the user's JWT — RLS applies there.
+Mobilní aplikace používá **klient s anon-key** s JWT uživatele - RLS zde platí.
 
-## Session persistence
+## Udržování relace
 
-On the website, sessions are stored in cookies that expire in 7 days. On the mobile app, sessions are stored with MMKV (encrypted local storage) and persist until the user logs out.
+Na webové stránce jsou relace uloženy v cookie, které platí 7 dní. Na mobilní aplikaci jsou relace uloženy pomocí MMKV (šifrované lokální úložiště) a trvají, dokud uživatel neodhlásí.
 
-## Logging out
+## Odhlášení
 
-Call `supabase.auth.signOut()`. This clears the session cookie and redirects to `/login`.
+Volání `supabase.auth.signOut()`. Toto vymaže cookie relace a přesměruje na `/login`.
 
-## Magic links
+## Magické odkazy
 
-Supabase supports **magic link** login — the user enters their email and receives a link that logs them in without a password. Enable this in the Supabase Auth settings.
+Supabase podporuje přihlašování pomocí **magických odkazů** - uživatel zadá svůj e-mail a obdrží odkaz, který ho přihlásí bez hesla. Aktivujte toto v nastavení Supabase Auth.
 
 ## Google OAuth
 
-Google Sign-In is pre-configured. Set up your OAuth credentials in the Supabase Auth settings and add your redirect URLs. Works on both web and mobile.
+Google Sign-In je předkonfigurován. Nastavte své ověřovací údaje OAuth v nastavení Supabase Auth a přidejte své URL pro přesměrování. Funguje jak na webu, tak na mobilu.

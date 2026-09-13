@@ -1,11 +1,11 @@
 ---
-title: Example Guide
-description: A guide in my new Starlight docs site.
+title: Příklad průvodce
+description: Průvodce na mé nové dokumentační stránce Starlight.
 ---
 
-Guides lead a user through a specific task they want to accomplish, often with a sequence of steps.
-Writing a good guide requires thinking about what your users are trying to do.
+Průvodce vedou uživatele k dokončení konkrétního úkolu, často s řadou kroků.
+Psaní dobrého návodu vyžaduje uvažování o tom, co vaši uživatelé chtějí udělat.
 
-## Further reading
+## Další čtení
 
-- Read [about how-to guides](https://diataxis.fr/how-to-guides/) in the Diátaxis framework
+- Přečtěte si [o návodech typu jak-to](https://diataxis.fr/how-to-guides/) v rámci Diátaxis frameworku

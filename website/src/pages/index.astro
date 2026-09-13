@@ -15,6 +15,7 @@ import AICapabilities from "../components/landing/sections/AICapabilities.astro"
 import CommissionCalculator from "../components/landing/sections/CommissionCalculator.astro";
 import NoCompanySelling from "../components/landing/sections/NoCompanySelling.astro";
 import ExampleScenarios from "../components/landing/sections/ExampleScenarios.astro";
+import Documentation from "../components/landing/sections/Documentation.astro";
 import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
 import { createSupabase } from "../lib/supabase";
@@ -38,5 +39,6 @@ const featuredStores = await listLandingFeaturedStores(supabase);
   <CommissionCalculator />
   <NoCompanySelling />
   <ExampleScenarios />
+  <Documentation />
   <FinalCta />
 </LandingLayout>

@@ -1712,6 +1712,7 @@ export const cs: Translations = {
       employment: "Zaměstnání",
       about: "O nás",
       contact: "Kontakt",
+      docs: "Dokumentace",
       cta: "Začít zdarma",
     },
     hero: {
@@ -1876,6 +1877,17 @@ export const cs: Translations = {
       secondaryCta: "Zobrazit ceník",
       badges: ["0 Kč na start", "10 % jen z prodeje", "Spuštěno za pár minut"],
     },
+    documentation: {
+      eyebrow: "Dokumentace",
+      title: "Kompletní návod ke každé části administrace",
+      sub: "Podrobný průvodce e-shopem — od prvního přihlášení přes produkty, objednávky a ceny až po vzhled storefrontu. Každá stránka administrace má svůj vlastní návod.",
+      items: [
+        { title: "Začínáme", desc: "Nastavení, onboarding a přehled celé administrace krok za krokem." },
+        { title: "Katalog a prodej", desc: "Produkty, sklad, objednávky, reklamace, kupóny i ceníky." },
+        { title: "Obsah a vzhled", desc: "Stránky, blog, navigace, branding a kompletní nastavení storefrontu." },
+      ],
+      primaryCta: "Otevřít dokumentaci",
+    },
     footer: {
       tagline: "E-shop je zdarma. Vyděláváme, jen když vyděláte vy.",
       columns: {
@@ -1886,6 +1898,7 @@ export const cs: Translations = {
             { label: "Ceník", href: "/pricing" },
             { label: "Šablony", href: "/templates" },
             { label: "Zaměstnání", href: "/employment" },
+            { label: "Dokumentace", href: "/docs" },
           ],
         },
         company: {

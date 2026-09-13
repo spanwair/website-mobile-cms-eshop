@@ -1,90 +1,76 @@
 ---
-title: Product Reviews
-description: How to moderate customer reviews — approve, reject, hide, and delete.
+title: Recenze
+description: Moderace recenzí produktů od zákazníků - schvalujte, zamítnějte, skryjte nebo smažte hodnocení a psané zpětné vazby
 ---
 
-Reviews appear on product pages and affect trust and conversion. All new reviews start as `pending` and are hidden from customers until you explicitly approve them. Reviews require the same permission as managing products.
+Stránka Recenze je místo, kde jsou hodnocení produktů předložená zákazníky moderována předtím, než se objeví v obchodě.
+Recenze jsou připojeny k [produktům](/docs/admin/products) a jsou veřejně zobrazeny pouze po schválení a pouze tehdy, když je v obchodě povolena recenze (přepínač `enable_reviews` v nastavení vzhledu značky [Branding](/docs/admin/settings-branding)).
 
-## Permission required
+## Požadované oprávnění
 
-| Permission bit | Name | Who has it by default |
+| Bit oprávnění | Název | Kdo ho má výchozí |
 |---|---|---|
-| 8 | MANAGE_PRODUCTS | Owner, Admin, Eshop Admin (with this bit) |
+| 8 | MANAGE_PRODUCTS | Vlastník, Administrátor, Administrátor e-shopu (s tímto bitem) |
 
-This is the **same permission as [Products](/admin/products)** — anyone who can manage products can also moderate their reviews.
+Recenze sdílejí bit `MANAGE_PRODUCTS` s [Produkty](/docs/admin/products) a [Podmínkami produktu](/docs/admin/product-conditions).
+Bez něj vás systém přesměruje na `/admin`.
 
-## Review list (`/admin/reviews`)
+## Seznam recenzí (`/admin/reviews`)
 
-The page shows review **cards** (not a table) grouped by status tabs at the top:
+Recenze se načítají po 20 na stránku pomocí `fetchReviews`, nejnovější jako první, s celkovým počtem vedle názvu.
 
-| Tab | Shows |
+### Záložky stavu
+
+Pять záložek filtruje podle stavu moderace:
+
+| Záložka | `product_reviews.status` |
 |---|---|
-| All | Every review regardless of status |
-| Pending | New reviews awaiting your decision |
-| Approved | Published reviews visible on the eshop |
-| Rejected | Declined reviews (kept for records, not public) |
-| Hidden | Reviews that were approved but later hidden |
+| Všechny | (žádný filtr) |
+| Očekává | `pending` - výchozí stav pro nově předloženou recenzi, čekající na moderaci. |
+| Schválené | `approved` - veřejně viditelné. |
+| Zamítnuté | `rejected` - zamítnuto, nikdy neukázáno. |
+| Skryté | `hidden` - dříve viditelné, nyní vytaženo z obchodu. |
 
-Each card shows:
-- Star rating (1–5)
-- Author name and email
-- **Verified Purchase** badge (if the reviewer has a completed order for this product)
-- Status badge
-- Date submitted
-- Review title and body text
-- Action buttons
+### Karta recenze
 
-## Review statuses explained
+Každá recenze se vykreslí jako karta, ne jako řádek tabulky:
 
-| Status | Visible to customers | Description |
-|---|---|---|
-| `pending` | No | New review — no decision made yet |
-| `approved` | Yes | Published on the product page |
-| `rejected` | No | Declined — not published, but kept in the database |
-| `hidden` | No | Was approved, now hidden. Use for reviews that aged poorly or were later flagged. |
+- **Hvězdy** - hodnocení vykreslené jako vyplněné/prázdné hvězdy (1 až 5), s názvem číselnou hodnotou.
+- **Jméno autora** a **e-mail autora**.
+- Odznak "Ověřený nákup", když je `is_verified` pravdivé (recenzent skutečně koupil položku).
+- **Odznak stavu** - kódovaný barvou: čekající žlutá, schválená zelená, zamítnutá červená, skrytá šedá.
+- **Datum** - `created_at` v aktuální lokalitě.
+- **Výhody / Nevýhody** - dvě sloupce, výhody předponovány zeleným `+`, nevýhody červeným mínusem.
+- **Text** - recenze v volném textu, pokud je přítomna.
 
-## What "Verified Purchase" means
+### Akce moderace
 
-A review is marked Verified Purchase when:
-- The reviewer is a registered customer linked to a [customer record](/admin/customers)
-- That customer has a completed order containing the reviewed product
+Každá karta zobrazuje akce, které mají smysl pro její aktuální stav, plus Smazat:
 
-This happens automatically. Verified Purchase reviews carry more weight with shoppers.
+| Tlačítko | Efekt (POST `action`) |
+|---|---|
+| Schválit | Nastaví stav na `approved` (skryto, pokud je již schváleno). |
+| Zamítnout | Nastaví stav na `rejected` (skryto, pokud je již zamítnuto). |
+| Skrýt | Nastaví stav na `hidden` (skryto, pokud je již skryto). |
+| Smazat | Trvale odstraní recenzi po dialogu `confirm()`. |
 
-## Moderation workflow
+Schválení / zamítnutí / skrytí aktualizuje řádek na místě; smazání ho zcela odstraní.
+Po jakékoli akci se stránka přesměruje zpět na `/admin/reviews`.
 
-**Check the Pending tab daily** (or set up notifications for new reviews):
+## Prázdný stav a paginace
 
-1. Read the review fully before deciding.
-2. Click **Approve** if the review is genuine — it immediately appears on the eshop.
-3. Click **Reject** if the review violates your policy (spam, hate speech, fake reviews, etc.) — it stays in the database as `rejected` but is not shown.
-4. Click **Hide** to temporarily remove an approved review from public view without permanently rejecting it.
-5. Click **Delete** to permanently remove the review from the database. Use sparingly — rejection is usually sufficient.
+Pokud záložka nemá žádné recenze, zobrazí se centrováná karta „Žádné recenze“.
+Odkazy Předchozí / Další s indikátorem „Stránka X / Y“ se objeví, když je více než jedna stránka, a zachovají aktivní filtr stavu.
 
-### When to approve
+## Data a úložiště (cloud)
 
-- Any genuine customer experience, including negative ones
-- Constructive criticism with specifics
-- Reviews from Verified Purchase customers
+- **Tabulka:** `product_reviews` (`product_id`, `author_name`, `author_email`, `rating`, `pros[]`, `cons[]`, `body`, `is_verified`, `status`, `created_at`).
+- **Denormalizováno na produktu:** Schválené recenze ovlivňují `products.rating_avg` a `products.review_count`.
+- **Služba:** `fetchReviews` (`reviewService`); zápisy stavu/smazání jdou přímo do `product_reviews`.
+- **Konfigurace obchodu:** `enable_reviews` určuje, zda se schválené recenze vůbec vykreslí v obchodě.
+- Omezeno na `ctx.partyId`.
 
-### When to reject
+## Související stránky
 
-- Spam or unrelated content
-- Profanity or hate speech
-- Reviews clearly about a different product
-- Fake reviews (5 stars, no detail, no purchase history)
-
-### Reject vs Hide
-
-- **Reject**: Review never makes it public. Use for policy violations before they were ever approved.
-- **Hide**: Review was approved and visible, now you're removing it. Use when a review aged poorly or when you discover a problem after approval. The reviewer can see their review is no longer shown.
-
-## How ratings update
-
-The product's average rating and review count update **automatically** via a database trigger whenever a review is approved or removed. You do not need to manually recalculate anything.
-
-## Related pages
-
-- [Products](/admin/products) — reviews are per-product; same MANAGE_PRODUCTS permission
-- [Customers](/admin/customers) — reviewer's customer record linked in card email
-- [Permissions](/users/permissions) — MANAGE_PRODUCTS permission (bit 8)
+- [Produkty](/docs/admin/products) - recenze jsou připojeny k produktům; průměr hodnocení a počet se zobrazují na produktu
+- [Branding](/docs/admin/settings-branding) - přepínač `enable_reviews`, který zapíná nebo vypíná recenze v obchodě

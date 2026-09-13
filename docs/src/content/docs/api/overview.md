@@ -1,37 +1,37 @@
 ---
-title: API Overview
-description: How to connect your custom eshop to the CMS API.
+title: Přehled API
+description: Jak připojit svůj vlastní eshop k CMS API.
 ---
 
-The CMS exposes two types of API endpoints. Both are provided by your Supabase project — you do not run a separate API server.
+CMS poskytuje dva typy API endpointů. Oba jsou poskytovány vaším projektem Supabase - nemáte spuštět samostatný API server.
 
-| Type | Base URL | What it does |
+| Typ | Základní URL | Co dělá |
 |---|---|---|
-| **PostgREST** | `https://{ref}.supabase.co/rest/v1` | Direct table access — products, categories, cart, orders |
-| **Edge Functions** | `https://{ref}.supabase.co/functions/v1` | Custom logic — account deletion, webhooks, integrations |
+| **PostgREST** | `https://{ref}.supabase.co/rest/v1` | Přímý přístup k tabulce - produkty, kategorie, košík, objednávky |
+| **Edge Functions** | `https://{ref}.supabase.co/functions/v1` | Vlastní logika - smazání účtu, webhooks, integrace |
 
-Your project `ref` is visible in your Supabase project settings and in `.env.development` as `PUBLIC_SUPABASE_URL`.
+Váš projekt `ref` je viditelný v nastavení vašeho projektu Supabase a v `.env.development` jako `PUBLIC_SUPABASE_URL`.
 
-## Authentication
+## Autentizace
 
-Every request needs the `apikey` header set to your **anon key**. This key is public and safe to include in frontend code.
+Každý požadavek musí mít hlavičku `apikey` nastavenou na váš **anon klíč**. Tento klíč je veřejný a je bezpečné jej zahrnout do frontend kódu.
 
 ```http
 apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-For endpoints that require a logged-in user (cart, orders, wishlist, account operations), also send the user's JWT:
+Pro endpointy, které vyžadují přihlášeného uživatele (košík, objednávky, seznam přání, operace účtu), zašlete také JWT uživatele:
 
 ```http
 apikey: <your-anon-key>
 Authorization: Bearer <user-jwt>
 ```
 
-> **Never use the `service_role` key** in eshop code. It bypasses all Row Level Security and exposes every organization's data to every other organization. See [Multi-Tenant Architecture](/architecture/multi-tenancy) for details.
+> **Nikdy nepoužívejte klíč `service_role`** v kódu eshopu. Obchází veškerou bezpečnost na úrovni řádků a odhaluje data každé organizace každé jiné organizaci. Podrobnější informace najdete v [Architektuře s více nájemníky](/docs/architecture/multi-tenancy).
 
-## Getting the user JWT
+## Získání JWT uživatele
 
-Use the Supabase JS client:
+Použijte Supabase JS klienta:
 
 ```javascript
 import { createClient } from '@supabase/supabase-js'
@@ -49,37 +49,37 @@ const { data: { session } } = await supabase.auth.getSession()
 const jwt = session?.access_token
 ```
 
-## Filtering syntax
+## Syntax pro filtrování
 
-PostgREST uses URL query parameters for filtering. No SQL needed.
+PostgREST používá parametry dotazu URL pro filtrování. SQL není nutné.
 
-| Want | Query parameter |
+| Chcete | Parametr dotazu |
 |---|---|
-| Equals | `?status=eq.active` |
-| Not equals | `?status=neq.draft` |
-| Greater than | `?price=gt.50` |
-| Less than or equal | `?price=lte.200` |
-| In a list | `?status=in.(active,inactive)` |
-| Pattern match | `?title=ilike.*shirt*` |
-| Is null | `?parent_id=is.null` |
-| Select specific columns | `?select=id,title,price,slug` |
-| Sort ascending | `?order=title.asc` |
-| Sort descending | `?order=created_at.desc` |
-| Pagination | `?limit=20&offset=40` |
+| Rovnost | `?status=eq.active` |
+| Nerovnost | `?status=neq.draft` |
+| Větší než | `?price=gt.50` |
+| Menší nebo rovno | `?price=lte.200` |
+| V seznamu | `?status=in.(active,inactive)` |
+| Shoda vzoru | `?title=ilike.*shirt*` |
+| Je null | `?parent_id=is.null` |
+| Vybrat specifické sloupce | `?select=id,title,price,slug` |
+| Seřazení rostoucí | `?order=title.asc` |
+| Seřazení sestupující | `?order=created_at.desc` |
+| Paginace | `?limit=20&offset=40` |
 
-Filters combine with `&`: `?status=eq.active&is_visible=eq.true&order=title.asc&limit=20`
+Filtry se kombinují pomocí `&`: `?status=eq.active&is_visible=eq.true&order=title.asc&limit=20`
 
-## The party_id filter (required)
+## Filtr party_id (vyžadováno)
 
-Public endpoints (products, categories, brands) return data from **all organizations** on the platform. You must filter by your organization ID to get only your data.
+Veřejné endpointy (produkty, kategorie, značky) vrací data ze **všech organizací** na platformě. Musíte filtrovat podle ID vaší organizace, abyste získali pouze svá data.
 
-Find your `party_id` in the admin panel at **[Admin → Organizations](/admin/parties)** — it is the UUID shown in the organization detail page URL.
+Najděte své `party_id` v panelu administrátora na **[Administrátor → Organizace](/docs/admin/parties)** - je to UUID zobrazené v URL stránky detailu organizace.
 
 ```
 ?party_id=eq.550e8400-e29b-41d4-a716-446655440000
 ```
 
-## Quick start — list your products
+## Rychlý start - seznamte své produkty
 
 ```javascript
 const SUPABASE_URL = 'https://your-ref.supabase.co'
@@ -104,9 +104,9 @@ const response = await fetch(
 const products = await response.json()
 ```
 
-## Using the Supabase JS client (recommended)
+## Používání Supabase JS klienta (doporučeno)
 
-The Supabase client library handles authentication, retries, and realtime subscriptions. It is the recommended approach over raw fetch.
+Knižnice klienta Supabase zpracovává autentizaci, opakování a časově reálné odběry. Je to doporučený přístup oproti použití surového fetch.
 
 ```javascript
 import { createClient } from '@supabase/supabase-js'
@@ -123,7 +123,7 @@ const { data: products, error } = await supabase
   .order('title', { ascending: true })
   .limit(20)
 
-// Authenticated — get cart (user must be logged in)
+// Authenticated - get cart (user must be logged in)
 const { data: cartItems } = await supabase
   .from('cart_items')
   .select('*, products(title, price)')
@@ -134,27 +134,27 @@ const { error } = await supabase
   .insert({ product_id: 'uuid-here', quantity: 1 })
 ```
 
-## Rate limits
+## Limity rychlosti
 
-| Supabase plan | Limit |
+| Plán Supabase | Limit |
 |---|---|
-| Free | ~500 requests/second per project |
-| Pro and above | Higher limits — see your Supabase dashboard |
+| Free | ~500 požadavků/sekundu na projekt |
+| Pro a vyšší | Vyšší limity - podívejte se na svou nástěnku Supabase |
 
-PostgREST returns a `413` error if the response would exceed 2MB. Use `?select` to reduce payload size and `?limit` to paginate.
+PostgREST vrátí chybu `413`, pokud by odpověď překročila 2 MB. Použijte `?select` k redukci velikosti zátěže a `?limit` pro paginaci.
 
 ## CORS
 
-PostgREST allows all origins by default. Edge Functions include explicit CORS headers. If you need to restrict origins, configure this in your Supabase project settings under **API → CORS**.
+PostgREST výchozíně povoluje všechny domény. Edge Functions zahrnují explicitní CORS hlavičky. Pokud potřebujete omezit domény, nakonfigurujte to v nastavení vašeho projektu Supabase pod **API → CORS**.
 
-## Full API reference
+## Kompletní reference API
 
-The interactive API reference (with a "Try it" console for every endpoint) is available at:
+Interaktivní reference API (s konzolí „Vyzkoušet“ pro každý endpoint) je k dispozici na:
 
-- **[API Reference](/api/reference)** — rendered from the OpenAPI spec
+- **[Reference API](/docs/api/reference)** - vykreslená z OpenAPI specifikace
 
-## Related
+## Související
 
-- [Multi-Tenant Architecture](/architecture/multi-tenancy) — how organization isolation works and what not to do
-- [Role Hierarchy](/users/roles) — which users can access which data
-- [Environment Setup](/getting-started/environment) — where to find your project URL, anon key, and party_id
+- [Architektura s více nájemníky](/docs/architecture/multi-tenancy) - jak funguje izolace organizací a co nechat dělat
+- [Hierarchie rolí](/docs/users/roles) - které uživatele mohou přistupovat k jakým datům
+- [Nastavení prostředí](/docs/getting-started/environment) - kde najít URL vašeho projektu, anon klíč a party_id

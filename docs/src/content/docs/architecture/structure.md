@@ -1,89 +1,89 @@
 ---
-title: Project Structure
-description: How the monorepo is organized.
+title: Struktura projektu
+description: Jak je monorepo uspořádáno.
 ---
 
-## Folder layout
+## Rozložení složek
 
 ```
 website-mobile-template/
-├── mobile/          React Native / Expo mobile app
-├── website/         Astro 5 SSR admin + public website
-├── shared/          Code shared by both (services, types, i18n)
-├── supabase/        DB migrations and Edge Functions
-├── docs/            This documentation (Starlight)
-├── scripts/         Build, deploy, and utility scripts
-└── _project_specs/  Project planning and session notes
+├── mobile/          React Native / Expo mobilní aplikace
+├── website/         Astro 5 SSR administrace + veřejný web
+├── shared/          Kód sdílený oběma (služby, typy, i18n)
+├── supabase/        Migrace DB a Edge Functions
+├── docs/            Tato dokumentace (Starlight)
+├── scripts/         Skripty pro sestavení, nasazení a utility
+└── _project_specs/  Plánování projektu a poznámky ze schůzek
 ```
 
-## The shared/ folder
+## Složka shared/
 
-This is the most important folder to understand. **Any logic that could run on both mobile and website goes here.**
+Toto je nejdůležitější složka k pochopení. **Všechna logika, která může běžet jak na mobilu, tak na webu, patří sem.**
 
 ```
 shared/
 ├── constants/
-│   ├── permissions.ts   Role constants (ROLE.OWNER, PERMISSIONS.MANAGE_PRODUCTS…)
-│   └── theme.ts         Colors and spacing
+│   ├── permissions.ts   Konstanty role (ROLE.OWNER, PERMISSIONS.MANAGE_PRODUCTS…)
+│   └── theme.ts         Barvy a rozestupy
 ├── i18n/
-│   ├── locales/cs.ts    Czech translations
-│   ├── locales/en.ts    English translations
-│   └── getT.ts          Translation helper
+│   ├── locales/cs.ts    České překlady
+│   ├── locales/en.ts    Anglické překlady
+│   └── getT.ts          Pomocník pro překlady
 ├── services/
-│   ├── authService.ts         Login / logout
-│   ├── categoryService.ts     Fetch / create / update / delete categories
-│   ├── customerService.ts     Customer CRUD
-│   ├── productService.ts      Product CRUD + category assignment
-│   ├── productImageService.ts Image upload, delete, set-primary
-│   ├── profileService.ts      User profiles + fetchUsersForAdmin
-│   ├── auditService.ts        Audit log queries
-│   ├── inventoryService.ts    Inventory items + adjustments
-│   ├── orderService.ts        Order queries and updates
-│   ├── permissionsService.ts  Role + permission checks
+│   ├── authService.ts         Přihlášení / odhlášení
+│   ├── categoryService.ts     Získání / vytvoření / aktualizace / smazání kategorií
+│   ├── customerService.ts     CRUD zákazníků
+│   ├── productService.ts      CRUD produktů + přiřazení kategorie
+│   ├── productImageService.ts Nahrávání obrázků, smazání, nastavení primárního
+│   ├── profileService.ts      Profil uživatelů + získání uživatelů pro administrátora
+│   ├── auditService.ts        Dotazy na protokol auditu
+│   ├── inventoryService.ts    Skladové zásoby + úpravy
+│   ├── orderService.ts        Dotazy a aktualizace objednávek
+│   ├── permissionsService.ts  Kontroly role + oprávnění
 │   └── ...
 ├── supabase/
-│   └── types.ts         Auto-generated DB types (never edit manually)
+│   └── types.ts         Automaticky vygenerované typy DB (nikdy ručně nedit)
 └── types/
-    └── index.ts         Shared TypeScript interfaces
+    └── index.ts         Sdílené TypeScript rozhraní
 ```
 
-## The website/ folder
+## Složka website/
 
 ```
 website/
 ├── src/
 │   ├── components/
-│   │   └── cms/         Admin UI components (CmsLayout, ProductImages, etc.)
+│   │   └── cms/         Komponenty UI pro administraci (CmsLayout, ProductImages, atd.)
 │   ├── lib/
-│   │   ├── admin.ts     requireAdminCtx() — auth guard for all admin pages
-│   │   ├── i18n.ts      useT() — translation helper for Astro pages
-│   │   └── supabase.ts  createSupabase() — Supabase client factory
+│   │   ├── admin.ts     requireAdminCtx() - ochrana pro všechny administrátorské stránky
+│   │   ├── i18n.ts      useT() - pomocník pro překlady pro stránky Astro
+│   │   └── supabase.ts  createSupabase() - továrna klientů Supabase
 │   └── pages/
-│       ├── admin/       All admin pages (SSR, protected)
+│       ├── admin/       Všechny administrátorské stránky (SSR, chráněné)
 │       ├── dashboard.astro
 │       ├── index.astro
 │       └── login.astro
 ├── tests/
-│   └── e2e/             Playwright E2E tests
+│   └── e2e/             E2E testy Playwright
 └── playwright.config.ts
 ```
 
-## The supabase/ folder
+## Složka supabase/
 
 ```
 supabase/
-├── migrations/          SQL migration files, applied in order
+├── migrations/          SQL migrační soubory, aplikované v pořadí
 │   ├── 20260101000001_create_profiles.sql
 │   ├── 20260102000005_eshop_catalog.sql
 │   └── ...
 └── functions/           Edge Functions (serverless, Deno)
 ```
 
-## The 200-line rule
+## Pravidlo 200 řádků
 
-Every file in this project must stay under **200 lines**. If a file grows beyond that:
-- Split components into smaller components
-- Split services into separate service files
-- Split admin pages into sub-pages
+Každý soubor v tomto projektu musí zůstat pod **200 řádky**. Pokud soubor překročí tuto hranici:
+- Rozdělte komponenty na menší komponenty
+- Rozdělte služby na samostatné soubory služeb
+- Rozdělte administrátorské stránky na podstránky
 
-This keeps the codebase navigable and each file focused on one thing.
+Tím zůstane kód srozumitelný a každý soubor se zaměří na jednu věc.

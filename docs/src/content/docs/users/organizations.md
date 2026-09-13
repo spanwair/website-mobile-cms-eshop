@@ -1,62 +1,62 @@
 ---
-title: Organizations (Parties)
-description: How organizations work and why everything is scoped to them.
+title: Organizace (Strany)
+description: Jak fungují organizace a proč je vše pro ně definováno.
 ---
 
-## What is a "Party"?
+## Co je „Strana“?
 
-In the database, organizations are called **parties**. Every piece of data — products, orders, customers, categories — belongs to exactly one party.
+V databázi jsou organizace nazývány **strany**. Každý kus dat - produkty, objednávky, zákazníci, kategorie - patří přesně jedné straně.
 
-This means:
-- **Company A's admin** can only see Company A's products
-- **Company B's admin** can only see Company B's data
-- Multiple companies can run independently on the same platform
+To znamená:
+- **Administrátor Společnosti A** vidí pouze produkty Společnosti A
+- **Administrátor Společnosti B** vidí pouze data Společnosti B
+- Více společností může fungovat nezávisle na stejné platformě
 
-## What belongs to an organization
+## Co patří do organizace
 
-| Data type | Scoped to party? |
+| Typ dat | Připojeno k straně? |
 |-----------|-----------------|
-| Products | ✅ Yes |
-| Categories | ✅ Yes |
-| Orders | ✅ Yes |
-| Customers | ✅ Yes |
-| Inventory | ✅ Yes |
-| Discount rules & coupons | ✅ Yes |
-| Warehouses | ✅ Yes |
-| Roles (custom) | ✅ Yes |
-| User accounts (profiles) | ❌ No — users belong to Supabase Auth |
-| Party membership | ✅ Via `user_party_roles` table |
+| Produkty | ✅ Ano |
+| Kategorie | ✅ Ano |
+| Objednávky | ✅ Ano |
+| Zákazníci | ✅ Ano |
+| Skladové zásoby | ✅ Ano |
+| Pravidla pro slevy a kupóny | ✅ Ano |
+| Sklady | ✅ Ano |
+| Role (vlastní) | ✅ Ano |
+| Uživatelské účty (profily) | ❌ Ne - uživatelé patří do Supabase Auth |
+| Příslušnost k straně | ✅ Pomocí tabulky `user_party_roles` |
 
-## Party fields
+## Pole strany
 
-When you create an organization, you fill in:
+Když vytvoříte organizaci, vyplníte:
 
-| Field | Required | Description |
+| Pole | Požadované | Popis |
 |-------|----------|-------------|
-| Name | ✅ | Display name (e.g. "My Shop s.r.o.") |
-| Slug | ✅ | URL-safe identifier (auto-suggested from name) |
-| Company name | | Legal name |
-| VAT number | | For invoicing |
-| Billing email | | Where invoices go |
-| Logo URL | | Brand logo |
+| Název | ✅ | Zobrazovaný název (např. „Můj obchod s.r.o.“) |
+| Slug | ✅ | Identifikátor bezpečný pro URL (automaticky navrhovaný z názvu) |
+| Název společnosti | | Právní název |
+| IČ DPH | | Pro fakturaci |
+| E-mail pro fakturaci | | Kam jsou faktury zasílány |
+| URL loga | | Logo značky |
 
-## Joining an organization
+## Připojení k organizaci
 
-A user without an organization cannot manage anything — they see a setup page telling them to contact an Owner. An Owner or Admin adds users to the organization via **Admin → Parties → [Organization] → Invite member**.
+Uživatel bez organizace nemůže nic spravovat - vidí stránku nastavení, která ho vyzve k kontaktu s Vlastníkem. Vlastník nebo Administrátor přidá uživatele do organizace přes **Administrátor → Strany → [Organizace] → Pozvat člena**.
 
-When you invite someone:
-1. Select their account from the dropdown
-2. Choose which custom role they get within the party
-3. Click **Invite**
+Když někoho pozvete:
+1. Vyberte jeho účet z rozbalovací nabídky
+2. Vyberte, jakou vlastní roli dostane v rámci strany
+3. Klikněte na **Pozvat**
 
-They are immediately added and can log in to the admin panel.
+Okamžitě jsou přidáni a mohou se přihlásit do administrace.
 
-## Removing members
+## Odstraňování členů
 
-On the party detail page, each member row has a **Remove** button (with confirmation). Removing a user from a party means they lose access to that party's data but keep their account.
+Na stránce podrobností strany má každý řádek člena tlačítko **Odstranit** (s potvrzením). Odstranění uživatele ze strany znamená, že ztratí přístup k datům této strany, ale jeho účet zůstane.
 
-## The "Super Admin" role
+## Role „Super Administrátor“
 
-Each party automatically gets a **Super Admin** system role (created by a database trigger when the party is created). This role has all permissions (bitmask `32767`) and cannot be deleted.
+Každá strana automaticky získá systémovou **role Super Administrátor** (vytvořenou spouštěčem databáze při vytvoření strany). Tato role má všechna oprávnění (bitmaska `32767`) a nemůže být smazána.
 
-The first admin of the party is assigned this role automatically.
+První administrátor strany je této roli automaticky přidělen.

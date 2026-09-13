@@ -1,145 +1,145 @@
 ---
-title: Database Schema
-description: The tables, relationships, and how data is organized.
+title: Schéma databáze
+description: Tabulky, vztahy a způsob uspořádání dat.
 ---
 
-## Overview
+## Přehled
 
-The database is PostgreSQL hosted on Supabase. Everything runs through Supabase's API — no direct DB connections from the app.
+Databáze je PostgreSQL hostovaná na Supabase. Vše běží přes API Supabase - žádné přímé připojení k DB z aplikace.
 
-## Core tables
+## Základní tabulky
 
 ### profiles
-Extends Supabase Auth's `auth.users`. Created automatically when a user signs up.
+Rozšiřuje `auth.users` Supabase Auth. Vytvářeno automaticky při registraci uživatele.
 
-| Column | Type | Description |
+| Sloupec | Typ | Popis |
 |--------|------|-------------|
-| id | UUID | Same as auth.users.id |
-| email | text | User's email |
-| display_name | text | Shown in the UI |
-| role | int | 1=User, 2=EshopAdmin, 4=Admin, 8=Owner |
-| avatar_url | text | Profile picture URL |
-| lang | text | Preferred language (cs/en) |
+| id | UUID | Stejné jako auth.users.id |
+| email | text | E-mail uživatele |
+| display_name | text | Zobrazeno v rozhraní |
+| role | int | 1=Uživatel, 2=EshopAdministrátor, 4=Administrátor, 8=Vlastník |
+| avatar_url | text | URL obrázku profilu |
+| lang | text | Preferovaný jazyk (cs/en) |
 
 ### parties
-Organizations. All e-commerce data belongs to a party.
+Organizace. Všechna e-commerce data patří organizaci.
 
-| Column | Type | Description |
+| Sloupec | Typ | Popis |
 |--------|------|-------------|
-| id | UUID | Primary key |
-| name | text | Display name |
-| slug | text | URL-safe identifier (unique) |
-| company_name | text | Legal name |
-| vat_number | text | For invoicing |
-| billing_email | text | Invoice destination |
-| is_active | boolean | Whether this org is active |
+| id | UUID | Primární klíč |
+| name | text | Zobrazená jméno |
+| slug | text | Identifikátor bezpečný pro URL (unikátní) |
+| company_name | text | Právní jméno |
+| vat_number | text | Pro fakturaci |
+| billing_email | text | Údaje pro fakturaci |
+| is_active | boolean | Činnost této organizace |
 
 ### user_party_roles
-Junction table linking users to parties with a role.
+Spojovací tabulka propojující uživatele s organizacemi s rolem.
 
-| Column | Type | Description |
+| Sloupec | Typ | Popis |
 |--------|------|-------------|
 | user_id | UUID | FK → profiles.id |
 | party_id | UUID | FK → parties.id |
 | role_id | UUID | FK → roles.id |
 
 ### products
-The product catalog.
+Katalog produktů.
 
-| Column | Type | Description |
+| Sloupec | Typ | Popis |
 |--------|------|-------------|
-| id | UUID | Primary key |
-| party_id | UUID | Which org owns this |
-| title | text | Product name |
-| slug | text | URL identifier (unique per party) |
-| price | numeric(12,2) | Regular price |
-| discount_price | numeric(12,2) | Sale price (optional) |
-| status | text | draft / active / inactive |
-| is_featured | boolean | Show in featured sections |
+| id | UUID | Primární klíč |
+| party_id | UUID | Která organizace to vlastní |
+| title | text | Název produktu |
+| slug | text | Identifikátor URL (unikátní pro organizaci) |
+| price | numeric(12,2) | Standardní cena |
+| discount_price | numeric(12,2) | Cena v akci (volitelné) |
+| status | text | návrh / aktivní / neaktivní |
+| is_featured | boolean | Zobrazit v vybraných sekcích |
 
 ### product_categories
-Junction table — many-to-many between products and categories.
+Spojovací tabulka - mnoho-k-mnoha mezi produkty a kategoriemi.
 
-| Column | Type |
+| Sloupec | Typ |
 |--------|------|
 | product_id | UUID → products.id |
 | category_id | UUID → categories.id |
 
 ### product_images
-Images uploaded for a product.
+Obrázky nahrané pro produkt.
 
-| Column | Type | Description |
+| Sloupec | Typ | Popis |
 |--------|------|-------------|
-| id | UUID | Primary key |
+| id | UUID | Primární klíč |
 | product_id | UUID | FK → products.id |
-| url | text | Full public URL in Supabase Storage |
-| alt | text | Alt text for accessibility |
-| is_primary | boolean | Main image (shown in listings) |
-| sort_order | int | Display order |
+| url | text | Plná veřejná URL v Supabase Storage |
+| alt | text | Alternativní text pro přístupnost |
+| is_primary | boolean | Hlavní obrázek (zobrazený v seznamu) |
+| sort_order | int | Pořadí zobrazení |
 
 ### categories
-Product categories in a tree structure.
+Kategorie produktů ve stromové struktuře.
 
-| Column | Type | Description |
+| Sloupec | Typ | Popis |
 |--------|------|-------------|
-| id | UUID | Primary key |
-| party_id | UUID | Owner org |
-| parent_id | UUID | Parent category (null = root) |
-| name | text | Display name |
-| slug | text | URL identifier (unique per party) |
-| is_visible | boolean | Show to customers |
+| id | UUID | Primární klíč |
+| party_id | UUID | Vlastní organizace |
+| parent_id | UUID | Родиní kategorie (null = kořen) |
+| name | text | Zobrazená jméno |
+| slug | text | Identifikátor URL (unikátní pro organizaci) |
+| is_visible | boolean | Zobrazit zákazníkům |
 
 ### orders
-Customer orders.
+Objednávky zákazníků.
 
-| Column | Type | Description |
+| Sloupec | Typ | Popis |
 |--------|------|-------------|
-| id | UUID | Primary key |
-| party_id | UUID | Owner org |
-| customer_id | UUID | FK → customers.id |
-| order_number | text | Human-readable (e.g. ORD-2026-001) |
-| status | text | pending/confirmed/processing/shipped/delivered/cancelled |
-| payment_status | text | unpaid/paid/refunded |
-| total_amount | numeric | Order total |
-| currency | text | ISO code (e.g. CZK) |
+| id | UUID | Primární klíč |
+| party_id | UUID | Vlastní organizace |
+| customer_id | UUID | FK → zákazníci.id |
+| order_number | text | Čitelné pro člověka (např. ORD-2026-001) |
+| status | text | čekající/potvrzená/zpracovávána/odeslaná/doručená/zrušená |
+| payment_status | text | nezaplacená/zaplacená/vrácená |
+| total_amount | numeric | Celková hodnota objednávky |
+| currency | text | ISO kód (např. CZK) |
 
 ### customers
-Customer contact records.
+Kontaktní záznamy zákazníků.
 
-| Column | Type | Description |
+| Sloupec | Typ | Popis |
 |--------|------|-------------|
-| id | UUID | Primary key |
-| party_id | UUID | Owner org |
-| first_name | text | First name |
-| last_name | text | Last name |
-| email | text | Contact email |
-| phone | text | Phone number |
-| is_active | boolean | Active/inactive |
+| id | UUID | Primární klíč |
+| party_id | UUID | Vlastní organizace |
+| first_name | text | Jméno |
+| last_name | text | Příjmení |
+| email | text | Kontaktní e-mail |
+| phone | text | Telefonní číslo |
+| is_active | boolean | Aktivní/neaktivní |
 
 ### inventory_items
-Stock levels per product per warehouse.
+Úrovně zásob pro produkt v skladu.
 
-| Column | Type | Description |
+| Sloupec | Typ | Popis |
 |--------|------|-------------|
-| id | UUID | Primary key |
-| party_id | UUID | Owner org |
-| product_id | UUID | FK → products.id |
-| warehouse_id | UUID | FK → warehouses.id |
-| qty_on_hand | int | Current stock |
-| qty_reserved | int | Allocated to orders |
-| low_stock_threshold | int | Alert threshold |
+| id | UUID | Primární klíč |
+| party_id | UUID | Vlastní organizace |
+| product_id | UUID | FK → produkty.id |
+| warehouse_id | UUID | FK → sklady.id |
+| qty_on_hand | int | Aktuální zásoba |
+| qty_reserved | int | Vyčleněno objednávkám |
+| low_stock_threshold | int | Pražec pro upozornění |
 
 ## Supabase Storage
 
-Images are stored in a Supabase Storage bucket called `product-images`. The bucket is public (images are readable by everyone) but only authenticated users can upload.
+Obrázky jsou uloženy v bucketu Supabase Storage s názvem `product-images`. Bucket je veřejný (obrázky jsou čitelné pro všechny), ale nahrávat mohou pouze ověření uživatelé.
 
 Path pattern: `{party_id}/{product_id}/{timestamp}.{ext}`
 
-## Migrations
+## Migrace
 
-All schema changes go through SQL migration files in `supabase/migrations/`. Never use the Supabase Dashboard to change the schema directly — it won't be reflected in your migration history.
+Všechny změny schématu probíhají prostřednictvím SQL migračních souborů v `supabase/migrations/`. Nikdy nepoužívejte Supabase Dashboard k přímé změně schématu - nebude to zreflektováno v historii migrací.
 
-After changing the schema, regenerate types:
+Po změně schématu znovu vygenerujte typy:
 ```bash
 supabase gen types > shared/supabase/types.ts
 ```
