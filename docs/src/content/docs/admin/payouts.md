@@ -1,13 +1,13 @@
 ---
 title: Výplaty
-description: Účet výplat pro organizaci pro prodejce na provizi a historii poplatků platformy pro prodejce vlastní firmy
+description: Účetní kniha výplat pro organizaci pro prodejce na provizi a historie poplatků platformy pro prodejce vlastní firmy
 ---
 
-Výplaty je stránka s finančními údaji pro danou organizaci.
-To, co zobrazuje, závisí zcela na `seller_mode` aktivní organizace: prodejce na provizi vidí účet výplat objednávka po objednávce, zatímco prodejce vlastní firmy vidí svou měsíční historii poplatků platformy (s možností zaplatit poplatek online přes Stripe).
-Souhrn napříč organizacemi se nachází v [Fakturace](/docs/admin/billing); tato stránka je místo, kde jednáte s jednou organizací.
+Výplaty je stránka s finančními údaji pro každou organizaci.
+To, co zobrazuje, závisí výhradně na aktivním `seller_mode` organizace: prodejce na provizi vidí účetní knihu výplat objednávka po objednávce, zatímco prodejce vlastní firmy vidí svou historii měsíčních poplatků platformy (s možností zaplatit poplatek online přes Stripe).
+Souhrn napříč organizacemi se nachází v [Fakturace](/docs/en/admin/billing); tato stránka je místo, kde jednáte s jednou organizací.
 
-## Požadovaná oprávnění
+## Požadované oprávnění
 
 | Bit oprávnění | Název | Kdo ho má výchozí |
 |---|---|---|
@@ -18,54 +18,55 @@ Organizace bez aktivní strany vás přesměruje na `/admin/setup` (vlastník: `
 
 ## Prodejci na provizi (`smalljobs_commission`)
 
-### Přízkumné dlaždice
+### Souhrnné prvky
 
-- **Pokrok výplaty** - celková výplata tohoto měsíce oproti měsíčnímu limitu 12 000 Kč (`NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK`), zobrazena jako lišta pokroku.
-- **Udržováno**, **Přípustné**, **Zaplaceno**, **Zdrženo** - kumulativní součty v účtu.
+- **Pokrok výplaty** - celková výplata tohoto měsíce oproti měsíčnímu limitu 12 000 Kč (`NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK`), zobrazená jako lišta pokroku.
+- **Uložené**, **Eligible**, **Zaplacené**, **Zdržované** - kumulativní součty v účetní knize.
 
-### Tabulka účtu
+### Tabulka účetní knihy
 
-Každý řádek je položka provize z jedné objednávky (až 200 nejnovějších) s následujícími sloupci:
-Číslo objednávky, Brutto, DPH, Provize, Čistá výplata, Zdrženo, Udržováno do, Stav, Akce.
+Každý řádek představuje provizi z jedné objednávky (až 200 nejnovějších), s následujícími sloupci:
+Číslo objednávky, Brutto, DPH, Provize, Čistá k výplatě, Zdržované, Uložit do, Stav, Akce.
 
 | Stav | Význam |
 |---|---|
-| Udržováno | V rámci svého okna zadržení (`hold_until` v budoucnosti). 60denní zadržení chrání proti vrácením/chargebackům. |
-| Přípustné | `udržováno` v databázi, ale zadržení vypršelo - připraveno k výplatě. |
-| Zaplaceno | Už vyplaceno. |
-| Zrušeno | Zrušeno (např. objednávka byla vrácena); vyloučeno z součtů. |
+| Uložené | V rámci svého časového okna pro uložení (`hold_until` v budoucnosti). 60denní blokáda chrání proti vrácením/chargebackům. |
+| Eligible | `held` v databázi, ale blokáda vypršela - připraveno k výplatě. |
+| Zaplacené | Už bylo vyplaceno. |
+| Zvrácené | Zrušeno (např. objednávka byla vrácena); vyloučeno z součtů. |
 
 ### Uvolnění výplaty
 
-Na řádku **Přípustné** zadejte volitelný **referenční kód výplaty** (identifikátor vašeho bankovního převodu) a klikněte na **Označit jako zaplaceno** (chrání ho `confirm()`).
-To odešle `action=mark_paid`, což nastaví řádek účtu na `zaplaceno` s `paid_at`, `paid_by` a referencí - ale pouze pokud je řádek stále `udržováno` a patří vaší straně (ochrana proti dvojitému vyplatení).
+Na řádku **Eligible** zadejte volitelný **referenční kód výplaty** (identifikátor vašeho bankovního převodu) a klikněte na **Označit jako zaplacené** (je to chráněno funkcí `confirm()`).
+Tím se odešle `action=mark_paid`, což nastaví řádek účetní knihy na `paid` s `paid_at`, `paid_by` a referencí - ale pouze tehdy, pokud je řádek stále `held` a patří vaší straně (ochrana proti dvojitému vyplacení).
 
 ## Prodejci vlastní firmy (`own_company`)
 
-Místo účtu vykresluje tento režim `PlatformFeeHistory` pro až 24 měsíčních období fakturace.
-Kytka z Beskyd, která začíná v režimu vlastní firmy, by zde viděla své měsíční poplatky platformy ve výši 10 %.
+Místo účetní knihy tento režim vykresluje `PlatformFeeHistory` pro až 24 měsíčních období fakturace.
+Poplatek činí 10 % z měsíčního obratu, který klesá na zlevněné 5 % z celého měsíce, jakmile obrat překročí 29 900 Kč (obě sazby i práh lze přepsat pro každou organizaci).
+Kytka z Beskyd, která začíná v režimu vlastní firmy, by zde viděla své měsíční poplatky platformy.
 
-### Online platba měsíčního poplatku (Stripe)
+### Platba měsíčního poplatku online (Stripe)
 
-Akce **Zaplatit poplatek** odešle `action=pay_fee_online`, přečte `fee_amount` období z `eshop_billing_periods` a spustí sezení Stripe Checkout v CZK.
-Bydete přesměrováni na Stripe; po návratu stránka ověří, že se sezení pokladny skutečně dostalo do stavu `payment_status = "paid"` před jeho zaznamenáním k danému období.
+Akce **Zaplatit poplatek** odešle `action=pay_fee_online`, přečte `fee_amount` pro dané období z `eshop_billing_periods` a spustí se sesízení Stripe Checkout v CZK.
+Bydete přesměrováni na Stripe; po návratu stránka ověří, že se sesízení pokladny skutečně dostalo do stavu `payment_status = "paid"` před jeho zaznamenáním k danému období.
 Zrušení vás vrátí s upozorněním "platba zrušena".
 
-### Ruční označení zaplacení poplatku (pouze vlastník)
+### Označení zaplaceného poplatku manuálně (pouze vlastník)
 
 Potvrzení offline platby jako přijaté je rozhodnutí platformy, nikdy neorganizace.
-Pouze globální **vlastník** vidí **Označit poplatek jako zaplacený** (`action=mark_fee_paid_manual`), což označí poplatek období jako zaplacený prostřednictvím klienta s rolem služby bez online platby.
+Pouze globální **vlastník** vidí **Označit poplatek jako zaplacený** (`action=mark_fee_paid_manual`), což označí poplatek za dané období jako zaplacený prostřednictvím klientu service-role bez online platby.
 
 ## Data a úložiště (cloud)
 
 - **Tabulky:** `order_commission_ledger` (`gross_amount`, `tax_amount`, `commission_amount`, `net_payable`, `withheld_amount`, `status`, `hold_until`, `paid_at`, `paid_by`, `payout_reference`), `eshop_billing_periods` (`period_start`, `fee_amount`), `parties` (`seller_mode`).
 - **Služby:** `listBillingPeriods`, `markBillingPeriodFeePaid` (`billingPeriodService`); `createCheckoutSession`, `retrieveCheckoutSession` (integrace Stripe).
-- **Klient:** ruční označení zaplacení poplatku a potvrzení Stripe používají `createAdminClient()` (role služby); označení zaplaceno v účtu používá sezení klienta s ochranou straně/stavu.
+- **Klient:** Manuální zápisy zaplaceného poplatku a potvrzené Stripe používají `createAdminClient()` (service role); označení zaplacené výplaty používá sesízení klienta s ochranou stran/stavu.
 - **Komponenta:** `PlatformFeeHistory`.
 
 ## Související stránky
 
-- [Fakturace](/docs/admin/billing) - přehled napříč organizacemi a tlačítko Vyřešit, které zde skončí
-- [Organizace](/docs/admin/parties) - karta Režimu prodejce, která určuje, jaký pohled tato stránka zobrazuje
-- [Zprávy](/docs/admin/reports) - období fakturace a CSV pro daně z příjmu, které shrnuje stejné údaje
-- [Objednávky](/docs/admin/orders) - každá položka účtu provize odpovídá jedné objednávce
+- [Fakturace](/docs/en/admin/billing) - přehled napříč organizacemi a tlačítko Resolve, které zde přistane
+- [Organizace](/docs/en/admin/parties) - karta Režimu prodejce, která určuje, jaký pohled tato stránka zobrazuje
+- [Zprávy](/docs/en/admin/reports) - období fakturace a CSV pro daně, které shrnuje stejné údaje
+- [Objednávky](/docs/en/admin/orders) - každý záznam v účetní knize provize odpovídá jedné objednávce
