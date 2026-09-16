@@ -1,0 +1,8 @@
+{
+  "agent": "admin-auditor",
+  "slice": "categories",
+  "findings": [
+    {"severity": "P2", "title": "missing aria-expanded on category tree toggle", "file": "website/src/pages/admin/categories/index.astro:88", "autoland": true},
+    {"severity": "P1", "title": "N+1 product count per category without batch query", "file": "shared/services/categoryService.ts:42", "autoland": false}
+  ]
+}

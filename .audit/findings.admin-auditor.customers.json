@@ -1,0 +1,8 @@
+{
+  "agent": "admin-auditor",
+  "slice": "customers",
+  "findings": [
+    {"severity": "P2", "title": "customer email link missing rel noopener on external mailto fallback", "file": "website/src/pages/admin/customers/index.astro:64", "autoland": true},
+    {"severity": "P1", "title": "customers list query lacks party_id scoping when search term present", "file": "shared/services/customerService.ts:38", "autoland": false}
+  ]
+}

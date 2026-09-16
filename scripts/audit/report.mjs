@@ -8,7 +8,11 @@ const files = fs.readdirSync(auditDir).filter(f => f.startsWith("findings.") && 
 let all = [];
 for (const f of files) {
   const data = JSON.parse(fs.readFileSync(path.join(auditDir, f), "utf8"));
-  all = all.concat(data.findings || []);
+  const agent = data.agent || "unknown";
+  const slice = data.slice || "unknown";
+  for (const finding of (data.findings || [])) {
+    all.push({ ...finding, agent: finding.agent || agent, slice: finding.slice || slice });
+  }
 }
 const p0 = all.filter(x => x.severity === "P0");
 const p1 = all.filter(x => x.severity === "P1");

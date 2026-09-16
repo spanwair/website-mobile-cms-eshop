@@ -1,0 +1,8 @@
+{
+  "agent": "docs-tutorial-auditor",
+  "slice": "cms-settings",
+  "findings": [
+    {"severity": "P2", "title": "CMS page slug help text missing link to docs slug convention", "file": "website/src/pages/admin/cms/index.astro:61", "autoland": true},
+    {"severity": "P1", "title": "docs/src/content/docs/admin/cms*.md drift: storeConfigService fields not documented", "file": "docs/src/content/docs/admin/cms.md:18", "autoland": false}
+  ]
+}

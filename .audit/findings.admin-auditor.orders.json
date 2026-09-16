@@ -1,0 +1,8 @@
+{
+  "agent": "admin-auditor",
+  "slice": "orders",
+  "findings": [
+    {"severity": "P2", "title": "missing i18n key for order status badge fallback", "file": "website/src/pages/admin/orders/index.astro:115", "autoland": true},
+    {"severity": "P1", "title": "orders query missing index on party_id+status composite", "file": "shared/services/orderService.ts:67", "autoland": false}
+  ]
+}

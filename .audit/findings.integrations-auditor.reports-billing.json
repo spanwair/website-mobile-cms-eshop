@@ -1,0 +1,8 @@
+{
+  "agent": "integrations-auditor",
+  "slice": "reports-billing",
+  "findings": [
+    {"severity": "P2", "title": "billing period chart placeholder missing empty-state a11y announcement", "file": "website/src/pages/admin/billing/index.astro:133", "autoland": true},
+    {"severity": "P1", "title": "commission ledger aggregation recomputed per request without materialized view or cache", "file": "shared/services/commissionLedgerService.ts:58", "autoland": false}
+  ]
+}

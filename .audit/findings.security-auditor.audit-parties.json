@@ -1,0 +1,8 @@
+{
+  "agent": "security-auditor",
+  "slice": "audit-parties",
+  "findings": [
+    {"severity": "P2", "title": "audit log timestamp column missing locale-aware formatting helper", "file": "website/src/pages/admin/audit/index.astro:71", "autoland": true},
+    {"severity": "P1", "title": "auditService queries audit_log without party_id filter when filtering by user", "file": "shared/services/auditService.ts:44", "autoland": false}
+  ]
+}

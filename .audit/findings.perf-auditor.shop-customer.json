@@ -1,0 +1,8 @@
+{
+  "agent": "perf-auditor",
+  "slice": "shop-customer",
+  "findings": [
+    {"severity": "P2", "title": "shop product grid images missing loading=lazy and decoding async", "file": "website/src/pages/shop/index.astro:92", "autoland": true},
+    {"severity": "P1", "title": "shop product listing fetches images per product (N+1) instead of joining product_images", "file": "website/src/pages/shop/index.astro:44", "autoland": false}
+  ]
+}

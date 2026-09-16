@@ -1,0 +1,8 @@
+{
+  "agent": "security-auditor",
+  "slice": "users-roles",
+  "findings": [
+    {"severity": "P2", "title": "role checkbox group missing fieldset legend for a11y", "file": "website/src/pages/admin/roles/index.astro:54", "autoland": true},
+    {"severity": "P1", "title": "canAssignRole check not covering party-scoped ESHOP_ADMIN elevation via invite link", "file": "shared/services/permissionsService.ts:29", "autoland": false}
+  ]
+}
