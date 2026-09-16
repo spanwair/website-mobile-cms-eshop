@@ -113,6 +113,15 @@ Globální role **Administrátor** (4) může číst a zapisovat katalogová dat
 
 Pokud spravujete platformu, kde musí být každá organizace zcela izolována i od platformních administrátorů, přiřaďte všem manažerům role Administrátora eshopu s vlastními rolemi namísto globálních administrátorů.
 
+## Ověření Fleet auditu (Task 5)
+
+Bezpečnostní audit ověřuje izolaci nájemců dvěma E2E repro testy v `website/tests/e2e/36-audit-security.spec.ts`:
+
+- `cross-tenant product access is blocked` - přihlášený admin bez členství v `PARTY2` nesmí vidět produkty druhé organizace. Ověřuje RLS + `requireAdminCtx` + cookie `activePartyId`.
+- `service_role is not exposed to client` - veřejná stránka `/shop` nesmí obsahovat řetězec `service_role`. Ověřuje, že klient používá pouze `anon` klíč.
+
+Dodatečně migrace `20260917000001_audit_indexes.sql` přidává chybějící indexy `idx_orders_party_id`, `idx_products_party_id`, `idx_inventory_items_party_id` (všechny `IF NOT EXISTS`). Existující kompozitní indexy (`idx_orders_party_status`, `idx_products_party_status`, `idx_inventory_party_product`) již pokrývají hlavní dotazy, nové indexy kryjí filtr pouze podle `party_id` bez dalšího predikátu. Stripe webhook (`website/src/pages/api/stripe/webhook.ts`) používá `createAdminClient()` pouze na serveru - není vystaven klientovi.
+
 ## Související
 
 - [Přehled API](/docs/api/overview) - jak připojit svůj eshop k API
