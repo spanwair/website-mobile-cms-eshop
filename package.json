@@ -12,6 +12,10 @@
     "build:android:dev": "./scripts/build-dev-android.sh",
     "build:android:prod": "./scripts/build-production.sh",
     "build:android:prod:aab": "./scripts/build-production.sh --aab",
-    "verify": "./scripts/verify-tooling.sh"
+    "verify": "./scripts/verify-tooling.sh",
+    "audit:rls": "./scripts/audit/scan-rls.sh",
+    "audit:perms": "./scripts/audit/scan-permissions.sh",
+    "audit:fleet": "./scripts/audit/fleet.sh",
+    "audit:report": "node ./scripts/audit/report.mjs"
   }
 }
