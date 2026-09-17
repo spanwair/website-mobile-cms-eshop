@@ -18,6 +18,20 @@ VALUES
   ('00000000-0000-0000-0000-000000000003', 'Bob Demo',    1)
 ON CONFLICT (id) DO UPDATE SET display_name = EXCLUDED.display_name, role = EXCLUDED.role;
 
+-- Platform owners (local dev). Registered here so owner status survives `db reset` without a
+-- manual `UPDATE profiles SET role=8`. The enforce_platform_owner_role trigger
+-- (20260917000002_platform_owner_registry) pins any matching profile to role 8 on write. To make
+-- someone an owner locally, add their email here — do NOT hand-edit profiles.role.
+INSERT INTO platform_owners (email, note) VALUES
+  ('ysdxysdxysdx@gmail.com', 'Jan — primary local owner'),
+  ('owner@test.com',         'E2E owner fixture')
+ON CONFLICT (email) DO NOTHING;
+
+-- Re-pin any already-existing profiles to owner (accounts created by real signup, not this seed).
+UPDATE profiles p SET role = 8
+FROM platform_owners o
+WHERE lower(p.email) = lower(o.email) AND p.role <> 8;
+
 -- Mock items
 INSERT INTO items (id, title, description, status, created_by)
 VALUES

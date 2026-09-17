@@ -2,6 +2,7 @@
 import Layout from "../layout/Layout.astro";
 import Sidebar from "./Sidebar.astro";
 import PartySwitcher from "./PartySwitcher.astro";
+import HomepageMapButton from "./HomepageMapButton.astro";
 import MediaPickerModal from "./MediaPickerModal.astro";
 
 interface Props {
@@ -24,6 +25,7 @@ const storeHref = activeParty ? `/eshop-${activeParty.slug}` : null;
       <header class="cms-header">
         <h1 class="cms-title">{title}</h1>
         <div class="cms-header-right">
+          {partyId && <HomepageMapButton />}
           <PartySwitcher parties={parties} partyId={partyId} />
         </div>
       </header>

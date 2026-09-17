@@ -1,11 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { recomputeBillingPeriod } from "./billingPeriodService";
-import {
-  SELLER_MODE,
-  COMMISSION_BREAK_EVEN_CZK,
-} from "../constants/sellerMode";
-import { autoFeeMode, type BillingFeeMode } from "../utils/billingFeeCalc";
+import { SELLER_MODE } from "../constants/sellerMode";
+import { autoFeeMode, resolveFeeSchedule, type BillingFeeMode } from "../utils/billingFeeCalc";
 import {
   getCalendarMonthPeriod,
   isPeriodElapsed,
@@ -17,6 +14,9 @@ export interface FeeTierParty {
   billing_email: string | null;
   lang: string | null;
   seller_mode: string;
+  commission_rate_override?: number | string | null;
+  reduced_commission_rate_override?: number | string | null;
+  commission_threshold_override?: number | string | null;
 }
 
 export interface FeeTierEvaluation {
@@ -30,6 +30,7 @@ export interface FeeTierEvaluation {
   changed: boolean;
   alreadyEvaluated: boolean; // true if a prior cron run already decided this exact month
   grossRevenueKc: number;
+  thresholdKc: number; // the party's effective reduced-rate threshold used for this decision
 }
 
 // Last mode this party was actually switched to/confirmed at (the audit trail IS the state --
@@ -50,8 +51,8 @@ export async function getCurrentFeeTier(
   return (data?.new_fee_mode as BillingFeeMode | undefined) ?? "percentage";
 }
 
-// Evaluates ONE own_company party's just-closed calendar month against COMMISSION_BREAK_EVEN_CZK
-// (shared/utils/billingFeeCalc.ts decideAutoFeeMode) and, only if the tier actually changes,
+// Evaluates ONE own_company party's just-closed calendar month against its effective reduced-rate
+// threshold (shared/utils/billingFeeCalc.ts autoFeeMode) and, only if the tier actually changes,
 // persists the new fee_mode via recomputeBillingPeriod -- the SAME write path the manual admin
 // UI in /admin/reports uses, so there is exactly one place fee numbers get computed.
 //
@@ -91,9 +92,10 @@ export async function evaluateFeeTierForClosedPeriod(
   if (totalsErr) throw new Error(totalsErr.message);
 
   const grossRevenueKc = Number(totals.gross_revenue);
+  const schedule = resolveFeeSchedule(party);
   // Same determination the live /admin/reports recompute uses (autoFeeMode), so the tier the
   // cron records always matches what recomputeBillingPeriod persists for the month.
-  const newFeeMode = autoFeeMode(grossRevenueKc, party.seller_mode);
+  const newFeeMode = autoFeeMode(grossRevenueKc, party.seller_mode, schedule);
   const changed = newFeeMode !== previousFeeMode;
 
   const { error: recomputeErr } = await recomputeBillingPeriod(
@@ -114,7 +116,7 @@ export async function evaluateFeeTierForClosedPeriod(
       new_fee_mode: newFeeMode,
       changed,
       gross_revenue: grossRevenueKc,
-      threshold_amount: COMMISSION_BREAK_EVEN_CZK,
+      threshold_amount: schedule.thresholdKc,
     });
 
   if (insertErr) {
@@ -137,6 +139,7 @@ export async function evaluateFeeTierForClosedPeriod(
         changed: false, // another run already owns the notification for this exact month
         alreadyEvaluated: true,
         grossRevenueKc: Number(existing.gross_revenue),
+        thresholdKc: schedule.thresholdKc,
       };
     }
     throw new Error(insertErr.message);
@@ -153,6 +156,7 @@ export async function evaluateFeeTierForClosedPeriod(
     changed,
     alreadyEvaluated: false,
     grossRevenueKc,
+    thresholdKc: schedule.thresholdKc,
   };
 }
 

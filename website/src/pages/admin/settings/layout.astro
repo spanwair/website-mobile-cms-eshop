@@ -6,6 +6,7 @@ import { fetchStoreConfig, updateStoreConfig } from "@shared/services/storeConfi
 import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { SECTION_REGISTRY, sanitizeLayout } from "@/lib/pageComposer";
+import type { SectionKey } from "@shared/types";
 import { useT } from "@/lib/i18n";
 
 const supabase = createSupabase(Astro);
@@ -21,6 +22,8 @@ const partySlug = parties.find((p) => p.id === partyId)?.slug;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redirect("/admin");
 const t = useT(Astro);
 
+const config = await fetchStoreConfig(supabase, partyId);
+let layout = sanitizeLayout(config?.homepage_layout);
 let success = "";
 
 if (Astro.request.method === "POST") {
@@ -30,12 +33,27 @@ if (Astro.request.method === "POST") {
     .map((sec) => ({ key: sec.key, order: Number(form.get(`order_${sec.key}`) ?? 0) }))
     .sort((a, b) => a.order - b.order)
     .map((s) => s.key);
-  await updateStoreConfig(supabase, partyId, { homepage_layout: included });
+  // "product_grid" is the shop-listing marker — it has no registry row and is not shown here, so
+  // re-insert it at the same spot relative to the sections that preceded it. Without this, saving
+  // the form would drop the marker and reset the listing position chosen during onboarding.
+  const gridIdx = layout.indexOf("product_grid");
+  let next: SectionKey[] = included;
+  if (gridIdx !== -1) {
+    const beforeGrid = layout.slice(0, gridIdx).filter((k) => included.includes(k)).length;
+    next = [...included.slice(0, beforeGrid), "product_grid", ...included.slice(beforeGrid)];
+  }
+  await updateStoreConfig(supabase, partyId, { homepage_layout: next });
+  layout = sanitizeLayout(next);
   success = t.admin.settings.savedSuccess;
 }
 
-const config = await fetchStoreConfig(supabase, partyId);
-const layout = sanitizeLayout(config?.homepage_layout);
+// Render rows in the saved order so a reorder done via onboarding drag is mirrored here: included
+// sections first (in their stored order), then any excluded sections in registry order.
+const orderedKeys: SectionKey[] = [
+  ...layout.filter((k) => k !== "product_grid" && SECTION_REGISTRY.some((s) => s.key === k)),
+  ...SECTION_REGISTRY.filter((s) => !layout.includes(s.key)).map((s) => s.key),
+];
+const orderedSections = orderedKeys.map((k) => SECTION_REGISTRY.find((s) => s.key === k)!);
 ---
 
 <CmsLayout title={t.admin.settings.title} userPermissions={permissions} currentPath="/admin/settings/layout" parties={ctx.parties} partyId={ctx.partyId}>
@@ -46,42 +64,59 @@ const layout = sanitizeLayout(config?.homepage_layout);
     <h2 class="section-title">{t.admin.settings.layoutTitle}</h2>
     <p class="hint">{t.admin.settings.layoutHint}</p>
     <form method="POST" class="layout-form">
-      {SECTION_REGISTRY.map((sec) => {
-        const included = layout.includes(sec.key);
-        const orderIdx = layout.indexOf(sec.key);
-        return (
-          <div class="layout-row">
-            <label class="check-label">
-              <input type="checkbox" name={`include_${sec.key}`} checked={included} />
-              {sec.label}
-            </label>
-            <div class="order-field">
-              <span class="order-label">{t.admin.settings.layoutOrder}</span>
-              <input
-                type="number"
-                name={`order_${sec.key}`}
-                value={orderIdx >= 0 ? orderIdx : SECTION_REGISTRY.length}
-                min="0"
-                class="order-input"
-              />
+      <div id="layout-list" class="layout-list">
+        {orderedSections.map((sec) => {
+          const included = layout.includes(sec.key);
+          const orderIdx = orderedKeys.indexOf(sec.key);
+          return (
+            <div class="layout-row" data-key={sec.key}>
+              <div class="row-main">
+                <button type="button" class="drag-handle" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>
+                <label class="check-label">
+                  <input type="checkbox" name={`include_${sec.key}`} checked={included} />
+                  {sec.label}
+                </label>
+              </div>
+              <div class="order-field">
+                <span class="order-label">{t.admin.settings.layoutOrder}</span>
+                <input
+                  type="number"
+                  name={`order_${sec.key}`}
+                  value={orderIdx}
+                  min="0"
+                  class="order-input"
+                />
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
       <button type="submit" class="btn btn-primary">{t.common.saveChanges}</button>
     </form>
   </div>
 </CmsLayout>
+
+<script>
+  import { initLayoutReorder } from "@/scripts/layoutReorder";
+  initLayoutReorder();
+</script>
 
 <style>
   .alert-success { background:rgba(34,197,94,0.08); border:1px solid #22c55e; border-radius:8px; padding:12px 16px; color:#16a34a; margin-bottom:16px; font-size:14px; }
   .section-title { font-size:15px; font-weight:700; margin-bottom:8px; }
   .hint { font-size:13px; color:var(--text-muted); margin-bottom:20px; }
   .layout-form { display:flex; flex-direction:column; gap:12px; }
-  .layout-row { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--bg-subtle); border-radius:var(--radius-sm); }
+  .layout-list { display:flex; flex-direction:column; gap:12px; }
+  .layout-row { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--bg-subtle); border-radius:var(--radius-sm); border:1px solid transparent; transition:border-color .12s, background .12s, opacity .12s; }
+  .layout-row.is-dragging { opacity:.65; border-color:var(--accent-primary, #4F46E5); background:var(--bg-surface); box-shadow:0 4px 12px rgba(0,0,0,.08); }
+  .row-main { display:flex; align-items:center; gap:8px; min-width:0; }
+  .drag-handle { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border:1px solid var(--border); border-radius:6px; background:var(--bg-surface); cursor:grab; font-size:14px; line-height:1; color:var(--text-muted); flex-shrink:0; user-select:none; touch-action:none; }
+  .drag-handle:active { cursor:grabbing; }
+  .is-dragging-active { cursor:grabbing !important; user-select:none; }
+  .is-dragging-active .drag-handle { cursor:grabbing; }
   .check-label { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; }
   .check-label input { width:auto; }
-  .order-field { display:flex; align-items:center; gap:8px; }
+  .order-field { display:flex; align-items:center; gap:8px; flex-shrink:0; }
   .order-label { font-size:12px; color:var(--text-muted); }
   .order-input { width:64px; }
 </style>

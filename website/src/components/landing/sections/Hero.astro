@@ -35,27 +35,17 @@ const commissionPct = Math.round(COMMISSION_RATE * 100);
 </section>
 
 <script>
-  const form = document.getElementById("hero-lead-form");
-  const msg = document.getElementById("hero-form-msg");
-  const originalMsg = msg?.textContent ?? "";
+  const form = document.getElementById("hero-lead-form") as HTMLFormElement | null;
 
   if (form) {
-    form.addEventListener("submit", async (e) => {
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
       const emailInput = form.elements.namedItem("email") as HTMLInputElement | null;
-      const email = emailInput ? emailInput.value : "";
+      const email = emailInput ? emailInput.value.trim() : "";
 
-      try {
-        const res = await fetch("/api/landing/lead", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
-        if (msg) msg.textContent = res.ok ? "✓" : originalMsg;
-        if (res.ok && emailInput) emailInput.value = "";
-      } catch {
-        if (msg) msg.textContent = originalMsg;
-      }
+      const params = new URLSearchParams({ mode: "signup" });
+      if (email) params.set("email", email);
+      window.location.href = `/login?${params.toString()}`;
     });
   }
 </script>

@@ -1,0 +1,47 @@
+---
+// Public full text of the komisionářská smlouva (§2455+ ObčZ) linked from the footer legal
+// column. Clauses are rendered from the SAME source the admin seller-mode UI shows
+// (t.admin.parties.sellerMode.agreementTerms) — never duplicate the legal text here.
+// Each clause is "N. Heading. Body…"; split into heading + body so it matches the h2/p
+// layout of terms.astro and privacy.astro.
+import LandingLayout from "../components/landing/LandingLayout.astro";
+import PageHero from "../components/landing/PageHero.astro";
+import { useT } from "../lib/i18n";
+
+const t = useT(Astro);
+const page = t.landing.commissionairePage;
+const agreement = t.admin.parties.sellerMode;
+
+const clauses = agreement.agreementTerms.map((clause) => {
+  const match = clause.match(/^(\d+\.\s[^.]+)\.\s*(.*)$/s);
+  return match ? { heading: match[1], body: match[2] } : { heading: clause, body: "" };
+});
+---
+
+<LandingLayout title={`${page.title} — Mamtodoma`} description={page.sub}>
+  <PageHero eyebrow={page.eyebrow} title={page.title} lead={page.sub} />
+  <section class="landing" style="padding-top:0">
+    <div class="container-lg legal-content">
+      <p class="legal-updated">{page.updated}</p>
+      <p class="legal-disclaimer">{page.disclaimer}</p>
+      {clauses.map((s) => (
+        <div class="legal-section">
+          <h2>{s.heading}</h2>
+          <p>{s.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+</LandingLayout>
+
+<style>
+  .legal-content { max-width: 720px; margin-inline: auto; }
+  .legal-updated { font-size: 13px; color: var(--text-placeholder); margin-bottom: 16px; }
+  .legal-disclaimer {
+    font-size: 14px; color: var(--text-muted); background: var(--bg-subtle);
+    border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 40px; line-height: 1.6;
+  }
+  .legal-section { margin-bottom: 28px; }
+  .legal-section h2 { font-size: 17px; font-weight: 700; margin-bottom: 8px; font-family: inherit; }
+  .legal-section p { color: var(--text-muted); line-height: 1.7; font-size: 15px; }
+</style>

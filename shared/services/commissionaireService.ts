@@ -32,7 +32,7 @@ async function upsertSaleNoticePage(client: SupabaseClient, partyId: string, par
 
 // Bump when the commissionaire agreement text changes materially — re-acceptance is only
 // required going forward for new agreements, existing ones keep the version they accepted.
-export const CURRENT_COMMISSIONAIRE_TERMS_VERSION = "2026-08-06";
+export const CURRENT_COMMISSIONAIRE_TERMS_VERSION = "2026-09-16";
 
 export async function fetchCommissionaireAgreement(
   client: SupabaseClient,

@@ -76,7 +76,7 @@ const sharedVidItems = sharedImages.filter((m) => m.media_type === "video");
   )}
 </div>
 
-<div class="card media-card" style="margin-top:16px">
+<div class="card media-card">
   <h3 class="media-title">
     {t.admin.media.imagesTitle}
     {variantId && variantName && <span class="scope-hint">{t.admin.media.imagesForVariant.replace("{{name}}", variantName)}</span>}
@@ -149,7 +149,7 @@ const sharedVidItems = sharedImages.filter((m) => m.media_type === "video");
 </div>
 
 <style>
-  .media-card { max-width:720px; margin-top:16px; }
+  .media-card { max-width:none; width:100%; min-width:0; }
   .media-title { margin:0 0 16px; font-size:16px; font-weight:600; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
   .scope-hint { font-size:12px; font-weight:500; color:var(--text-muted); }
   .media-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:20px; }

@@ -23,15 +23,8 @@ UPDATE store_configs SET
 WHERE party_id = 'a0000000-0000-0000-0000-000000000003';
 
 -- Footer badges ------------------------------------------------------------------------------
-INSERT INTO footer_badges (party_id, kind, label, icon, sort_order) VALUES
-  ('a0000000-0000-0000-0000-000000000003', 'shipping', 'Česká pošta', '✉️', 1),
-  ('a0000000-0000-0000-0000-000000000003', 'shipping', 'Zásilkovna', '📦', 2),
-  ('a0000000-0000-0000-0000-000000000003', 'shipping', 'Osobní předání', '🤝', 3);
-
-INSERT INTO footer_badges (party_id, kind, label, icon, sort_order) VALUES
-  ('a0000000-0000-0000-0000-000000000003', 'payment', 'Bankovním převodem', '🏦', 1),
-  ('a0000000-0000-0000-0000-000000000003', 'payment', 'Dobírkou', '📦', 2);
-
+-- shipping/payment badges are the platform-managed integrated set (PPL, Zásilkovna, card
+-- payment) seeded by the on_party_created_seed_footer_badges trigger — not listed here.
 INSERT INTO footer_badges (party_id, kind, label, icon, url, sort_order) VALUES
   ('a0000000-0000-0000-0000-000000000003', 'social', 'Facebook', '📘', 'https://facebook.com/kytkazbeskyd', 1),
   ('a0000000-0000-0000-0000-000000000003', 'social', 'Instagram', '📷', 'https://instagram.com/kytkazbeskyd', 2);

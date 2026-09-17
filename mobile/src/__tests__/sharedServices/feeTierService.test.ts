@@ -23,7 +23,7 @@ const party = {
 const partiesSeed = { [party.id]: { seller_mode: party.seller_mode } };
 
 describe("evaluateFeeTierForClosedPeriod - bod 5 auto switch", () => {
-  it("switches percentage -> fixed when the closed month's revenue is above the threshold", async () => {
+  it("switches percentage -> reduced when the closed month's revenue is above the threshold", async () => {
     const state = createFakeState({
       grossRevenueKc: 35000,
       parties: partiesSeed,
@@ -38,7 +38,7 @@ describe("evaluateFeeTierForClosedPeriod - bod 5 auto switch", () => {
     );
 
     expect(result?.previousFeeMode).toBe("percentage");
-    expect(result?.newFeeMode).toBe("fixed");
+    expect(result?.newFeeMode).toBe("reduced");
     expect(result?.changed).toBe(true);
     expect(result?.alreadyEvaluated).toBe(false);
   });
@@ -62,7 +62,7 @@ describe("evaluateFeeTierForClosedPeriod - bod 5 auto switch", () => {
     expect(result?.changed).toBe(false);
   });
 
-  it("switches fixed -> percentage the month after revenue drops back down", async () => {
+  it("switches reduced -> percentage the month after revenue drops back down", async () => {
     const state = createFakeState({
       grossRevenueKc: 40000,
       parties: partiesSeed,
@@ -70,7 +70,7 @@ describe("evaluateFeeTierForClosedPeriod - bod 5 auto switch", () => {
     const client = createFakeClient(state) as any;
 
     await evaluateFeeTierForClosedPeriod(client, party, PAST_YEAR, PAST_MONTH0);
-    expect(await getCurrentFeeTier(client, party.id)).toBe("fixed");
+    expect(await getCurrentFeeTier(client, party.id)).toBe("reduced");
 
     state.grossRevenueKc = 5000;
     const nextMonth = await evaluateFeeTierForClosedPeriod(
@@ -80,7 +80,7 @@ describe("evaluateFeeTierForClosedPeriod - bod 5 auto switch", () => {
       PAST_MONTH0 + 1,
     );
 
-    expect(nextMonth?.previousFeeMode).toBe("fixed");
+    expect(nextMonth?.previousFeeMode).toBe("reduced");
     expect(nextMonth?.newFeeMode).toBe("percentage");
     expect(nextMonth?.changed).toBe(true);
   });
@@ -149,6 +149,6 @@ describe("evaluateFeeTierForClosedPeriod - bod 5 auto switch", () => {
 
     expect(second?.alreadyEvaluated).toBe(true);
     expect(second?.changed).toBe(false);
-    expect(second?.newFeeMode).toBe("fixed"); // still the first run's decision, not re-derived
+    expect(second?.newFeeMode).toBe("reduced"); // still the first run's decision, not re-derived
   });
 });

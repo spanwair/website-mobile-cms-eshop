@@ -1,0 +1,159 @@
+---
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import OnboardingStepper from "@/components/cms/OnboardingStepper.astro";
+import { createSupabase } from "@/lib/supabase";
+import { fetchStoreConfig } from "@shared/services/storeConfigService";
+import { requireAdminCtx } from "@/lib/admin";
+import { ROLE } from "@shared/constants/permissions";
+import { COLOR_GROUPS } from "@/lib/colorGroups";
+import { FONT_OPTIONS } from "@/lib/fontOptions";
+import { useT } from "@/lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (ctx.role < ROLE.ADMIN) return Astro.redirect("/admin/setup");
+if (!ctx.partyId) return Astro.redirect("/admin/parties/new?onboarding=1");
+const { partyId } = ctx;
+const t = useT(Astro);
+const d = t.admin.onboardingWizard.design;
+
+const config = await fetchStoreConfig(supabase, partyId);
+const initial = {
+  color_primary: config?.color_primary ?? "#4F46E5",
+  color_secondary: config?.color_secondary ?? "#7C3AED",
+  color_background: config?.color_background ?? "#FFFFFF",
+  color_surface: config?.color_surface ?? "#F6F7FB",
+  color_text_primary: config?.color_text_primary ?? "#1E2230",
+  color_text_secondary: config?.color_text_secondary ?? "#5A6072",
+  color_border: config?.color_border ?? "#E5E7F0",
+  font_heading: config?.font_heading ?? "Inter",
+  font_body: config?.font_body ?? "Inter",
+};
+type Field = keyof typeof initial;
+const colorFields: [Field, string][] = [
+  ["color_primary", d.colorPrimary], ["color_secondary", d.colorSecondary],
+  ["color_background", d.colorBackground], ["color_surface", d.colorSurface],
+  ["color_text_primary", d.colorTextPrimary], ["color_text_secondary", d.colorTextSecondary],
+  ["color_border", d.colorBorder],
+];
+---
+
+<CmsLayout title={d.title} userPermissions={0} currentPath="/admin/onboarding" parties={ctx.parties} partyId={partyId}>
+  <OnboardingStepper active={2} labels={{ org: t.admin.onboardingWizard.welcomeStep1Title.replace(/^1\.\s*/, ""), design: d.stepperLabel, catalogue: d.stepperCatalogue }} />
+
+  <div class="design-head">
+    <h1 class="design-title">{d.title}</h1>
+    <p class="design-intro">{d.intro}</p>
+    <span class="save-state" id="save-state" data-saving={d.saving} data-saved={d.saved}></span>
+  </div>
+
+  <div class="design-grid" id="design-root"
+       data-groups={JSON.stringify(COLOR_GROUPS)} data-party={partyId}
+       data-next={`/admin/parties/${partyId}?onboarding=1`}>
+    {colorFields.map(([name]) => <input type="hidden" id={`in_${name}`} value={initial[name]} />)}
+    <input type="hidden" id="in_font_heading" value={initial.font_heading} />
+    <input type="hidden" id="in_font_body" value={initial.font_body} />
+
+    <section class="preview-wrap">
+      <div class="browser-bar"><span></span><span></span><span></span><em>storefront</em></div>
+      <iframe id="pb-frame" src="/admin/onboarding/preview" title="preview" loading="eager"></iframe>
+      <p class="preview-hint">{d.dragHint}</p>
+    </section>
+
+    <aside class="panel">
+      <div class="panel-card">
+        <h3 class="panel-title">{d.colorGroupsTitle}</h3>
+        <div class="groups" id="groups">
+          {COLOR_GROUPS.map((g) => (
+            <button type="button" class="group" data-key={g.key} title={g.label}>
+              <span class="mini">
+                <i style={`background:${g.color_primary}`}></i>
+                <i style={`background:${g.color_secondary}`}></i>
+                <i style={`background:${g.color_surface}`}></i>
+                <i style={`background:${g.color_text_primary}`}></i>
+              </span>
+              <span class="group-label">{g.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <details class="panel-card">
+        <summary class="panel-title">{d.customColorsTitle}</summary>
+        <div class="custom-colors">
+          {colorFields.map(([name, label]) => (
+            <label class="cc-row">
+              <span>{label}</span>
+              <input type="color" class="cc-swatch" data-target={name} value={initial[name]} />
+            </label>
+          ))}
+        </div>
+      </details>
+
+      <div class="panel-card">
+        <h3 class="panel-title">{d.fontsTitle}</h3>
+        <label class="font-row">
+          <span>{d.fontHeading}</span>
+          <select id="sel_font_heading">
+            {FONT_OPTIONS.map((f) => <option value={f.value} selected={f.value === initial.font_heading}>{f.label}</option>)}
+          </select>
+        </label>
+        <label class="font-row">
+          <span>{d.fontBody}</span>
+          <select id="sel_font_body">
+            {FONT_OPTIONS.map((f) => <option value={f.value} selected={f.value === initial.font_body}>{f.label}</option>)}
+          </select>
+        </label>
+      </div>
+
+      <div class="panel-actions">
+        <a href="/admin/parties/new?onboarding=1" class="btn btn-ghost">{t.common.back}</a>
+        <button type="button" class="btn btn-primary" id="publish-btn">{d.continueBtn}</button>
+      </div>
+    </aside>
+  </div>
+</CmsLayout>
+
+<script>
+  import { initOnboardingDesign } from "@/scripts/onboardingDesign";
+  initOnboardingDesign();
+</script>
+
+<style>
+  .design-head { margin-bottom:16px; }
+  .design-title { font-size:22px; font-weight:800; margin:0 0 6px; }
+  .design-intro { font-size:14px; color:var(--text-muted); margin:0; max-width:680px; line-height:1.6; }
+  .save-state { display:inline-block; font-size:12px; color:var(--text-muted); margin-top:6px; min-height:16px; }
+  .design-grid { display:grid; grid-template-columns:1fr 340px; gap:20px; align-items:start; }
+  @media(max-width:960px){ .design-grid{ grid-template-columns:1fr; } }
+
+  .preview-wrap { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--bg-subtle); }
+  .browser-bar { display:flex; align-items:center; gap:6px; padding:10px 14px; background:var(--bg-surface); border-bottom:1px solid var(--border); }
+  .browser-bar span { width:10px; height:10px; border-radius:50%; background:var(--border); }
+  .browser-bar em { margin-left:10px; font-size:12px; color:var(--text-muted); font-style:normal; }
+  #pb-frame { width:100%; height:1400px; border:0; display:block; background:#fff; overflow:hidden; }
+  .preview-hint { font-size:12px; color:var(--text-muted); padding:8px 14px; margin:0; }
+
+  .panel { display:flex; flex-direction:column; gap:14px; position:sticky; top:16px; }
+  .panel-card { border:1px solid var(--border); border-radius:12px; padding:14px; background:var(--bg-surface); }
+  .panel-title { font-size:13px; font-weight:700; margin:0 0 12px; cursor:default; }
+  details.panel-card .panel-title { cursor:pointer; margin:0; }
+  details.panel-card[open] .panel-title { margin-bottom:12px; }
+  .groups { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+  .group { display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--bg-page); cursor:pointer; text-align:left; }
+  .group.active { border-color:var(--accent-primary); box-shadow:0 0 0 1px var(--accent-primary); }
+  .group .mini { display:inline-flex; border-radius:4px; overflow:hidden; flex-shrink:0; }
+  .group .mini i { width:10px; height:20px; display:block; }
+  .group-label { font-size:11px; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .custom-colors { display:flex; flex-direction:column; gap:8px; }
+  .cc-row, .font-row { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:13px; }
+  .font-row + .font-row { margin-top:10px; }
+  .cc-swatch { width:44px; height:30px; padding:2px; cursor:pointer; }
+  .font-row select { flex:1; max-width:190px; }
+  .panel-actions { display:flex; gap:10px; justify-content:flex-end; }
+</style>

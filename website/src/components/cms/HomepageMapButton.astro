@@ -1,0 +1,72 @@
+---
+import { BLOCK_MAP } from "@/lib/homepageBlockMap";
+import { useT } from "@/lib/i18n";
+
+const t = useT(Astro);
+const d = t.admin.onboardingWizard.design;
+const extra: Record<string, string> = {
+  header: d.blockHeader, product_grid: d.blockProductGrid, footer: d.blockFooter,
+};
+function label(key: string): string {
+  return (d.sections as Record<string, string>)[key] ?? extra[key] ?? key;
+}
+---
+
+<button type="button" class="map-btn" id="hp-map-btn" title={d.mapTitle} aria-label={d.mapTitle}>ⓘ</button>
+
+<div class="map-overlay" id="hp-map-overlay" hidden>
+  <div class="map-modal" role="dialog" aria-modal="true">
+    <div class="map-modal-head">
+      <div>
+        <h2 class="map-modal-title">{d.mapTitle}</h2>
+        <p class="map-modal-intro">{d.mapIntro}</p>
+      </div>
+      <button type="button" class="map-close" id="hp-map-close" aria-label="×">×</button>
+    </div>
+    <div class="map-blocks">
+      {BLOCK_MAP.map((b) => (
+        <a href={b.adminPath} class:list={["map-block", { fixed: !b.reorderable }]}>
+          <span class="map-block-label">{label(b.key)}</span>
+          <span class="map-block-path">{b.adminPath.replace("/admin/", "")} ↗</span>
+        </a>
+      ))}
+    </div>
+  </div>
+</div>
+
+<script>
+  const btn = document.getElementById("hp-map-btn");
+  const overlay = document.getElementById("hp-map-overlay");
+  const close = document.getElementById("hp-map-close");
+  const open = () => overlay?.removeAttribute("hidden");
+  const hide = () => overlay?.setAttribute("hidden", "");
+  btn?.addEventListener("click", open);
+  close?.addEventListener("click", hide);
+  overlay?.addEventListener("click", (e) => { if (e.target === overlay) hide(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hide(); });
+</script>
+
+<style>
+  .map-btn {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,.5);
+    background: rgba(255,255,255,.12); color: #fff; font-size: 16px; cursor: pointer; flex-shrink: 0;
+  }
+  .map-btn:hover { background: rgba(255,255,255,.22); }
+  .map-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,.55); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .map-overlay[hidden] { display: none; }
+  .map-modal { background: var(--bg-surface, #fff); border-radius: 14px; width: 100%; max-width: 460px; max-height: 82vh; overflow: auto; padding: 20px; }
+  .map-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .map-modal-title { font-size: 17px; font-weight: 800; margin: 0 0 4px; color: var(--text-primary); }
+  .map-modal-intro { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5; }
+  .map-close { background: none; border: none; font-size: 24px; line-height: 1; cursor: pointer; color: var(--text-muted); }
+  .map-blocks { display: flex; flex-direction: column; gap: 6px; }
+  .map-block {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--bg-page); text-decoration: none;
+    transition: border-color .12s, transform .12s;
+  }
+  .map-block:hover { border-color: var(--accent-primary); transform: translateX(2px); }
+  .map-block.fixed { opacity: .82; border-style: dashed; }
+  .map-block-label { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .map-block-path { font-size: 11px; color: var(--text-muted); font-family: monospace; }
+</style>

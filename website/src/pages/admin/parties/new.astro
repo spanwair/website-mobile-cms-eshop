@@ -96,8 +96,7 @@ if (Astro.request.method === "POST") {
           httpOnly: true,
           sameSite: "lax",
         });
-        const dest = `/admin/parties/${result.data.id}`;
-        return Astro.redirect(onboarding ? `${dest}?onboarding=1` : dest);
+        return Astro.redirect(onboarding ? "/admin/onboarding/design" : `/admin/parties/${result.data.id}`);
       }
     }
   }

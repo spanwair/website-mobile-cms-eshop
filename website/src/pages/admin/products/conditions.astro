@@ -72,7 +72,10 @@ const editing = editId ? conditions.find((c) => c.id === editId) ?? null : null;
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">{t.admin.conditions.fieldColor}</label>
-          <input class="form-input" type="color" name="color_hex" value={editing?.color_hex ?? "#7CB342"} />
+          <div class="color-input-row">
+            <input class="form-input" type="color" name="color_hex" value={editing?.color_hex ?? "#7CB342"} style="padding:4px;width:56px;height:42px;cursor:pointer;flex-shrink:0" oninput="this.nextElementSibling.textContent=this.value" />
+            <span class="color-hex">{editing?.color_hex ?? "#7CB342"}</span>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">{t.admin.conditions.fieldSortOrder}</label>
@@ -136,5 +139,7 @@ const editing = editId ? conditions.find((c) => c.id === editId) ?? null : null;
   .form-actions { display:flex; gap:12px; justify-content:flex-end; }
   .action-cell { display:flex; gap:8px; align-items:center; }
   .swatch { display:inline-block; width:14px; height:14px; border-radius:4px; vertical-align:middle; border:1px solid var(--border-default); }
+  .color-input-row { display:flex; align-items:center; gap:8px; }
+  .color-hex { font-family:monospace; font-size:13px; color:var(--text-muted); }
   @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
 </style>

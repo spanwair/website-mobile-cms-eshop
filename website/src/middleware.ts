@@ -1,6 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { createSupabase } from "./lib/supabase";
-import { resolvePartyIdByDomain, resolvePartyIdBySlug, fetchStoreConfig } from "@shared/services/storeConfigService";
+import { resolvePartyIdByDomain, resolveStorefrontPartyBySlug, fetchStoreConfig } from "@shared/services/storeConfigService";
+import type { StorefrontParty } from "@shared/services/storeConfigService";
 
 // The documentation is a Starlight site (base=/docs) published as static assets into
 // public/docs by scripts/build-docs.sh. In production Cloudflare's asset layer serves
@@ -55,25 +56,26 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // /eshop-[partySlug] paths resolve their own org explicitly — takes priority over
   // domain-based resolution so the same base domain can serve any organization by path.
-  let partyId = context.params.partySlug
-    ? await resolvePartyIdBySlug(supabase, context.params.partySlug as string)
+  let party: StorefrontParty | null = context.params.partySlug
+    ? await resolveStorefrontPartyBySlug(supabase, context.params.partySlug as string)
     : null;
 
-  if (!partyId) {
-    partyId = await resolvePartyIdByDomain(supabase, hostname);
+  if (!party) {
+    const domainPartyId = await resolvePartyIdByDomain(supabase, hostname);
+    if (domainPartyId) party = { id: domainPartyId, status: "active" };
   }
 
-  if (!partyId) {
+  if (!party) {
     if (appDomain && hostname !== appDomain && hostname.endsWith(`.${appDomain}`)) {
       const slug = hostname.slice(0, -(appDomain.length + 1));
       if (slug && slug !== "www") {
-        partyId = await resolvePartyIdBySlug(supabase, slug);
+        party = await resolveStorefrontPartyBySlug(supabase, slug);
       }
     }
   }
 
-  context.locals.storeParty = partyId
-    ? { id: partyId, config: await fetchStoreConfig(supabase, partyId) }
+  context.locals.storeParty = party
+    ? { id: party.id, status: party.status, config: await fetchStoreConfig(supabase, party.id) }
     : null;
 
   const response = await next();

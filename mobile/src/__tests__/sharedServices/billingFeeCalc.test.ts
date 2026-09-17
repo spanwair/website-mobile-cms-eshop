@@ -1,21 +1,77 @@
 import {
   COMMISSION_RATE,
-  MONTHLY_COMMISSION_CAP_CZK,
+  REDUCED_COMMISSION_RATE,
+  COMMISSION_REDUCED_THRESHOLD_CZK,
 } from "@shared/constants/sellerMode";
-import { computeBillingPeriodTotals } from "@shared/utils/billingFeeCalc";
+import {
+  computeBillingPeriodTotals,
+  autoFeeMode,
+  resolveFeeSchedule,
+} from "@shared/utils/billingFeeCalc";
+import { SELLER_MODE } from "@shared/constants/sellerMode";
 
-describe("computeBillingPeriodTotals — percentage mode", () => {
+describe("resolveFeeSchedule", () => {
+  it("falls back to the global defaults when no overrides are set", () => {
+    expect(resolveFeeSchedule(null)).toEqual({
+      standardRate: COMMISSION_RATE,
+      reducedRate: REDUCED_COMMISSION_RATE,
+      thresholdKc: COMMISSION_REDUCED_THRESHOLD_CZK,
+    });
+    expect(resolveFeeSchedule({})).toEqual({
+      standardRate: COMMISSION_RATE,
+      reducedRate: REDUCED_COMMISSION_RATE,
+      thresholdKc: COMMISSION_REDUCED_THRESHOLD_CZK,
+    });
+  });
+
+  it("applies each per-party override independently, accepting numeric strings from the DB", () => {
+    const schedule = resolveFeeSchedule({
+      commission_rate_override: 0.08,
+      reduced_commission_rate_override: "0.04",
+      commission_threshold_override: "50000",
+    });
+    expect(schedule).toEqual({ standardRate: 0.08, reducedRate: 0.04, thresholdKc: 50000 });
+  });
+
+  it("ignores non-finite override values and keeps the default", () => {
+    const schedule = resolveFeeSchedule({ commission_rate_override: "not-a-number" });
+    expect(schedule.standardRate).toBe(COMMISSION_RATE);
+  });
+});
+
+describe("autoFeeMode — tier selection by monthly turnover", () => {
+  it("stays on the standard rate at or below the threshold, switches to reduced strictly above it", () => {
+    expect(autoFeeMode(COMMISSION_REDUCED_THRESHOLD_CZK, SELLER_MODE.OWN_COMPANY)).toBe("percentage");
+    expect(autoFeeMode(COMMISSION_REDUCED_THRESHOLD_CZK + 1, SELLER_MODE.OWN_COMPANY)).toBe("reduced");
+  });
+
+  it("switches at haléř precision just above the threshold", () => {
+    expect(autoFeeMode(29900.01, SELLER_MODE.OWN_COMPANY)).toBe("reduced");
+    expect(autoFeeMode(29899.99, SELLER_MODE.OWN_COMPANY)).toBe("percentage");
+  });
+
+  it("honours a per-party threshold override", () => {
+    const schedule = resolveFeeSchedule({ commission_threshold_override: 50000 });
+    expect(autoFeeMode(40000, SELLER_MODE.OWN_COMPANY, schedule)).toBe("percentage");
+    expect(autoFeeMode(50001, SELLER_MODE.OWN_COMPANY, schedule)).toBe("reduced");
+  });
+
+  it("always returns 'ledger' for smalljobs_commission sellers regardless of turnover", () => {
+    expect(autoFeeMode(5000, SELLER_MODE.SMALLJOBS_COMMISSION)).toBe("ledger");
+    expect(autoFeeMode(500000, SELLER_MODE.SMALLJOBS_COMMISSION)).toBe("ledger");
+  });
+});
+
+describe("computeBillingPeriodTotals — percentage mode (standard rate)", () => {
   it("computes gross, real costs, net revenue, fee and net payout correctly", () => {
     const result = computeBillingPeriodTotals(
-      { grossRevenueKc: 100000, realCostsKc: 40000 },
+      { grossRevenueKc: 20000, realCostsKc: 8000 },
       "percentage",
     );
-    expect(result.grossRevenueKc).toBe(100000);
-    expect(result.realCostsKc).toBe(40000);
-    expect(result.netRevenueKc).toBe(60000);
+    expect(result.netRevenueKc).toBe(12000);
     expect(result.feeRate).toBe(COMMISSION_RATE);
-    expect(result.feeAmountKc).toBeCloseTo(100000 * COMMISSION_RATE, 2);
-    expect(result.netPayoutKc).toBeCloseTo(60000 - 100000 * COMMISSION_RATE, 2);
+    expect(result.feeAmountKc).toBeCloseTo(20000 * COMMISSION_RATE, 2); // 2000
+    expect(result.netPayoutKc).toBeCloseTo(12000 - 2000, 2);
   });
 
   it("rounds to whole haléře instead of drifting under repeated float math", () => {
@@ -29,29 +85,43 @@ describe("computeBillingPeriodTotals — percentage mode", () => {
   });
 });
 
-describe("computeBillingPeriodTotals — fixed mode", () => {
-  it("charges the flat monthly cap regardless of turnover size", () => {
-    const small = computeBillingPeriodTotals(
-      { grossRevenueKc: 5000, realCostsKc: 1000 },
-      "fixed",
+describe("computeBillingPeriodTotals — reduced mode (5% of the whole turnover)", () => {
+  it("charges the reduced rate on the entire turnover, snapshotting the rate used", () => {
+    const result = computeBillingPeriodTotals(
+      { grossRevenueKc: 100000, realCostsKc: 40000 },
+      "reduced",
     );
-    const large = computeBillingPeriodTotals(
-      { grossRevenueKc: 500000, realCostsKc: 100000 },
-      "fixed",
-    );
-    expect(small.feeAmountKc).toBe(MONTHLY_COMMISSION_CAP_CZK);
-    expect(large.feeAmountKc).toBe(MONTHLY_COMMISSION_CAP_CZK);
-    expect(small.feeRate).toBeNull();
+    expect(result.feeRate).toBe(REDUCED_COMMISSION_RATE);
+    expect(result.feeAmountKc).toBeCloseTo(100000 * REDUCED_COMMISSION_RATE, 2); // 5000
+    expect(result.netPayoutKc).toBeCloseTo(60000 - 5000, 2);
   });
 
-  it("net payout can go negative when the fixed fee exceeds net revenue for a quiet month", () => {
-    const result = computeBillingPeriodTotals(
-      { grossRevenueKc: 1000, realCostsKc: 500 },
-      "fixed",
+  it("produces the documented drop at the threshold: 29 900 pays more than 30 000", () => {
+    const atThreshold = computeBillingPeriodTotals(
+      { grossRevenueKc: 29900, realCostsKc: 0 },
+      autoFeeMode(29900, SELLER_MODE.OWN_COMPANY),
     );
-    expect(result.netRevenueKc).toBe(500);
-    expect(result.feeAmountKc).toBe(MONTHLY_COMMISSION_CAP_CZK);
-    expect(result.netPayoutKc).toBe(500 - MONTHLY_COMMISSION_CAP_CZK);
+    const justAbove = computeBillingPeriodTotals(
+      { grossRevenueKc: 30000, realCostsKc: 0 },
+      autoFeeMode(30000, SELLER_MODE.OWN_COMPANY),
+    );
+    expect(atThreshold.feeMode).toBe("percentage");
+    expect(atThreshold.feeAmountKc).toBeCloseTo(2990, 2); // 29900 * 10%
+    expect(justAbove.feeMode).toBe("reduced");
+    expect(justAbove.feeAmountKc).toBeCloseTo(1500, 2); // 30000 * 5%
+    expect(justAbove.feeAmountKc).toBeLessThan(atThreshold.feeAmountKc);
+  });
+
+  it("uses a per-party reduced-rate override", () => {
+    const schedule = resolveFeeSchedule({ reduced_commission_rate_override: 0.06 });
+    const result = computeBillingPeriodTotals(
+      { grossRevenueKc: 100000, realCostsKc: 0 },
+      "reduced",
+      0,
+      schedule,
+    );
+    expect(result.feeRate).toBe(0.06);
+    expect(result.feeAmountKc).toBeCloseTo(6000, 2);
   });
 });
 

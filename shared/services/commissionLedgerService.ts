@@ -11,9 +11,9 @@ import {
 // and website/src/lib/checkoutFlow.ts confirmStripeSession call this instead of duplicating
 // the split logic). Ledger-based collection is smalljobs_commission-only — is idempotent, safe
 // to call from both paths for the same order. own_company parties have a completely separate
-// pricing track (10% capped at MONTHLY_COMMISSION_CAP_CZK/month, billed monthly rather than
-// deducted per order) — see shared/services/monthlyFeeService.ts. The two tracks do not stack:
-// a smalljobs_commission party is never subject to the 2,990 Kč commission cap, and an
+// pricing track (10% of monthly turnover, dropping to a reduced 5% above the threshold, billed
+// monthly rather than deducted per order) — see shared/services/monthlyFeeService.ts. The two
+// tracks do not stack: a smalljobs_commission party is never subject to the tiered commission, and an
 // own_company party never has a payout withheld — pick one constant set per seller_mode, never
 // mix them (this function previously, incorrectly, applied the own_company cap here).
 export async function recordCommissionForOrder(

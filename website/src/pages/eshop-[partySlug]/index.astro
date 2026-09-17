@@ -51,24 +51,31 @@ function buildUrl(params: Record<string, string>) {
   u.searchParams.delete("page");
   return u.pathname + u.search;
 }
+
+// The "product_grid" marker in the layout decides where the shop listing sits among the homepage
+// sections. Without a marker the listing renders after every section (the historical default).
+const homeLayout = sanitizeLayout(storeConfig?.homepage_layout);
+const gridIdx = homeLayout.indexOf("product_grid");
+const sectionsBeforeGrid = gridIdx === -1 ? homeLayout : homeLayout.slice(0, gridIdx);
+const sectionsAfterGrid = gridIdx === -1 ? [] : homeLayout.slice(gridIdx + 1);
+const sectionProps = {
+  storeConfig,
+  categories: categories.filter((c) => !c.parent_id),
+  featuredProducts,
+  cardVariant,
+  media: sectionsMedia,
+  slides: heroSlides,
+  benefitItems,
+  conditions,
+  blogPosts,
+  linkBase,
+};
 ---
 
 <Layout title={`${storeConfig?.brand_name ?? "Shop"}${search ? ` — ${search}` : ""}${categorySlug ? ` — ${categorySlug}` : ""}`}>
   <div id="shop-app">
-    {isHomepageView && (
-      <Sections
-        layout={sanitizeLayout(storeConfig?.homepage_layout)}
-        storeConfig={storeConfig}
-        categories={categories.filter((c) => !c.parent_id)}
-        featuredProducts={featuredProducts}
-        cardVariant={cardVariant}
-        media={sectionsMedia}
-        slides={heroSlides}
-        benefitItems={benefitItems}
-        conditions={conditions}
-        blogPosts={blogPosts}
-        linkBase={linkBase}
-      />
+    {isHomepageView && sectionsBeforeGrid.length > 0 && (
+      <Sections layout={sectionsBeforeGrid} {...sectionProps} />
     )}
     <div class="shop-layout">
       <CategorySidebar categories={categories} categorySlug={categorySlug} homeHref={linkBase} buildUrl={buildUrl} conditions={conditions} activeCondition={conditionCode} />
@@ -125,6 +132,9 @@ function buildUrl(params: Record<string, string>) {
         )}
       </main>
     </div>
+    {isHomepageView && sectionsAfterGrid.length > 0 && (
+      <Sections layout={sectionsAfterGrid} {...sectionProps} />
+    )}
   </div>
 </Layout>
 

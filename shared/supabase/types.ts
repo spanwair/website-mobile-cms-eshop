@@ -800,6 +800,127 @@ export type Database = {
           },
         ]
       }
+      eshop_billing_periods: {
+        Row: {
+          computed_at: string | null
+          created_at: string
+          currency: string
+          fee_amount: number
+          fee_mode: string
+          fee_paid_at: string | null
+          fee_rate: number | null
+          gross_revenue: number
+          id: string
+          net_payout: number
+          net_revenue: number
+          party_id: string
+          period_end: string
+          period_start: string
+          real_costs: number
+          seller_mode: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          computed_at?: string | null
+          created_at?: string
+          currency?: string
+          fee_amount?: number
+          fee_mode?: string
+          fee_paid_at?: string | null
+          fee_rate?: number | null
+          gross_revenue?: number
+          id?: string
+          net_payout?: number
+          net_revenue?: number
+          party_id: string
+          period_end: string
+          period_start: string
+          real_costs?: number
+          seller_mode: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          computed_at?: string | null
+          created_at?: string
+          currency?: string
+          fee_amount?: number
+          fee_mode?: string
+          fee_paid_at?: string | null
+          fee_rate?: number | null
+          gross_revenue?: number
+          id?: string
+          net_payout?: number
+          net_revenue?: number
+          party_id?: string
+          period_end?: string
+          period_start?: string
+          real_costs?: number
+          seller_mode?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eshop_billing_periods_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      eshop_fee_tier_events: {
+        Row: {
+          changed: boolean
+          created_at: string
+          gross_revenue: number
+          id: string
+          new_fee_mode: string
+          notified_email: boolean
+          notified_in_app: boolean
+          party_id: string
+          period_start: string
+          previous_fee_mode: string
+          threshold_amount: number
+        }
+        Insert: {
+          changed: boolean
+          created_at?: string
+          gross_revenue: number
+          id?: string
+          new_fee_mode: string
+          notified_email?: boolean
+          notified_in_app?: boolean
+          party_id: string
+          period_start: string
+          previous_fee_mode: string
+          threshold_amount: number
+        }
+        Update: {
+          changed?: boolean
+          created_at?: string
+          gross_revenue?: number
+          id?: string
+          new_fee_mode?: string
+          notified_email?: boolean
+          notified_in_app?: boolean
+          party_id?: string
+          period_start?: string
+          previous_fee_mode?: string
+          threshold_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eshop_fee_tier_events_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       faq_items: {
         Row: {
           answer: string
@@ -853,6 +974,7 @@ export type Database = {
           kind: string
           label: string
           party_id: string
+          provider_key: string | null
           sort_order: number
           updated_at: string
           url: string | null
@@ -865,6 +987,7 @@ export type Database = {
           kind: string
           label: string
           party_id: string
+          provider_key?: string | null
           sort_order?: number
           updated_at?: string
           url?: string | null
@@ -877,6 +1000,7 @@ export type Database = {
           kind?: string
           label?: string
           party_id?: string
+          provider_key?: string | null
           sort_order?: number
           updated_at?: string
           url?: string | null
@@ -1826,6 +1950,8 @@ export type Database = {
       parties: {
         Row: {
           billing_email: string | null
+          commission_rate_override: number | null
+          commission_threshold_override: number | null
           company_ico: string | null
           company_name: string | null
           created_at: string
@@ -1833,6 +1959,7 @@ export type Database = {
           lang: string
           logo_url: string | null
           name: string
+          reduced_commission_rate_override: number | null
           seller_mode: string
           settings: Json
           slug: string
@@ -1844,6 +1971,8 @@ export type Database = {
         }
         Insert: {
           billing_email?: string | null
+          commission_rate_override?: number | null
+          commission_threshold_override?: number | null
           company_ico?: string | null
           company_name?: string | null
           created_at?: string
@@ -1851,6 +1980,7 @@ export type Database = {
           lang?: string
           logo_url?: string | null
           name: string
+          reduced_commission_rate_override?: number | null
           seller_mode?: string
           settings?: Json
           slug: string
@@ -1862,6 +1992,8 @@ export type Database = {
         }
         Update: {
           billing_email?: string | null
+          commission_rate_override?: number | null
+          commission_threshold_override?: number | null
           company_ico?: string | null
           company_name?: string | null
           created_at?: string
@@ -1869,6 +2001,7 @@ export type Database = {
           lang?: string
           logo_url?: string | null
           name?: string
+          reduced_commission_rate_override?: number | null
           seller_mode?: string
           settings?: Json
           slug?: string
@@ -3357,6 +3490,10 @@ export type Database = {
         Args: { p_variant_id: string }
         Returns: undefined
       }
+      get_billing_period_totals: {
+        Args: { p_party_id: string; p_range_end: string; p_range_start: string }
+        Returns: Json
+      }
       get_my_role: { Args: never; Returns: number }
       get_product_activity_log: {
         Args: { p_limit?: number; p_party_id: string }
@@ -3410,9 +3547,30 @@ export type Database = {
         }[]
       }
       party_is_active: { Args: { p_party_id: string }; Returns: boolean }
-      resolve_active_party_id_by_slug: {
+      report_customer_stats: {
+        Args: { p_months?: number; p_party_id: string }
+        Returns: Json
+      }
+      report_monthly_series: {
+        Args: { p_months?: number; p_party_id: string }
+        Returns: {
+          month: string
+          orders: number
+          revenue: number
+        }[]
+      }
+      report_top_products: {
+        Args: { p_limit?: number; p_months?: number; p_party_id: string }
+        Returns: {
+          product_id: string
+          revenue: number
+          title: string
+          units: number
+        }[]
+      }
+      resolve_storefront_party_by_slug: {
         Args: { p_slug: string }
-        Returns: string
+        Returns: { id: string; status: string }[]
       }
       subscribe_to_newsletter: {
         Args: { p_email: string; p_party_id: string }
@@ -3444,6 +3602,7 @@ export type Database = {
         | "new_registration"
         | "system_alert"
         | "role_invitation"
+        | "fee_tier_change"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3459,12 +3618,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3488,11 +3647,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3513,11 +3672,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3538,11 +3697,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3555,11 +3714,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3582,6 +3741,7 @@ export const Constants = {
         "new_registration",
         "system_alert",
         "role_invitation",
+        "fee_tier_change",
       ],
     },
   },

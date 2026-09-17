@@ -15,10 +15,13 @@ export const SECTION_REGISTRY: { key: SectionKey; label: string }[] = [
 
 export const DEFAULT_HOMEPAGE_LAYOUT: SectionKey[] = SECTION_REGISTRY.map((s) => s.key);
 
+// "product_grid" is not a section component — it marks where the shop listing sits among the
+// homepage sections (see the eshop index). It is a valid layout entry but has no registry row.
+const KNOWN_LAYOUT_KEYS = new Set<SectionKey>([...SECTION_REGISTRY.map((s) => s.key), "product_grid"]);
+
 // Drops unknown/removed keys so a stale homepage_layout value never crashes rendering.
 export function sanitizeLayout(layout: unknown): SectionKey[] {
   if (!Array.isArray(layout)) return DEFAULT_HOMEPAGE_LAYOUT;
-  const known = new Set(SECTION_REGISTRY.map((s) => s.key));
-  const filtered = layout.filter((k): k is SectionKey => known.has(k as SectionKey));
+  const filtered = layout.filter((k): k is SectionKey => KNOWN_LAYOUT_KEYS.has(k as SectionKey));
   return filtered.length > 0 ? filtered : DEFAULT_HOMEPAGE_LAYOUT;
 }

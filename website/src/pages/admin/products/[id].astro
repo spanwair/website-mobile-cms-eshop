@@ -226,14 +226,17 @@ const recentMovements = inventoryItem
   <a href="/admin/products" class="back-link">{t.admin.products.back}</a>
   {error && <div class="form-error" style="margin-bottom:16px;max-width:720px">{error}</div>}
 
-  <ProductVariants
-    variants={product.variants}
-    productId={id!}
-    editingId={editingVariantId}
-    selectedVariantId={selectedVariantId}
-  />
+  <div class="product-detail-grid">
+    <div class="col-variants">
+      <ProductVariants
+        variants={product.variants}
+        productId={id!}
+        editingId={editingVariantId}
+        selectedVariantId={selectedVariantId}
+      />
+    </div>
 
-  <div class="card" style="max-width:720px;margin-top:16px">
+    <div class="col-main card">
     <form method="POST" class="product-form">
       <div class="form-row">
         <div class="form-group">
@@ -323,16 +326,19 @@ const recentMovements = inventoryItem
       <input type="hidden" name="action" value="delete" />
       <button type="submit" class="btn btn-danger">{t.admin.products.deleteBtn}</button>
     </form>
-  </div>
+    </div>
 
-  <ProductImages
-    images={product.images}
-    productId={id!}
-    variantId={selectedVariantId}
-    variantName={selectedVariantId ? (product.variants.find((v) => v.id === selectedVariantId)?.name ?? null) : null}
-  />
+    <div class="col-media">
+      <ProductImages
+        images={product.images}
+        productId={id!}
+        variantId={selectedVariantId}
+        variantName={selectedVariantId ? (product.variants.find((v) => v.id === selectedVariantId)?.name ?? null) : null}
+      />
+    </div>
 
-  <div class="inv-card" style="max-width:720px">
+    <div class="col-side">
+      <div class="inv-card card">
       <h2 class="inv-title">
         {t.admin.inventory.title}
         {selectedVariantId && (
@@ -452,7 +458,9 @@ const recentMovements = inventoryItem
         </>
       ) : (
         <p style="color:var(--text-muted);font-size:14px">{t.admin.inventory.noInventoryRecord}</p>
-      )}
+       )}
+      </div>
+    </div>
   </div>
 </CmsLayout>
 
@@ -469,10 +477,62 @@ const recentMovements = inventoryItem
   .cat-check { display:flex; align-items:center; gap:6px; font-size:14px; cursor:pointer; }
   .cat-check input { width:auto; }
   @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
-  .inv-card { margin-top:24px; }
+
+  /* 3-column responsive layout — uses shared tokens from global.css (var(--border), --radius-*, --shadow-*) */
+  .product-detail-grid { display:grid; gap:20px; align-items:start; }
+  .col-variants, .col-main, .col-media, .col-side { min-width:0; }
+  .col-main { width:100%; }
+  .col-media { display:flex; flex-direction:column; gap:20px; }
+  .col-side .inv-card { margin-top:0; width:100%; }
+  .product-detail-grid .card { max-width:none; }
+
+  /* PC: 3 columns equal width — fills previous empty right space; shared breakpoints from @shared/constants/theme */
+  @media(min-width:1700px) {
+    .product-detail-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-areas:
+        "variants main side"
+        "media main side";
+    }
+    .col-variants { grid-area: variants; }
+    .col-main { grid-area: main; }
+    .col-media { grid-area: media; }
+    .col-side { grid-area: side; position:sticky; top:20px; }
+  }
+  /* Tablet: 2 columns — form + inventory top (most used), variants + media full width below */
+  @media(min-width:1200px) and (max-width:1699px) {
+    .product-detail-grid {
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        "main side"
+        "variants variants"
+        "media media";
+    }
+    .col-variants { grid-area: variants; }
+    .col-main { grid-area: main; }
+    .col-media { grid-area: media; }
+    .col-side { grid-area: side; }
+  }
+  /* Mobile: 1 column stacked — preserves original order variants -> main -> media -> side */
+  @media(max-width:1199px) {
+    .product-detail-grid {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "variants"
+        "main"
+        "media"
+        "side";
+    }
+    .col-variants { grid-area: variants; }
+    .col-main { grid-area: main; }
+    .col-media { grid-area: media; }
+    .col-side { grid-area: side; }
+  }
+
+  .inv-card { margin-top:0; }
   .inv-title { font-size:16px; font-weight:700; margin:0 0 16px; }
   .inv-title-variant { color:var(--text-muted); font-weight:500; }
-  .inv-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:12px; }
+  .inv-stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:12px; margin-bottom:12px; }
   .inv-stat { background:var(--bg-subtle); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:4px; }
   .inv-label { font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
   .inv-value { font-size:22px; font-weight:800; }

@@ -35,6 +35,7 @@ const pathname = Astro.url.pathname;
 const partySlug = Astro.params.partySlug as string | undefined;
 const isStorefrontPage = pathname === "/shop" || pathname.startsWith("/shop/") || !!partySlug;
 const isStorefront = isStorefrontPage && !!storeParty;
+const isPendingStore = isStorefront && storeParty?.status === "pending_approval";
 const shopHref = partySlug ? `/eshop-${partySlug}` : "/shop";
 const brandHref = isStorefront ? shopHref : "/";
 
@@ -107,6 +108,15 @@ const currentPath = Astro.url.pathname + Astro.url.search;
     <style set:html={buildThemeCss(storeConfig)} />
   </head>
   <body>
+    {isPendingStore && (
+      <aside class="pending-banner" role="status">
+        <span class="pending-banner-icon" aria-hidden="true">⏳</span>
+        <span class="pending-banner-text">
+          <strong>{t.storefrontPending.title}</strong>
+          <span>{t.storefrontPending.body}</span>
+        </span>
+      </aside>
+    )}
     {isStorefront ? (
       <StorefrontNav
         storeConfig={storeConfig}
@@ -170,4 +180,19 @@ const currentPath = Astro.url.pathname + Astro.url.search;
   @media (max-width: 640px) {
     .nav-links { display: none; }
   }
+
+  /* Sticky (not position:fixed) so it pins to the top while scrolling without overlapping the
+     nav or needing a body top-offset. Sits above StorefrontNav in source order so it's the very
+     first thing a visitor to a not-yet-approved storefront sees. */
+  .pending-banner {
+    position: sticky; top: 0; z-index: 200;
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 20px;
+    background: #fef3c7; color: #92400e;
+    border-bottom: 1px solid #fcd34d;
+    font-size: 13px; line-height: 1.4;
+  }
+  .pending-banner-icon { font-size: 18px; flex-shrink: 0; }
+  .pending-banner-text { display: flex; flex-direction: column; gap: 2px; }
+  .pending-banner-text strong { font-weight: 700; }
 </style>

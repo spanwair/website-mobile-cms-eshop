@@ -1,0 +1,161 @@
+---
+import "@/styles/global.css";
+import Hero from "@/components/sections/Hero.astro";
+import Subhero from "@/components/sections/Subhero.astro";
+import Categories from "@/components/sections/Categories.astro";
+import FeaturedProducts from "@/components/sections/FeaturedProducts.astro";
+import Benefits from "@/components/sections/Benefits.astro";
+import BuybackPromo from "@/components/sections/BuybackPromo.astro";
+import ConditionExplainer from "@/components/sections/ConditionExplainer.astro";
+import BlogPreview from "@/components/sections/BlogPreview.astro";
+import Newsletter from "@/components/sections/Newsletter.astro";
+import ProductCard from "@/components/variants/ProductCard/ProductCard.astro";
+import { createSupabase } from "@/lib/supabase";
+import { requireAdminCtx } from "@/lib/admin";
+import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
+import { buildThemeCss, googleFontsUrl } from "@/lib/themeEngine";
+import { sanitizeLayout } from "@/lib/pageComposer";
+import { adminPathForBlock } from "@/lib/homepageBlockMap";
+import { fetchStoreConfig } from "@shared/services/storeConfigService";
+import { fetchVisibleHeroSlides } from "@shared/services/heroSlideService";
+import { fetchVisibleBenefitItems } from "@shared/services/benefitItemService";
+import { fetchProductConditions } from "@shared/services/productConditionService";
+import { fetchPublishedBlogPosts } from "@shared/services/blogService";
+import {
+  previewConfig, PH_CATEGORIES, PH_PRODUCTS, PH_BENEFITS,
+  PH_CONDITIONS, PH_BLOG, PH_SLIDE,
+} from "@/lib/onboardingPlaceholders";
+import { useT } from "@/lib/i18n";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx || !ctx.partyId || !hasPermission(ctx.permissions, PERMISSIONS.MANAGE_SETTINGS)) {
+  return Astro.redirect("/admin");
+}
+const partyId = ctx.partyId;
+const t = useT(Astro);
+
+const realConfig = await fetchStoreConfig(supabase, partyId);
+const config = previewConfig(realConfig);
+const sanitized = sanitizeLayout(realConfig?.homepage_layout);
+const layout = sanitized.includes("product_grid") ? sanitized : [...sanitized, "product_grid"];
+
+const realSlides = await fetchVisibleHeroSlides(supabase, partyId);
+const slides = realSlides.length > 0 || realConfig?.hero_content ? realSlides : [PH_SLIDE];
+const realBenefits = await fetchVisibleBenefitItems(supabase, partyId);
+const benefits = realBenefits.length > 0 ? realBenefits : PH_BENEFITS;
+const realConditions = await fetchProductConditions(supabase, partyId);
+const conditions = realConditions.length > 0 ? realConditions : PH_CONDITIONS;
+const realBlog = (await fetchPublishedBlogPosts(supabase, partyId, { page: 1, pageSize: 3 })).posts;
+const blog = realBlog.length > 0 ? realBlog : PH_BLOG;
+const cats = PH_CATEGORIES;
+const products = PH_PRODUCTS;
+
+const customFontsUrl = googleFontsUrl(config);
+const navNames = ["Kategorie 1", "Kategorie 2", "Kategorie 3", "Kategorie 4"];
+---
+
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Preview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
+    {customFontsUrl && <link href={customFontsUrl} rel="stylesheet" />}
+    <style set:html={buildThemeCss(config)} />
+  </head>
+  <body class="pb-body">
+    <!-- Header (fixed) -->
+    <div class="pb-block" data-key="header" data-reorder="0">
+      <div class="pb-overlay"></div>
+      <div class="pb-chrome"><span class="pb-name">Hlavička</span><a class="pb-edit" target="_top" href={adminPathForBlock("header")}>⚙ {t.admin.onboardingWizard.design.editInAdmin}</a></div>
+      <header class="pb-header">
+        <strong class="pb-logo">{config.brand_name}</strong>
+        <nav class="pb-nav">{navNames.map((n) => <span>{n}</span>)}</nav>
+        <span class="pb-icons">🔍 ❤ 🛒</span>
+      </header>
+    </div>
+
+    <!-- Reorderable sections + product grid -->
+    {layout.map((key) => (
+      <div class="pb-block" data-key={key} data-reorder="1">
+        <div class="pb-overlay"></div>
+        <div class="pb-chrome">
+          <span class="pb-grip">⠿</span>
+          <span class="pb-name">{t.admin.onboardingWizard.design.sections[key] ?? key}</span>
+          <a class="pb-edit" target="_top" href={adminPathForBlock(key)}>⚙</a>
+          <button type="button" class="pb-del" title={t.common.delete}>🗑</button>
+        </div>
+        {key === "hero" && <Hero storeConfig={config} slides={slides} />}
+        {key === "subhero" && <Subhero storeConfig={config} />}
+        {key === "categories" && <Categories categories={cats} />}
+        {key === "featured_products" && <FeaturedProducts products={products} variant={config.product_card_variant ?? "classic"} />}
+        {key === "benefits" && <Benefits items={benefits} />}
+        {key === "buyback_promo" && <BuybackPromo storeConfig={config} />}
+        {key === "condition_explainer" && <ConditionExplainer conditions={conditions} />}
+        {key === "blog_preview" && <BlogPreview posts={blog} />}
+        {key === "newsletter" && <Newsletter />}
+        {key === "product_grid" && (
+          <section class="section container">
+            <div class="pb-pgrid">{products.map((p) => <ProductCard product={p} variant="classic" />)}</div>
+          </section>
+        )}
+      </div>
+    ))}
+
+    <!-- Footer (fixed) -->
+    <div class="pb-block" data-key="footer" data-reorder="0">
+      <div class="pb-overlay"></div>
+      <div class="pb-chrome"><span class="pb-name">Patička</span><a class="pb-edit" target="_top" href={adminPathForBlock("footer")}>⚙ {t.admin.onboardingWizard.design.editInAdmin}</a></div>
+      <footer class="pb-footer">
+        <div><strong>{config.brand_name}</strong><p>Sem přijde krátký popis obchodu.</p></div>
+        <div><b>Kategorie</b>{navNames.map((n) => <p>{n}</p>)}</div>
+        <div><b>Zákaznický servis</b><p>O nás</p><p>Kontakt</p><p>Obchodní podmínky</p></div>
+      </footer>
+    </div>
+
+    <script>
+      import { initOnboardingPreview } from "@/scripts/onboardingPreview";
+      initOnboardingPreview();
+    </script>
+
+    <style is:global>
+      html, .pb-body { min-height: 0; }
+      .pb-body { margin: 0; background: var(--bg-page); overflow: hidden; }
+      .pb-block { position: relative; outline: 2px dashed transparent; outline-offset: -2px; transition: outline-color .12s; }
+      .pb-block:hover { outline-color: color-mix(in srgb, var(--accent-primary) 60%, transparent); }
+      .pb-block.pb-drag-over { outline-color: color-mix(in srgb, var(--accent-primary) 60%, transparent); outline-style: dashed; }
+      .pb-block.pb-dragging { outline: 3px solid #2563eb; outline-offset: -3px; opacity: .75; }
+      /* Full-block layer: intercepts every click so storefront links never navigate, and is the
+         drag surface for reorderable blocks so the whole block can be grabbed, not just a handle. */
+      .pb-overlay { position: absolute; inset: 0; z-index: 10; }
+      .pb-block[data-reorder="1"] > .pb-overlay { cursor: grab; }
+      .pb-body.pb-dragging-active { cursor: grabbing; user-select: none; }
+      .pb-body.pb-dragging-active .pb-overlay { cursor: grabbing; }
+      .pb-body.pb-dragging-active .pb-chrome { pointer-events: none; }
+      .pb-chrome {
+        position: absolute; top: 6px; right: 6px; z-index: 30; display: none; align-items: center; gap: 6px;
+        background: rgba(17,24,39,.92); color: #fff; border-radius: 8px; padding: 4px 8px; font-size: 12px;
+        font-family: system-ui, sans-serif;
+      }
+      .pb-block:hover > .pb-chrome { display: flex; }
+      .pb-chrome .pb-name { font-weight: 600; }
+      .pb-chrome .pb-grip { cursor: grab; font-size: 14px; }
+      .pb-chrome .pb-edit { color: #fff; text-decoration: none; opacity: .85; }
+      .pb-chrome .pb-edit:hover { opacity: 1; }
+      .pb-chrome .pb-del { background: none; border: none; color: #fff; cursor: pointer; font-size: 13px; padding: 0; }
+      .pb-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 32px; border-bottom: 1px solid var(--border); background: var(--bg-surface); }
+      .pb-logo { font-family: var(--font-heading); font-size: 18px; color: var(--text-primary); }
+      .pb-nav { display: flex; gap: 18px; flex: 1; justify-content: center; font-size: 13px; color: var(--text-secondary); }
+      .pb-icons { font-size: 14px; }
+      .pb-pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+      .pb-footer { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 40px 32px; background: #1f2430; color: #cbd2e0; font-size: 13px; }
+      .pb-footer strong, .pb-footer b { color: #fff; display: block; margin-bottom: 8px; }
+      .pb-footer p { margin: 4px 0; }
+    </style>
+  </body>
+</html>

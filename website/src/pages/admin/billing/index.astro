@@ -1,6 +1,6 @@
 ---
-// Platform-level, cross-party billing overview — every party's current pricing state (10%
-// capped-at-2,990 for own_company, 30%/12,000-payout-limit for smalljobs_commission) and
+// Platform-level, cross-party billing overview — every party's current pricing state (10% of
+// turnover dropping to 5% above the threshold for own_company, 30%/12,000-payout-limit for smalljobs_commission) and
 // outstanding balance in one place, so whoever holds MANAGE_AUDIT doesn't have to switch
 // active party and hunt through /admin/payouts for each org individually. Always scoped to
 // ctx.parties (owner sees every party, admin sees only their assigned ones) — never queries
@@ -10,7 +10,7 @@ import { createSupabase } from "@/lib/supabase";
 import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT, getLang } from "@/lib/i18n";
-import { SELLER_MODE, MONTHLY_COMMISSION_CAP_CZK, NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK } from "@shared/constants/sellerMode";
+import { SELLER_MODE, NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK } from "@shared/constants/sellerMode";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -112,7 +112,7 @@ const rows = (partyRows ?? []).map((party) => {
                 </div>
               ) : fee?.thisMonth ? (
                 <div>
-                  <div class="progress-line">{fmt(Number(fee.thisMonth.fee_amount))} {t.admin.billing.of} {fmt(MONTHLY_COMMISSION_CAP_CZK)}</div>
+                  <div class="progress-line">{fmt(Number(fee.thisMonth.fee_amount))} <span class="muted">({Math.round(Number(fee.thisMonth.fee_rate) * 100 * 100) / 100}% {t.admin.billing.ofTurnover})</span></div>
                   <span class={`badge ${fee.thisMonth.status === "paid" ? "badge-active" : "badge-pending"}`}>
                     {fee.thisMonth.status === "paid" ? t.admin.billing.statusPaid : t.admin.billing.statusUnpaid}
                   </span>

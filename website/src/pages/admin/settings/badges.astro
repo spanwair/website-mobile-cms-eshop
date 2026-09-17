@@ -3,8 +3,11 @@ import CmsLayout from "@/components/cms/CmsLayout.astro";
 import SettingsTabs from "@/components/cms/SettingsTabs.astro";
 import { createSupabase } from "@/lib/supabase";
 import {
-  fetchFooterBadges, createFooterBadge, updateFooterBadge, deleteFooterBadge,
+  fetchFooterBadges, createFooterBadge, updateFooterBadge, deleteFooterBadge, upsertProviderBadge,
 } from "@shared/services/footerBadgeService";
+import {
+  INTEGRATED_FOOTER_PROVIDERS, RESTRICTED_BADGE_KINDS, FREEFORM_BADGE_KINDS, providersForKind,
+} from "@shared/constants/footerProviders";
 import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT } from "@/lib/i18n";
@@ -24,17 +27,30 @@ if (!hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)) return Astro.redir
 const t = useT(Astro);
 
 let error = "";
+const freeformKinds = FREEFORM_BADGE_KINDS;
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const action = (form.get("_action") as string) ?? "save";
-  const id = form.get("id") as string;
 
-  if (action === "delete" && id) {
-    await deleteFooterBadge(supabase, id);
+  if (action === "providers") {
+    for (const provider of INTEGRATED_FOOTER_PROVIDERS) {
+      const result = await upsertProviderBadge(supabase, partyId, provider, {
+        is_visible: form.get(`visible_${provider.key}`) === "on",
+        sort_order: parseInt((form.get(`order_${provider.key}`) as string) || "0", 10),
+      });
+      if (result.error) error = result.error.message;
+    }
+  } else if (action === "delete") {
+    const id = form.get("id") as string;
+    const target = (await fetchFooterBadges(supabase, partyId)).find((b) => b.id === id);
+    if (target && !target.provider_key) await deleteFooterBadge(supabase, id);
   } else {
+    const rawKind = form.get("kind") as FooterBadgeKind;
+    const kind: FooterBadgeKind = freeformKinds.includes(rawKind) ? rawKind : "social";
+    const id = form.get("id") as string;
     const input = {
-      kind: (form.get("kind") as FooterBadgeKind) ?? "payment",
+      kind,
       label: (form.get("label") as string).trim(),
       icon: (form.get("icon") as string) || null,
       url: (form.get("url") as string) || null,
@@ -50,42 +66,73 @@ if (Astro.request.method === "POST") {
 }
 
 const badges = await fetchFooterBadges(supabase, partyId);
+const badgeByProvider = new Map(badges.filter((b) => b.provider_key).map((b) => [b.provider_key, b]));
 const editId = Astro.url.searchParams.get("edit");
-const editing = editId ? badges.find((b) => b.id === editId) ?? null : null;
-const kinds: FooterBadgeKind[] = ["shipping", "payment", "social", "store_feature"];
+const editing = editId
+  ? badges.find((b) => b.id === editId && freeformKinds.includes(b.kind)) ?? null
+  : null;
 const kindLabels: Record<FooterBadgeKind, string> = {
-  shipping: t.admin.settings.kindShipping, payment: t.admin.settings.kindPayment, social: t.admin.settings.kindSocial, store_feature: t.admin.settings.kindStoreFeature,
+  shipping: t.admin.settings.kindShipping, payment: t.admin.settings.kindPayment,
+  social: t.admin.settings.kindSocial, store_feature: t.admin.settings.kindStoreFeature,
 };
 ---
 
 <CmsLayout title={t.admin.settings.tabBadges} userPermissions={permissions} currentPath="/admin/settings/badges" parties={ctx.parties} partyId={ctx.partyId}>
   <SettingsTabs active="badges" partySlug={partySlug} />
   {error && <div class="alert-error">{error}</div>}
-  <p class="content-hint">{t.admin.settings.badgesHint}</p>
 
   <div class="card" style="max-width:640px;margin-bottom:24px">
-    <h2 class="section-title">{editing ? t.common.edit : t.admin.settings.addBadgeBtn}</h2>
+    <h2 class="section-title">{t.admin.settings.integratedProvidersTitle}</h2>
+    <p class="content-hint">{t.admin.settings.providerBadgesHint}</p>
+    <form method="POST">
+      <input type="hidden" name="_action" value="providers" />
+      {RESTRICTED_BADGE_KINDS.map((k) => (
+        <div class="provider-group">
+          <div class="group-title">{kindLabels[k]}</div>
+          {providersForKind(k).map((p) => {
+            const row = badgeByProvider.get(p.key);
+            return (
+              <div class="provider-row">
+                <span class="provider-name">{p.icon} {p.label}</span>
+                <label class="form-check">
+                  <input type="checkbox" name={`visible_${p.key}`} checked={row ? row.is_visible : true} />
+                  {t.admin.settings.fieldVisible}
+                </label>
+                <input class="form-input order-input" type="number" name={`order_${p.key}`} value={row?.sort_order ?? 0} />
+              </div>
+            );
+          })}
+        </div>
+      ))}
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{t.admin.settings.saveProvidersBtn}</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card" style="max-width:640px;margin-bottom:24px">
+    <h2 class="section-title">{editing ? t.common.edit : t.admin.settings.freeformBadgesTitle}</h2>
     <form method="POST" class="badge-form">
       {editing && <input type="hidden" name="id" value={editing.id} />}
       <div class="form-group">
         <label class="form-label">{t.admin.settings.fieldKind}</label>
         <select class="form-input" name="kind">
-          {kinds.map((k) => <option value={k} selected={editing ? editing.kind === k : k === "payment"}>{kindLabels[k]}</option>)}
+          {freeformKinds.map((k) => <option value={k} selected={editing ? editing.kind === k : k === "social"}>{kindLabels[k]}</option>)}
         </select>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">{t.admin.settings.fieldIcon}</label>
-          <input class="form-input" name="icon" value={editing?.icon ?? ""} placeholder="💳" />
+          <input class="form-input" name="icon" value={editing?.icon ?? ""} placeholder="🌟" />
         </div>
         <div class="form-group">
           <label class="form-label">{t.admin.cms.fieldLabel}</label>
-          <input class="form-input" name="label" required value={editing?.label ?? ""} placeholder="Visa" />
+          <input class="form-input" name="label" required value={editing?.label ?? ""} placeholder="Instagram" />
         </div>
       </div>
       <div class="form-group">
         <label class="form-label">{t.admin.cms.fieldUrl}</label>
-        <input class="form-input" name="url" value={editing?.url ?? ""} placeholder="https://facebook.com/..." />
+        <input class="form-input" name="url" value={editing?.url ?? ""} placeholder="https://instagram.com/..." />
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -104,7 +151,7 @@ const kindLabels: Record<FooterBadgeKind, string> = {
     </form>
   </div>
 
-  {kinds.map((k) => (
+  {freeformKinds.map((k) => (
     <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
       <div class="group-title">{kindLabels[k]}</div>
       <table class="data-table">
@@ -138,15 +185,20 @@ const kindLabels: Record<FooterBadgeKind, string> = {
 </CmsLayout>
 
 <style>
-  .section-title { font-size:15px; font-weight:700; margin-bottom:16px; }
+  .section-title { font-size:15px; font-weight:700; margin-bottom:8px; }
   .group-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); padding:12px 16px; border-bottom:1px solid var(--border-default); }
   .content-hint { font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+  .provider-group { margin-bottom:16px; }
+  .provider-group .group-title { padding:8px 0; border-bottom:none; }
+  .provider-row { display:grid; grid-template-columns:1fr auto 80px; align-items:center; gap:16px; padding:8px 0; border-top:1px solid var(--border-default); }
+  .provider-name { font-weight:600; }
+  .order-input { max-width:80px; }
   .badge-form { display:flex; flex-direction:column; gap:16px; }
   .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .form-check { display:flex; align-items:center; gap:8px; font-size:14px; }
   .form-check input { width:auto; }
-  .form-actions { display:flex; gap:12px; justify-content:flex-end; }
+  .form-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:8px; }
   .action-cell { display:flex; gap:8px; align-items:center; }
   .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
-  @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+  @media(max-width:600px) { .form-row { grid-template-columns:1fr; } .provider-row { grid-template-columns:1fr auto; } .order-input { grid-column:2; } }
 </style>

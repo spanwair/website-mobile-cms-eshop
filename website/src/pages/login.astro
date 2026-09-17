@@ -10,7 +10,8 @@ const { data: { session } } = await supabase.auth.getSession();
 if (session) return Astro.redirect("/");
 const t = useT(Astro);
 const lang = getLang(Astro);
-const initialMode = Astro.url.searchParams.get("mode") === "signup" ? "signup" : "signin";
+const prefillEmail = Astro.url.searchParams.get("email") ?? "";
+const initialMode = Astro.url.searchParams.get("mode") === "signup" || prefillEmail ? "signup" : "signin";
 const rawRedirect = Astro.url.searchParams.get("redirect");
 const redirectTo = rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "";
 // `sp` (storefront party id) is set when the user reaches /login from inside a storefront. It
@@ -103,7 +104,7 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
             </div>
             <div class="input-icon-group">
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>
-              <input id="su-email" type="email" placeholder={t.auth.emailPlaceholder} required autocomplete="email" />
+              <input id="su-email" type="email" value={prefillEmail} placeholder={t.auth.emailPlaceholder} required autocomplete="email" />
             </div>
             <div class="input-icon-group">
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>

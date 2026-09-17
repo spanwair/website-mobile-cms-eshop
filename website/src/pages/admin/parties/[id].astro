@@ -8,10 +8,13 @@ import { fetchParty, updateParty, fetchPartyMembers, inviteUserToParty, removeUs
 import { fetchCommissionaireAgreement, acceptCommissionaireAgreement, revokeCommissionaireAgreement } from "@shared/services/commissionaireService";
 import { fetchRoles } from "@shared/services/permissionsService";
 import { findUserByEmail } from "@shared/services/profileService";
+import { fetchProducts } from "@shared/services/productService";
 import { requireAdminCtx } from "@/lib/admin";
 import { useT, getLang } from "@/lib/i18n";
 import { PERMISSIONS, hasPermission, ROLE, ROLE_LABEL, assignableRoles, canAssignRole } from "@shared/constants/permissions";
 import { sendPartyInvitation, buildDevInviteMetadata } from "@/lib/integrations/email";
+import { SELLER_MODE, COMMISSION_RATE, REDUCED_COMMISSION_RATE, COMMISSION_REDUCED_THRESHOLD_CZK } from "@shared/constants/sellerMode";
+import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -69,6 +72,42 @@ if (Astro.request.method === "POST") {
         });
         if (result.error) { error = result.error.message; }
         else { success = t.admin.parties.updatedSuccess; }
+      }
+    }
+  } else if (action === "update_fee_schedule") {
+    if (!canManageSettings) {
+      error = t.admin.parties.errorInsufficientPermissions;
+    } else {
+      // Blank input = clear the override and fall back to the platform default. Rates are entered
+      // as percentages in the UI and stored as fractions (10 -> 0.10). resolveFeeSchedule reads
+      // NULL as "use global", so an empty field must become NULL, not 0.
+      const parsePct = (raw: string): number | null | undefined => {
+        const v = raw.trim();
+        if (v === "") return null;
+        const n = Number(v.replace(",", "."));
+        if (!Number.isFinite(n) || n < 0 || n > 100) return undefined; // invalid
+        return Math.round((n / 100) * 10000) / 10000;
+      };
+      const parseKc = (raw: string): number | null | undefined => {
+        const v = raw.trim();
+        if (v === "") return null;
+        const n = Number(v.replace(/\s/g, "").replace(",", "."));
+        if (!Number.isFinite(n) || n < 0) return undefined;
+        return Math.round(n * 100) / 100;
+      };
+      const rate = parsePct(form.get("commission_rate_pct") as string);
+      const reduced = parsePct(form.get("reduced_commission_rate_pct") as string);
+      const threshold = parseKc(form.get("commission_threshold_kc") as string);
+      if (rate === undefined || reduced === undefined || threshold === undefined) {
+        error = t.admin.parties.feeSchedule.errorInvalid;
+      } else {
+        const result = await updateParty(supabase, id!, {
+          commission_rate_override: rate,
+          reduced_commission_rate_override: reduced,
+          commission_threshold_override: threshold,
+        });
+        if (result.error) { error = result.error.message; }
+        else { success = t.admin.parties.feeSchedule.savedSuccess; }
       }
     }
   } else if (action === "invite") {
@@ -207,12 +246,53 @@ if (Astro.request.method === "POST") {
 const party = await fetchParty(supabase, id!);
 if (!party) return Astro.redirect("/admin/parties");
 
-const [members, allRoles, commissionAgreement] = await Promise.all([
+const partyProductsPage = Math.max(1, parseInt(new URL(Astro.request.url).searchParams.get("products_page") ?? "1", 10));
+const partyProductsPageSize = 20;
+
+const [members, allRoles, commissionAgreement, partyProductsResult] = await Promise.all([
   fetchPartyMembers(supabase, id!),
   fetchRoles(supabase),
   canManageSettings ? fetchCommissionaireAgreement(supabase, id!) : Promise.resolve(null),
+  fetchProducts(supabase, id!, { page: partyProductsPage, pageSize: partyProductsPageSize }),
 ]);
 const roles = allRoles.filter(r => !r.is_system);
+const partyProducts = partyProductsResult.data;
+const partyProductsTotal = partyProductsResult.total;
+const partyProductsTotalPages = Math.ceil(partyProductsTotal / partyProductsPageSize);
+
+function partyProductStatusClass(s: string) {
+  return s === "active" ? "badge-active" : s === "draft" ? "badge-draft" : "badge-inactive";
+}
+function partyProductStatusLabel(s: string) {
+  return s === "active" ? t.common.active : s === "draft" ? t.common.draft : t.common.inactive;
+}
+const partyStockColors = {
+  muted: "var(--text-muted)",
+  error: "var(--error)",
+  warning: "var(--warning)",
+  success: "var(--success)",
+} as const;
+type PartyStockVariant = keyof typeof partyStockColors;
+function partyStockDisplay(stock: number | null): { variant: PartyStockVariant; label: string } {
+  if (stock === null) return { variant: "muted", label: t.admin.products.noStockTracking };
+  if (stock <= 0) return { variant: "error", label: t.admin.products.outOfStock };
+  if (stock <= 10) return { variant: "warning", label: `${stock} ${t.admin.products.inStock}` };
+  return { variant: "success", label: `${stock} ${t.admin.products.inStock}` };
+}
+
+// Fee-schedule editor: inputs show the party's override when set, otherwise blank with the
+// global default as placeholder. Rates are percentages in the UI, fractions in the DB.
+const isOwnCompany = party.seller_mode === SELLER_MODE.OWN_COMPANY;
+const pctValue = (v: number | null) => (v === null || v === undefined ? "" : String(Math.round(Number(v) * 1000000) / 10000));
+const feeSchedule = {
+  ratePct: pctValue(party.commission_rate_override),
+  reducedPct: pctValue(party.reduced_commission_rate_override),
+  thresholdKc: party.commission_threshold_override === null || party.commission_threshold_override === undefined
+    ? "" : String(Number(party.commission_threshold_override)),
+  defRatePct: String(COMMISSION_RATE * 100),
+  defReducedPct: String(REDUCED_COMMISSION_RATE * 100),
+  defThresholdKc: COMMISSION_REDUCED_THRESHOLD_CZK.toLocaleString("cs-CZ"),
+};
 
 function roleName(roleId: string) {
   return allRoles.find((r) => r.id === roleId)?.name ?? roleId.slice(0, 8);
@@ -251,6 +331,7 @@ function roleName(roleId: string) {
   <div class="party-grid">
     <div>
       {canManageSettings && (
+        <Fragment>
         <div class="card">
           <h2 class="section-title">{t.admin.parties.sectionInfo}</h2>
           <form method="POST" class="edit-form">
@@ -315,6 +396,45 @@ function roleName(roleId: string) {
           </form>
         </div>
         <PartySellerModeCard party={party} agreement={commissionAgreement} lang={lang} t={t} />
+        {isOwnCompany && (
+          <div class="card" style="margin-top:16px">
+            <h2 class="section-title">{t.admin.parties.feeSchedule.title}</h2>
+            <p class="invite-note">{t.admin.parties.feeSchedule.hint}</p>
+            <form method="POST" class="party-form">
+              <input type="hidden" name="action" value="update_fee_schedule" />
+              <div class="form-row">
+                <label class="form-label" for="commission_rate_pct">{t.admin.parties.feeSchedule.standardRateLabel}</label>
+                <div class="fee-input-wrap">
+                  <input class="form-input" type="number" step="0.01" min="0" max="100" name="commission_rate_pct"
+                    id="commission_rate_pct" value={feeSchedule.ratePct}
+                    placeholder={`${feeSchedule.defRatePct} (${t.admin.parties.feeSchedule.defaultTag})`} />
+                  <span class="fee-suffix">%</span>
+                </div>
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="reduced_commission_rate_pct">{t.admin.parties.feeSchedule.reducedRateLabel}</label>
+                <div class="fee-input-wrap">
+                  <input class="form-input" type="number" step="0.01" min="0" max="100" name="reduced_commission_rate_pct"
+                    id="reduced_commission_rate_pct" value={feeSchedule.reducedPct}
+                    placeholder={`${feeSchedule.defReducedPct} (${t.admin.parties.feeSchedule.defaultTag})`} />
+                  <span class="fee-suffix">%</span>
+                </div>
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="commission_threshold_kc">{t.admin.parties.feeSchedule.thresholdLabel}</label>
+                <div class="fee-input-wrap">
+                  <input class="form-input" type="number" step="0.01" min="0" name="commission_threshold_kc"
+                    id="commission_threshold_kc" value={feeSchedule.thresholdKc}
+                    placeholder={`${feeSchedule.defThresholdKc} (${t.admin.parties.feeSchedule.defaultTag})`} />
+                  <span class="fee-suffix">Kč</span>
+                </div>
+              </div>
+              <p class="invite-note">{t.admin.parties.feeSchedule.clearNote}</p>
+              <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.common.saveChanges}</button>
+            </form>
+          </div>
+        )}
+        </Fragment>
       )}
 
       {canManageUsers && (
@@ -368,31 +488,97 @@ function roleName(roleId: string) {
       )}
     </div>
 
-    <div class="card">
-      <h2 class="section-title">{t.admin.parties.sectionMembers} ({members.length})</h2>
-      <table class="data-table">
-        <thead><tr><th>{t.admin.parties.colMemberName}</th><th>{t.admin.parties.colMemberEmail}</th><th>{t.admin.parties.colMemberRole}</th><th>{t.admin.parties.colJoined}</th><th></th></tr></thead>
-        <tbody>
-          {members.map((m) => (
+    <div style="display:flex;flex-direction:column;gap:24px;min-width:0">
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:16px 16px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <h2 class="section-title" style="margin-bottom:0">{t.admin.products.title} ({partyProductsTotal})</h2>
+          <span class="total-label" style="font-size:13px;color:var(--text-muted)">{partyProductsTotal} {t.admin.products.title.toLowerCase()}</span>
+        </div>
+        <table class="data-table" style="margin-top:12px">
+          <thead>
             <tr>
-              <td style="font-weight:600">{m.profile?.display_name ?? t.common.unnamed}</td>
-              <td style="font-size:13px;color:var(--text-muted)">{m.profile?.email ?? "—"}</td>
-              <td><span class="badge badge-pending">{roleName(m.role_id)}</span></td>
-              <td style="font-size:12px;color:var(--text-muted)">{new Date(m.joined_at).toLocaleDateString(lang)}</td>
-              <td>
-                {canManageUsers && m.user_id !== session.user.id && (
-                  <form method="POST" onsubmit={`return confirm('${t.admin.parties.removeConfirm}')`} style="display:inline">
-                    <input type="hidden" name="action" value="remove" />
-                    <input type="hidden" name="user_id" value={m.user_id} />
-                    <button type="submit" class="btn btn-danger" style="padding:4px 10px;font-size:12px">{t.admin.parties.removeBtn}</button>
-                  </form>
-                )}
-              </td>
+              <th></th>
+              <th>{t.admin.products.colName}</th>
+              <th>{t.admin.products.colSku}</th>
+              <th>{t.admin.products.colStatus}</th>
+              <th>{t.admin.products.colPrice}</th>
+              <th>{t.admin.products.colStock}</th>
+              <th>{t.admin.products.colActions}</th>
             </tr>
-          ))}
-          {members.length === 0 && <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">{t.admin.parties.noMembers}</td></tr>}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {partyProducts.map((p) => (
+              <tr>
+                <td class="thumb-cell">
+                  {p.primaryImage ? (
+                    p.primaryImageIsVideo ? (
+                      <video src={`${p.primaryImage}#t=0.1`} class="thumb-img" muted playsinline preload="metadata" aria-label={p.title} />
+                    ) : (
+                      <img src={p.primaryImage} alt={p.title} class="thumb-img" />
+                    )
+                  ) : (
+                    <div class="thumb-placeholder">{t.shop.noImage}</div>
+                  )}
+                </td>
+                <td style="font-weight:600">{p.title}</td>
+                <td style="color:var(--text-muted)">{p.sku ?? "—"}</td>
+                <td><span class={`badge ${partyProductStatusClass(p.status)}`}>{partyProductStatusLabel(p.status)}</span></td>
+                <td>{formatPrice(p.displayPrice, lang)}</td>
+                <td>
+                  {(() => {
+                    const s = partyStockDisplay((p as any).stock ?? null);
+                    return (
+                      <span style={`color:${partyStockColors[s.variant]};${s.variant !== "muted" ? "font-weight:600" : ""}`}>
+                        {s.label}
+                      </span>
+                    );
+                  })()}
+                </td>
+                <td>
+                  <a href={`/admin/products/${p.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.products.edit}</a>
+                </td>
+              </tr>
+            ))}
+            {partyProducts.length === 0 && (
+              <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.products.noProducts}</td></tr>
+            )}
+          </tbody>
+        </table>
+        {partyProductsTotalPages > 1 && (
+          <div class="pagination" style="padding:12px 16px">
+            {partyProductsPage > 1 && <a href={`?products_page=${partyProductsPage - 1}`} class="btn btn-ghost">{t.common.previous}</a>}
+            <span class="page-info">{t.common.page} {partyProductsPage} {t.common.of} {partyProductsTotalPages} ({t.common.total} {partyProductsTotal})</span>
+            {partyProductsPage < partyProductsTotalPages && <a href={`?products_page=${partyProductsPage + 1}`} class="btn btn-ghost">{t.common.next}</a>}
+          </div>
+        )}
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">{t.admin.parties.sectionMembers} ({members.length})</h2>
+        <table class="data-table">
+          <thead><tr><th>{t.admin.parties.colMemberName}</th><th>{t.admin.parties.colMemberEmail}</th><th>{t.admin.parties.colMemberRole}</th><th>{t.admin.parties.colJoined}</th><th></th></tr></thead>
+          <tbody>
+            {members.map((m) => (
+              <tr>
+                <td style="font-weight:600">{m.profile?.display_name ?? t.common.unnamed}</td>
+                <td style="font-size:13px;color:var(--text-muted)">{m.profile?.email ?? "—"}</td>
+                <td><span class="badge badge-pending">{roleName(m.role_id)}</span></td>
+                <td style="font-size:12px;color:var(--text-muted)">{new Date(m.joined_at).toLocaleDateString(lang)}</td>
+                <td>
+                  {canManageUsers && m.user_id !== session.user.id && (
+                    <form method="POST" onsubmit={`return confirm('${t.admin.parties.removeConfirm}')`} style="display:inline">
+                      <input type="hidden" name="action" value="remove" />
+                      <input type="hidden" name="user_id" value={m.user_id} />
+                      <button type="submit" class="btn btn-danger" style="padding:4px 10px;font-size:12px">{t.admin.parties.removeBtn}</button>
+                    </form>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {members.length === 0 && <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">{t.admin.parties.noMembers}</td></tr>}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </CmsLayout>
@@ -414,6 +600,10 @@ document.querySelectorAll('.system-role-select').forEach(sel => {
 </script>
 
 <style>
+  .form-row { margin-bottom:12px; }
+  .fee-input-wrap { position:relative; display:flex; align-items:center; }
+  .fee-input-wrap .form-input { padding-right:44px; }
+  .fee-suffix { position:absolute; right:12px; font-size:13px; color:var(--text-muted); pointer-events:none; }
   .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
   .back-link:hover { color:var(--text-primary); }
   .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
@@ -438,5 +628,10 @@ document.querySelectorAll('.system-role-select').forEach(sel => {
   .role-hint { font-weight:400; font-style:italic; color:var(--text-muted); }
   code { font-family:monospace; font-size:13px; background:var(--bg-subtle); padding:2px 6px; border-radius:4px; }
   .status-locked { font-size:13px; color:var(--text-muted); padding:8px 10px; background:var(--bg-subtle); border-radius:var(--radius-sm); border:1px solid var(--border-default); }
+  .thumb-cell { width:56px; }
+  .thumb-img { width:44px; height:44px; object-fit:cover; border-radius:6px; display:block; }
+  .thumb-placeholder { width:44px; height:44px; border-radius:6px; background:var(--bg-subtle); display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--text-muted); text-align:center; line-height:1.2; }
+  .pagination { display:flex; align-items:center; gap:12px; margin-top:16px; }
+  .page-info { font-size:13px; color:var(--text-muted); }
   @media(max-width:768px) { .party-grid { grid-template-columns:1fr; } }
 </style>
