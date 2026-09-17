@@ -5,7 +5,7 @@ description: Účetní kniha výplat pro organizaci pro prodejce na provizi a hi
 
 Výplaty je stránka s finančními údaji pro každou organizaci.
 To, co zobrazuje, závisí výhradně na aktivním `seller_mode` organizace: prodejce na provizi vidí účetní knihu výplat objednávka po objednávce, zatímco prodejce vlastní firmy vidí svou historii měsíčních poplatků platformy (s možností zaplatit poplatek online přes Stripe).
-Souhrn napříč organizacemi se nachází v [Fakturace](/docs/en/admin/billing); tato stránka je místo, kde jednáte s jednou organizací.
+Souhrn napříč organizacemi se nachází v [Fakturace](/docs/admin/billing); tato stránka je místo, kde jednáte s jednou organizací.
 
 ## Požadované oprávnění
 
@@ -66,7 +66,7 @@ Pouze globální **vlastník** vidí **Označit poplatek jako zaplacený** (`act
 
 ## Související stránky
 
-- [Fakturace](/docs/en/admin/billing) - přehled napříč organizacemi a tlačítko Resolve, které zde přistane
-- [Organizace](/docs/en/admin/parties) - karta Režimu prodejce, která určuje, jaký pohled tato stránka zobrazuje
-- [Zprávy](/docs/en/admin/reports) - období fakturace a CSV pro daně, které shrnuje stejné údaje
-- [Objednávky](/docs/en/admin/orders) - každý záznam v účetní knize provize odpovídá jedné objednávce
+- [Fakturace](/docs/admin/billing) - přehled napříč organizacemi a tlačítko Resolve, které zde přistane
+- [Organizace](/docs/admin/parties) - karta Režimu prodejce, která určuje, jaký pohled tato stránka zobrazuje
+- [Zprávy](/docs/admin/reports) - období fakturace a CSV pro daně, které shrnuje stejné údaje
+- [Objednávky](/docs/admin/orders) - každý záznam v účetní knize provize odpovídá jedné objednávce

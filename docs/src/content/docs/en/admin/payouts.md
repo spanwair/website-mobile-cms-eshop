@@ -43,7 +43,8 @@ This posts `action=mark_paid`, which sets the ledger row to `paid` with `paid_at
 ## Own-company sellers (`own_company`)
 
 Instead of a ledger, this mode renders the `PlatformFeeHistory` of up to 24 monthly billing periods.
-Kytka z Beskyd, which starts in own-company mode, would see its monthly 10% platform fees here.
+The fee is 10% of each month's turnover, dropping to a reduced 5% on the whole month once turnover passes 29 900 Kč (both rates and the threshold can be overridden per organization).
+Kytka z Beskyd, which starts in own-company mode, would see its monthly platform fees here.
 
 ### Paying a monthly fee online (Stripe)
 

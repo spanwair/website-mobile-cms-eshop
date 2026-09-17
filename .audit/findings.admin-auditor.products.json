@@ -1,8 +1,0 @@
-{
-  "agent": "admin-auditor",
-  "slice": "products",
-  "findings": [
-    {"severity": "P2", "title": "example: missing alt text on product image gallery", "file": "website/src/pages/admin/products/[id].astro:142", "autoland": true},
-    {"severity": "P1", "title": "example: N+1 query fetching categories per product", "file": "shared/services/productService.ts:58", "autoland": false}
-  ]
-}

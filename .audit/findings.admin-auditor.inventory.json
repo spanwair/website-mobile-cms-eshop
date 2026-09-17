@@ -1,8 +1,0 @@
-{
-  "agent": "admin-auditor",
-  "slice": "inventory",
-  "findings": [
-    {"severity": "P2", "title": "low-stock threshold input missing accessible label", "file": "website/src/pages/admin/inventory/index.astro:102", "autoland": true},
-    {"severity": "P1", "title": "inventory stock deduction not wrapped in transaction with cross-party check", "file": "shared/services/inventoryService.ts:94", "autoland": false}
-  ]
-}

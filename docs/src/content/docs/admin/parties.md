@@ -5,7 +5,7 @@ description: Vytvářejte, upravujte, schvalujte a obsazujte organizace (strany)
 
 **Organizace** (tzv. „strana“ v databázi) je nejvyšší kontejner pro data obchodu.
 Produkty, kategorie, objednávky, zákazníci, skladové zásoby, ceny a obsah CMS patří do přesně jedné organizace.
-Tímto způsobem platforma udržuje více e-shopů, jako je [Kytka z Beskyd](/docs/en/admin/dashboard) a jakýkoli jiný nájemce, zcela izolované od sebe.
+Tímto způsobem platforma udržuje více e-shopů, jako je [Kytka z Beskyd](/docs/admin/dashboard) a jakýkoli jiný nájemce, zcela izolované od sebe.
 
 ## Požadované oprávnění
 
@@ -42,7 +42,7 @@ Pokud nejsou žádné organizace, je zobrazen řádek s prázdným stavem uprost
 ## Vytváření nové organizace (`/admin/parties/new`)
 
 Pouze administrátoři a vlastníci dosáhnou této stránky; jakýkoli uživatel pod úrovní administrátora je přesměrován na `/admin/parties`.
-Pokud je otevřena s parametrem `?onboarding=1` (z [onboardingového průvodce](/docs/en/admin/onboarding)), objeví se úvodní banner a úspěšné přesměrování předá tento flag do tutoriálu.
+Pokud je otevřena s parametrem `?onboarding=1` (z [onboardingového průvodce](/docs/admin/onboarding)), objeví se úvodní banner a úspěšné přesměrování předá tento flag do tutoriálu.
 
 ### Máte IČO?
 
@@ -102,7 +102,7 @@ V horní části se objevují upozornění na úspěch a chyby, plus jakýkoli b
 
 - **Vlastník**, který prohlíží organizaci ve stavu `pending_approval`, vidí banner s tlačítkem **Schválit**.
   Kliknutí na něj (po dialogu potvrzení) spustí akci `approve_party` a nastaví stav na `active`, čímž obchod získá živý stav.
-- **Vytvořil (nenávladatel)** vidí banner pouze pro čtení vysvětlující, že organizace čeká na schválení vlastníka, plus odkaz do [onboardingového tutoriálu](/docs/en/admin/onboarding) při příchodu přes `?onboarding=1`.
+- **Vytvořil (nenávladatel)** vidí banner pouze pro čtení vysvětlující, že organizace čeká na schválení vlastníka, plus odkaz do [onboardingového tutoriálu](/docs/admin/onboarding) při příchodu přes `?onboarding=1`.
 
 ### Levý sloupec - Informace o organizaci (vyžaduje MANAGE_AUDIT)
 
@@ -136,7 +136,7 @@ Ukládání spustí akci `update_party`.
 
 Pod formulářem informací se zobrazí kartička **Režim prodejce** (komponenta `PartySellerModeCard`), která zobrazuje aktuální režim a jeho popis.
 
-- **Režim provize s aktivní dohodou**: zobrazuje datum účinnosti dohody a verzi akceptovaných podmínek, odkaz na [účet výplat](/docs/en/admin/payouts) a tlačítko **Zpět**.
+- **Režim provize s aktivní dohodou**: zobrazuje datum účinnosti dohody a verzi akceptovaných podmínek, odkaz na [účet výplat](/docs/admin/payouts) a tlačítko **Zpět**.
   Zpět (po potvrzení) spustí `revoke_commission_agreement`.
 - **Režim vlastní společnosti**: zobrazuje upozornění **Přepnout na provizi**.
   Rozbalení odhalí plný text dohody plus formulář (plné právní jméno, adresa 1, město, PSČ, bankovní účet, poznámka k osobnímu ID a povinné zaškrtávací políčko pro podmínky).
@@ -161,15 +161,15 @@ Upravování plánu vyžaduje MANAGE_AUDIT.
 ### Levý sloupec - Zveřejnit člena (vyžaduje MANAGE_USERS)
 
 Formulář pro přidání někoho do této organizace.
-Podívejte se na [úplný proces zveřejňování](/invite-flow) níže.
+Podívejte se na [úplný proces zveřejňování](#invite-flow) níže.
 
 | Pole | Poznámky |
 |---|---|
 | E-mail | Požadováno |
 | Role systému | Rozbalovací menu rolí, které můžete přidělit, filtrované na Eshop Admin a vyšší, ale pod Vlastníkem. Skryto, pokud nemůžete přidělit žádnou |
-| Role | [Vlastní role](/docs/en/admin/roles), kterou udělíte v této straně. Vyplněno z ne-systémových rolí |
+| Role | [Vlastní role](/docs/admin/roles), kterou udělíte v této straně. Vyplněno z ne-systémových rolí |
 
-Poznámka vysvětluje chování zveřejňování a pokud nemáte žádné přidělitelné systémy role, přesměruje vás na [Uživatelé](/docs/en/admin/users).
+Poznámka vysvětluje chování zveřejňování a pokud nemáte žádné přidělitelné systémy role, přesměruje vás na [Uživatelé](/docs/admin/users).
 Skript na straně klienta: když je systémová role nastavena na **admin**, rozbalovací menu role strany je skryto a není vyžadováno (administrátor získá plná oprávnění z systémové role, takže není potřeba vlastní role).
 Pro **eshop_admin** se vlastní role stává vyžadovanou, pokud existují role.
 
@@ -202,7 +202,7 @@ Akce zveřejňování se rozvětvuje podle toho, zda e-mail již existuje, a pod
   Metainformace o zveřejnění (`pending_party_id`, `pending_role_id`, `pending_system_role`, `invited_by`) jsou vloženy, aby byl účet správně připojen, když uživatel klikne na `/auth/callback` a nastaví heslo.
 
 Při přidělování rolí se vždy dodržuje `canAssignRole`: odeslaná systémová role je uznána pouze tehdy, pokud jste oprávněni ji přidělit.
-Podívejte se na [Uživatelé](/docs/en/admin/users) pro pravidla přidělování a na [Role](/docs/en/admin/roles) pro vytváření vlastních rolí zobrazených v rozbalovacím menu zveřejňování.
+Podívejte se na [Uživatelé](/docs/admin/users) pro pravidla přidělování a na [Role](/docs/admin/roles) pro vytváření vlastních rolí zobrazených v rozbalovacím menu zveřejňování.
 
 ## Data a úložiště (cloud)
 
@@ -217,9 +217,9 @@ Podívejte se na [Uživatelé](/docs/en/admin/users) pro pravidla přidělován�
 
 ## Související stránky
 
-- [Onboarding](/docs/en/admin/onboarding) - průvodní proces, který používá samo-registrovaný administrátor k vytvoření své první organizace
-- [Uživatelé](/docs/en/admin/users) - změna systémových rolí a přidělení organizací stávajících uživatelů
-- [Role](/docs/en/admin/roles) - vytváření vlastních rolí nabízených v formuláři zveřejňování
-- [Výplaty](/docs/en/admin/payouts) - účet odkazovaný z kartičky Režim prodejce
-- [Fakturace](/docs/en/admin/billing) - přehled poplatků a výplat napříč organizacemi
-- [Nastavení obchodu](/docs/en/admin/settings-branding) - vzhled značky a konfigurace pro vybranou organizaci
+- [Onboarding](/docs/admin/onboarding) - průvodní proces, který používá samo-registrovaný administrátor k vytvoření své první organizace
+- [Uživatelé](/docs/admin/users) - změna systémových rolí a přidělení organizací stávajících uživatelů
+- [Role](/docs/admin/roles) - vytváření vlastních rolí nabízených v formuláři zveřejňování
+- [Výplaty](/docs/admin/payouts) - účet odkazovaný z kartičky Režim prodejce
+- [Fakturace](/docs/admin/billing) - přehled poplatků a výplat napříč organizacemi
+- [Nastavení obchodu](/docs/admin/settings-branding) - vzhled značky a konfigurace pro vybranou organizaci

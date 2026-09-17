@@ -1,8 +1,0 @@
-{
-  "agent": "admin-auditor",
-  "slice": "pricing",
-  "findings": [
-    {"severity": "P2", "title": "coupon code input missing autocomplete off and aria-describedby", "file": "website/src/pages/admin/pricing/index.astro:76", "autoland": true},
-    {"severity": "P1", "title": "pricing discount validation allows discount_price >= price when party overrides missing", "file": "shared/services/pricingService.ts:51", "autoland": false}
-  ]
-}

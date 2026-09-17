@@ -22,7 +22,7 @@ Each organization has a `seller_mode` (set on the Seller Mode card in [Organizat
 
 | Mode | Badge | How it is charged |
 |---|---|---|
-| Own company (`own_company`) | green "Own company" | 10% platform fee, capped at `MONTHLY_COMMISSION_CAP_CZK` (2 990 Kč) per month, billed as a monthly platform fee. Kytka z Beskyd starts in this mode. |
+| Own company (`own_company`) | green "Own company" | `COMMISSION_RATE` (10%) of monthly turnover, dropping to `REDUCED_COMMISSION_RATE` (5%) on the whole month once turnover passes `COMMISSION_REDUCED_THRESHOLD_CZK` (29 900 Kč), billed as a monthly platform fee. Any of these three can be overridden per organization (see [Organizations](/docs/en/admin/parties)). Kytka z Beskyd starts in this mode. |
 | Commission (`smalljobs_commission`) | amber "Commission" | Per-order commission held in a ledger, with a `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` (12 000 Kč) monthly payout limit. |
 
 ## The overview table (`/admin/billing`)
@@ -31,7 +31,7 @@ Each organization has a `seller_mode` (set on the Seller Mode card in [Organizat
 |---|---|---|
 | Organization | Party name. | Party name. |
 | Mode | Pricing-mode badge. | Pricing-mode badge. |
-| This month | Current month's fee vs the 2 990 Kč cap, with a paid/unpaid badge; "no activity yet" when there is no fee row. | Payout so far this month vs the 12 000 Kč limit, drawn as a progress bar, plus a red "withheld" note when any amount was withheld. |
+| This month | Current month's fee with the applied rate (10% or the reduced 5%), plus a paid/unpaid badge; "no activity yet" when there is no fee row. | Payout so far this month vs the 12 000 Kč limit, drawn as a progress bar, plus a red "withheld" note when any amount was withheld. |
 | Outstanding | Total unpaid fee amount and how many unpaid months, or "nothing due". | Total eligible-to-pay amount and how many ledger entries are ready, or "nothing due". |
 | Actions | **Resolve** button. | **Resolve** button. |
 
@@ -43,7 +43,7 @@ Billing itself is read-only; it never changes a balance.
 ## Data & storage (cloud)
 
 - **Tables:** `parties` (`seller_mode`), `monthly_platform_fees` (own-company fees: `period_month`, `fee_amount`, `status`), `order_commission_ledger` (commission entries: `net_payable`, `withheld_amount`, `status`, `hold_until`).
-- **Constants:** `SELLER_MODE`, `MONTHLY_COMMISSION_CAP_CZK`, `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` from `shared/constants/sellerMode.ts`.
+- **Constants:** `SELLER_MODE`, `COMMISSION_RATE`, `REDUCED_COMMISSION_RATE`, `COMMISSION_REDUCED_THRESHOLD_CZK`, `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` from `shared/constants/sellerMode.ts`. Per-organization overrides live on `parties` (`commission_rate_override`, `reduced_commission_rate_override`, `commission_threshold_override`) and are resolved by `resolveFeeSchedule()` in `shared/utils/billingFeeCalc.ts`.
 - Reads only; scoped to `ctx.parties`.
 
 ## Related pages
