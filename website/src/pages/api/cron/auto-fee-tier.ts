@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { createAdminClient } from "@/lib/supabase";
-import { SELLER_MODE, COMMISSION_BREAK_EVEN_CZK } from "@shared/constants/sellerMode";
+import { SELLER_MODE } from "@shared/constants/sellerMode";
 import { previousCalendarMonth } from "@shared/utils/billingPeriod";
 import { evaluateFeeTierForClosedPeriod, markFeeTierEventNotified } from "@shared/services/feeTierService";
 import { createNotification, resolvePartyNotificationRecipients } from "@shared/services/notificationService";
@@ -10,7 +10,7 @@ import { getT } from "@shared/i18n/getT";
 // Called monthly by Supabase pg_cron (see supabase/migrations/20260103000079_auto_fee_tier.sql)
 // on the 1st of each month, 15 minutes after monthly-platform-fees, to evaluate each
 // own_company party's just-closed calendar month and auto-switch fee_mode between
-// 'percentage' and 'fixed' (shared/services/feeTierService.ts). Protected by the same shared
+// 'percentage' and 'reduced' (shared/services/feeTierService.ts). Protected by the same shared
 // secret as the other cron routes -- no logged-in caller here.
 export const POST: APIRoute = async ({ request }) => {
   const secret = import.meta.env.CRON_SECRET;
@@ -24,7 +24,9 @@ export const POST: APIRoute = async ({ request }) => {
   const adminClient = createAdminClient();
   const { data: parties, error: partiesErr } = await adminClient
     .from("parties")
-    .select("id, name, billing_email, lang, seller_mode")
+    .select(
+      "id, name, billing_email, lang, seller_mode, commission_rate_override, reduced_commission_rate_override, commission_threshold_override"
+    )
     .eq("seller_mode", SELLER_MODE.OWN_COMPANY)
     .eq("status", "active");
   if (partiesErr) {
@@ -49,7 +51,7 @@ export const POST: APIRoute = async ({ request }) => {
       changed.push(party.id);
       const t = getT(evalResult.lang);
       const ft = t.email.feeTierChange;
-      const toFixed = evalResult.newFeeMode === "fixed";
+      const toReduced = evalResult.newFeeMode === "reduced";
 
       try {
         const recipients = await resolvePartyNotificationRecipients(adminClient, party.id);
@@ -58,8 +60,8 @@ export const POST: APIRoute = async ({ request }) => {
           {
             party_id: party.id,
             type: "fee_tier_change",
-            title: toFixed ? ft.notifTitleToFixed : ft.notifTitleToPercentage,
-            body: toFixed ? ft.notifBodyToFixed : ft.notifBodyToPercentage,
+            title: toReduced ? ft.notifTitleToReduced : ft.notifTitleToPercentage,
+            body: toReduced ? ft.notifBodyToReduced : ft.notifBodyToPercentage,
             metadata: {
               period_start: evalResult.periodStart,
               previous_fee_mode: evalResult.previousFeeMode,
@@ -81,10 +83,10 @@ export const POST: APIRoute = async ({ request }) => {
             to: evalResult.billingEmail,
             partyName: evalResult.partyName,
             periodStart: evalResult.periodStart,
-            previousFeeMode: evalResult.previousFeeMode as "percentage" | "fixed",
-            newFeeMode: evalResult.newFeeMode as "percentage" | "fixed",
+            previousFeeMode: evalResult.previousFeeMode as "percentage" | "reduced",
+            newFeeMode: evalResult.newFeeMode as "percentage" | "reduced",
             grossRevenueAmount: evalResult.grossRevenueKc,
-            thresholdAmount: COMMISSION_BREAK_EVEN_CZK,
+            thresholdAmount: evalResult.thresholdKc,
             lang: evalResult.lang,
           });
           await markFeeTierEventNotified(adminClient, party.id, evalResult.periodStart, "notified_email");

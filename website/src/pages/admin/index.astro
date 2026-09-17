@@ -6,7 +6,8 @@ import { fetchUsersForAdmin } from "@shared/services/profileService";
 import { fetchProducts } from "@shared/services/productService";
 import { fetchOrders } from "@shared/services/orderService";
 import { fetchProductOverview, fetchProductActivityLog } from "@shared/services/productOverviewService";
-import type { ProductOverviewStats, ProductActivityEvent } from "@shared/types";
+import { fetchPartiesPaged } from "@shared/services/partyService";
+import type { ProductOverviewStats, ProductActivityEvent, Party } from "@shared/types";
 import { requireAdminCtx } from "../../lib/admin";
 import { useT, getLang } from "../../lib/i18n";
 import { ROLE, PERMISSIONS, hasPermission } from "@shared/constants/permissions";
@@ -112,6 +113,27 @@ const kpis = [
   ...((canOrders || canReports) ? [{ key: "revenue", label: t.admin.kpiRevenue, value: formatPrice(revenue, lang) }] : []),
 ];
 
+// Owner-only: eshops awaiting approval (status = pending_approval), paginated max 10 per page.
+// Only pending parties appear here — already approved ones are excluded by the status filter.
+const pendingPageSize = 10;
+let pendingParties: Party[] = [];
+let pendingTotal = 0;
+let pendingTotalPages = 0;
+let pendingPage = 1;
+if (ctx.isOwner && tablesReady) {
+  const url = new URL(Astro.request.url);
+  pendingPage = Math.max(1, parseInt(url.searchParams.get("pendingPage") ?? "1", 10));
+  const pendingResult = await fetchPartiesPaged(supabase, { page: pendingPage, pageSize: pendingPageSize, status: "pending_approval" });
+  pendingParties = pendingResult.data;
+  pendingTotal = pendingResult.total;
+  pendingTotalPages = Math.ceil(pendingTotal / pendingPageSize);
+  if (pendingPage > pendingTotalPages && pendingTotalPages > 0) {
+    pendingPage = pendingTotalPages;
+    const corrected = await fetchPartiesPaged(supabase, { page: pendingPage, pageSize: pendingPageSize, status: "pending_approval" });
+    pendingParties = corrected.data;
+  }
+}
+
 function statusClass(s: string) {
   const map: Record<string, string> = {
     pending: "badge-pending", confirmed: "badge-active", processing: "badge-draft",
@@ -146,6 +168,46 @@ const dateLocale = lang === "en" ? "en-US" : "cs-CZ";
     <div class="info-banner onboarding-banner">
       🚀 {t.admin.onboardingWizard.tutorialIntro}
       <a href="/admin/onboarding/tutorial" class="banner-link">{t.admin.onboardingWizard.tutorialTitle}</a>
+    </div>
+  )}
+
+  {ctx.isOwner && tablesReady && (
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:24px" data-section="pending-approvals">
+      <div style="padding:20px 20px 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:12px">
+          <h2 class="section-title" style="margin-bottom:0">{t.admin.pendingApprovals.title}</h2>
+          <span class="total-label">{pendingTotal} {t.admin.pendingApprovals.totalLabel}</span>
+        </div>
+        {pendingTotal > 0 && <p class="pending-hint">{t.admin.pendingApprovals.hint}</p>}
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr><th>{t.admin.pendingApprovals.colName}</th><th>{t.admin.pendingApprovals.colSlug}</th><th>{t.admin.pendingApprovals.colCompany}</th><th>{t.admin.pendingApprovals.colCreated}</th><th>{t.admin.pendingApprovals.colActions}</th></tr>
+          </thead>
+          <tbody>
+            {pendingParties.map((p) => (
+              <tr>
+                <td style="font-weight:600">{p.name}</td>
+                <td style="font-family:monospace;font-size:13px;color:var(--text-muted)">{p.slug}</td>
+                <td style="color:var(--text-muted)">{p.company_name ?? "—"}</td>
+                <td style="font-size:13px;color:var(--text-muted)">{new Date(p.created_at).toLocaleDateString(lang)}</td>
+                <td><a href={`/admin/parties/${p.id}`} class="btn btn-ghost" style="padding:6px 12px;font-size:13px">{t.admin.pendingApprovals.view}</a></td>
+              </tr>
+            ))}
+            {pendingParties.length === 0 && (
+              <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.pendingApprovals.empty}</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      {pendingTotalPages > 1 && (
+        <div class="pagination" style="padding:12px 20px">
+          {pendingPage > 1 && <a href={`?pendingPage=${pendingPage - 1}`} class="btn btn-ghost">{t.common.previous}</a>}
+          <span class="page-info">{t.common.page} {pendingPage} {t.common.of} {pendingTotalPages} ({t.common.total} {pendingTotal})</span>
+          {pendingPage < pendingTotalPages && <a href={`?pendingPage=${pendingPage + 1}`} class="btn btn-ghost">{t.common.next}</a>}
+        </div>
+      )}
     </div>
   )}
 
@@ -213,5 +275,10 @@ const dateLocale = lang === "en" ? "en-US" : "cs-CZ";
   .chart-placeholder { height:160px; background:var(--bg-subtle); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:14px; }
   .empty { color:var(--text-muted); font-size:14px; padding:16px 0; }
   .section-title { font-size:16px; font-weight:700; margin-bottom:16px; }
+  .total-label { font-size:13px; color:var(--text-muted); }
+  .pending-hint { font-size:13px; color:var(--text-muted); margin-bottom:16px; line-height:1.5; }
+  .pagination { display:flex; align-items:center; gap:12px; margin-top:0; border-top:1px solid var(--border-default); }
+  .page-info { font-size:13px; color:var(--text-muted); }
+  .badge-pending_approval { background: rgba(234,179,8,0.14); color: #a16207; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
   @media(max-width:768px) { .dashboard-grid { grid-template-columns:1fr; } }
 </style>

@@ -9,7 +9,7 @@ const t = useT(Astro);
 const lang = getLang(Astro);
 ---
 
-<a href={`${linkBase}/${product.slug}`} class="product-card">
+<a href={`${linkBase}/${product.slug}`} class="product-card" data-testid="product-card">
   <div class="product-img-wrap">
     {product.primaryImage ? (
       product.primaryMediaType === "video" ? (

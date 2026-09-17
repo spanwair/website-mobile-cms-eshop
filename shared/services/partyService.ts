@@ -23,6 +23,20 @@ export async function fetchParties(client: Client): Promise<Party[]> {
   return (data ?? []) as Party[];
 }
 
+export async function fetchPartiesPaged(
+  client: Client,
+  opts: { page?: number; pageSize?: number; status?: Party["status"] } = {}
+): Promise<{ data: Party[]; total: number; page: number; pageSize: number }> {
+  const { page = 1, pageSize = 20, status } = opts;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  let query = client.from("parties").select("*", { count: "exact" }).order("created_at", { ascending: false });
+  if (status) query = query.eq("status", status);
+  const { data, error, count } = await query.range(from, to);
+  if (error) throw new Error(error.message);
+  return { data: (data ?? []) as Party[], total: count ?? 0, page, pageSize };
+}
+
 export async function createParty(
   client: Client,
   input: {
@@ -60,7 +74,7 @@ export async function createParty(
 export async function updateParty(
   client: Client,
   partyId: string,
-  updates: Partial<Pick<Party, "name" | "slug" | "company_name" | "company_ico" | "vat_number" | "billing_email" | "logo_url" | "settings" | "status" | "lang">>
+  updates: Partial<Pick<Party, "name" | "slug" | "company_name" | "company_ico" | "vat_number" | "billing_email" | "logo_url" | "settings" | "status" | "lang" | "commission_rate_override" | "reduced_commission_rate_override" | "commission_threshold_override">>
 ): Promise<{ error: Error | null }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await client.from("parties").update(updates as any).eq("id", partyId);

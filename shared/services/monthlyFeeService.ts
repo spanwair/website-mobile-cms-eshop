@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { SELLER_MODE, COMMISSION_RATE, MONTHLY_COMMISSION_CAP_CZK } from "../constants/sellerMode";
+import { SELLER_MODE } from "../constants/sellerMode";
+import { resolveFeeSchedule } from "../utils/billingFeeCalc";
 
 export interface NewMonthlyFee {
   id: string;
@@ -14,8 +15,9 @@ export interface NewMonthlyFee {
 }
 
 // Computes and records each own_company party's platform fee for one calendar month
-// (10% of turnover, capped at MONTHLY_COMMISSION_CAP_CZK — shared/constants/sellerMode.ts is
-// the single source of truth for both numbers). own_company has no per-order deduction
+// (standard rate of turnover, dropping to the reduced rate on the whole month once turnover
+// exceeds the threshold — resolveFeeSchedule + shared/constants/sellerMode.ts are the single
+// source of truth, and each party may override the rates/threshold). own_company has no per-order deduction
 // (contrast smalljobs_commission, handled in real time by commissionLedgerService.ts), so this
 // is billed after the fact as a manually-reconciled invoice — see monthly_platform_fees
 // migration. Safe to re-run for the same period: upserts with ignoreDuplicates, so a row that
@@ -32,7 +34,9 @@ export async function computeMonthlyFeesForPeriod(
 
   const { data: parties, error: partiesErr } = await client
     .from("parties")
-    .select("id, name, billing_email, lang")
+    .select(
+      "id, name, billing_email, lang, commission_rate_override, reduced_commission_rate_override, commission_threshold_override"
+    )
     .eq("seller_mode", SELLER_MODE.OWN_COMPANY)
     .eq("status", "active");
   if (partiesErr) return { error: new Error(partiesErr.message), created: [] };
@@ -59,12 +63,14 @@ export async function computeMonthlyFeesForPeriod(
     .map((party) => {
       const turnover = turnoverByParty.get(party.id) ?? 0;
       if (turnover <= 0) return null;
-      const feeAmount = Math.round(Math.min(turnover * COMMISSION_RATE, MONTHLY_COMMISSION_CAP_CZK) * 100) / 100;
+      const schedule = resolveFeeSchedule(party);
+      const feeRate = turnover > schedule.thresholdKc ? schedule.reducedRate : schedule.standardRate;
+      const feeAmount = Math.round(turnover * feeRate * 100) / 100;
       return {
         party_id: party.id,
         period_month: periodMonthDate,
         turnover_amount: Math.round(turnover * 100) / 100,
-        fee_rate: COMMISSION_RATE,
+        fee_rate: feeRate,
         fee_amount: feeAmount,
         currency: currencyByParty.get(party.id) ?? "CZK",
         status: "unpaid" as const,

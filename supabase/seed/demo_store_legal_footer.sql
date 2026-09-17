@@ -19,22 +19,8 @@ UPDATE store_configs SET
 WHERE party_id = 'a0000000-0000-0000-0000-000000000001';
 
 -- Footer badges ------------------------------------------------------------------------------
-INSERT INTO footer_badges (party_id, kind, label, icon, sort_order) VALUES
-  ('a0000000-0000-0000-0000-000000000001', 'shipping', 'Zásilkovna', '📦', 1),
-  ('a0000000-0000-0000-0000-000000000001', 'shipping', 'PPL', '🚚', 2),
-  ('a0000000-0000-0000-0000-000000000001', 'shipping', 'GLS', '🚚', 3),
-  ('a0000000-0000-0000-0000-000000000001', 'shipping', 'Česká pošta', '✉️', 4),
-  ('a0000000-0000-0000-0000-000000000001', 'shipping', 'Osobní odběr', '🏬', 5);
-
-INSERT INTO footer_badges (party_id, kind, label, icon, sort_order) VALUES
-  ('a0000000-0000-0000-0000-000000000001', 'payment', 'Visa', '💳', 1),
-  ('a0000000-0000-0000-0000-000000000001', 'payment', 'Mastercard', '💳', 2),
-  ('a0000000-0000-0000-0000-000000000001', 'payment', 'Google Pay', '📱', 3),
-  ('a0000000-0000-0000-0000-000000000001', 'payment', 'Apple Pay', '📱', 4),
-  ('a0000000-0000-0000-0000-000000000001', 'payment', 'Dobírkou', '📦', 5),
-  ('a0000000-0000-0000-0000-000000000001', 'payment', 'Bankovním převodem', '🏦', 6),
-  ('a0000000-0000-0000-0000-000000000001', 'payment', 'Splátky Home Credit', '🏛️', 7);
-
+-- shipping/payment badges are the platform-managed integrated set (PPL, Zásilkovna, card
+-- payment) seeded by the on_party_created_seed_footer_badges trigger — not listed here.
 INSERT INTO footer_badges (party_id, kind, label, icon, url, sort_order) VALUES
   ('a0000000-0000-0000-0000-000000000001', 'social', 'Facebook', '📘', 'https://facebook.com', 1),
   ('a0000000-0000-0000-0000-000000000001', 'social', 'Instagram', '📷', 'https://instagram.com', 2),

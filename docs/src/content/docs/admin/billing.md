@@ -4,12 +4,12 @@ description: Přehled napříč organizacemi cenového režimu každé strany, p
 ---
 
 Fakturace je přehled na úrovni platformy, který zahrnuje všechny strany.
-Na jednom obrazovce zobrazuje každou organizaci, kterou můžete vidět - její cenový režim, poplatek za tento měsíc a její dlužný zůstatek - takže se vám nikdy nemusíte přepínat mezi aktivní stranou a hledat informace pro každou organizaci zvlášť v [Výplatách](/docs/admin/payouts).
-Je vždy omezeno na `ctx.parties`: vlastník vidí všechny strany, administrátor vidí pouze ty, které mu byly přiděleny.
+Na jednom obrazovce zobrazuje každou organizaci, kterou můžete vidět - její cenový režim, poplatek za tento měsíc a dlužný zůstatek - takže se vám nikdy nemusíte přepínat mezi aktivními stranami a hledat jednotlivě v [Výplatách](/docs/admin/payouts) každé organizace.
+Je vždy omezeno na `ctx.parties`: vlastník vidí všechny strany, administrátor vidí pouze ty, které jsou mu přiděleny.
 
 ## Požadované oprávnění
 
-| Bit oprávnění | Název | Kdo ho má výchozíně |
+| Bit oprávnění | Název | Kdo ho má výchozí |
 |---|---|---|
 | 4096 | MANAGE_AUDIT | Vlastník, Administrátor, Administrátor obchodu (s tímto bitem) |
 
@@ -22,8 +22,8 @@ Každá organizace má `seller_mode` (nastavený na kartě Režim pro prodejce v
 
 | Režim | Odznak | Jak je účtováno |
 |---|---|---|
-| Vlastní společnost (`own_company`) | zelený "Vlastní společnost" | 10% poplatku za platformu, omezeno na `MONTHLY_COMMISSION_CAP_CZK` (2 990 Kč) měsíčně, fakturováno jako měsíční poplatek za platformu. Kytka z Beskyd začíná v tomto režimu. |
-| Provize (`smalljobs_commission`) | hnědý "Provize" | Provize za objednávku uchovávaná v účetním knihě, s měsíčním limitem výplaty `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` (12 000 Kč). |
+| Vlastní společnost (`own_company`) | zelený "Vlastní společnost" | `COMMISSION_RATE` (10 %) z měsíčního obratu, který klesá na `REDUCED_COMMISSION_RATE` (5 %) za celý měsíc, jakmile obrat překročí `COMMISSION_REDUCED_THRESHOLD_CZK` (29 900 Kč), fakturováno jako měsíční poplatek platformy. Jakákoli z těchto tří hodnot může být přepsána pro každou organizaci (viz [Organizace](/docs/admin/parties)). Kytka z Beskyd začíná v tomto režimu. |
+| Provize (`smalljobs_commission`) | hnědý "Provize" | Provizní poplatek účtovaný v účetní knize, s měsíčním limitem výplaty `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` (12 000 Kč). |
 
 ## Přehledová tabulka (`/admin/billing`)
 
@@ -31,23 +31,23 @@ Každá organizace má `seller_mode` (nastavený na kartě Režim pro prodejce v
 |---|---|---|
 | Organizace | Název strany. | Název strany. |
 | Režim | Odznak cenového režimu. | Odznak cenového režimu. |
-| Tento měsíc | Poplatek za aktuální měsíc oproti limitu 2 990 Kč, s odznakem zaplaceno/nezaplaceno; "žádná aktivita zatím" při absenci řádku poplatku. | Výplata do té doby tohoto měsíce oproti limitu 12 000 Kč, zobrazená jako lišta pokroku, plus červená poznámka "zdrženo", pokud byla zdržena jakákoli částka. |
-| Dlužné | Celková nezaplacená částka poplatku a počet nezaplacených měsíců, nebo "nic neplatné". | Celková částka způsobilá k platbě a počet připravených záznamů v účetní knize, nebo "nic neplatné". |
+| Tento měsíc | Poplatek za tento měsíc s aplikovanou sazbou (10 % nebo snížená 5 %), plus odznak zaplaceno/nezaplaceno; „žádná aktivita zatím“ při absenci řádku poplatku. | Výplata do tohoto měsíce oproti limitu 12 000 Kč, zobrazená jako lišta pokroku, plus červená poznámka „zdrženo“, pokud byla zdržena jakákoli částka. |
+| Dlužné | Celková nezaplacená částka a počet nezaplacených měsíců, nebo „nic neplatné“. | Celková částka podléhající platbě a počet záznamů v knize, které jsou připraveny, nebo „nic neplatné“. |
 | Akce | Tlačítko **Vyřešit**. | Tlačítko **Vyřešit**. |
 
 ### Akce Vyřešit
 
-**Vyřešit** odesílá na `/api/switch-party`, přepíná vaši aktivní stranu na danou organizaci a přesměruje vás na její stránku [Výplaty](/docs/admin/payouts), kde skutečně označíte poplatek jako zaplacený nebo uvolníte výplatu.
+**Vyřešit** odesílá požadavek na `/api/switch-party`, přepíná vaši aktivní stranu na danou organizaci a přesměruje vás na její stránku [Výplaty](/docs/admin/payouts), kde skutečně označíte poplatek jako zaplacený nebo uvolníte výplatu.
 Samotná Fakturace je pouze pro čtení; nikdy nezmění zůstatek.
 
 ## Data a úložiště (cloud)
 
 - **Tabulky:** `parties` (`seller_mode`), `monthly_platform_fees` (poplatky vlastní společnosti: `period_month`, `fee_amount`, `status`), `order_commission_ledger` (záznamy provize: `net_payable`, `withheld_amount`, `status`, `hold_until`).
-- **Konstanty:** `SELLER_MODE`, `MONTHLY_COMMISSION_CAP_CZK`, `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` z `shared/constants/sellerMode.ts`.
+- **Konstanty:** `SELLER_MODE`, `COMMISSION_RATE`, `REDUCED_COMMISSION_RATE`, `COMMISSION_REDUCED_THRESHOLD_CZK`, `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` z `shared/constants/sellerMode.ts`. Přepsání pro každou organizaci je uloženo v `parties` (`commission_rate_override`, `reduced_commission_rate_override`, `commission_threshold_override`) a je vyřešeno funkcí `resolveFeeSchedule()` v `shared/utils/billingFeeCalc.ts`.
 - Pouze čtení; omezeno na `ctx.parties`.
 
 ## Související stránky
 
-- [Výplaty](/docs/admin/payouts) - stránka pro organizaci, kde jsou plateny poplatky a uvolňovány provize
-- [Organizace](/docs/admin/parties) - karta Režim pro prodejce, která určuje, na jaký model cenový je organizace
-- [Zprávy](/docs/admin/reports) - měsíční období fakturace a CSV export pro daně z příjmu
+- [Výplaty](/docs/admin/payouts) - stránka pro každou organizaci, kde jsou plateny poplatky a uvolňovány provizní výplaty
+- [Organizace](/docs/admin/parties) - karta Režim pro prodejce, která určuje, na jaký model cenotvorby je organizace
+- [Zprávy](/docs/admin/reports) - měsíční období fakturace a export CSV pro daně z příjmu

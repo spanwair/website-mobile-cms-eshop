@@ -143,3 +143,43 @@ Po změně schématu znovu vygenerujte typy:
 ```bash
 supabase gen types > shared/supabase/types.ts
 ```
+
+## Indexy a výkon (Audit Task 6)
+
+Audit 2026-09-17 ověřil query patterns pro storefront a zhodnotil N+1 rizika.
+
+### Stav N+1
+
+- `shared/services/productService.ts:10-86` (`fetchProducts`) - již batched: jeden `products` select s embed `product_variants` + `product_images`, jeden `inventory_items` dotaz přes `IN (productIds)` a map-reduce. Žádný per-product `fetchCategoriesForProduct` loop - P1 N+1 není prokázán, batch fix není aplikován (not applicable, ověřeno grep + code-review).
+- `website/src/lib/shopQueries.ts:18-123` (`fetchShopData`) - batched: `categories`, `products` (s `product_variants`/`product_images`/`product_conditions` embed), `fetchOutOfStockMap` + `fetchInventoryTrackingMap` paralelně přes `Promise.all`, map `deriveCardFields`. Bez per-product dotazů.
+- Všechny `products` dotazy filtrují `party_id` (multi-tenancy) a `status='active'` + `is_visible=true` pro storefront.
+
+### Indexy pro storefront cesty
+
+Zavedeno v `supabase/migrations/20260103000180_eshop_scoped_query_indexes.sql` (small pre-prod data, plain `CREATE INDEX` bez CONCURRENTLY - viz komentář v migraci, verified `BEGIN/CREATE INDEX CONCURRENTLY` fails v transakci).
+
+| Index | Tabulka | Sloupce / Predikát | Použití |
+|-------|---------|-------------------|---------|
+| `idx_products_party_created_active` | products | `(party_id, created_at DESC) WHERE status='active' AND is_visible=true` | default sort `created_at` |
+| `idx_products_party_price_active` | products | `(party_id, price) WHERE status='active' AND is_visible=true` | sort `price_asc`/`price_desc` |
+| `idx_products_party_rating_active` | products | `(party_id, rating_avg DESC) WHERE status='active' AND is_visible=true` | sort `rating` |
+| `idx_products_party_featured_active` | products | `(party_id, created_at DESC) WHERE status='active' AND is_visible=true AND is_featured=true` | homepage featured widget |
+| `idx_product_categories_category` | product_categories | `(category_id, product_id)` | reverse lookup "products in category X" (`product_categories!inner(category_id)`) |
+| `idx_inventory_items_product_variant` | inventory_items | `(product_id, variant_id)` | `fetchOutOfStockMap`/`fetchInventoryTrackingMap` bez `party_id` v dotazu, voláno pro každý storefront card |
+| `idx_orders_customer_created` | orders | `(customer_id, created_at DESC)` | customer self-service `fetchOrders` |
+| `idx_orders_party_payment_status` | orders | `(party_id, payment_status)` | `fetchOrders` payment_status branch |
+| `idx_customers_user` | customers | `(user_id) WHERE user_id IS NOT NULL` | RLS "Customers read own record" |
+| `idx_addresses_customer` | addresses | `(customer_id)` | checkout address selection |
+| `idx_carts_party_user` | carts | `(party_id, user_id) WHERE user_id IS NOT NULL` | `getOrCreateCart` |
+| `idx_carts_party_session` | carts | `(party_id, session_id) WHERE session_id IS NOT NULL` | anon cart lookup |
+
+Plus dřívější `idx_products_party_status` (composite) a `idx_orders_party_status`, `idx_inventory_party_product` atd. - viz `supabase/migrations/20260102000005_eshop_catalog.sql` a audit Task 5 (`supabase/migrations/20260917000001_audit_indexes.sql` pro plain `party_id` indexes).
+
+### Perf budget test
+
+`website/tests/e2e/37-audit-performance.spec.ts` měří `/shop` načtení do `networkidle` pod 5000ms a `data-testid='product-card'` count >0. Baseline:  ~700-1800ms na dev SSR (seed 32 produktů, `pageSize=24`). `pageSize=24` + `range()` paginace v `fetchShopData` limituje payload. `astro.config.ts` bez bundle-analýzy; `website` build přes `astro build` + Cloudflare adapter.
+
+### Doporučení
+
+- Pro velké katalogy zvážit `CREATE INDEX CONCURRENTLY` mimo transakci (prod follow-up, viz migrace komentář).
+- Držet `party_id` leading v nových storefront indexech - cross-org isolation a party-scoped cache.

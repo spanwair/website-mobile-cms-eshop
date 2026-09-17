@@ -45,3 +45,13 @@ export const duration = {
   normal: 250,
   slow: 400,
 } as const;
+
+export const breakpoints = {
+  mobile: 1200,
+  tablet: 1700,
+  /** <1200 mobile, 1200-1699 tablet, >=1700 desktop (3-col) — used by admin product detail */
+  mobileMax: 1199,
+  tabletMin: 1200,
+  tabletMax: 1699,
+  desktopMin: 1700,
+} as const;

@@ -50,6 +50,9 @@ export interface Party {
   status: PartyStatus;
   seller_mode: SellerMode;
   lang: "cs" | "en";
+  commission_rate_override: number | null;
+  reduced_commission_rate_override: number | null;
+  commission_threshold_override: number | null;
   terms_accepted_at: string | null;
   terms_version: string | null;
   created_at: string;
@@ -104,7 +107,8 @@ export type ProductCardVariant = 'classic' | 'minimal' | 'luxury';
 export type RadiusScale = 'sharp' | 'default' | 'soft';
 export type SectionKey =
   | 'hero' | 'subhero' | 'categories' | 'featured_products' | 'newsletter'
-  | 'benefits' | 'buyback_promo' | 'condition_explainer' | 'blog_preview';
+  | 'benefits' | 'buyback_promo' | 'condition_explainer' | 'blog_preview'
+  | 'product_grid';
 export type ContentFormat = 'markdown' | 'html';
 
 export interface StoreConfig {
@@ -805,6 +809,7 @@ export interface FooterBadge {
   id: string;
   party_id: string;
   kind: FooterBadgeKind;
+  provider_key: string | null;
   label: string;
   icon: string | null;
   url: string | null;

@@ -181,8 +181,11 @@ SELECT :'new_party', slug, media_type, url, alt FROM store_media WHERE party_id 
 INSERT INTO footer_links (party_id, column_key, label, url, sort_order, is_visible)
 SELECT :'new_party', column_key, label, url, sort_order, is_visible FROM footer_links WHERE party_id = :'old_party';
 
+-- Only free-form badges are cloned; the integrated shipping/payment set is seeded on the new
+-- party by the on_party_created_seed_footer_badges trigger.
 INSERT INTO footer_badges (party_id, kind, label, icon, url, sort_order, is_visible)
-SELECT :'new_party', kind, label, icon, url, sort_order, is_visible FROM footer_badges WHERE party_id = :'old_party';
+SELECT :'new_party', kind, label, icon, url, sort_order, is_visible
+FROM footer_badges WHERE party_id = :'old_party' AND provider_key IS NULL;
 
 INSERT INTO faq_items (party_id, question, answer, context, sort_order, is_visible)
 SELECT :'new_party', question, answer, context, sort_order, is_visible FROM faq_items WHERE party_id = :'old_party';

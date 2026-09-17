@@ -144,6 +144,20 @@ Below the info form, a **Seller Mode** card (component `PartySellerModeCard`) sh
 
 Both seller-mode actions require MANAGE_AUDIT.
 
+### Left column - Commission schedule (requires MANAGE_AUDIT)
+
+For own-company organizations, a **Commission schedule** card lets you override the platform fee for this one organization.
+It has three fields, each blank by default (blank = use the platform default shown as the placeholder):
+
+- **Standard rate** - the percentage charged up to the threshold (platform default 10%).
+- **Reduced rate** - the percentage charged on the whole month once turnover passes the threshold (platform default 5%).
+- **Reduced-rate threshold** - the monthly turnover (Kč) above which the reduced rate applies (platform default 29 900 Kč).
+
+Rates are entered as percentages and stored as fractions on the `parties` table (`commission_rate_override`, `reduced_commission_rate_override`, `commission_threshold_override`).
+Clearing a field removes the override and falls back to the global default.
+All fee math reads the effective values through `resolveFeeSchedule()` in `shared/utils/billingFeeCalc.ts`, so a custom rate takes effect on the next billing-period computation with no code change.
+Editing the schedule requires MANAGE_AUDIT.
+
 ### Left column - Invite member (requires MANAGE_USERS)
 
 A form to add someone to this organization.
@@ -192,7 +206,7 @@ See [Users](/docs/en/admin/users) for the assignment rules and [Roles](/docs/en/
 
 ## Data & storage (cloud)
 
-- `parties` table: `name`, `slug`, `company_name`, `company_ico`, `vat_number`, `billing_email`, `seller_mode`, `status`, `lang`, `created_at`, `terms_accepted_at`, `terms_version`.
+- `parties` table: `name`, `slug`, `company_name`, `company_ico`, `vat_number`, `billing_email`, `seller_mode`, `status`, `lang`, `created_at`, `terms_accepted_at`, `terms_version`, `commission_rate_override`, `reduced_commission_rate_override`, `commission_threshold_override`.
   The `enforce_party_approval_transition` trigger restricts `pending_approval -> active` to owners.
 - `user_party_roles` table: membership rows (`user_id`, `party_id`, `role_id`) for the members list, invites, and removals.
 - `roles` table: custom (non-system) roles shown in the invite dropdown.

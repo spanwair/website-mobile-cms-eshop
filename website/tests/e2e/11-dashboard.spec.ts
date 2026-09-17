@@ -25,7 +25,7 @@ test.describe("11 — Dashboard: KPI Cards, Navigation, Recent Orders", () => {
   });
 
   test("11-02 6 KPI cards are visible", async () => {
-    const cards = page.locator(".stat-card");
+    const cards = page.locator(".stats-row .stat-card");
     const count = await cards.count();
     expect(count).toBe(6);
     await screenshot(page, "11-02-all-6-kpi-cards");

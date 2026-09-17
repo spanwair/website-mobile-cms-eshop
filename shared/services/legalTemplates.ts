@@ -34,8 +34,8 @@ Some products in the **${storeName}** store are sold by their creator without th
 
 Because Smalljobs contracts with you directly, Smalljobs — not the creator — is responsible to you for all statutory consumer rights, in particular:
 
-- The right to withdraw from the contract within **14 days** of receiving the goods, without giving a reason.
-- The right to have a complaint (reklamace) about defective goods handled within 30 days, under §2161 et seq. of the Civil Code.
+- The right to withdraw from the contract within **14 days** of receiving the goods, without giving a reason (§1829 of the Civil Code).
+- The right to have a complaint (reklamace) about defective goods handled within 30 days, under §2161 et seq. of the Civil Code and §19 of Act No. 634/1992 Coll., on consumer protection.
 
 The creator may physically handle a return or complaint on Smalljobs' behalf, but this does not reduce or replace your rights against Smalljobs as the seller.
 
@@ -66,8 +66,8 @@ Některé produkty v obchodě **${storeName}** prodává jejich tvůrce, který 
 
 Protože Smalljobs jedná vlastním jménem, je vůči vám ve smyslu spotřebitelského práva prodávajícím a odpovídá vám zejména za:
 
-- právo odstoupit od smlouvy do **14 dnů** od převzetí zboží bez udání důvodu,
-- právo na vyřízení reklamace vadného zboží do 30 dnů podle § 2161 a násl. občanského zákoníku.
+- právo odstoupit od smlouvy do **14 dnů** od převzetí zboží bez udání důvodu (§ 1829 občanského zákoníku),
+- právo na vyřízení reklamace vadného zboží do 30 dnů podle § 2161 a násl. občanského zákoníku a § 19 zákona č. 634/1992 Sb., o ochraně spotřebitele.
 
 Tvůrce může vrácení zboží nebo reklamaci fyzicky vyřizovat jménem Smalljobs, tím však nejsou nijak omezena vaše práva vůči Smalljobs jakožto prodávajícímu.
 

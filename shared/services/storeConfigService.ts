@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
-import type { StoreConfig, StoreDomain } from "../types";
+import type { PartyStatus, StoreConfig, StoreDomain } from "../types";
+
+export type StorefrontParty = { id: string; status: PartyStatus };
 
 type Client = SupabaseClient<Database>;
 
@@ -65,12 +67,15 @@ export async function resolvePartyIdByDomain(client: Client, domain: string): Pr
 
 // Used by /eshop-[partySlug] path-based storefront routing and the domain middleware's
 // subdomain fallback. `parties` has no anon SELECT policy (the row carries vat_number and
-// billing_email), so this goes through a SECURITY DEFINER function that returns only the id,
-// scoped to active parties — never a raw table query, which anon can't read anyway.
-export async function resolvePartyIdBySlug(client: Client, slug: string): Promise<string | null> {
-  const { data, error } = await client.rpc("resolve_active_party_id_by_slug", { p_slug: slug });
-  if (error || !data) return null;
-  return data as string;
+// billing_email), so this goes through a SECURITY DEFINER function that returns only the id +
+// status - never a raw table query, which anon can't read anyway. Resolves both 'active' and
+// 'pending_approval' orgs so a freshly onboarded seller can open their storefront (with a
+// pending-approval banner) before the platform owner has approved it.
+export async function resolveStorefrontPartyBySlug(client: Client, slug: string): Promise<StorefrontParty | null> {
+  const { data, error } = await client.rpc("resolve_storefront_party_by_slug", { p_slug: slug });
+  const row = Array.isArray(data) ? data[0] : null;
+  if (error || !row) return null;
+  return { id: row.id, status: row.status as PartyStatus };
 }
 
 export async function fetchStoreDomains(client: Client, partyId: string): Promise<StoreDomain[]> {

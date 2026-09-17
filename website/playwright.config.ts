@@ -14,10 +14,10 @@ export default defineConfig({
   reporter: [["list"], ["json", { outputFile: "tests/results.json" }]],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:4321",
-    headless: CI,
+    headless: true,
     screenshot: "on",
-    video: CI ? "off" : "retain-on-failure",
-    slowMo: CI ? 0 : 80,
+    video: "off",
+    slowMo: 0,
     viewport: { width: 1440, height: 900 },
   },
   projects: [

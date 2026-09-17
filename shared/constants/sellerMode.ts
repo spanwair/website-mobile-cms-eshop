@@ -8,7 +8,7 @@ export const SELLER_MODE = {
 
 export type SellerModeValue = (typeof SELLER_MODE)[keyof typeof SELLER_MODE];
 
-// Flat platform commission taken from gross sale price. Currently applied to BOTH seller
+// Standard platform commission taken from gross sale price. Currently applied to BOTH seller
 // modes by recordCommissionForOrder (shared/services/commissionLedgerService.ts) — that is
 // the live, enforced rate today. NO_ICO_DEDUCTION_RATE below is the real target rate for
 // smalljobs_commission once Phase 2 lands; until then this stays the enforced value for both.
@@ -27,21 +27,29 @@ export const DEFAULT_VAT_RATE = 21;
 // before Smalljobs releases funds it may still need to refund a consumer.
 export const PAYOUT_HOLD_DAYS = 60;
 
-// --- Public pricing/employment page constants ---
-// Phase 1 (current): these are the SINGLE SOURCE OF TRUTH for what the public pricing and
-// employment pages display and calculate. They are NOT YET enforced anywhere in the ledger —
-// recordCommissionForOrder still charges a flat COMMISSION_RATE with no monthly cap and no
-// per-payout limit. Phase 2 (separate, reviewed change) wires these into
-// shared/services/commissionLedgerService.ts and website/src/pages/admin/payouts/index.astro.
-// Never redefine these values inline in a component — always import from here.
+// --- Tiered own_company commission (public pricing + monthly billing) ---
+// These three numbers are the SINGLE SOURCE OF TRUTH for the own_company platform fee and for
+// what the public pricing/employment pages display. They are the GLOBAL DEFAULTS: every party
+// may override each of them individually (parties.commission_rate_override /
+// reduced_commission_rate_override / commission_threshold_override), resolved in one place via
+// resolveFeeSchedule() in shared/utils/billingFeeCalc.ts. Never redefine these inline — always
+// import from here, and always read a party's effective schedule through resolveFeeSchedule().
+//
+// The model: an own_company party pays COMMISSION_RATE of its monthly turnover, UNTIL turnover
+// exceeds COMMISSION_REDUCED_THRESHOLD_CZK — from that point the whole month's turnover is
+// charged at the lower REDUCED_COMMISSION_RATE instead. The reduced rate is a floor that always
+// exceeds the platform's own fixed card-processor percentage, so the platform never loses money
+// on high-volume stores (the old flat 2 990 Kč cap did not guarantee that). smalljobs_commission
+// sellers are unaffected — they pay per-order via order_commission_ledger, not this tier.
 
-// Monthly commission cap: once COMMISSION_RATE * monthly turnover would exceed this, the
-// party is charged this flat amount instead for that month ("paušál").
-export const MONTHLY_COMMISSION_CAP_CZK = 2990;
+// Reduced commission rate charged on the ENTIRE monthly turnover once turnover exceeds the
+// threshold below. Replaces the old flat 2 990 Kč monthly cap.
+export const REDUCED_COMMISSION_RATE = 0.05;
 
-// Monthly turnover at which the flat cap becomes cheaper than the percentage commission.
-// Derived, not independently configurable: cap / rate.
-export const COMMISSION_BREAK_EVEN_CZK = MONTHLY_COMMISSION_CAP_CZK / COMMISSION_RATE;
+// Monthly turnover (Kč, strict >) above which a party switches from COMMISSION_RATE to
+// REDUCED_COMMISSION_RATE for that whole month. First-class configurable value (per-party
+// overridable), not derived from any cap.
+export const COMMISSION_REDUCED_THRESHOLD_CZK = 29900;
 
 // Total deduction (platform commission + statutory contributions withheld on the creator's
 // behalf) for smalljobs_commission (no-IČO) sellers. Replaces COMMISSION_RATE for that mode

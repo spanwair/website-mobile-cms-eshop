@@ -6,12 +6,13 @@ import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
 import {
   COMMISSION_RATE,
-  MONTHLY_COMMISSION_CAP_CZK,
+  REDUCED_COMMISSION_RATE,
   NO_ICO_DEDUCTION_RATE,
 } from "@shared/constants/sellerMode";
 
 const t = useT(Astro);
 const commissionPct = Math.round(COMMISSION_RATE * 100);
+const reducedPct = Math.round(REDUCED_COMMISSION_RATE * 100);
 const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 ---
 
@@ -23,8 +24,8 @@ const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
         <span class="pricing-summary-label">{t.landing.pricingPage.summaryCommissionLabel}</span>
       </div>
       <div class="pricing-summary-card" data-reveal>
-        <span class="pricing-summary-num font-display">{MONTHLY_COMMISSION_CAP_CZK.toLocaleString("cs-CZ")} Kč</span>
-        <span class="pricing-summary-label">{t.landing.pricingPage.summaryCapLabel}</span>
+        <span class="pricing-summary-num font-display">{reducedPct} %</span>
+        <span class="pricing-summary-label">{t.landing.pricingPage.summaryReducedLabel}</span>
       </div>
       <div class="pricing-summary-card" data-reveal>
         <span class="pricing-summary-num font-display">{employmentPct} %</span>

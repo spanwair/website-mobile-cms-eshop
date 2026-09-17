@@ -14,6 +14,7 @@ declare namespace App {
   interface Locals {
     storeParty: {
       id: string;
+      status: import("@shared/types").PartyStatus;
       config: import("@shared/types").StoreConfig | null;
     } | null;
   }

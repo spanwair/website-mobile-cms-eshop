@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCalendarMonthPeriod, isPeriodElapsed } from "../utils/billingPeriod";
-import { computeBillingPeriodTotals, autoFeeMode, type BillingFeeMode } from "../utils/billingFeeCalc";
+import {
+  computeBillingPeriodTotals,
+  autoFeeMode,
+  resolveFeeSchedule,
+  type BillingFeeMode,
+} from "../utils/billingFeeCalc";
 
 export interface BillingPeriodRow {
   id: string;
@@ -91,7 +96,9 @@ export async function recomputeBillingPeriod(
 
   const { data: party, error: partyErr } = await client
     .from("parties")
-    .select("seller_mode")
+    .select(
+      "seller_mode, commission_rate_override, reduced_commission_rate_override, commission_threshold_override"
+    )
     .eq("id", partyId)
     .single();
   if (partyErr || !party) return { error: new Error(partyErr?.message ?? "Party not found"), row: null };
@@ -103,12 +110,14 @@ export async function recomputeBillingPeriod(
   });
   if (totalsErr) return { error: new Error(totalsErr.message), row: null };
 
-  const feeMode: BillingFeeMode = autoFeeMode(Number(totals.gross_revenue), party.seller_mode);
+  const schedule = resolveFeeSchedule(party);
+  const feeMode: BillingFeeMode = autoFeeMode(Number(totals.gross_revenue), party.seller_mode, schedule);
 
   const computation = computeBillingPeriodTotals(
     { grossRevenueKc: Number(totals.gross_revenue), realCostsKc: Number(totals.real_costs) },
     feeMode,
-    Number(totals.ledger_fee_amount ?? 0)
+    Number(totals.ledger_fee_amount ?? 0),
+    schedule
   );
 
   const status = isPeriodElapsed(period.periodEnd) ? "finalized" : "draft";

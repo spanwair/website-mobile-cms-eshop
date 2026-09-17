@@ -326,13 +326,13 @@ export async function sendMonthlyFeeNotice(opts: {
 
 // Sent by /api/cron/auto-fee-tier the moment an own_company party's fee_mode actually changes
 // (never on a month where it stays the same) -- previousFeeMode/newFeeMode are always
-// 'percentage' or 'fixed', decided by shared/utils/billingFeeCalc.ts decideAutoFeeMode.
+// 'percentage' or 'reduced', decided by shared/utils/billingFeeCalc.ts autoFeeMode.
 export async function sendFeeTierChangeNotice(opts: {
   to: string;
   partyName: string;
   periodStart: string; // "YYYY-MM-DD", first day of the evaluated (just-closed) month
-  previousFeeMode: "percentage" | "fixed";
-  newFeeMode: "percentage" | "fixed";
+  previousFeeMode: "percentage" | "reduced";
+  newFeeMode: "percentage" | "reduced";
   grossRevenueAmount: number;
   thresholdAmount: number;
   currency?: string;
@@ -342,11 +342,11 @@ export async function sendFeeTierChangeNotice(opts: {
   const t = getT(lang);
   const monthLabel = new Date(opts.periodStart).toLocaleDateString(lang === 'en' ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long', timeZone: 'UTC' });
   const ft = t.email.feeTierChange;
-  const toFixed = opts.newFeeMode === 'fixed';
-  const modeLabel = (mode: "percentage" | "fixed") => (mode === 'fixed' ? ft.modeFixed : ft.modePercentage);
+  const toReduced = opts.newFeeMode === 'reduced';
+  const modeLabel = (mode: "percentage" | "reduced") => (mode === 'reduced' ? ft.modeReduced : ft.modePercentage);
 
   const html = `
-    <h1>${toFixed ? ft.headingToFixed : ft.headingToPercentage}${opts.partyName}</h1>
+    <h1>${toReduced ? ft.headingToReduced : ft.headingToPercentage}${opts.partyName}</h1>
     <p>${ft.intro}${monthLabel}:</p>
     <table cellpadding="8" cellspacing="0" style="width:100%;max-width:460px">
       <tr><td>${ft.revenueLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.grossRevenueAmount, lang, opts.currency)}</strong></td></tr>
@@ -354,7 +354,7 @@ export async function sendFeeTierChangeNotice(opts: {
       <tr><td>${ft.previousModeLabel}</td><td style="text-align:right">${modeLabel(opts.previousFeeMode)}</td></tr>
       <tr><td>${ft.newModeLabel}</td><td style="text-align:right"><strong>${modeLabel(opts.newFeeMode)}</strong></td></tr>
     </table>
-    <p>${toFixed ? ft.explanationToFixed : ft.explanationToPercentage}</p>
+    <p>${toReduced ? ft.explanationToReduced : ft.explanationToPercentage}</p>
   `;
 
   if (!import.meta.env.RESEND_API_KEY) {

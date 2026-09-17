@@ -1,0 +1,32 @@
+---
+interface Props {
+  active: 1 | 2 | 3;
+  labels: { org: string; design: string; catalogue: string };
+}
+const { active, labels } = Astro.props;
+const steps = [labels.org, labels.design, labels.catalogue];
+---
+
+<div class="stepper">
+  {steps.map((label, i) => {
+    const n = i + 1;
+    const state = n < active ? "done" : n === active ? "current" : "todo";
+    return (
+      <div class:list={["step", state]}>
+        <span class="dot">{n < active ? "✓" : n}</span>
+        <span class="label">{label}</span>
+      </div>
+    );
+  })}
+</div>
+
+<style>
+  .stepper { display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+  .step { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-muted); }
+  .step:not(:last-child)::after { content:""; width:32px; height:1px; background:var(--border); margin-left:8px; }
+  .dot { width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:700;
+         background:var(--bg-subtle); border:1px solid var(--border); color:var(--text-muted); }
+  .step.current .label, .step.done .label { color:var(--text-primary); font-weight:600; }
+  .step.current .dot { background:var(--accent-primary); border-color:var(--accent-primary); color:#fff; }
+  .step.done .dot { background:var(--accent-primary); border-color:var(--accent-primary); color:#fff; }
+</style>

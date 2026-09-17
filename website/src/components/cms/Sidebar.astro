@@ -16,8 +16,18 @@ function can(perm: number) {
   return hasPermission(userPermissions, perm);
 }
 
-function isActive(path: string) {
-  return currentPath === path || currentPath.startsWith(path + "/");
+function isActive(path: string, exact?: boolean) {
+  if (exact) return currentPath === path;
+  if (currentPath === path || currentPath.startsWith(path + "/")) return true;
+  // All Store Settings sub-tabs (/admin/settings/*) should keep the single
+  // "Store settings" sidebar entry highlighted. Shipping is a separate
+  // owner-only entry and must not activate the Store settings item.
+  if (
+    path === "/admin/settings/branding" &&
+    (currentPath === "/admin/settings" || currentPath.startsWith("/admin/settings/")) &&
+    !currentPath.startsWith("/admin/settings/shipping")
+  ) return true;
+  return false;
 }
 
 const groups = [
@@ -85,6 +95,18 @@ const groups = [
 const renderGroups = hasParty
   ? groups
   : [{ label: t.admin.sidebar.people, items: groups.flatMap((g) => g.items).filter((i) => i.href === "/admin/parties") }];
+
+// Pick longest matching href so nested entries (e.g. /admin/products/conditions)
+// don't also activate their parent (/admin/products).
+const allVisibleItems = renderGroups.flatMap((g) =>
+  g.items.filter((item) => item.perm === 0 || can(item.perm))
+);
+let activeHref: string | null = null;
+for (const item of allVisibleItems) {
+  if (isActive(item.href, (item as { exact?: boolean }).exact)) {
+    if (!activeHref || item.href.length > activeHref.length) activeHref = item.href;
+  }
+}
 ---
 
 <aside class="sidebar">
@@ -106,9 +128,7 @@ const renderGroups = hasParty
         <div class="nav-group">
           <p class="nav-group-label">{group.label}</p>
           {visibleItems.map((item) => {
-            const active = item.exact
-              ? currentPath === item.href
-              : isActive(item.href);
+            const active = item.href === activeHref;
             return (
               <a
                 href={item.href}

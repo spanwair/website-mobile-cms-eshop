@@ -115,6 +115,13 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .form-input::placeholder { color: var(--text-placeholder); }
 .form-input:focus { outline: none; background: var(--bg-page); border-color: var(--accent-primary); box-shadow: 0 0 0 4px rgba(79,70,229,0.12); }
+.form-input[type="color"] { padding: 4px; height: 44px; cursor: pointer; }
+.form-input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.form-input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+.form-input[type="color"]::-moz-color-swatch { border: none; border-radius: 6px; }
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+input[type="color"]::-moz-color-swatch { border: none; border-radius: 6px; }
 .form-error { font-size: 12px; color: var(--error); }
 
 input, textarea, select {

@@ -10,15 +10,16 @@ interface Props {
   required?: boolean;
   createLabel: string;
   urlOnly?: boolean;
+  allowCreate?: boolean;
 }
 
 const {
-  name, value = "", options, placeholder = "", id, required = false, createLabel, urlOnly = false,
+  name, value = "", options, placeholder = "", id, required = false, createLabel, urlOnly = false, allowCreate = true,
 } = Astro.props;
 const inputId = id ?? name;
 ---
 
-<div class="combobox" data-create-label={createLabel} data-url-only={urlOnly ? "true" : "false"}>
+<div class="combobox" data-create-label={createLabel} data-url-only={urlOnly ? "true" : "false"} data-allow-create={allowCreate ? "true" : "false"}>
   <input
     class="form-input combobox-input"
     type="text"
@@ -76,6 +77,7 @@ const inputId = id ?? name;
     const options: { label: string; value: string }[] = JSON.parse(dataEl.textContent || "[]");
     const createLabel = root.dataset.createLabel ?? "Use custom value";
     const urlOnly = root.dataset.urlOnly === "true";
+    const allowCreate = root.dataset.allowCreate !== "false";
     let activeIndex = -1;
 
     function normalizeUrl(v: string): string {
@@ -114,7 +116,7 @@ const inputId = id ?? name;
         ? options.filter((o) => o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q))
         : options;
       const exact = options.some((o) => o.value.toLowerCase() === q);
-      const showCreate = !exact && isCustomAllowed(raw);
+      const showCreate = allowCreate && !exact && isCustomAllowed(raw);
 
       list!.innerHTML = "";
       activeIndex = -1;

@@ -1,15 +1,15 @@
 ---
 // Public pricing calculator — Phase 1 (display only). Every number comes from
 // shared/constants/sellerMode.ts, the single source of truth; nothing here is
-// independently hardcoded. The monthly-cap and no-IČO enforcement itself is not yet
+// independently hardcoded. The tiered rate and no-IČO enforcement itself is not yet
 // wired into the ledger (see shared/services/commissionLedgerService.ts) — that is a
 // separate, reviewed Phase 2 change. This calculator is an accurate estimate, not a
 // live account balance.
 import { useT } from "@/lib/i18n";
 import {
   COMMISSION_RATE,
-  MONTHLY_COMMISSION_CAP_CZK,
-  COMMISSION_BREAK_EVEN_CZK,
+  REDUCED_COMMISSION_RATE,
+  COMMISSION_REDUCED_THRESHOLD_CZK,
   NO_ICO_DEDUCTION_RATE,
   NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK,
   NO_ICO_WITHHOLDING_EXPIRY_YEARS,
@@ -18,13 +18,14 @@ import {
 const t = useT(Astro);
 
 const commissionPct = Math.round(COMMISSION_RATE * 100);
+const reducedPct = Math.round(REDUCED_COMMISSION_RATE * 100);
 const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 const fmt = (n: number) => Math.round(n).toLocaleString("cs-CZ");
 
 const exampleNote = t.landing.commissionCalculator.exampleNote
-  .replace("{breakEven}", fmt(COMMISSION_BREAK_EVEN_CZK))
+  .replace("{threshold}", fmt(COMMISSION_REDUCED_THRESHOLD_CZK))
   .replace("{rate}", String(commissionPct))
-  .replace("{cap}", fmt(MONTHLY_COMMISSION_CAP_CZK));
+  .replace("{reducedRate}", String(reducedPct));
 const employmentNote = t.landing.commissionCalculator.employmentNote
   .replace("{limit}", fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK))
   .replace("{years}", String(NO_ICO_WITHHOLDING_EXPIRY_YEARS));
@@ -40,12 +41,12 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
     <div
       class="calc-card"
       data-commission-rate={COMMISSION_RATE}
-      data-monthly-cap={MONTHLY_COMMISSION_CAP_CZK}
-      data-break-even={COMMISSION_BREAK_EVEN_CZK}
+      data-reduced-rate={REDUCED_COMMISSION_RATE}
+      data-threshold={COMMISSION_REDUCED_THRESHOLD_CZK}
       data-employment-rate={NO_ICO_DEDUCTION_RATE}
       data-payout-limit={NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK}
       data-badge-percentage={t.landing.commissionCalculator.badgePercentage.replace("{rate}", String(commissionPct))}
-      data-badge-flat={t.landing.commissionCalculator.badgeFlatFee.replace("{cap}", fmt(MONTHLY_COMMISSION_CAP_CZK))}
+      data-badge-reduced={t.landing.commissionCalculator.badgeReduced.replace("{reducedRate}", String(reducedPct))}
         data-badge-ico={t.landing.commissionCalculator.badgeIcoRequired}
       data-savings-template={t.landing.commissionCalculator.savingsNote}
     >
@@ -72,10 +73,6 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
         <div class="calc-split-item">
           <span class="calc-split-label">{t.landing.commissionCalculator.weTakeLabel}</span>
           <span class="calc-split-value" id="calc-fee">6 000 Kč</span>
-        </div>
-        <div class="calc-split-item">
-          <span class="calc-split-label">{t.landing.commissionCalculator.monthlyLabel}</span>
-          <span class="calc-split-value" id="calc-monthly">6 000 Kč</span>
         </div>
       </div>
 
@@ -115,7 +112,6 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
   const badge = document.getElementById("calc-badge");
   const keepEl = document.getElementById("calc-keep");
   const feeEl = document.getElementById("calc-fee");
-  const monthlyEl = document.getElementById("calc-monthly");
   const splitCommission = document.getElementById("calc-split-commission");
   const splitEmployment = document.getElementById("calc-split-employment");
   const noteCommission = document.getElementById("calc-note-commission");
@@ -136,7 +132,8 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
   function update() {
     if (!input || !card) return;
     const rate = Number(card.dataset.commissionRate);
-    const cap = Number(card.dataset.monthlyCap);
+    const reducedRate = Number(card.dataset.reducedRate);
+    const threshold = Number(card.dataset.threshold);
     const employmentRate = Number(card.dataset.employmentRate);
     const payoutLimit = Number(card.dataset.payoutLimit);
     const turnover = Number(input.value);
@@ -171,22 +168,22 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
       noteCommission?.classList.remove("calc-note--hidden");
       noteEmployment?.classList.add("calc-note--hidden");
 
-      const uncappedFee = turnover * rate;
-      const fee = Math.min(uncappedFee, cap);
+      const usingReduced = turnover > threshold;
+      const appliedRate = usingReduced ? reducedRate : rate;
+      const fee = turnover * appliedRate;
       const keep = turnover - fee;
-      const usingCap = uncappedFee > cap;
 
       if (keepEl) keepEl.textContent = formatKc(keep);
       if (feeEl) feeEl.textContent = formatKc(fee);
-      if (monthlyEl) monthlyEl.textContent = formatKc(fee);
       if (badge) {
-        badge.textContent = usingCap ? (card.dataset.badgeFlat ?? "") : (card.dataset.badgePercentage ?? "");
+        badge.textContent = usingReduced ? (card.dataset.badgeReduced ?? "") : (card.dataset.badgePercentage ?? "");
         badge.classList.remove("badge-error");
         badge.classList.add("badge-active");
       }
       if (savingsEl) {
-        if (usingCap) {
-          const savings = uncappedFee - cap;
+        if (usingReduced) {
+          // What the reduced rate saves versus paying the standard rate on the same turnover.
+          const savings = turnover * (rate - reducedRate);
           savingsEl.textContent = (card.dataset.savingsTemplate ?? "").replace("{amount}", formatNum(savings));
           savingsEl.classList.remove("calc-note--hidden");
         } else {
@@ -227,6 +224,7 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
     .calc-switch-input:checked + .calc-switch-track .calc-switch-thumb { transform: translateX(16px); }
     .calc-switch-input:focus-visible + .calc-switch-track { outline: 2px solid var(--landing-mint); outline-offset: 2px; }
   .calc-split { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); }
+  #calc-split-commission { grid-template-columns: repeat(2, 1fr); }
   .calc-split--hidden { display: none; }
   .calc-split-item { display: flex; flex-direction: column; gap: 4px; }
   .calc-split-label { font-size: 12px; color: var(--landing-dark-text-muted); }

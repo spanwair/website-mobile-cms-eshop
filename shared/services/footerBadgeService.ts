@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
 import type { FooterBadge, FooterBadgeKind } from "../types";
+import type { FooterProvider } from "../constants/footerProviders";
 
 type Client = SupabaseClient<Database>;
 
@@ -52,4 +53,34 @@ export async function updateFooterBadge(
 export async function deleteFooterBadge(client: Client, id: string): Promise<{ error: Error | null }> {
   const { error } = await client.from("footer_badges").delete().eq("id", id);
   return { error: error ? new Error(error.message) : null };
+}
+
+// Toggle/reorder an integrated provider badge. Self-heals: if the row is missing (e.g. a provider
+// added after this party was seeded) it is created from the provider constant.
+export async function upsertProviderBadge(
+  client: Client,
+  partyId: string,
+  provider: FooterProvider,
+  state: { is_visible: boolean; sort_order: number }
+): Promise<{ error: Error | null }> {
+  const { data: existing } = await client
+    .from("footer_badges")
+    .select("id")
+    .eq("party_id", partyId)
+    .eq("provider_key", provider.key)
+    .maybeSingle();
+  if (existing) {
+    return updateFooterBadge(client, existing.id, state);
+  }
+  const { error } = await createFooterBadge(client, {
+    party_id: partyId,
+    kind: provider.kind,
+    provider_key: provider.key,
+    label: provider.label,
+    icon: provider.icon,
+    url: provider.url,
+    is_visible: state.is_visible,
+    sort_order: state.sort_order,
+  });
+  return { error };
 }

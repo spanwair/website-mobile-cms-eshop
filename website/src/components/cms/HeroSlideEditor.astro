@@ -1,11 +1,90 @@
 ---
 import type { HeroSlide, StoreMedia } from "@shared/types";
 import ImagePicker from "./ImagePicker.astro";
+import CreatableCombobox from "./CreatableCombobox.astro";
 import { useT } from "../../lib/i18n";
 
-interface Props { slides: HeroSlide[]; editingSlide: HeroSlide | null; media: StoreMedia[] }
-const { slides, editingSlide, media } = Astro.props;
+interface ProductOpt { slug: string; title: string }
+interface BlogOpt { slug: string; title: string }
+
+interface Props {
+  slides: HeroSlide[];
+  editingSlide: HeroSlide | null;
+  media: StoreMedia[];
+  products?: ProductOpt[];
+  blogs?: BlogOpt[];
+  partySlug?: string;
+  // legacy prop name for backwards-compat (previous Block)
+  blocks?: BlogOpt[];
+}
+const { slides, editingSlide, media, products = [], blogs: blogsProp, blocks = [], partySlug = "" } = Astro.props;
+const blogs = blogsProp ?? blocks ?? [];
 const t = useT(Astro);
+const eshopBase = partySlug ? `/eshop-${partySlug}` : "/shop";
+
+// Infer initial CTA link type from stored cta_link value.
+// Product => /eshop-<slug>/<product-slug> (or legacy /shop/<slug>), Blog => /eshop-<slug>/blog/<slug> (or legacy /shop/blog/<slug>), otherwise custom.
+function inferLinkType(link: string | null | undefined): "product" | "blog" | "custom" {
+  if (!link) return "custom";
+  const trimmed = link.trim();
+  // eshop-specific blog: /eshop-<party>/blog/<slug>
+  if (trimmed.startsWith("/eshop-") && trimmed.includes("/blog/")) {
+    const slug = trimmed.split("/blog/")[1]?.split("?")[0].split("#")[0] ?? "";
+    if (blogs.some((b) => b.slug === slug)) return "blog";
+  }
+  if (trimmed.startsWith("/shop/blog/")) {
+    const slug = trimmed.slice(11).split("?")[0].split("#")[0];
+    if (blogs.some((b) => b.slug === slug)) return "blog";
+  }
+  if (trimmed.startsWith("/blog/")) {
+    const slug = trimmed.slice(6).split("?")[0].split("#")[0];
+    if (blogs.some((b) => b.slug === slug)) return "blog";
+  }
+  // eshop-specific product: /eshop-<party>/<slug>
+  if (trimmed.startsWith("/eshop-")) {
+    // Avoid misclassifying blog as product: already handled blog case above
+    if (!trimmed.includes("/blog/")) {
+      const slug = trimmed.slice(trimmed.indexOf("/", 1) + 1).split("?")[0].split("#")[0];
+      if (slug && products.some((p) => p.slug === slug)) return "product";
+    }
+  }
+  if (trimmed.startsWith("/shop/") && !trimmed.startsWith("/shop/blog/")) {
+    const slug = trimmed.slice(6).split("?")[0].split("#")[0];
+    if (products.some((p) => p.slug === slug)) return "product";
+  }
+  if (trimmed.startsWith("/stranka/")) {
+    const slug = trimmed.slice(9).split("?")[0].split("#")[0];
+    if (blogs.some((b) => b.slug === slug)) return "blog";
+  }
+  if (products.some((p) => `/shop/${p.slug}` === trimmed || `${eshopBase}/${p.slug}` === trimmed || p.slug === trimmed)) return "product";
+  if (blogs.some((b) => `/shop/blog/${b.slug}` === trimmed || `${eshopBase}/blog/${b.slug}` === trimmed || `/blog/${b.slug}` === trimmed || b.slug === trimmed)) return "blog";
+  return "custom";
+}
+const initialType = inferLinkType(editingSlide?.cta_link);
+// Normalize legacy /shop paths to eshop-specific for display so combobox matches
+function normalizeLinkForDisplay(link: string): string {
+  const trimmed = link.trim();
+  if (partySlug) {
+    // product legacy
+    if (trimmed.startsWith("/shop/") && !trimmed.startsWith("/shop/blog/")) {
+      const slug = trimmed.slice(6).split("?")[0].split("#")[0];
+      if (products.some((p) => p.slug === slug)) return `${eshopBase}/${slug}`;
+    }
+    if (trimmed.startsWith("/shop/blog/")) {
+      const slug = trimmed.slice(11).split("?")[0].split("#")[0];
+      if (blogs.some((b) => b.slug === slug)) return `${eshopBase}/blog/${slug}`;
+    }
+    if (trimmed.startsWith("/blog/")) {
+      const slug = trimmed.slice(6).split("?")[0].split("#")[0];
+      if (blogs.some((b) => b.slug === slug)) return `${eshopBase}/blog/${slug}`;
+    }
+    // bare slug
+    if (products.some((p) => p.slug === trimmed)) return `${eshopBase}/${trimmed}`;
+    if (blogs.some((b) => b.slug === trimmed)) return `${eshopBase}/blog/${trimmed}`;
+  }
+  return link;
+}
+const currentLink = editingSlide?.cta_link ? normalizeLinkForDisplay(editingSlide.cta_link) : "";
 ---
 
 <div class="card">
@@ -26,25 +105,84 @@ const t = useT(Astro);
       </div>
     </div>
     <ImagePicker name="image_url" label={t.admin.settings.fieldImageUrl} value={editingSlide?.image_url ?? null} media={media} />
+
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">{t.admin.settings.fieldCtaText}</label>
         <input class="form-input" name="cta_text" value={editingSlide?.cta_text ?? ""} />
       </div>
       <div class="form-group">
-        <label class="form-label">{t.admin.settings.fieldCtaLink}</label>
-        <input class="form-input" name="cta_link" value={editingSlide?.cta_link ?? ""} />
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
         <label class="form-label">{t.admin.settings.fieldSortOrder}</label>
         <input class="form-input" type="number" name="sort_order" value={editingSlide?.sort_order ?? 0} />
       </div>
-      <div class="form-check" style="align-self:end">
-        <input type="checkbox" name="is_visible" id="slide_visible" checked={editingSlide ? editingSlide.is_visible : true} />
-        <label for="slide_visible">{t.admin.settings.fieldVisible}</label>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">{t.admin.settings.fieldCtaLink}</label>
+      <div class="cta-type-switches" data-cta-type-switch>
+        <label class="cta-switch" data-value="product">
+          <input type="radio" name="cta_link_type" value="product" checked={initialType === "product"} />
+          <span>{(t.admin.settings as any).ctaTypeProduct ?? "Product"}</span>
+        </label>
+        <label class="cta-switch" data-value="blog">
+          <input type="radio" name="cta_link_type" value="blog" checked={initialType === "blog"} />
+          <span>{(t.admin.settings as any).ctaTypeBlog ?? (t.admin.settings as any).ctaTypeBlock ?? "Blog"}</span>
+        </label>
+        <label class="cta-switch" data-value="custom">
+          <input type="radio" name="cta_link_type" value="custom" checked={initialType === "custom"} />
+          <span>{(t.admin.settings as any).ctaTypeCustom ?? "Custom link"}</span>
+        </label>
       </div>
+    </div>
+
+    <!-- Product selector panel - autocomplete -->
+    <div class="form-group cta-panel" data-cta-panel="product" hidden={initialType !== "product"}>
+      <label class="form-label">{(t.admin.settings as any).ctaSelectProduct ?? "Select product"}</label>
+      <div data-cta-input="product">
+        <CreatableCombobox
+          name={initialType === "product" ? "cta_link" : "cta_product"}
+          value={initialType === "product" ? currentLink : ""}
+          options={products.map((p) => ({ label: p.title, value: `${eshopBase}/${p.slug}` }))}
+          placeholder={(t.admin.settings as any).ctaSelectProductPlaceholder ?? "Type to search products..."}
+          createLabel={(t.admin.settings as any).ctaSelectProduct ?? "Product"}
+          allowCreate={false}
+        />
+      </div>
+      {products.length === 0 && <p class="hint" style="margin-top:6px">{(t.admin.settings as any).ctaNoProducts ?? "No products yet."}</p>}
+    </div>
+
+    <!-- Blog selector panel - autocomplete -->
+    <div class="form-group cta-panel" data-cta-panel="blog" hidden={initialType !== "blog"}>
+      <label class="form-label">{(t.admin.settings as any).ctaSelectBlog ?? (t.admin.settings as any).ctaSelectBlock ?? "Select blog post"}</label>
+      <div data-cta-input="blog">
+        <CreatableCombobox
+          name={initialType === "blog" ? "cta_link" : "cta_blog"}
+          value={initialType === "blog" ? currentLink : ""}
+          options={blogs.map((b) => ({ label: b.title, value: `${eshopBase}/blog/${b.slug}` }))}
+          placeholder={(t.admin.settings as any).ctaSelectBlogPlaceholder ?? (t.admin.settings as any).ctaSelectBlockPlaceholder ?? "Type to search blog posts..."}
+          createLabel={(t.admin.settings as any).ctaSelectBlog ?? "Blog"}
+          allowCreate={false}
+        />
+      </div>
+      {blogs.length === 0 && <p class="hint" style="margin-top:6px">{(t.admin.settings as any).ctaNoBlogs ?? (t.admin.settings as any).ctaNoBlocks ?? "No blog posts yet."}</p>}
+    </div>
+
+    <!-- Custom link panel -->
+    <div class="form-group cta-panel" data-cta-panel="custom" hidden={initialType !== "custom"}>
+      <label class="form-label">{(t.admin.settings as any).ctaCustomLinkLabel ?? "Custom URL"}</label>
+      <input
+        class="form-input"
+        type="text"
+        data-cta-input="custom"
+        name={initialType === "custom" ? "cta_link" : undefined}
+        data-fallback-name="cta_custom"
+        value={initialType === "custom" ? currentLink : ""}
+        placeholder={`${eshopBase}/my-product or https://...`}
+      />
+    </div>
+    <div class="form-check" style="align-self:flex-start">
+      <input type="checkbox" name="is_visible" id="slide_visible" checked={editingSlide ? editingSlide.is_visible : true} />
+      <label for="slide_visible">{t.admin.settings.fieldVisible}</label>
     </div>
     <div class="form-actions">
       {editingSlide && <a href="/admin/settings/content" class="btn btn-ghost">{t.common.cancel}</a>}
@@ -87,5 +225,82 @@ const t = useT(Astro);
   .form-check input { width:auto; }
   .form-actions { display:flex; gap:12px; justify-content:flex-end; }
   .action-cell { display:flex; gap:8px; align-items:center; }
+  .cta-type-switches { display:flex; gap:8px; flex-wrap:wrap; }
+  .cta-switch {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 14px; border:1.5px solid var(--border-strong, #e5e7eb); border-radius:999px;
+    font-size:13px; font-weight:600; cursor:pointer; background:var(--bg-page, #fff);
+    color:var(--text-secondary, #6b7280); transition:all 0.15s;
+    user-select:none;
+  }
+  .cta-switch:has(input:checked), .cta-switch--active {
+    background:var(--accent-primary, #4f46e5); border-color:var(--accent-primary, #4f46e5); color:#fff;
+  }
+  .cta-switch input { position:absolute; opacity:0; width:0; height:0; }
+  .cta-panel[hidden] { display:none !important; }
   @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
 </style>
+
+<script>
+  function initCtaLinkSwitch(root: HTMLElement) {
+    const radios = root.querySelectorAll<HTMLInputElement>('input[name="cta_link_type"]');
+    const panels = root.querySelectorAll<HTMLElement>("[data-cta-panel]");
+    function sync() {
+      const active = root.querySelector<HTMLInputElement>('input[name="cta_link_type"]:checked')?.value ?? "custom";
+      panels.forEach((p) => {
+        const isActive = p.dataset.ctaPanel === active;
+        (p as HTMLElement).hidden = !isActive;
+      });
+      // Handle both native [data-cta-input] wrappers and legacy direct inputs.
+      root.querySelectorAll<HTMLElement>("[data-cta-input]").forEach((el) => {
+        const kind = el.dataset.ctaInput;
+        // If this is a wrapper containing a combobox input, target the inner input
+        const innerInput = el.querySelector<HTMLInputElement>("input.combobox-input") ?? el.querySelector<HTMLInputElement>("input, select");
+        // Determine fallback name: wrapper's fallback, or inner's fallback if present
+        const fallback = el.dataset.fallbackName ?? innerInput?.dataset.fallbackName ?? "";
+        // Also check if el itself is the input
+        const isInput = el instanceof HTMLInputElement || el instanceof HTMLSelectElement;
+        const target = isInput ? el as HTMLElement : (innerInput as HTMLElement | null) ?? el;
+        if (!target) return;
+        if (kind === active) {
+          target.setAttribute("name", "cta_link");
+          // For combobox wrappers, also ensure wrapper doesn't carry stale name
+          if (!isInput) el.removeAttribute("name");
+        } else {
+          // Fallback names: product -> cta_product, blog -> cta_blog, custom -> cta_custom
+          const fb = fallback || (kind === "product" ? "cta_product" : kind === "blog" ? "cta_blog" : kind === "custom" ? "cta_custom" : "");
+          if (isInput) {
+            if (fb) target.setAttribute("name", fb);
+            else target.removeAttribute("name");
+          } else {
+            if (innerInput) {
+              if (fb) innerInput.setAttribute("name", fb);
+              else innerInput.removeAttribute("name");
+            }
+          }
+        }
+      });
+      // Also handle legacy custom input that is itself the [data-cta-input]
+      root.querySelectorAll<HTMLElement>("input[data-cta-input], select[data-cta-input]").forEach((el) => {
+        const kind = (el as HTMLElement).dataset.ctaInput;
+        const fallback = (el as HTMLElement).dataset.fallbackName ?? "";
+        if (kind === active) (el as HTMLElement).setAttribute("name", "cta_link");
+        else {
+          if (fallback) (el as HTMLElement).setAttribute("name", fallback);
+          else (el as HTMLElement).removeAttribute("name");
+        }
+      });
+      // Update switch visual active class for fallback browsers without :has
+      root.querySelectorAll<HTMLElement>(".cta-switch").forEach((sw) => {
+        const inp = sw.querySelector<HTMLInputElement>("input");
+        sw.classList.toggle("cta-switch--active", !!(inp && inp.checked));
+      });
+    }
+    radios.forEach((r) => r.addEventListener("change", sync));
+    sync();
+  }
+  document.querySelectorAll<HTMLElement>("[data-cta-type-switch]").forEach((root) => {
+    const form = root.closest("form");
+    if (form) initCtaLinkSwitch(form as HTMLElement);
+  });
+</script>
