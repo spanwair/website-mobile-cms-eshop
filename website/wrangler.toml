@@ -23,3 +23,7 @@ OCI_REGION = "eu-frankfurt-1"
 OCI_KEY_FINGERPRINT = "31:0b:fa:46:ed:29:34:f9:1a:2c:20:7a:4e:13:84:00"
 EMAIL_FROM = "noreply@smalljobs.cz"
 EMAIL_FROM_NAME = "noreply@smalljobs.cz"
+# App's canonical origin. The Send Email hook builds every auth link as ${SHOP_URL}/auth/callback.
+# Non-PUBLIC name on purpose: PUBLIC_* is build-inlined by Vite and would ignore this runtime value.
+# Origin only — no trailing path, no /auth/v1.
+SHOP_URL = "https://mamtodoma.cz"

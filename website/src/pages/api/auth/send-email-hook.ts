@@ -73,6 +73,7 @@ export const GET: APIRoute = async () =>
       ok: true,
       ociConfigured: ociConfigured(),
       hookSecretPresent: Boolean(import.meta.env.SEND_EMAIL_HOOK_SECRET),
+      shopUrl: import.meta.env.SHOP_URL || null,
       ociEnv: ociEnvStatus(),
       ociMissing: Object.entries(ociEnvStatus())
         .filter(([, present]) => !present)
@@ -109,7 +110,12 @@ export const POST: APIRoute = async ({ request }) => {
   if (!action) return fail(200, "ignored"); // unknown/unsupported type — nothing to send
 
   const lang: AppLanguage = user?.user_metadata?.lang === "en" ? "en" : "cs";
-  const siteUrl: string = data.site_url || import.meta.env.PUBLIC_SHOP_URL || "";
+  // The app's own canonical origin is the single source of truth for email links. We do NOT trust
+  // GoTrue's data.site_url — a misconfigured dashboard Site URL (e.g. the Supabase API base) would
+  // otherwise produce dead links like https://<ref>.supabase.co/auth/v1/auth/callback.
+  // SHOP_URL (not PUBLIC_*) so it resolves from the Worker's runtime [vars], not a build-inlined value.
+  const siteUrl = (import.meta.env.SHOP_URL ?? "").replace(/\/+$/, "");
+  if (!siteUrl) return fail(500, "shop_url_not_configured");
 
   // email_change with double-confirm carries a second token for the new address.
   const useNew = rawType === "email_change_new";
@@ -119,7 +125,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const verifyType = action === "email_change" ? "email_change" : action;
   const params = new URLSearchParams({ token_hash: tokenHash, type: verifyType });
-  if (typeof data.redirect_to === "string" && data.redirect_to.startsWith(siteUrl) && siteUrl) {
+  if (typeof data.redirect_to === "string" && data.redirect_to.startsWith(siteUrl)) {
     const rest = data.redirect_to.slice(siteUrl.length);
     if (rest.startsWith("/")) params.set("redirect", rest);
   }

@@ -24,7 +24,6 @@ export function initOnboardingDesign() {
   if (!root || !frame) return;
 
   const groups: ColorGroup[] = JSON.parse(root.dataset.groups || "[]");
-  const partyId = root.dataset.party!;
   const nextUrl = root.dataset.next!;
   const saveState = document.getElementById("save-state");
   let latestOrder: string[] | null = null;
