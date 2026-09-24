@@ -10,7 +10,16 @@ compatibility_flags = ["nodejs_compat"]
 directory = "./dist"
 binding = "ASSETS"
 
-# Runtime secrets/vars (PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, STRIPE_SECRET_KEY, etc.)
-# are NOT set here. With a GitHub-connected build, .env.production on your laptop never
-# reaches Cloudflare's build machine — set every var this project reads under the Worker's
-# Settings → Variables and Secrets in the dashboard instead, then redeploy.
+# Secrets (SUPABASE_SERVICE_ROLE_KEY, STRIPE_SECRET_KEY, OCI_PRIVATE_KEY, SEND_EMAIL_HOOK_SECRET,
+# etc.) are NOT set here — with a GitHub-connected build, .env.production on your laptop never
+# reaches Cloudflare's build machine, so set them under the Worker's Settings → Variables and
+# Secrets in the dashboard (as encrypted Secrets, which survive every deploy).
+#
+# Non-secret plain-text vars MUST live in [vars] below, not only in the dashboard: wrangler
+# governs plain-text vars on every deploy, so any dashboard-only plain var gets wiped on the
+# next build. (Encrypted Secrets are untouched by deploys; plain-text vars are not.)
+[vars]
+OCI_REGION = "eu-frankfurt-1"
+OCI_KEY_FINGERPRINT = "31:0b:fa:46:ed:29:34:f9:1a:2c:20:7a:4e:13:84:00"
+EMAIL_FROM = "noreply@smalljobs.cz"
+EMAIL_FROM_NAME = "noreply@smalljobs.cz"
