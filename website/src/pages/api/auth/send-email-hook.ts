@@ -10,6 +10,9 @@ import type { AppLanguage } from "@shared/i18n/getT";
 // shared secret in SEND_EMAIL_HOOK_SECRET.
 
 function fail(status: number, message: string): Response {
+  // Logged so prod delivery failures are visible in Cloudflare Workers logs — GoTrue
+  // surfaces a generic error to the user, so this is the only place the real reason shows.
+  console.error(`[send-email-hook] fail ${status}: ${message}`);
   return new Response(JSON.stringify({ error: { http_code: status, message } }), {
     status,
     headers: { "content-type": "application/json" },
@@ -62,14 +65,35 @@ const ACTION_MAP: Record<string, AuthEmailAction> = {
   email_change_current: "email_change",
 };
 
+// Health check — curl this URL in prod to confirm config without triggering a signup.
+// Reports only booleans, never secret values.
+export const GET: APIRoute = async () =>
+  new Response(
+    JSON.stringify({
+      ok: true,
+      ociConfigured: ociConfigured(),
+      hookSecretPresent: Boolean(import.meta.env.SEND_EMAIL_HOOK_SECRET),
+    }),
+    { status: 200, headers: { "content-type": "application/json" } },
+  );
+
 export const POST: APIRoute = async ({ request }) => {
+  console.log("[send-email-hook] received POST");
   if (!ociConfigured()) return fail(500, "email_not_configured");
 
   const secret = import.meta.env.SEND_EMAIL_HOOK_SECRET;
   if (!secret) return fail(500, "hook_secret_not_configured");
 
   const raw = await request.text();
-  if (!(await verify(secret, request.headers, raw))) return fail(401, "invalid_signature");
+  const hasSigHeaders = Boolean(
+    request.headers.get("webhook-id") &&
+      request.headers.get("webhook-timestamp") &&
+      request.headers.get("webhook-signature"),
+  );
+  if (!(await verify(secret, request.headers, raw))) {
+    console.error(`[send-email-hook] signature check failed (sig headers present=${hasSigHeaders})`);
+    return fail(401, "invalid_signature");
+  }
 
   let payload: HookPayload;
   try { payload = JSON.parse(raw) as HookPayload; } catch { return fail(400, "invalid_json"); }
@@ -99,10 +123,12 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { subject, html } = renderAuthEmail({ action, lang, actionUrl, siteUrl });
 
+  console.log(`[send-email-hook] sending action=${action} type=${rawType} to=${recipient} lang=${lang}`);
   try {
     await sendEmail({ to: recipient, subject, html });
   } catch (e) {
     return fail(500, `send_failed: ${(e as Error).message}`);
   }
+  console.log(`[send-email-hook] sent action=${action} to=${recipient}`);
   return new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } });
 };

@@ -130,6 +130,7 @@ export async function sendEmail(input: OciEmailInput): Promise<void> {
   const date = new Date().toUTCString();
   const auth = await authorization(cfg, host, date, bodySha, bodyBytes.length);
 
+  console.log(`[oci-email] submit region=${cfg.region} from=${cfg.from} to=${toList.map((t) => t.email).join(",")}`);
   const res = await fetch(`https://${host}${SUBMIT_PATH}`, {
     method: "POST",
     headers: {
@@ -143,6 +144,8 @@ export async function sendEmail(input: OciEmailInput): Promise<void> {
 
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
+    console.error(`[oci-email] send failed ${res.status}: ${detail}`);
     throw new Error(`OCI Email send failed (${res.status}): ${detail}`);
   }
+  console.log(`[oci-email] sent status=${res.status}`);
 }
