@@ -22,6 +22,7 @@ interface OciConfig {
 }
 
 function readConfig(): OciConfig | null {
+  // cache-bust: force Vite to re-inline import.meta.env on this build (rev 2)
   const region = import.meta.env.OCI_REGION;
   const tenancy = import.meta.env.OCI_TENANCY_OCID;
   const user = import.meta.env.OCI_USER_OCID;
