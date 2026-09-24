@@ -1,27 +1,11 @@
-// Transactional email via Resend (resend.com).
-// Set RESEND_API_KEY in .env.production
-// Install: pnpm add resend (in website/)
-// Configure your sending domain at resend.com/domains (free tier: 100 emails/day)
+// Transactional email via OCI Email Delivery (Oracle Cloud) — see oci-email.ts.
+// Sending domain, approved sender and DKIM/SPF are configured in the OCI Console;
+// credentials come from the OCI_* env vars in .env.production.
 
-import { Resend } from "resend";
+import { sendEmail, ociConfigured } from "./oci-email";
 import { getT, type AppLanguage } from "@shared/i18n/getT";
 import { PERMISSIONS, ROLE } from "@shared/constants/permissions";
 import { formatPrice } from "@shared/utils/format";
-
-function getResend() {
-  const key = import.meta.env.RESEND_API_KEY;
-  if (!key) throw new Error("RESEND_API_KEY is not set — add it to .env.production");
-  return new Resend(key);
-}
-
-// resend.emails.send() resolves with { error } instead of throwing — surface it.
-async function sendEmail(opts: { to: string; subject: string; html: string }): Promise<void> {
-  const resend = getResend();
-  const { error } = await resend.emails.send({ from: FROM, ...opts });
-  if (error) throw new Error(`Resend send failed: ${error.message}`);
-}
-
-const FROM = import.meta.env.EMAIL_FROM ?? "noreply@yourdomain.cz";
 
 function makeRoleNames(lang: AppLanguage): Record<number, string> {
   const t = getT(lang);
@@ -166,7 +150,7 @@ export async function sendPartyInvitation(opts: {
 </table>
 </body></html>`;
 
-  if (!import.meta.env.RESEND_API_KEY) {
+  if (!ociConfigured()) {
     // Dev fallback for existing-user notifications (new users go via GoTrue → Mailpit)
     console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${subject}${inviteLink ? `\n[email:dev] LINK: ${inviteLink}` : ''}\n`);
     return;
@@ -317,7 +301,7 @@ export async function sendMonthlyFeeNotice(opts: {
     <p>${t.email.monthlyFeeNotice.paymentInstructions}</p>
   `;
 
-  if (!import.meta.env.RESEND_API_KEY) {
+  if (!ociConfigured()) {
     console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${t.email.monthlyFeeNotice.subjectPrefix}${monthLabel} | FEE: ${opts.feeAmount}\n`);
     return;
   }
@@ -357,7 +341,7 @@ export async function sendFeeTierChangeNotice(opts: {
     <p>${toReduced ? ft.explanationToReduced : ft.explanationToPercentage}</p>
   `;
 
-  if (!import.meta.env.RESEND_API_KEY) {
+  if (!ociConfigured()) {
     console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${ft.subjectPrefix}${monthLabel} | MODE: ${opts.previousFeeMode} -> ${opts.newFeeMode}\n`);
     return;
   }
@@ -386,7 +370,7 @@ export async function sendPayoutLimitReached(opts: {
     <p>${t.email.payoutLimitReached.explanation.replace('{years}', String(opts.expiryYears))}</p>
   `;
 
-  if (!import.meta.env.RESEND_API_KEY) {
+  if (!ociConfigured()) {
     console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${t.email.payoutLimitReached.subject}\n`);
     return;
   }

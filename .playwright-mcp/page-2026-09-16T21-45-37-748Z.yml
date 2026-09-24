@@ -1,0 +1,84 @@
+- generic [active] [ref=f1e1]:
+  - main [ref=f1e2]:
+    - generic [ref=f1e5]:
+      - generic [ref=f1e6]:
+        - link "mamtodoma.cz" [ref=f1e7] [cursor=pointer]:
+          - /url: /
+        - paragraph [ref=f1e8]: Spravujte svůj e-shop odkudkoli
+      - generic [ref=f1e12]:
+        - heading "Vítejte zpět" [level=1] [ref=f1e13]
+        - paragraph [ref=f1e14]: Přihlaste se ke svému účtu
+        - generic [ref=f1e15]:
+          - textbox "vy@priklad.cz" [ref=f1e17]
+          - generic [ref=f1e18]:
+            - textbox "Vaše heslo" [ref=f1e19]
+            - button "toggle password visibility" [ref=f1e20] [cursor=pointer]
+          - button "Přihlásit se" [ref=f1e24] [cursor=pointer]
+          - button "Vytvořit účet" [ref=f1e25] [cursor=pointer]
+        - generic [ref=f1e26]: nebo
+        - button "G Pokračovat přes Google" [ref=f1e28] [cursor=pointer]:
+          - generic [ref=f1e29]: G
+          - text: Pokračovat přes Google
+  - contentinfo [ref=f1e31]:
+    - generic [ref=f1e32]:
+      - generic [ref=f1e33]:
+        - link "mamtodoma.cz" [ref=f1e34] [cursor=pointer]:
+          - /url: /
+        - paragraph [ref=f1e38]: E-shop je zdarma. Vyděláváme, jen když vyděláte vy.
+      - generic [ref=f1e39]:
+        - heading "Produkt" [level=4] [ref=f1e40]
+        - list [ref=f1e41]:
+          - listitem [ref=f1e42]:
+            - link "Funkce" [ref=f1e43] [cursor=pointer]:
+              - /url: /features
+          - listitem [ref=f1e44]:
+            - link "Ceník" [ref=f1e45] [cursor=pointer]:
+              - /url: /pricing
+          - listitem [ref=f1e46]:
+            - link "Reálné eshopy" [ref=f1e47] [cursor=pointer]:
+              - /url: /eshopy
+          - listitem [ref=f1e48]:
+            - link "Zaměstnání" [ref=f1e49] [cursor=pointer]:
+              - /url: /employment
+          - listitem [ref=f1e50]:
+            - link "Dokumentace" [ref=f1e51] [cursor=pointer]:
+              - /url: /docs
+      - generic [ref=f1e52]:
+        - heading "Společnost" [level=4] [ref=f1e53]
+        - list [ref=f1e54]:
+          - listitem [ref=f1e55]:
+            - link "O nás" [ref=f1e56] [cursor=pointer]:
+              - /url: /about
+          - listitem [ref=f1e57]:
+            - link "Kontakt" [ref=f1e58] [cursor=pointer]:
+              - /url: /contact
+      - generic [ref=f1e59]:
+        - heading "Právní informace" [level=4] [ref=f1e60]
+        - list [ref=f1e61]:
+          - listitem [ref=f1e62]:
+            - link "Obchodní podmínky" [ref=f1e63] [cursor=pointer]:
+              - /url: /terms
+          - listitem [ref=f1e64]:
+            - link "Zásady ochrany osobních údajů" [ref=f1e65] [cursor=pointer]:
+              - /url: /privacy
+          - listitem [ref=f1e66]:
+            - link "Komisionářská smlouva" [ref=f1e67] [cursor=pointer]:
+              - /url: /commissionaire
+      - generic [ref=f1e68]:
+        - heading "Kontakt" [level=4] [ref=f1e69]
+        - list [ref=f1e70]:
+          - listitem [ref=f1e71]: Smalljobs s.r.o.
+          - listitem [ref=f1e72]: IČO 22312846
+          - listitem [ref=f1e73]: U parčíku 47/24, Topolany, 779 00 Olomouc
+      - generic [ref=f1e74]:
+        - heading "Občasné tipy z e-commerce" [level=4] [ref=f1e75]
+        - paragraph [ref=f1e76]: Žádný spam — nejvýše pár e-mailů měsíčně.
+        - generic [ref=f1e77]:
+          - textbox "vas@email.cz" [ref=f1e78]
+          - button "Odebírat" [ref=f1e79] [cursor=pointer]
+    - generic [ref=f1e80]: © 2026 mamtodoma.cz. Všechna práva vyhrazena.
+  - generic [ref=f1e83]:
+    - button [ref=f1e84]
+    - button [ref=f1e90]
+    - button [ref=f1e94]
+    - button [ref=f1e99]

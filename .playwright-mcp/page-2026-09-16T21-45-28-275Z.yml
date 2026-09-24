@@ -1,0 +1,176 @@
+- generic [active] [ref=e1]:
+  - status [ref=e2]:
+    - generic [aria-hidden] [ref=e3]: ⏳
+    - generic [ref=e4]:
+      - strong [ref=e5]: Náhled - čeká na schválení
+      - generic [ref=e6]: Tento obchod je zatím dostupný pouze jako náhled. Než se zveřejní a bude moci přijímat objednávky, musí vaši organizaci schválit provozovatel platformy.
+  - generic [ref=e9]:
+    - generic [ref=e10]: CZK
+    - generic [ref=e11]:
+      - button "CS" [ref=e13] [cursor=pointer]
+      - button "EN" [ref=e15] [cursor=pointer]
+  - navigation [ref=e16]:
+    - generic [ref=e17]:
+      - link "Template" [ref=e18] [cursor=pointer]:
+        - /url: /eshop-test-caster-x
+      - generic [ref=e20]:
+        - searchbox "Hledat produkty…" [ref=e21]
+        - button "Hledat" [ref=e22] [cursor=pointer]: 🔍
+      - generic [ref=e23]:
+        - link "♡ Seznam přání" [ref=e24] [cursor=pointer]:
+          - /url: /eshop-test-caster-x/wishlist
+          - generic [ref=e25]: ♡
+          - generic [ref=e26]: Seznam přání
+        - link "👤 Přihlásit se" [ref=e27] [cursor=pointer]:
+          - /url: /login?redirect=%2Feshop-test-caster-x&sp=e619ab8d-8744-495a-aedf-c1fd4496cd80
+          - generic [ref=e28]: 👤
+          - generic [ref=e29]: Přihlásit se
+        - link "🛒 Košík" [ref=e30] [cursor=pointer]:
+          - /url: /eshop-test-caster-x/cart
+          - generic [ref=e31]: 🛒
+          - generic [ref=e32]: Košík
+  - main [ref=e33]:
+    - generic [ref=e34]:
+      - generic [ref=e36]:
+        - heading "Shop" [level=1] [ref=e37]
+        - paragraph [ref=e38]: Výkonná CMS šablona s mobilní aplikací a webem — připravena k přizpůsobení.
+        - link "Zobrazit všechny produkty" [ref=e39] [cursor=pointer]:
+          - /url: "#featured-products"
+      - generic [ref=e40]:
+        - heading "Kategorie" [level=2] [ref=e41]
+        - generic [ref=e42]:
+          - link "📦 Kategorie 1" [ref=e43] [cursor=pointer]:
+            - /url: /eshop-test-caster-x?category=ukazkova-kategorie-1
+            - generic [ref=e44]: 📦
+            - generic [ref=e45]: Kategorie 1
+          - link "📦 Kategorie 2" [ref=e46] [cursor=pointer]:
+            - /url: /eshop-test-caster-x?category=ukazkova-kategorie-2
+            - generic [ref=e47]: 📦
+            - generic [ref=e48]: Kategorie 2
+          - link "📦 Kategorie 3" [ref=e49] [cursor=pointer]:
+            - /url: /eshop-test-caster-x?category=ukazkova-kategorie-3
+            - generic [ref=e50]: 📦
+            - generic [ref=e51]: Kategorie 3
+      - generic [ref=e52]:
+        - heading "Doporučeno" [level=2] [ref=e53]
+        - generic [ref=e54]:
+          - link "Bez obrázku Doporučeno Ukázkový produkt 4 899,00 Kč" [ref=e55] [cursor=pointer]:
+            - /url: /eshop-test-caster-x/ukazkovy-produkt-4
+            - generic [ref=e56]:
+              - generic [ref=e57]: Bez obrázku
+              - generic [ref=e58]: Doporučeno
+            - generic [ref=e59]:
+              - heading "Ukázkový produkt 4" [level=3] [ref=e60]
+              - generic [ref=e61]: 899,00 Kč
+          - link "Bez obrázku Doporučeno Ukázkový produkt 3 799,00 Kč" [ref=e63] [cursor=pointer]:
+            - /url: /eshop-test-caster-x/ukazkovy-produkt-3
+            - generic [ref=e64]:
+              - generic [ref=e65]: Bez obrázku
+              - generic [ref=e66]: Doporučeno
+            - generic [ref=e67]:
+              - heading "Ukázkový produkt 3" [level=3] [ref=e68]
+              - generic [ref=e69]: 799,00 Kč
+          - link "Bez obrázku Doporučeno Ukázkový produkt 2 699,00 Kč" [ref=e71] [cursor=pointer]:
+            - /url: /eshop-test-caster-x/ukazkovy-produkt-2
+            - generic [ref=e72]:
+              - generic [ref=e73]: Bez obrázku
+              - generic [ref=e74]: Doporučeno
+            - generic [ref=e75]:
+              - heading "Ukázkový produkt 2" [level=3] [ref=e76]
+              - generic [ref=e77]: 699,00 Kč
+          - link "Bez obrázku Doporučeno Ukázkový produkt 1 599,00 Kč" [ref=e79] [cursor=pointer]:
+            - /url: /eshop-test-caster-x/ukazkovy-produkt-1
+            - generic [ref=e80]:
+              - generic [ref=e81]: Bez obrázku
+              - generic [ref=e82]: Doporučeno
+            - generic [ref=e83]:
+              - heading "Ukázkový produkt 1" [level=3] [ref=e84]
+              - generic [ref=e85]: 599,00 Kč
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - heading "Zůstaňte v obraze" [level=2] [ref=e90]
+          - paragraph [ref=e91]: Novinky o nových produktech a akcích.
+        - generic [ref=e92]:
+          - textbox "vas@email.cz" [ref=e93]
+          - button "Odebírat" [ref=e94] [cursor=pointer]
+        - paragraph
+      - generic [ref=e95]:
+        - complementary [ref=e96]:
+          - heading "Kategorie" [level=2] [ref=e97]
+          - list [ref=e98]:
+            - listitem [ref=e99]:
+              - link "Všechny produkty" [ref=e100] [cursor=pointer]:
+                - /url: /eshop-test-caster-x
+            - listitem [ref=e101]:
+              - link "Kategorie 1" [ref=e102] [cursor=pointer]:
+                - /url: /eshop-test-caster-x?category=ukazkova-kategorie-1
+            - listitem [ref=e103]:
+              - link "Kategorie 2" [ref=e104] [cursor=pointer]:
+                - /url: /eshop-test-caster-x?category=ukazkova-kategorie-2
+            - listitem [ref=e105]:
+              - link "Kategorie 3" [ref=e106] [cursor=pointer]:
+                - /url: /eshop-test-caster-x?category=ukazkova-kategorie-3
+        - main [ref=e107]:
+          - generic [ref=e108]:
+            - generic [ref=e109]:
+              - generic [ref=e110]: "Řadit:"
+              - combobox "Řadit:" [ref=e111]:
+                - option "Nejnovější" [selected]
+                - option "Cena ↑"
+                - option "Cena ↓"
+                - option "Nejlépe hodnoceno"
+            - generic [ref=e112]: 4 produktů
+          - generic [ref=e113]:
+            - link "Bez obrázku Doporučeno Ukázkový produkt 4 899,00 Kč" [ref=e114] [cursor=pointer]:
+              - /url: /eshop-test-caster-x/ukazkovy-produkt-4
+              - generic [ref=e115]:
+                - generic [ref=e116]: Bez obrázku
+                - generic [ref=e117]: Doporučeno
+              - generic [ref=e118]:
+                - heading "Ukázkový produkt 4" [level=3] [ref=e119]
+                - generic [ref=e120]: 899,00 Kč
+            - link "Bez obrázku Doporučeno Ukázkový produkt 3 799,00 Kč" [ref=e122] [cursor=pointer]:
+              - /url: /eshop-test-caster-x/ukazkovy-produkt-3
+              - generic [ref=e123]:
+                - generic [ref=e124]: Bez obrázku
+                - generic [ref=e125]: Doporučeno
+              - generic [ref=e126]:
+                - heading "Ukázkový produkt 3" [level=3] [ref=e127]
+                - generic [ref=e128]: 799,00 Kč
+            - link "Bez obrázku Doporučeno Ukázkový produkt 2 699,00 Kč" [ref=e130] [cursor=pointer]:
+              - /url: /eshop-test-caster-x/ukazkovy-produkt-2
+              - generic [ref=e131]:
+                - generic [ref=e132]: Bez obrázku
+                - generic [ref=e133]: Doporučeno
+              - generic [ref=e134]:
+                - heading "Ukázkový produkt 2" [level=3] [ref=e135]
+                - generic [ref=e136]: 699,00 Kč
+            - link "Bez obrázku Doporučeno Ukázkový produkt 1 599,00 Kč" [ref=e138] [cursor=pointer]:
+              - /url: /eshop-test-caster-x/ukazkovy-produkt-1
+              - generic [ref=e139]:
+                - generic [ref=e140]: Bez obrázku
+                - generic [ref=e141]: Doporučeno
+              - generic [ref=e142]:
+                - heading "Ukázkový produkt 1" [level=3] [ref=e143]
+                - generic [ref=e144]: 599,00 Kč
+  - contentinfo [ref=e146]:
+    - generic [ref=e147]:
+      - generic [ref=e149]:
+        - heading "Odebírej náš newsletter" [level=2] [ref=e150]
+        - list [ref=e151]:
+          - listitem [ref=e152]: ✓ Speciální slevy a akce
+          - listitem [ref=e153]: ✓ Žádný spam
+          - listitem [ref=e154]: ✓ Kdykoliv se odhlásíš
+        - generic [ref=e155]:
+          - textbox "Vložte váš e-mail" [ref=e156]
+          - button "CHCI SPECIÁLNÍ VÝHODY" [ref=e157] [cursor=pointer]
+        - paragraph [ref=e158]
+        - paragraph [ref=e159]:
+          - text: Vložením e-mailu souhlasíte s
+          - link "podmínkami ochrany osobních údajů" [ref=e160] [cursor=pointer]:
+            - /url: /eshop-test-caster-x/stranka/ochrana-osobnich-udaju
+          - text: .
+      - generic [ref=e162]:
+        - paragraph [ref=e163]: Template
+        - paragraph [ref=e164]: Každý den jsme tu pro tebe
+      - paragraph [ref=e166]: © 2026 Template. Všechna práva vyhrazena.

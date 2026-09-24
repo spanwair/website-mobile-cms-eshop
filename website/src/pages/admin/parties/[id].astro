@@ -13,6 +13,7 @@ import { requireAdminCtx } from "@/lib/admin";
 import { useT, getLang } from "@/lib/i18n";
 import { PERMISSIONS, hasPermission, ROLE, ROLE_LABEL, assignableRoles, canAssignRole } from "@shared/constants/permissions";
 import { sendPartyInvitation, buildDevInviteMetadata } from "@/lib/integrations/email";
+import { ociConfigured } from "@/lib/integrations/oci-email";
 import { SELLER_MODE, COMMISSION_RATE, REDUCED_COMMISSION_RATE, COMMISSION_REDUCED_THRESHOLD_CZK } from "@shared/constants/sellerMode";
 import { formatPrice } from "@shared/utils/format";
 
@@ -171,7 +172,7 @@ if (Astro.request.method === "POST") {
           invited_by: session.user.id,
           ...(validSystemRole ? { pending_system_role: validSystemRole } : {}),
         };
-        if (!import.meta.env.RESEND_API_KEY) {
+        if (!ociConfigured()) {
           // Dev: inviteUserByEmail → GoTrue renders supabase/templates/invite.html → Mailpit
           const emailMeta = buildDevInviteMetadata({ lang: inviterLang, partyName, roleName: inviteRoleName, systemRole: validSystemRole, rolePermissions: inviteRolePerms });
           const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
@@ -181,7 +182,7 @@ if (Astro.request.method === "POST") {
           if (inviteErr) { error = inviteErr.message; }
           else { success = t.admin.parties.inviteSentPrefix + email + t.admin.parties.inviteSentSuffix; }
         } else {
-          // Prod: generateLink + styled Resend email
+          // Prod: generateLink (no email sent by GoTrue → no send-email-hook) + styled OCI email
           const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
             type: 'invite', email,
             options: { redirectTo: `${origin}/auth/callback`, data: authData },

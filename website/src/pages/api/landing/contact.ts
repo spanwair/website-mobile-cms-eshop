@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { Resend } from "resend";
+import { sendEmail, ociConfigured } from "@/lib/integrations/oci-email";
 import sanitizeHtml from "sanitize-html";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -14,20 +14,18 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: "invalid_input" }), { status: 400 });
   }
 
-  const key = import.meta.env.RESEND_API_KEY;
-  if (!key) {
+  if (!ociConfigured()) {
     return new Response(JSON.stringify({ error: "email_not_configured" }), { status: 500 });
   }
-  const resend = new Resend(key);
   const safeMessage = sanitizeHtml(message, { allowedTags: [], allowedAttributes: {} });
-  const { error } = await resend.emails.send({
-    from: import.meta.env.EMAIL_FROM ?? "noreply@mamtodoma.cz",
-    to: import.meta.env.LEADS_INBOX ?? "founders@mamtodoma.cz",
-    replyTo: email,
-    subject: `Contact form: ${name}`,
-    html: `<p><strong>${sanitizeHtml(name, { allowedTags: [], allowedAttributes: {} })}</strong> (${email})</p><p>${safeMessage.replace(/\n/g, "<br/>")}</p>`,
-  });
-  if (error) {
+  try {
+    await sendEmail({
+      to: import.meta.env.LEADS_INBOX ?? "founders@mamtodoma.cz",
+      replyTo: email,
+      subject: `Contact form: ${name}`,
+      html: `<p><strong>${sanitizeHtml(name, { allowedTags: [], allowedAttributes: {} })}</strong> (${email})</p><p>${safeMessage.replace(/\n/g, "<br/>")}</p>`,
+    });
+  } catch {
     return new Response(JSON.stringify({ error: "send_failed" }), { status: 500 });
   }
   return new Response(JSON.stringify({ ok: true }), { status: 200 });

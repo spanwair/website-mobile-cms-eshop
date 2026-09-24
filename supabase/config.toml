@@ -74,6 +74,18 @@ content_path = "./supabase/templates/magic_link.html"
 subject = "Confirm your email / Potvrďte svůj e-mail"
 content_path = "./supabase/templates/confirmation.html"
 
+# Send Email Hook — in PRODUCTION, GoTrue delegates every auth email to our endpoint
+# (website /api/auth/send-email-hook), which renders the templates in
+# authEmailTemplates.ts and sends them via OCI Email Delivery. This is what removes
+# Supabase's own email delivery entirely — enable it in the Supabase Dashboard
+# (Auth → Hooks → Send Email) with the same secret as SEND_EMAIL_HOOK_SECRET.
+# Left disabled for LOCAL dev so signup/magic-link/recovery still land in Mailpit
+# (the E2E helpers scrape it); the templates above are only rendered in local dev.
+[auth.hook.send_email]
+enabled = false
+uri = "http://host.docker.internal:4321/api/auth/send-email-hook"
+secrets = "env(SEND_EMAIL_HOOK_SECRET)"
+
 [auth.sms]
 enable_signup = true
 enable_confirmations = false
