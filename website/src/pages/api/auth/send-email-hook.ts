@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { sendEmail, ociConfigured } from "@/lib/integrations/oci-email";
+import { sendEmail, ociConfigured, ociEnvStatus } from "@/lib/integrations/oci-email";
 import { renderAuthEmail, type AuthEmailAction } from "@/lib/integrations/authEmailTemplates";
 import type { AppLanguage } from "@shared/i18n/getT";
 
@@ -73,6 +73,10 @@ export const GET: APIRoute = async () =>
       ok: true,
       ociConfigured: ociConfigured(),
       hookSecretPresent: Boolean(import.meta.env.SEND_EMAIL_HOOK_SECRET),
+      ociEnv: ociEnvStatus(),
+      ociMissing: Object.entries(ociEnvStatus())
+        .filter(([, present]) => !present)
+        .map(([k]) => k),
     }),
     { status: 200, headers: { "content-type": "application/json" } },
   );

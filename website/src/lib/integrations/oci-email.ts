@@ -43,6 +43,19 @@ export function ociConfigured(): boolean {
   return readConfig() !== null;
 }
 
+// Per-var presence for the health check — booleans only, never leaks values.
+export function ociEnvStatus(): Record<string, boolean> {
+  return {
+    OCI_REGION: Boolean(import.meta.env.OCI_REGION),
+    OCI_TENANCY_OCID: Boolean(import.meta.env.OCI_TENANCY_OCID),
+    OCI_USER_OCID: Boolean(import.meta.env.OCI_USER_OCID),
+    OCI_KEY_FINGERPRINT: Boolean(import.meta.env.OCI_KEY_FINGERPRINT),
+    OCI_PRIVATE_KEY: Boolean(import.meta.env.OCI_PRIVATE_KEY),
+    OCI_COMPARTMENT_OCID: Boolean(import.meta.env.OCI_COMPARTMENT_OCID),
+    EMAIL_FROM: Boolean(import.meta.env.EMAIL_FROM),
+  };
+}
+
 function base64(bytes: ArrayBuffer): string {
   const b = new Uint8Array(bytes);
   let s = "";
