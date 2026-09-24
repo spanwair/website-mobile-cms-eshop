@@ -26,6 +26,11 @@ function b64ToBytes(b64: string): Uint8Array {
   return out;
 }
 
+function parseUrl(value: string | undefined | null): URL | null {
+  if (!value) return null;
+  try { return new URL(value); } catch { return null; }
+}
+
 // Standard Webhooks verification (Supabase signs with v1,whsec_<base64secret>).
 async function verify(secretRaw: string, headers: Headers, body: string): Promise<boolean> {
   const id = headers.get("webhook-id");
@@ -110,12 +115,6 @@ export const POST: APIRoute = async ({ request }) => {
   if (!action) return fail(200, "ignored"); // unknown/unsupported type — nothing to send
 
   const lang: AppLanguage = user?.user_metadata?.lang === "en" ? "en" : "cs";
-  // The app's own canonical origin is the single source of truth for email links. We do NOT trust
-  // GoTrue's data.site_url — a misconfigured dashboard Site URL (e.g. the Supabase API base) would
-  // otherwise produce dead links like https://<ref>.supabase.co/auth/v1/auth/callback.
-  // SHOP_URL (not PUBLIC_*) so it resolves from the Worker's runtime [vars], not a build-inlined value.
-  const siteUrl = (import.meta.env.SHOP_URL ?? "").replace(/\/+$/, "");
-  if (!siteUrl) return fail(500, "shop_url_not_configured");
 
   // email_change with double-confirm carries a second token for the new address.
   const useNew = rawType === "email_change_new";
@@ -123,12 +122,21 @@ export const POST: APIRoute = async ({ request }) => {
   const recipient = useNew ? (user.new_email ?? user.email) : user.email;
   if (!recipient || !tokenHash) return fail(400, "missing_recipient_or_token");
 
+  // Build the callback link on the ORIGIN GoTrue actually received in redirect_to — the domain the
+  // user is on. It is always an absolute app URL (GoTrue defaults it to the project Site URL when the
+  // client sends none), so this is correct for every storefront domain and can't be broken by an env
+  // or dashboard misconfig. SHOP_URL (wrangler [vars]) is only a last-resort origin.
+  const redirectUrl = parseUrl(data.redirect_to);
+  const siteUrl = redirectUrl?.origin ?? parseUrl(import.meta.env.SHOP_URL)?.origin ?? "";
+  if (!siteUrl) return fail(500, "no_callback_origin");
+
   const verifyType = action === "email_change" ? "email_change" : action;
   const params = new URLSearchParams({ token_hash: tokenHash, type: verifyType });
-  if (typeof data.redirect_to === "string" && data.redirect_to.startsWith(siteUrl)) {
-    const rest = data.redirect_to.slice(siteUrl.length);
-    if (rest.startsWith("/")) params.set("redirect", rest);
-  }
+  // Preserve a post-verify destination only when the client asked for a real page beyond the bare
+  // callback (not "/" or the callback itself — those carry no intent and would override the default).
+  const dest = redirectUrl ? redirectUrl.pathname + redirectUrl.search : "";
+  if (dest.startsWith("/") && dest !== "/" && dest !== "/auth/callback") params.set("redirect", dest);
+
   const actionUrl = `${siteUrl}/auth/callback?${params.toString()}`;
 
   const { subject, html } = renderAuthEmail({ action, lang, actionUrl, siteUrl });
