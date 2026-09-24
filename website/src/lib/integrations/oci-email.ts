@@ -45,7 +45,6 @@ export function ociConfigured(): boolean {
 
 // Per-var presence for the health check — booleans only, never leaks values.
 export function ociEnvStatus(): Record<string, boolean> {
-// Per-var presence for the health check — booleans only, never leaks values.
   return {
     OCI_REGION: Boolean(import.meta.env.OCI_REGION),
     OCI_TENANCY_OCID: Boolean(import.meta.env.OCI_TENANCY_OCID),
