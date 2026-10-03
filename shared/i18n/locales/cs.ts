@@ -134,6 +134,8 @@ export const cs: Translations = {
     settingPassword: "Ukládám…",
     setPasswordSuccess: "Heslo bylo nastaveno. Přesměrovávám…",
     skipForNow: "Přeskočit",
+    finishRegistrationTitle: "Dokončete registraci",
+    inviteSubtitlePrefix: "Byli jste pozváni k dokončení registrace do organizace:",
   },
   onboarding: {
     slide1Title: "Vítejte",
@@ -1158,6 +1160,10 @@ export const cs: Translations = {
     },
     users: {
       title: "Uživatelé",
+      inviteBtn: "+ Pozvat uživatele",
+      inviteTitle: "Pozvat uživatele",
+      back: "← Zpět na uživatele",
+      errorInvalidParty: "Vyberte platnou organizaci.",
       colName: "Jméno",
       colEmail: "E-mail",
       colRole: "Role",

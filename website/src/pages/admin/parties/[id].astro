@@ -1,5 +1,6 @@
 ---
 import CmsLayout from "@/components/cms/CmsLayout.astro";
+import InviteUserForm from "@/components/cms/InviteUserForm.astro";
 import PartySellerModeCard from "@/components/admin/PartySellerModeCard.astro";
 import SlugInput from "@/components/cms/SlugInput.astro";
 import { createSupabase, createAdminClient } from "@/lib/supabase";
@@ -11,7 +12,7 @@ import { findUserByEmail } from "@shared/services/profileService";
 import { fetchProducts } from "@shared/services/productService";
 import { requireAdminCtx } from "@/lib/admin";
 import { useT, getLang } from "@/lib/i18n";
-import { PERMISSIONS, hasPermission, ROLE, ROLE_LABEL, assignableRoles, canAssignRole } from "@shared/constants/permissions";
+import { PERMISSIONS, hasPermission, ROLE, assignableRoles, canAssignRole } from "@shared/constants/permissions";
 import { sendPartyInvitation, buildDevInviteMetadata } from "@/lib/integrations/email";
 import { ociConfigured } from "@/lib/integrations/oci-email";
 import { SELLER_MODE, COMMISSION_RATE, REDUCED_COMMISSION_RATE, COMMISSION_REDUCED_THRESHOLD_CZK } from "@shared/constants/sellerMode";
@@ -439,52 +440,14 @@ function roleName(roleId: string) {
       )}
 
       {canManageUsers && (
-        <div class="card" style={canManageSettings ? "margin-top:16px" : ""}>
-          <h2 class="section-title">{t.admin.parties.sectionInvite}</h2>
-          <p class="invite-note">
-            {t.admin.parties.inviteNote}
-            {systemRoleOptions.length === 0 && (
-              <>
-                <br /><br />
-                <strong>{t.admin.parties.inviteNoteExtra}</strong>{" "}
-                <a href="/admin/users">{t.admin.sidebar.users}</a>{" "}
-                {t.admin.parties.inviteNoteSuffix}
-              </>
-            )}
-          </p>
-          <form method="POST" class="invite-form">
-            <input type="hidden" name="action" value="invite" />
-            <div class="form-group">
-              <label class="form-label">{t.admin.parties.fieldEmail}</label>
-              <input class="form-input" type="email" name="email" required placeholder={t.auth.emailPlaceholder} />
-            </div>
-            {systemRoleOptions.length > 0 && (
-              <div class="form-group">
-                <label class="form-label">{t.admin.parties.fieldSystemRole}</label>
-                <select class="form-input system-role-select" name="system_role">
-                  <option value="">{t.admin.parties.systemRoleNone}</option>
-                  {systemRoleOptions.map(r => (
-                    <option value={r}>{ROLE_LABEL[r as keyof typeof ROLE_LABEL]}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <div class="form-group party-role-group">
-              <label class="form-label">
-                {t.admin.parties.fieldRole}
-                <span class="role-hint">{t.admin.parties.roleHint}</span>
-              </label>
-              <select class="form-input party-role-select" name="role_id">
-                <option value="">{roles.length === 0 ? t.admin.parties.noRoles : t.admin.parties.selectRole}</option>
-                {roles.map((r) => (
-                  <option value={r.id}>
-                    {r.name}{r.description ? ` — ${r.description}` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.admin.parties.sendInvite}</button>
-          </form>
+        <div style={canManageSettings ? "margin-top:16px" : ""}>
+          <InviteUserForm
+            parties={ctx.parties}
+            systemRoleOptions={systemRoleOptions}
+            roles={roles}
+            fixedPartyId={id}
+            showInviteNoteExtra={true}
+          />
         </div>
       )}
     </div>
@@ -583,22 +546,6 @@ function roleName(roleId: string) {
     </div>
   </div>
 </CmsLayout>
-
-<script define:vars={{ ROLE_ADMIN: ROLE.ADMIN }}>
-document.querySelectorAll('.system-role-select').forEach(sel => {
-  const form = sel.closest('form');
-  const roleGroup = form.querySelector('.party-role-group');
-  const roleSelect = form.querySelector('.party-role-select');
-
-  function sync() {
-    const isAdmin = Number(sel.value) === ROLE_ADMIN;
-    roleGroup.style.display = (isAdmin || !sel.value) ? 'none' : '';
-    roleSelect.required = !isAdmin && roleSelect.options.length > 1;
-  }
-  sync();
-  sel.addEventListener('change', sync);
-});
-</script>
 
 <style>
   .form-row { margin-bottom:12px; }

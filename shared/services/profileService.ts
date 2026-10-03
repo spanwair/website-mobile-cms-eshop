@@ -87,15 +87,16 @@ export async function fetchUsersForAdmin(
   const memberIds = (partyMembers ?? []).map((m) => m.user_id);
   if (memberIds.length === 0) return [];
 
-  let query = client.from("profiles").select("*").in("id", memberIds);
-
-  if (viewerRole >= ROLE.ADMIN) {
-    query = query.lt("role", ROLE.OWNER);
-  } else {
-    query = query.lte("role", ROLE.ESHOP_ADMIN);
-  }
-
-  const { data } = await query.order("created_at", { ascending: false });
+  // Non-owner admins (admin + eshop_admin) see every member of their party except owners.
+  // Eshop_admin still cannot modify admins (canChangeUser guards the form, and the profiles
+  // UPDATE RLS blocks it), but must be able to see who manages the org - e.g. the admin who
+  // invited them.
+  const { data } = await client
+    .from("profiles")
+    .select("*")
+    .in("id", memberIds)
+    .lt("role", ROLE.OWNER)
+    .order("created_at", { ascending: false });
   return (data ?? []).map((row: ProfileRow) => toUser(row, ""));
 }
 

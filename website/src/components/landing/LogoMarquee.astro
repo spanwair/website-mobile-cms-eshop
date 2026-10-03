@@ -3,9 +3,15 @@
 // never hardcoded here, so this never overstates what's actually connected (see
 // shared/constants/shipping.ts for the source of truth on carriers).
 import Icon from "./Icon.astro";
+import { getProviderLogoSrc, type ProviderLogo } from "@shared/constants/providerLogos";
+
+interface LogoItem {
+  name: string;
+  src?: string;
+}
 
 interface Props {
-  logos: string[];
+  logos: Array<string | LogoItem | ProviderLogo>;
   label: string;
 }
 const { logos, label } = Astro.props;
@@ -16,7 +22,14 @@ const style: Record<string, { icon: string; color: string; bg: string }> = {
   Zásilkovna: { icon: "box", color: "#EA9A1A", bg: "rgba(234,154,26,0.12)" },
 };
 const fallback = { icon: "shop", color: "var(--accent-primary)", bg: "var(--bg-subtle)" };
-const items = [...new Set(logos)].map((name) => ({ name, ...(style[name] ?? fallback) }));
+const items = [...new Map(logos.map((logo) => {
+  const item = typeof logo === "string" ? { name: logo } : logo;
+  return [item.name, item] as const;
+})).values()].map((item) => ({
+  ...item,
+  src: item.src ?? getProviderLogoSrc(item.name),
+  ...(style[item.name] ?? fallback),
+}));
 ---
 
 <section class="landing integrations">
@@ -24,11 +37,14 @@ const items = [...new Set(logos)].map((name) => ({ name, ...(style[name] ?? fall
     <p class="integrations-label font-mono">{label}</p>
     <div class="integrations-row">
       {items.map((item) => (
-        <div class="integrations-item">
-          <span class="integrations-icon" style={`color:${item.color}; background:${item.bg}`}>
-            <Icon name={item.icon} size={22} />
-          </span>
-          <span class="integrations-name">{item.name}</span>
+        <div class="integrations-item" title={item.name}>
+          {item.src ? (
+            <img src={item.src} alt={item.name} class="integrations-logo" loading="lazy" />
+          ) : (
+            <span class="integrations-icon" title={item.name} style={`color:${item.color}; background:${item.bg}`}>
+              <Icon name={item.icon} size={22} />
+            </span>
+          )}
         </div>
       ))}
     </div>
@@ -45,7 +61,7 @@ const items = [...new Set(logos)].map((name) => ({ name, ...(style[name] ?? fall
     display: flex; flex-wrap: wrap; justify-content: center; gap: 16px;
   }
   .integrations-item {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center;
     padding: 10px 20px; border: 1px solid var(--border-default); border-radius: var(--radius-full);
     background: var(--bg-page); transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   }
@@ -54,7 +70,10 @@ const items = [...new Set(logos)].map((name) => ({ name, ...(style[name] ?? fall
     display: inline-flex; align-items: center; justify-content: center;
     width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
   }
-  .integrations-name { font-weight: 600; font-size: 15px; color: var(--text-primary); white-space: nowrap; }
+  .integrations-logo {
+    height: 32px; max-width: 120px; object-fit: contain; flex-shrink: 0;
+    border-radius: 6px; background: #fff;
+  }
 
   @media (max-width: 640px) {
     .integrations-row { gap: 12px; }

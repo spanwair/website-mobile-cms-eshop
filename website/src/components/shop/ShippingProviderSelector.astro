@@ -2,6 +2,7 @@
 import { useT, getLang } from "../../lib/i18n";
 import { formatPrice } from "@shared/utils/format";
 import { computeShippingCost } from "@shared/services/shippingConfigService";
+import { getProviderLogoSrc } from "@shared/constants/providerLogos";
 import type { ShippingProviderConfig } from "@shared/types";
 
 interface Props {
@@ -16,11 +17,6 @@ const lang = getLang(Astro);
 const mockMode = (import.meta.env.PUBLIC_SHIPPING_MOCK_MODE ?? "true") !== "false";
 const packetaWidgetKey = import.meta.env.PUBLIC_PACKETA_WIDGET_API_KEY ?? "";
 const pplWidgetKey = import.meta.env.PUBLIC_PPL_WIDGET_API_KEY ?? "";
-
-const PROVIDER_LOGOS: Record<string, string> = {
-  ppl: "/logo-delivery-providers/Logo-ppl-1024x333.jpg",
-  packeta: "/logo-delivery-providers/preview-repasado-dark.png",
-};
 
 const MOCK_POINTS: Record<string, { id: string; name: string; address: string }[]> = {
   ppl: [
@@ -42,12 +38,15 @@ const MOCK_POINTS: Record<string, { id: string; name: string; address: string }[
   <div class="provider-list">
     {configs.map((cfg, i) => {
       const cost = computeShippingCost(cfg, subtotal);
-      const logo = PROVIDER_LOGOS[cfg.code];
+      const logo = getProviderLogoSrc(cfg.code);
       return (
         <label class="provider-option">
           <input type="radio" name="shipping_provider" value={cfg.code} data-cost={cost} data-label={cfg.display_name} form="checkout-form" checked={i === 0} class="styled-radio" required />
-          {logo && <img src={logo} alt={cfg.display_name} class="provider-logo" />}
-          <span class="provider-name">{cfg.display_name}</span>
+          {logo ? (
+            <img src={logo} alt={cfg.display_name} title={cfg.display_name} class="provider-logo" />
+          ) : (
+            <span class="provider-name">{cfg.display_name}</span>
+          )}
           <span class="provider-price">{cost === 0 ? t.shop.freeShipping : formatPrice(cost, lang, currency)}</span>
         </label>
       );

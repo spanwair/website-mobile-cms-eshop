@@ -93,6 +93,7 @@ if (Astro.request.method === "POST") {
 
 const users = await fetchUsersForAdmin(supabase, myRole, ctx.partyId);
 const canAssign = assignableRoles(myRole);
+const showOrgFilter = myRole >= ROLE.ADMIN;
 const [userPartiesMap, globalRoles] = await Promise.all([
   fetchUserParties(supabase, users.map(u => u.id)),
   fetchRoles(supabase),
@@ -123,6 +124,7 @@ function roleClass(r: number) {
   {error && <div class="alert-error">{error}</div>}
   <div class="toolbar">
     <span class="total-label">{users.length} {t.admin.users.title.toLowerCase()}</span>
+    <a href="/admin/users/new" class="btn btn-primary">{t.admin.users.inviteBtn}</a>
   </div>
 
   <div class="filter-bar">
@@ -132,9 +134,11 @@ function roleClass(r: number) {
       <option value="">{t.admin.users.filterByRole}</option>
       {canAssign.map(r => <option value={r}>{ROLE_LABEL[r as keyof typeof ROLE_LABEL]}</option>)}
     </select>
-    <select id="f-org" class="form-input filter-input">
-      <option value="">{t.admin.users.filterByOrg}</option>
-    </select>
+    {showOrgFilter && (
+      <select id="f-org" class="form-input filter-input">
+        <option value="">{t.admin.users.filterByOrg}</option>
+      </select>
+    )}
   </div>
 
   <div class="card" style="padding:0;overflow:hidden">
@@ -252,22 +256,24 @@ document.querySelectorAll('.ms-root').forEach(root => {
 (function () {
   const rows = [...document.querySelectorAll('tbody tr')];
 
-  // Populate org filter from data-orgs attributes
+  // Populate org filter from data-orgs attributes (absent for single-org admins)
   const orgSelect = document.getElementById('f-org');
-  const allOrgs = new Set();
-  rows.forEach(r => (r.dataset.orgs || '').split('|').filter(Boolean).forEach(o => allOrgs.add(o)));
-  [...allOrgs].sort().forEach(o => {
-    const opt = document.createElement('option');
-    opt.value = o;
-    opt.textContent = o;
-    orgSelect.appendChild(opt);
-  });
+  if (orgSelect) {
+    const allOrgs = new Set();
+    rows.forEach(r => (r.dataset.orgs || '').split('|').filter(Boolean).forEach(o => allOrgs.add(o)));
+    [...allOrgs].sort().forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o;
+      opt.textContent = o;
+      orgSelect.appendChild(opt);
+    });
+  }
 
   function applyFilters() {
     const name = document.getElementById('f-name').value.toLowerCase();
     const email = document.getElementById('f-email').value.toLowerCase();
     const role = document.getElementById('f-role').value;
-    const org = orgSelect.value.toLowerCase();
+    const org = orgSelect ? orgSelect.value.toLowerCase() : '';
     rows.forEach(r => {
       const match =
         (!name  || (r.dataset.name  || '').includes(name))  &&
@@ -280,6 +286,7 @@ document.querySelectorAll('.ms-root').forEach(root => {
 
   ['f-name', 'f-email', 'f-role', 'f-org'].forEach(id => {
     const el = document.getElementById(id);
+    if (!el) return;
     el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', applyFilters);
   });
 })();

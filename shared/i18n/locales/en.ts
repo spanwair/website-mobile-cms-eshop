@@ -132,6 +132,8 @@ export const en = {
     settingPassword: "Saving…",
     setPasswordSuccess: "Password set. Redirecting…",
     skipForNow: "Skip for now",
+    finishRegistrationTitle: "Finish your registration",
+    inviteSubtitlePrefix: "You've been invited to finish setting up your account for:",
   },
   onboarding: {
     slide1Title: "Welcome",
@@ -1156,6 +1158,10 @@ export const en = {
     },
     users: {
       title: "Users",
+      inviteBtn: "+ Invite user",
+      inviteTitle: "Invite user",
+      back: "← Back to users",
+      errorInvalidParty: "Select a valid organisation.",
       colName: "Name",
       colEmail: "Email",
       colRole: "Role",

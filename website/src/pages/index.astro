@@ -20,6 +20,7 @@ import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
 import { createSupabase } from "../lib/supabase";
 import { listLandingFeaturedStores } from "@shared/services/storeConfigService";
+import { LANDING_PROVIDER_LOGOS } from "@shared/constants/providerLogos";
 
 const t = useT(Astro);
 const supabase = createSupabase(Astro);
@@ -28,7 +29,7 @@ const featuredStores = await listLandingFeaturedStores(supabase);
 
 <LandingLayout title={t.landing.meta.defaultTitle} description={t.landing.meta.defaultDescription}>
   <Hero />
-  <LogoMarquee logos={["PPL", "Zásilkovna", "Stripe"]} label={t.landing.logoMarquee.label} />
+  <LogoMarquee logos={LANDING_PROVIDER_LOGOS} label={t.landing.logoMarquee.label} />
   <FoundingSellers />
   <Features />
   <HowItWorks />

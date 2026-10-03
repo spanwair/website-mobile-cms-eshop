@@ -1,0 +1,104 @@
+---
+import { useT } from "@/lib/i18n";
+import { ROLE, ROLE_LABEL } from "@shared/constants/permissions";
+
+interface Party { id: string; name: string }
+interface CustomRole { id: string; name: string; description?: string | null }
+
+interface Props {
+  parties: Party[];
+  systemRoleOptions: number[];
+  roles: CustomRole[];
+  fixedPartyId?: string | null;
+  selectedPartyId?: string | null;
+  showInviteNoteExtra?: boolean;
+}
+
+const { parties, systemRoleOptions, roles, fixedPartyId = null, selectedPartyId = null, showInviteNoteExtra = false } = Astro.props as Props;
+const t = useT(Astro);
+---
+<div class="card">
+  <h2 class="section-title">{t.admin.parties.sectionInvite}</h2>
+  <p class="invite-note">
+    {t.admin.parties.inviteNote}
+    {showInviteNoteExtra && systemRoleOptions.length === 0 && (
+      <>
+        <br /><br />
+        <strong>{t.admin.parties.inviteNoteExtra}</strong>{" "}
+        <a href="/admin/users">{t.admin.sidebar.users}</a>{" "}
+        {t.admin.parties.inviteNoteSuffix}
+      </>
+    )}
+  </p>
+  <form method="POST" class="invite-form">
+    <input type="hidden" name="action" value="invite" />
+    <div class="form-group">
+      <label class="form-label">{t.admin.parties.fieldEmail}</label>
+      <input class="form-input" type="email" name="email" required placeholder={t.auth.emailPlaceholder} />
+    </div>
+    {!fixedPartyId && (
+      <div class="form-group">
+        <label class="form-label">{t.admin.users.pickOrg}</label>
+        <select class="form-input" name="party_id" required>
+          <option value="">{t.admin.parties.selectRole}</option>
+          {parties.map((p) => (
+            <option value={p.id} selected={selectedPartyId === p.id}>{p.name}</option>
+          ))}
+        </select>
+      </div>
+    )}
+    {fixedPartyId && <input type="hidden" name="party_id" value={fixedPartyId} />}
+    {systemRoleOptions.length > 0 && (
+      <div class="form-group">
+        <label class="form-label">{t.admin.parties.fieldSystemRole}</label>
+        <select class="form-input system-role-select" name="system_role">
+          <option value="">{t.admin.parties.systemRoleNone}</option>
+          {systemRoleOptions.map((r) => (
+            <option value={r}>{ROLE_LABEL[r as keyof typeof ROLE_LABEL]}</option>
+          ))}
+        </select>
+      </div>
+    )}
+    <div class="form-group party-role-group">
+      <label class="form-label">
+        {t.admin.parties.fieldRole}
+        <span class="role-hint">{t.admin.parties.roleHint}</span>
+      </label>
+      <select class="form-input party-role-select" name="role_id">
+        <option value="">{roles.length === 0 ? t.admin.parties.noRoles : t.admin.parties.selectRole}</option>
+        {roles.map((r) => (
+          <option value={r.id}>
+            {r.name}{r.description ? ` — ${r.description}` : ""}
+          </option>
+        ))}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.admin.parties.sendInvite}</button>
+  </form>
+</div>
+
+<script define:vars={{ ROLE_ADMIN: ROLE.ADMIN }}>
+document.querySelectorAll('.system-role-select').forEach(sel => {
+  const form = sel.closest('form');
+  const roleGroup = form.querySelector('.party-role-group');
+  const roleSelect = form.querySelector('.party-role-select');
+
+  function sync() {
+    const isAdmin = Number(sel.value) === ROLE_ADMIN;
+    roleGroup.style.display = (isAdmin || !sel.value) ? 'none' : '';
+    roleSelect.required = !isAdmin && roleSelect.options.length > 1;
+  }
+  sync();
+  sel.addEventListener('change', sync);
+});
+</script>
+
+<style>
+  .section-title { font-size:15px; font-weight:700; margin-bottom:16px; }
+  .form-group { display:flex; flex-direction:column; gap:4px; }
+  .form-label { font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .invite-form { display:flex; flex-direction:column; gap:12px; }
+  .invite-note { font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:12px; padding:10px 12px; background:var(--bg-subtle); border-radius:8px; border-left:3px solid var(--primary); }
+  .invite-note a { color:var(--primary); font-weight:600; }
+  .role-hint { font-weight:400; font-style:italic; color:var(--text-muted); }
+</style>

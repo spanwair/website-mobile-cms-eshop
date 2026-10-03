@@ -413,6 +413,20 @@ test.describe("15-D — ESHOP_ADMIN full perms: access matches permission bits",
     // eshop_admin IS a member of PARTY2 in test data, so this should be accessible
     // (global-setup links ESHOP_ID to PARTY2 as well)
   });
+
+  test("15-D-11 eshop (full, MANAGE_USERS) sees the party admin in /admin/users", async () => {
+    // Regression: an eshop_admin with MANAGE_USERS must see the admins of their own party
+    // (e.g. the admin who invited them), not just role<=eshop_admin members.
+    await eshopPage.context().addCookies([{
+      name: "activePartyId", value: PARTY_ID, domain: "localhost", path: "/",
+    }]);
+    await eshopPage.goto(`${BASE}/admin/users`);
+    await eshopPage.waitForLoadState("networkidle");
+    await expect(eshopPage.getByText(ADMIN.email)).toBeVisible();
+    // ...but the admin row must not expose a role-change form to the eshop_admin.
+    const adminRow = eshopPage.locator("tr").filter({ hasText: ADMIN.email });
+    await expect(adminRow.locator("select[name='role']")).toHaveCount(0);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

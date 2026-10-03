@@ -1,0 +1,145 @@
+---
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import InviteUserForm from "@/components/cms/InviteUserForm.astro";
+import { createSupabase, createAdminClient } from "@/lib/supabase";
+import { inviteUserToParty } from "@shared/services/partyService";
+import { fetchRoles } from "@shared/services/permissionsService";
+import { findUserByEmail } from "@shared/services/profileService";
+import { requireAdminCtx } from "@/lib/admin";
+import { useT } from "@/lib/i18n";
+import { PERMISSIONS, hasPermission, ROLE, assignableRoles, canAssignRole } from "@shared/constants/permissions";
+import { sendPartyInvitation, buildDevInviteMetadata } from "@/lib/integrations/email";
+import { ociConfigured } from "@/lib/integrations/oci-email";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
+const { permissions } = ctx;
+if (!hasPermission(permissions, PERMISSIONS.MANAGE_USERS)) return Astro.redirect("/admin");
+const t = useT(Astro);
+
+const myRole = ctx.role;
+const systemRoleOptions = assignableRoles(myRole).filter(r => r >= ROLE.ESHOP_ADMIN && r < ROLE.OWNER);
+
+let error = "";
+let success = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const email = ((form.get("email") as string) ?? "").trim().toLowerCase();
+  const targetPartyId = ((form.get("party_id") as string) ?? "").trim() || ctx.partyId;
+  const roleId = form.get("role_id") as string;
+  const rawSystemRole = form.get("system_role") as string;
+  const systemRole = rawSystemRole ? Number(rawSystemRole) : null;
+  const validSystemRole = systemRole && canAssignRole(myRole, systemRole) ? systemRole : null;
+  const adminOnly = validSystemRole === ROLE.ADMIN;
+
+  if (!email) {
+    error = t.admin.parties.fieldEmail;
+  } else if (!targetPartyId || (!ctx.isOwner && !ctx.parties.some((p) => p.id === targetPartyId))) {
+    error = t.admin.users.errorInvalidParty;
+  } else {
+    const origin = new URL(Astro.request.url).origin;
+    const adminClient = createAdminClient();
+
+    const { data: senderProf } = await supabase.from("profiles").select("lang").eq("id", session.user.id).single();
+    const inviterLang: 'cs' | 'en' = senderProf?.lang === 'en' ? 'en' : 'cs';
+    const partyName = ctx.parties.find(p => p.id === targetPartyId)?.name ?? targetPartyId;
+
+    let inviteRoleName = '';
+    let inviteRolePerms = 0;
+    if (!adminOnly && roleId) {
+      const { data: roleRow } = await supabase.from("roles").select("name, permissions").eq("id", roleId).single();
+      if (roleRow) { inviteRoleName = roleRow.name; inviteRolePerms = Number(roleRow.permissions); }
+    }
+
+    const existingUser = await findUserByEmail(supabase, email);
+    if (existingUser) {
+      const { data: memberships } = await adminClient.from("user_party_roles").select("party_id").eq("user_id", existingUser.id);
+      const memberPartyIds = (memberships ?? []).map((m) => m.party_id);
+
+      if (existingUser.role < ROLE.ADMIN && memberPartyIds.some(pid => pid !== targetPartyId)) {
+        error = t.admin.parties.errorUserInOtherOrg;
+      }
+
+      if (!error && !adminOnly && roleId) {
+        const result = await inviteUserToParty(supabase, existingUser.id, targetPartyId, roleId, session.user.id);
+        if (result.error) { error = result.error.message; }
+      }
+
+      if (!error) {
+        if (validSystemRole) {
+          await supabase.from("profiles").update({ role: validSystemRole }).eq("id", existingUser.id);
+        }
+        const allPartyIds = [...new Set([...memberPartyIds, targetPartyId])];
+        const { data: partyRows } = await adminClient.from("parties").select("name").in("id", allPartyIds);
+        const orgNames = (partyRows ?? []).map((p) => p.name);
+        const emailLang: 'cs' | 'en' = existingUser.lang === 'en' ? 'en' : 'cs';
+        try {
+          await sendPartyInvitation({ to: email, lang: emailLang, partyName, roleName: inviteRoleName, systemRole: validSystemRole, rolePermissions: inviteRolePerms, inviteLink: null, userOrganizations: orgNames, siteUrl: origin });
+        } catch (e) { console.error('[invite] email send failed:', e); }
+        return Astro.redirect("/admin/users");
+      }
+    } else {
+      const authData = {
+        ...(!adminOnly && roleId ? { pending_party_id: targetPartyId, pending_role_id: roleId } : {}),
+        invited_by: session.user.id,
+        ...(validSystemRole ? { pending_system_role: validSystemRole } : {}),
+      };
+      if (!ociConfigured()) {
+        const emailMeta = buildDevInviteMetadata({ lang: inviterLang, partyName, roleName: inviteRoleName, systemRole: validSystemRole, rolePermissions: inviteRolePerms });
+        const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
+          redirectTo: `${origin}/auth/callback`,
+          data: { ...authData, ...emailMeta },
+        });
+        if (inviteErr) { error = inviteErr.message; }
+        else { success = t.admin.parties.inviteSentPrefix + email + t.admin.parties.inviteSentSuffix; }
+      } else {
+        const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
+          type: 'invite', email,
+          options: { redirectTo: `${origin}/auth/callback`, data: authData },
+        });
+        if (linkErr) {
+          error = linkErr.message;
+        } else {
+          const inviteLink = (linkData as { properties?: { action_link?: string } })?.properties?.action_link ?? null;
+          try {
+            await sendPartyInvitation({ to: email, lang: inviterLang, partyName, roleName: inviteRoleName, systemRole: validSystemRole, rolePermissions: inviteRolePerms, inviteLink, userOrganizations: [partyName], siteUrl: origin });
+          } catch (e) { console.error('[invite] email send failed:', e); }
+          success = t.admin.parties.inviteSentPrefix + email + t.admin.parties.inviteSentSuffix;
+        }
+      }
+    }
+  }
+}
+
+const allRoles = await fetchRoles(supabase);
+const roles = allRoles.filter(r => !r.is_system);
+---
+
+<CmsLayout title={t.admin.users.inviteTitle} userPermissions={permissions} currentPath="/admin/users" parties={ctx.parties} partyId={ctx.partyId}>
+  <a href="/admin/users" class="back-link">{t.admin.users.back}</a>
+  {error && <div class="alert-error">{error}</div>}
+  {success && <div class="alert-success">{success}</div>}
+
+  <div style="max-width:560px">
+    <InviteUserForm
+      parties={ctx.parties}
+      systemRoleOptions={systemRoleOptions}
+      roles={roles}
+      selectedPartyId={ctx.partyId}
+    />
+  </div>
+</CmsLayout>
+
+<style>
+  .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
+  .back-link:hover { color:var(--text-primary); }
+  .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
+  .alert-success { background:rgba(34,197,94,0.08); border:1px solid #22c55e; border-radius:8px; padding:12px 16px; color:#16a34a; margin-bottom:16px; font-size:14px; }
+</style>
