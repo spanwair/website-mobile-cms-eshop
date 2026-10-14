@@ -100,6 +100,17 @@ export const COUPON_ID = "88888888-8888-8888-8888-111111111111";
 export const NOTIF_ID = "99999999-9999-9999-9999-111111111111";
 export const CATEGORY_ID = "aa111111-1111-1111-1111-111111111111";
 
+// Mirrors shared/utils/format.ts formatPrice(amount, "cs") — the storefront renders Czech
+// formatting ("10,00 Kč", NBSP thousands). Specs must expect commas, never toFixed(2) dots,
+// for UI text (DB numerics still print with dots — keep toFixed there).
+export function formatCsPrice(amount: number): string {
+  const number = new Intl.NumberFormat("cs-CZ", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  return `${number} Kč`;
+}
+
 let screenshotCounter = 0;
 const SCREENSHOTS_DIR = path.join(process.cwd(), "tests", "screenshots");
 

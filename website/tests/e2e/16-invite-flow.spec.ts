@@ -154,18 +154,20 @@ test.describe("16 — Invite flow: invite → accept → set-password → login"
     expect(inviteLink).toContain("type=invite");
     expect(inviteLink).toContain("token_hash=");
 
-    // Navigate to callback URL → should land on /auth/set-password
+    // Navigate to callback URL → should land on the shared registration page in invite mode
     await page.goto(inviteLink);
-    await page.waitForURL(`${BASE}/auth/set-password`, { timeout: 20000 });
+    await page.waitForURL(`${BASE}/login?invite=1`, { timeout: 20000 });
     await screenshot(page, "16-01-set-password-page");
-    await expect(page).toHaveURL(`${BASE}/auth/set-password`);
+    await expect(page).toHaveURL(`${BASE}/login?invite=1`);
 
-    // Fill in set-password form
-    await page.fill("#sp-name", INVITE_NAME);
-    await page.fill("#sp-password", INVITE_PASSWORD);
-    await page.fill("#sp-confirm", INVITE_PASSWORD);
+    // Fill in the finish-registration form (email is prefilled + locked)
+    await expect(page.locator("#su-email")).toBeDisabled();
+    await expect(page.locator("#su-email")).toHaveValue(INVITE_EMAIL);
+    await page.fill("#su-name", INVITE_NAME);
+    await page.fill("#su-password", INVITE_PASSWORD);
+    await page.fill("#su-confirm", INVITE_PASSWORD);
     await screenshot(page, "16-01-set-password-filled");
-    await page.click("#setpw-btn");
+    await page.click("#signup-btn");
 
     // Should redirect into the admin area after setting password (invited user)
     await page.waitForURL(/\/admin/, { timeout: 20000 });
@@ -194,7 +196,7 @@ test.describe("16 — Invite flow: invite → accept → set-password → login"
     // signUp only returns user_already_exists for *confirmed* users (unconfirmed/new emails
     // get an obfuscated fake-success), so we confirm the invite first to hit that branch.
     await sendInviteEmail();
-    await waitForEmail(INVITE_EMAIL, "invited");
+    await waitForEmail(INVITE_EMAIL, "invitation");
     await clearMailbox();
     await confirmInviteUser();
 
@@ -222,12 +224,12 @@ test.describe("16 — Invite flow: invite → accept → set-password → login"
     await page.waitForURL(/\/admin/, { timeout: 20000 });
     await screenshot(page, "16-02-admin-via-magic-link");
     expect(page.url()).toMatch(/\/admin/);
-    expect(page.url()).not.toContain("/auth/set-password");
+    expect(page.url()).not.toContain("invite=1");
   });
 
   test("16-03 invite email is styled HTML in Czech", async () => {
     await sendInviteEmail();
-    const html = await waitForEmail(INVITE_EMAIL, "invited");
+    const html = await waitForEmail(INVITE_EMAIL, "invitation");
 
     // Must use styled template (not plain text)
     expect(html).toContain("4f46e5"); // brand purple

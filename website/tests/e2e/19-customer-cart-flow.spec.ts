@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { BASE, PARTY_ID, WAREHOUSE_ID, USER, USER_ID, loginAs, screenshot, psql, replica, defaultRole } from "./helpers";
+import { BASE, PARTY_ID, WAREHOUSE_ID, USER, USER_ID, loginAs, screenshot, psql, replica, defaultRole, formatCsPrice } from "./helpers";
 
 // Three distinct products so cart-quantity math can't be faked by a single-item happy path.
 const PROD_A = { id: "a9000001-0000-0000-0000-000000000001", slug: "e2e-cart-prod-a", title: "E2E Cart Product A", price: 10.0 };
@@ -50,7 +50,9 @@ test.describe("19 — Customer Cart Flow: add, merge quantities, multi-product t
     await page.waitForLoadState("networkidle");
     await page.locator("form.cart-form input[name='quantity']").fill(String(qty));
     await page.locator("form.cart-form button[type='submit']").click();
-    await page.waitForLoadState("networkidle");
+    // The purchase panel submits via fetch (not a form navigation), so networkidle does
+    // NOT cover the POST — wait for the success banner or the next goto aborts it.
+    await expect(page.locator(".cart-success")).toBeVisible({ timeout: 15000 });
   }
 
   test("19-01 add product A qty=1 — cart shows exactly 1 item, correct price", async () => {
@@ -62,7 +64,7 @@ test.describe("19 — Customer Cart Flow: add, merge quantities, multi-product t
     const row = page.locator(".cart-item").filter({ hasText: PROD_A.title });
     await expect(row).toBeVisible();
     await expect(row.locator(".qty-input")).toHaveValue("1");
-    await expect(row.locator(".item-total")).toHaveText(`${PROD_A.price.toFixed(2)} Kč`);
+    await expect(row.locator(".item-total")).toHaveText(`${formatCsPrice(PROD_A.price)}`);
   });
 
   test("19-02 adding product A again merges quantity (does not create a second row)", async () => {
@@ -72,7 +74,7 @@ test.describe("19 — Customer Cart Flow: add, merge quantities, multi-product t
     const rows = page.locator(".cart-item").filter({ hasText: PROD_A.title });
     await expect(rows).toHaveCount(1);
     await expect(rows.locator(".qty-input")).toHaveValue("3");
-    await expect(rows.locator(".item-total")).toHaveText(`${(PROD_A.price * 3).toFixed(2)} Kč`);
+    await expect(rows.locator(".item-total")).toHaveText(`${formatCsPrice((PROD_A.price * 3))}`);
     await screenshot(page, "19-02-merged-quantity");
   });
 
@@ -87,7 +89,7 @@ test.describe("19 — Customer Cart Flow: add, merge quantities, multi-product t
     const expectedSubtotal = PROD_A.price * 3 + PROD_B.price * 2 + PROD_C.price * 5;
     const expectedItemCount = 3 + 2 + 5;
     await expect(page.getByText(`Subtotal (${expectedItemCount} items)`)).toBeVisible();
-    await expect(page.locator(".total-price")).toHaveText(`${expectedSubtotal.toFixed(2)} Kč`);
+    await expect(page.locator(".total-price")).toHaveText(`${formatCsPrice(expectedSubtotal)}`);
   });
 
   test("19-04 update quantity in cart recalculates line total and subtotal", async () => {
@@ -98,7 +100,7 @@ test.describe("19 — Customer Cart Flow: add, merge quantities, multi-product t
     await screenshot(page, "19-04-updated-quantity");
 
     const expectedSubtotal = PROD_A.price * 3 + PROD_B.price * 4 + PROD_C.price * 5;
-    await expect(page.locator(".total-price")).toHaveText(`${expectedSubtotal.toFixed(2)} Kč`);
+    await expect(page.locator(".total-price")).toHaveText(`${formatCsPrice(expectedSubtotal)}`);
   });
 
   test("19-05 removing an item drops it from the cart and recalculates totals", async () => {
@@ -110,15 +112,23 @@ test.describe("19 — Customer Cart Flow: add, merge quantities, multi-product t
     await expect(page.locator(".cart-item")).toHaveCount(2);
     await expect(page.getByText(PROD_C.title)).not.toBeVisible();
     const expectedSubtotal = PROD_A.price * 3 + PROD_B.price * 4;
-    await expect(page.locator(".total-price")).toHaveText(`${expectedSubtotal.toFixed(2)} Kč`);
+    await expect(page.locator(".total-price")).toHaveText(`${formatCsPrice(expectedSubtotal)}`);
   });
 
   test("19-06 removing all items shows the empty-cart state", async () => {
-    let row = page.locator(".cart-item").first();
-    while (await row.count() > 0) {
-      await row.locator(".remove-btn").click();
-      await page.waitForLoadState("networkidle");
-      row = page.locator(".cart-item").first();
+    // Removals are fetch POSTs (the last one reloads the page to render .empty-cart) —
+    // wait for each removal to take effect before clicking the next button, otherwise
+    // rapid clicks double-submit the same row and the reload never triggers.
+    for (let guard = 0; guard < 10; guard++) {
+      if (await page.locator(".empty-cart").count() > 0) break;
+      const before = await page.locator(".cart-item").count();
+      if (before === 0) break;
+      await page.locator(".cart-item").first().locator(".remove-btn").click();
+      await expect(async () => {
+        const empty = await page.locator(".empty-cart").count();
+        const now = await page.locator(".cart-item").count();
+        expect(empty > 0 || now < before).toBeTruthy();
+      }).toPass({ timeout: 15000 });
     }
     await screenshot(page, "19-06-empty-cart");
     await expect(page.locator(".empty-cart")).toBeVisible();

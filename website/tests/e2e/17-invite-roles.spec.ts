@@ -2,8 +2,10 @@
  * 17 — Full invite-to-login role verification
  *
  * Covers:
- *   17-01  New user invited as ADMIN (role=4) → accept link → set-password → login
- *          → admin panel visible, DB role=4, email/password re-login works
+ *   17-01  New user invited as ADMIN (role=4) with party membership → accept link →
+ *          set-password → login → lands on the INVITING party's /admin dashboard
+ *          (never /admin/onboarding), DB role=4, membership present, activePartyId
+ *          pinned to the inviting party, email/password re-login works
  *   17-02  New user invited as ESHOP_ADMIN (role=2) with custom party role (permissions=25)
  *          → accept link → set-password → login → admin panel visible, DB role=2,
  *          user_party_roles entry present, /admin accessible
@@ -12,11 +14,15 @@
  *          → admin panel visible
  *   17-04  Regular user invited as ESHOP_ADMIN via admin party UI (existing user path)
  *          → no invite email, role updated immediately → login → admin panel visible
+ *   17-05  Legacy Admin invite WITHOUT party metadata (pre-fix shape: only
+ *          pending_system_role + invited_by, inviter has exactly one party)
+ *          → accept link → set-password → recovered into the inviter's party,
+ *          lands on /admin (never /admin/onboarding)
  */
 
 import { test, expect } from "@playwright/test";
 import { execSync } from "child_process";
-import { BASE, OWNER, ADMIN, ADMIN_ID, PARTY_ID, DASHBOARD_PROD_CAT_ROLE_ID, screenshot, loginAs } from "./helpers";
+import { BASE, OWNER, ADMIN, ADMIN_ID, PARTY_ID, DASHBOARD_PROD_CAT_ROLE_ID, screenshot, loginAs, replica, defaultRole } from "./helpers";
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -32,6 +38,8 @@ const ESHOP_INVITE_EMAIL = "eshop-role-e2e@testdomain.invalid";
 const ESHOP_INVITE_PASSWORD = "EshopRoleE2E!99";
 const EXISTING_INVITE_EMAIL = "existing-role-e2e@testdomain.invalid";
 const EXISTING_INVITE_PASSWORD = "ExistingRoleE2E!99";
+const LEGACY_ADMIN_EMAIL = "legacy-admin-e2e@testdomain.invalid";
+const LEGACY_ADMIN_PASSWORD = "LegacyAdminE2E!99";
 
 const AUTH_HEADERS = {
   apikey: SERVICE_ROLE_KEY,
@@ -132,6 +140,20 @@ async function hasPartyRole(userId: string, partyId: string, roleId: string): Pr
   return row.trim() !== "";
 }
 
+async function hasAnyPartyMembership(userId: string, partyId: string): Promise<boolean> {
+  const row = psql(
+    `SELECT 1 FROM public.user_party_roles WHERE user_id = '${userId}' AND party_id = '${partyId}'`
+  );
+  return row.trim() !== "";
+}
+
+async function activePartyCookie(
+  page: import("@playwright/test").Page
+): Promise<string | null> {
+  const cookies = await page.context().cookies();
+  return cookies.find((c) => c.name === "activePartyId")?.value ?? null;
+}
+
 // ── set-password flow helper ───────────────────────────────────────────────────
 
 async function acceptInviteAndSetPassword(
@@ -142,12 +164,12 @@ async function acceptInviteAndSetPassword(
   testId: string
 ) {
   await page.goto(callbackUrl);
-  await page.waitForURL(`${BASE}/auth/set-password`, { timeout: 20000 });
+  await page.waitForURL(`${BASE}/login?invite=1`, { timeout: 20000 });
   await screenshot(page, `${testId}-set-password-page`);
-  await page.fill("#sp-name", name);
-  await page.fill("#sp-password", password);
-  await page.fill("#sp-confirm", password);
-  await page.click("#setpw-btn");
+  await page.fill("#su-name", name);
+  await page.fill("#su-password", password);
+  await page.fill("#su-confirm", password);
+  await page.click("#signup-btn");
   await page.waitForURL(/\/admin/, { timeout: 20000 });
   await screenshot(page, `${testId}-admin-after-set-password`);
 }
@@ -160,6 +182,7 @@ test.describe("17 — Invite → role → login verification", () => {
     await deleteUserByEmail(ADMIN_INVITE_EMAIL);
     await deleteUserByEmail(ESHOP_INVITE_EMAIL);
     await deleteUserByEmail(EXISTING_INVITE_EMAIL);
+    await deleteUserByEmail(LEGACY_ADMIN_EMAIL);
     // Sign out any leftover session
     await page.goto(`${BASE}/auth/signout`);
     await page.waitForURL(`${BASE}/login`, { timeout: 10000 });
@@ -167,11 +190,14 @@ test.describe("17 — Invite → role → login verification", () => {
 
   // ── 17-01 ──────────────────────────────────────────────────────────────────
 
-  test("17-01 admin invite → correct role=4 in DB → email/password login → admin panel visible", async ({ page }) => {
-    // Invite a brand-new user as ADMIN (system role=4).
-    // pending_system_role is set but NO pending_party_id — admin-only invite.
+  test("17-01 admin invite with party membership → role=4 in DB → lands on inviting party dashboard (never onboarding) → email/password login → admin panel visible", async ({ page }) => {
+    // Invite a brand-new user as ADMIN (system role=4) of PARTY_ID. Since the fix, party
+    // invites ALWAYS embed pending_party_id (+ a fallback pending_role_id for Admins,
+    // whose permissions come from the system role) so the invitee becomes a member.
     const callbackUrl = await generateInviteCallbackUrl(ADMIN_INVITE_EMAIL, {
       pending_system_role: 4,
+      pending_party_id: PARTY_ID,
+      pending_role_id: SUPER_ADMIN_ROLE_ID,
       invited_by: ADMIN_ID,
     });
     expect(callbackUrl).toContain("token_hash=");
@@ -180,15 +206,19 @@ test.describe("17 — Invite → role → login verification", () => {
     // Accept invite → set-password page → fill and submit
     await acceptInviteAndSetPassword(page, callbackUrl, "Invited Admin", ADMIN_INVITE_PASSWORD, "17-01");
 
-    // After set-password, an invited user is taken straight into the admin area.
+    // After set-password, an invited admin lands on the INVITING party's dashboard —
+    // never on the self-serve onboarding flow (reserved for organic signups).
     expect(page.url()).toMatch(/\/admin/);
+    expect(page.url()).not.toContain("/admin/onboarding");
+    expect(await activePartyCookie(page)).toBe(PARTY_ID);
     await screenshot(page, "17-01-admin-after-invite");
 
-    // DB assertion: profile.role must be 4
+    // DB assertions: profile.role must be 4 AND membership in the inviting party exists
     const userId = await getUserId(ADMIN_INVITE_EMAIL);
     expect(userId).toBeTruthy();
     const role = await getProfileRole(userId!);
     expect(role).toBe(4);
+    expect(await hasPartyRole(userId!, PARTY_ID, SUPER_ADMIN_ROLE_ID)).toBe(true);
 
     // Sign out
     await page.goto(`${BASE}/auth/signout`);
@@ -274,16 +304,20 @@ test.describe("17 — Invite → role → login verification", () => {
     await page.waitForURL(/\/admin/, { timeout: 20000 });
     await screenshot(page, "17-03-existing-user-admin");
 
-    // Explicitly assert in admin area and not on set-password
+    // Explicitly assert in admin area and not on the finish-registration step
     expect(page.url()).toMatch(/\/admin/);
-    expect(page.url()).not.toContain("/auth/set-password");
+    expect(page.url()).not.toContain("invite=1");
   });
 
   // ── 17-04 ──────────────────────────────────────────────────────────────────
 
   test("17-04 existing confirmed user invited via admin UI → immediate role update (no email) → login → admin panel visible", async ({ page }) => {
-    // Create a fresh confirmed user with role=1 (no invite — simulates a regular sign-up).
+    // Create a fresh confirmed user with no invite metadata. Organic creation now yields
+    // role=4 (self-serve seller), so explicitly demote to 1 to simulate a regular
+    // customer — the pre-condition this test needs (replica mode bypasses the hierarchy
+    // trigger, which would otherwise reject a downgrade issued with no session).
     const existingUserId = await createConfirmedUser(EXISTING_INVITE_EMAIL, EXISTING_INVITE_PASSWORD);
+    psql(`${replica} UPDATE public.profiles SET role = 1 WHERE id = '${existingUserId}'; ${defaultRole}`);
 
     // Confirm they start with role=1
     const initialRole = await getProfileRole(existingUserId);
@@ -339,5 +373,37 @@ test.describe("17 — Invite → role → login verification", () => {
     await page.locator("#profile-toggle").click();
     await expect(page.locator(".dropdown-item[href='/admin']")).toBeVisible({ timeout: 5000 });
     await screenshot(page, "17-04-admin-link-visible");
+  });
+
+  // ── 17-05 ──────────────────────────────────────────────────────────────────
+
+  test("17-05 legacy admin invite without party metadata → recovered into inviter's party → /admin, never onboarding", async ({ page }) => {
+    // Pre-fix invite shape: only pending_system_role + invited_by, NO pending_party_id.
+    // The seed ADMIN administers exactly one party (PARTY_ID), so the callback recovery
+    // attaches the invitee there instead of dropping them on /admin/onboarding.
+    const adminParties = psql(
+      `SELECT COUNT(DISTINCT party_id) FROM public.user_party_roles WHERE user_id = '${ADMIN_ID}'`
+    );
+    expect(adminParties.trim().split("\n").some((l) => l.trim() === "1")).toBeTruthy();
+
+    const callbackUrl = await generateInviteCallbackUrl(LEGACY_ADMIN_EMAIL, {
+      pending_system_role: 4,
+      invited_by: ADMIN_ID,
+    });
+
+    // Accept invite → set-password
+    await acceptInviteAndSetPassword(page, callbackUrl, "Legacy Admin", LEGACY_ADMIN_PASSWORD, "17-05");
+
+    // Recovered into the inviting org — never the self-serve onboarding flow.
+    expect(page.url()).toMatch(/\/admin/);
+    expect(page.url()).not.toContain("/admin/onboarding");
+    expect(await activePartyCookie(page)).toBe(PARTY_ID);
+    await screenshot(page, "17-05-legacy-admin-recovered");
+
+    // DB assertions: role=4 and membership in the inviter's party exists
+    const userId = await getUserId(LEGACY_ADMIN_EMAIL);
+    expect(userId).toBeTruthy();
+    expect(await getProfileRole(userId!)).toBe(4);
+    expect(await hasAnyPartyMembership(userId!, PARTY_ID)).toBe(true);
   });
 });

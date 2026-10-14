@@ -44,11 +44,15 @@ const brandHref = isStorefront ? shopHref : "/";
 const isAdminPage = pathname === "/admin" || pathname.startsWith("/admin/");
 
 const supabase = createSupabase(Astro);
-const footerMedia = !isAdminPage && storeParty ? await fetchStoreMedia(supabase, storeParty.id) : [];
-const navTree = storeParty ? await fetchStorefrontNavTree(supabase, storeParty.id, shopHref) : [];
-const footerLinks = !isAdminPage && storeParty ? await fetchVisibleFooterLinks(supabase, storeParty.id) : [];
-const footerBadges = !isAdminPage && storeParty ? await fetchVisibleFooterBadges(supabase, storeParty.id) : [];
-const { data: { session } } = await supabase.auth.getSession();
+// These chrome queries are mutually independent — run them in one round-trip batch rather
+// than serially. On free-tier Supabase each serial await adds its full latency to TTFB.
+const [footerMedia, navTree, footerLinks, footerBadges, { data: { session } }] = await Promise.all([
+  !isAdminPage && storeParty ? fetchStoreMedia(supabase, storeParty.id) : Promise.resolve([]),
+  storeParty ? fetchStorefrontNavTree(supabase, storeParty.id, shopHref) : Promise.resolve([]),
+  !isAdminPage && storeParty ? fetchVisibleFooterLinks(supabase, storeParty.id) : Promise.resolve([]),
+  !isAdminPage && storeParty ? fetchVisibleFooterBadges(supabase, storeParty.id) : Promise.resolve([]),
+  supabase.auth.getSession(),
+]);
 const t = useT(Astro);
 
 let displayName: string | null = null;
@@ -103,6 +107,8 @@ const currentPath = Astro.url.pathname + Astro.url.search;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <link rel="icon" type="image/png" href={faviconUrl} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
     {customFontsUrl && <link href={customFontsUrl} rel="stylesheet" />}
     <style set:html={buildThemeCss(storeConfig)} />

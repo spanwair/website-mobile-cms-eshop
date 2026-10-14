@@ -102,6 +102,9 @@ test.describe("18 — Stock Deduction: Buy → Deduct → Notify", () => {
     await page.fill("input[name='line1']", "Testova 1");
     await page.fill("input[name='city']", "Praha");
     await page.fill("input[name='postal_code']", "10000");
+    // Default payment is Stripe (leaves the site) — choose cash-on-delivery so the
+    // order completes on-site and lands on the confirmation page.
+    await page.locator("input[name='payment_method'][value='cod']").check();
 
     await screenshot(page, "18-04-checkout-filled");
     await page.locator("form.address-form button[type='submit']").click();

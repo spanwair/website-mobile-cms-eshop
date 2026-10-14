@@ -29,7 +29,22 @@ const { permissions, partyId, role } = ctx;
 // onboarding tutorial on every /admin visit until their org has at least one category and
 // one product — landing here mid-onboarding must resume the flow, not show an empty
 // dashboard, regardless of how many times they log back in.
+//
+// Invite routing rule: an admin who was INVITED into this party (membership.invited_by
+// is someone else) is never force-redirected — they joined an existing company, they did
+// not start onboarding. They get the same dismissable-by-completion banner as staff.
+let invitedToParty = false;
 if (role === ROLE.ADMIN && partyId) {
+  const { data: myMembership } = await supabase
+    .from("user_party_roles")
+    .select("invited_by")
+    .eq("user_id", session.user.id)
+    .eq("party_id", partyId)
+    .limit(1)
+    .maybeSingle();
+  invitedToParty = !!myMembership?.invited_by && myMembership.invited_by !== session.user.id;
+}
+if (role === ROLE.ADMIN && partyId && !invitedToParty) {
   const { count: catCount } = await supabase.from("categories").select("id", { count: "exact", head: true }).eq("party_id", partyId);
   const { count: prodCount } = await supabase.from("products").select("id", { count: "exact", head: true }).eq("party_id", partyId);
   if ((catCount ?? 0) === 0 || (prodCount ?? 0) === 0) {
@@ -48,9 +63,9 @@ const canReports  = hasPermission(permissions, PERMISSIONS.MANAGE_REPORTS);
 
 // Non-ADMIN roles (eshop_admin staff dropped into an empty org, etc.) still just get a
 // dismissable-by-completion banner rather than a hard redirect — they weren't part of the
-// self-serve onboarding flow.
+// self-serve onboarding flow. Same for invited admins (see above).
 let showOnboardingChecklist = false;
-if (partyId && canProducts && role !== ROLE.ADMIN) {
+if (partyId && canProducts && (role !== ROLE.ADMIN || invitedToParty)) {
   const { count: catCount } = await supabase.from("categories").select("id", { count: "exact", head: true }).eq("party_id", partyId);
   const { count: prodCount } = await supabase.from("products").select("id", { count: "exact", head: true }).eq("party_id", partyId);
   showOnboardingChecklist = (catCount ?? 0) === 0 || (prodCount ?? 0) === 0;

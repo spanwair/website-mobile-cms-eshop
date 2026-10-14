@@ -2,16 +2,35 @@
 import "../styles/global.css";
 import "../styles/landing.css";
 import LandingFooter from "../components/landing/LandingFooter.astro";
-import { createSupabase } from "../lib/supabase";
+import { createSupabase, createAdminClient } from "../lib/supabase";
 import { useT, getLang } from "../lib/i18n";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
-if (session) return Astro.redirect("/");
+
+// Invited users arrive here already authenticated (the invite link created their account and
+// /auth/callback exchanged it for a session) but without a password. `?invite=1` puts this
+// shared registration page into finish-your-registration mode: email is prefilled + locked,
+// submit sets the password instead of creating a new account, then lands on /admin.
+const inviteMode = session != null && Astro.url.searchParams.get("invite") === "1";
+if (session && !inviteMode) return Astro.redirect("/");
+
 const t = useT(Astro);
 const lang = getLang(Astro);
-const prefillEmail = Astro.url.searchParams.get("email") ?? "";
-const initialMode = Astro.url.searchParams.get("mode") === "signup" || prefillEmail ? "signup" : "signin";
+
+let invitePartyName: string | null = null;
+if (inviteMode && session) {
+  const meta = (session.user.user_metadata ?? {}) as Record<string, string | null>;
+  const pendingPartyId = meta["pending_party_id"] ?? null;
+  if (pendingPartyId) {
+    const { data: party } = await createAdminClient()
+      .from("parties").select("name").eq("id", pendingPartyId).single();
+    invitePartyName = party?.name ?? null;
+  }
+}
+
+const prefillEmail = inviteMode ? (session?.user.email ?? "") : (Astro.url.searchParams.get("email") ?? "");
+const initialMode = inviteMode || Astro.url.searchParams.get("mode") === "signup" || prefillEmail ? "signup" : "signin";
 const rawRedirect = Astro.url.searchParams.get("redirect");
 const redirectTo = rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "";
 // `sp` (storefront party id) is set when the user reaches /login from inside a storefront. It
@@ -61,6 +80,7 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
         data-lang={lang}
         data-redirect={redirectTo}
         data-sp={signupPartyId}
+        data-invite={inviteMode ? "1" : ""}
       >
         <div id="mode-signin" class:list={[{ hidden: initialMode === "signup" }]}>
           <h1 class="auth-title">{t.auth.welcomeBack}</h1>
@@ -91,8 +111,15 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
         </div>
 
         <div id="mode-signup" class:list={[{ hidden: initialMode === "signin" }]}>
-          <h1 class="auth-title">{t.auth.createAccount}</h1>
-          <p class="auth-sub">{t.auth.createAccountSubtitle}</p>
+          <h1 class="auth-title">{inviteMode ? t.auth.finishRegistrationTitle : t.auth.createAccount}</h1>
+          {inviteMode ? (
+            <>
+              <p class="auth-sub">{t.auth.inviteSubtitlePrefix}</p>
+              {invitePartyName && <div class="org-chip">{invitePartyName}</div>}
+            </>
+          ) : (
+            <p class="auth-sub">{t.auth.createAccountSubtitle}</p>
+          )}
 
           <p id="error-su" class="auth-error hidden"></p>
           <p id="success-su" class="auth-success hidden"></p>
@@ -104,7 +131,7 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
             </div>
             <div class="input-icon-group">
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>
-              <input id="su-email" type="email" value={prefillEmail} placeholder={t.auth.emailPlaceholder} required autocomplete="email" />
+              <input id="su-email" type="email" value={prefillEmail} placeholder={t.auth.emailPlaceholder} required autocomplete="email" disabled={inviteMode} class:list={[{ "disabled-input": inviteMode }]} />
             </div>
             <div class="input-icon-group">
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
@@ -114,14 +141,18 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
               <input id="su-confirm" type="password" placeholder={t.auth.confirmPasswordPlaceholder} required autocomplete="new-password" />
             </div>
-            <button type="submit" class="btn btn-primary btn-block" id="signup-btn">{t.auth.createAccount}</button>
-            <button type="button" class="btn btn-secondary btn-block" id="to-signin">{t.auth.signIn}</button>
+            <button type="submit" class="btn btn-primary btn-block" id="signup-btn">{inviteMode ? t.auth.setPasswordBtn : t.auth.createAccount}</button>
+            {!inviteMode && <button type="button" class="btn btn-secondary btn-block" id="to-signin">{t.auth.signIn}</button>}
           </form>
 
-          <div class="auth-divider"><span>{t.common.or}</span></div>
-          <button id="google-btn-su" class="social-btn social-btn--wide" type="button">
-            <span class="google-icon">G</span> {t.auth.continueWithGoogle}
-          </button>
+          {!inviteMode && (
+            <>
+              <div class="auth-divider"><span>{t.common.or}</span></div>
+              <button id="google-btn-su" class="social-btn social-btn--wide" type="button">
+                <span class="google-icon">G</span> {t.auth.continueWithGoogle}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -157,6 +188,7 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
 
       const redirectPath = (d.redirect && d.redirect.startsWith("/") && !d.redirect.startsWith("//")) ? d.redirect : "";
       const signupPartyId = d.sp || "";
+      const inviteMode = d.invite === "1";
       const callbackParams = new URLSearchParams();
       if (redirectPath) callbackParams.set("redirect", redirectPath);
       // Carried for the OAuth path only: Google signups can't set user_metadata, so the callback
@@ -173,7 +205,7 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
         modeSignin.classList.add("hidden");
         modeSignup.classList.remove("hidden");
       });
-      document.getElementById("to-signin")!.addEventListener("click", () => {
+      document.getElementById("to-signin")?.addEventListener("click", () => {
         modeSignup.classList.add("hidden");
         modeSignin.classList.remove("hidden");
       });
@@ -203,7 +235,7 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
         if (error) showError("error-si", error.message);
       }
       document.getElementById("google-btn-si")!.addEventListener("click", googleSignIn);
-      document.getElementById("google-btn-su")!.addEventListener("click", googleSignIn);
+      document.getElementById("google-btn-su")?.addEventListener("click", googleSignIn);
 
       document.getElementById("signin-form")!.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -232,6 +264,21 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
 
         btn.disabled = true;
         btn.textContent = d.creating!;
+
+        // Invite completion: the user is already authenticated (no password yet). Set the
+        // password + name on the existing account instead of creating a new one, then go to
+        // the admin area of the org that invited them (activePartyId was pinned in the callback).
+        if (inviteMode) {
+          const { error: updErr } = await supabase.auth.updateUser({
+            password,
+            data: { full_name: name, display_name: name },
+          });
+          if (updErr) { showError("error-su", updErr.message); btn.disabled = false; btn.textContent = d.create!; return; }
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) await supabase.from("profiles").update({ display_name: name }).eq("id", user.id);
+          window.location.href = redirectPath || "/admin";
+          return;
+        }
 
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -333,6 +380,12 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
         display: flex; align-items: center; color: var(--text-placeholder);
       }
       .input-toggle:hover { color: var(--text-muted); }
+      .disabled-input { background: var(--bg-subtle); color: var(--text-muted); cursor: not-allowed; }
+      .org-chip {
+        display: block; width: fit-content; max-width: 100%; margin: 0 0 var(--space-5);
+        padding: 8px 16px; background: var(--accent-subtle, #EEF2FF); color: var(--accent-primary);
+        font-weight: 700; font-size: 15px; border-radius: 10px;
+      }
       .auth-error { font-size: 13px; color: var(--error); margin-bottom: var(--space-2); }
       .auth-success { font-size: 13px; color: var(--success); margin-bottom: var(--space-2); }
       .auth-divider {

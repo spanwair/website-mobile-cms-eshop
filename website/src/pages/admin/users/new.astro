@@ -58,6 +58,17 @@ if (Astro.request.method === "POST") {
       if (roleRow) { inviteRoleName = roleRow.name; inviteRolePerms = Number(roleRow.permissions); }
     }
 
+    // Invite routing rule: an invite sent for a party must ALWAYS carry that party in the
+    // metadata, otherwise the invitee gets zero memberships and lands on /admin/onboarding
+    // instead of the inviting org. An ADMIN's permissions come from the system role
+    // (ALL_PERMISSIONS), so the custom role is only a membership FK — resolve the
+    // highest-permission role as a safe placeholder when none was picked.
+    let effectiveRoleId: string | null = (!adminOnly && roleId) ? roleId : null;
+    if (adminOnly) {
+      const { data: fallbackRole } = await supabase.from("roles").select("id").order("permissions", { ascending: false }).limit(1).single();
+      effectiveRoleId = fallbackRole?.id ?? null;
+    }
+
     const existingUser = await findUserByEmail(supabase, email);
     if (existingUser) {
       const { data: memberships } = await adminClient.from("user_party_roles").select("party_id").eq("user_id", existingUser.id);
@@ -69,6 +80,15 @@ if (Astro.request.method === "POST") {
 
       if (!error && !adminOnly && roleId) {
         const result = await inviteUserToParty(supabase, existingUser.id, targetPartyId, roleId, session.user.id);
+        if (result.error) { error = result.error.message; }
+      }
+
+      // Admin invites carry no selectable party role, but the membership row must still
+      // exist — without it the invitee sees zero parties and lands on /admin/onboarding
+      // instead of this org. Already-a-member needs nothing (permissions come from the
+      // system role, set below).
+      if (!error && adminOnly && effectiveRoleId && !memberPartyIds.includes(targetPartyId)) {
+        const result = await inviteUserToParty(supabase, existingUser.id, targetPartyId, effectiveRoleId, session.user.id);
         if (result.error) { error = result.error.message; }
       }
 
@@ -87,7 +107,7 @@ if (Astro.request.method === "POST") {
       }
     } else {
       const authData = {
-        ...(!adminOnly && roleId ? { pending_party_id: targetPartyId, pending_role_id: roleId } : {}),
+        ...(effectiveRoleId ? { pending_party_id: targetPartyId, pending_role_id: effectiveRoleId } : {}),
         invited_by: session.user.id,
         ...(validSystemRole ? { pending_system_role: validSystemRole } : {}),
       };

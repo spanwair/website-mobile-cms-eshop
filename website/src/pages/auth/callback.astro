@@ -54,11 +54,47 @@ if (userId) {
   const pendingPartyId = userMeta["pending_party_id"] ?? null;
   const pendingRoleId = userMeta["pending_role_id"] ?? null;
   const invitedBy = userMeta["invited_by"] ?? null;
-  if (pendingPartyId && pendingRoleId) {
+
+  // Invite routing rule: a user arriving via an invite must end up as a member of the
+  // inviting org — otherwise they see zero parties and land on /admin/onboarding instead
+  // of the company that invited them.
+  let invitePartyId: string | null = pendingPartyId;
+  let inviteRoleId: string | null = pendingRoleId;
+  if (!invitePartyId && invitedBy) {
+    // Legacy recovery: Admin invites sent before the fix carry no party metadata at all.
+    // When the inviter administers exactly one party, that is unambiguously the inviting
+    // org — attach the invitee there. With zero or several parties we cannot guess.
+    const { data: inviterMemberships } = await adminClient
+      .from("user_party_roles")
+      .select("party_id")
+      .eq("user_id", invitedBy);
+    const distinctParties = [...new Set((inviterMemberships ?? []).map((m) => m.party_id))];
+    if (distinctParties.length === 1) invitePartyId = distinctParties[0];
+  }
+  if (invitePartyId && !inviteRoleId) {
+    // Admin invites pick no custom role (permissions come from the system role), but the
+    // membership row still needs a valid role FK — use the highest-permission role.
+    const { data: fallbackRole } = await adminClient
+      .from("roles")
+      .select("id")
+      .order("permissions", { ascending: false })
+      .limit(1)
+      .single();
+    inviteRoleId = fallbackRole?.id ?? null;
+  }
+  if (invitePartyId && inviteRoleId) {
     await adminClient.from("user_party_roles").upsert(
-      { user_id: userId, party_id: pendingPartyId, role_id: pendingRoleId, ...(invitedBy ? { invited_by: invitedBy } : {}) },
+      { user_id: userId, party_id: invitePartyId, role_id: inviteRoleId, ...(invitedBy ? { invited_by: invitedBy } : {}) },
       { ignoreDuplicates: true }
     );
+    // Pin the session to the inviting org so /admin (and the finish-registration step → /admin
+    // lands there — not on onboarding, and not on an unrelated first-alphabetical org.
+    Astro.cookies.set("activePartyId", invitePartyId, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 30,
+    });
   }
 
   // Storefront customer classification for the Google OAuth path. Email/OTP signups already
@@ -90,9 +126,10 @@ if (userId) {
   const currentRole = roleRow?.role ?? ROLE.USER;
 
   // Invite, or a brand-new user arriving via magic link (invite→signup flow), still has no
-  // password set — send them to set-password first (which then forwards to /admin).
+  // password set — send them to the shared registration page in invite-completion mode
+  // (email prefilled + locked), which sets the password and then forwards to /admin.
   if (type === "invite" || (type === "magiclink" && isNewUser)) {
-    redirectTo = "/auth/set-password";
+    redirectTo = "/login?invite=1";
   } else {
     // Every other successfully authenticated user (email confirmation, magic-link sign-in,
     // Google OAuth, returning login). An explicit redirect (e.g. an eshop storefront) always

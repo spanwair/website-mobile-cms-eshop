@@ -2,11 +2,11 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { BASE, OWNER, loginAs, screenshot, psql, replica, defaultRole } from "./helpers";
 
 // Self-serve org onboarding: a fresh organic signup (no invite) becomes ADMIN(4) immediately
-// and can create exactly one organization through the same form staff use. With an IČO the
-// storefront goes live immediately (own_company); without one it sells via Smalljobs s.r.o.
-// and stays hidden (pending_approval) until an owner approves it — and only an owner can
-// make that specific transition, even though the creating admin has ALL_PERMISSIONS on
-// their own party.
+// and creates an organization through the onboarding wizard (org form → design step →
+// catalog checklist). Every new org — with or without IČO — starts as pending_approval
+// (own_company when IČO is supplied, smalljobs_commission otherwise) and stays hidden
+// from customers until an owner approves it — and only an owner can make that specific
+// transition, even though the creating admin has ALL_PERMISSIONS on their own party.
 const RUN = Date.now();
 const icoEmail = `onboard-ico-${RUN}@e2e.test`;
 const noIcoEmail = `onboard-noico-${RUN}@e2e.test`;
@@ -73,7 +73,7 @@ test.describe("30 — Self-serve org onboarding", () => {
     expect(out.trim().split("\n").some((l) => l.trim() === "4")).toBeTruthy();
   });
 
-  test("30-02 create org with IČO goes live immediately", async () => {
+  test("30-02 create org with IČO lands on the design step as pending_approval", async () => {
     await icoPage.click("a.btn.btn-primary.btn-lg");
     await icoPage.waitForURL(/\/admin\/parties\/new\?onboarding=1/, { timeout: 10000 });
     await expect(icoPage.locator(".onboarding-banner")).toBeVisible();
@@ -85,28 +85,46 @@ test.describe("30 — Self-serve org onboarding", () => {
     await icoPage.check("input[name='terms_accepted']");
     await screenshot(icoPage, "30-02-ico-form-filled");
     await icoPage.locator("form.party-form button[type='submit']").click();
-    await icoPage.waitForURL(/\/admin\/parties\/[0-9a-f-]+\?onboarding=1/, { timeout: 10000 });
-    await screenshot(icoPage, "30-02-ico-created");
-
-    icoPartyId = icoPage.url().split("/").pop()!.split("?")[0];
-    await expect(icoPage.locator(".onboarding-cta")).toBeVisible();
+    // Step 2 of the wizard: the design editor (not the party detail page).
+    await icoPage.waitForURL(`${BASE}/admin/onboarding/design`, { timeout: 10000 });
+    await screenshot(icoPage, "30-02-ico-design");
+    await expect(icoPage.locator(".design-title")).toBeVisible();
 
     const out = psql(`SELECT status, seller_mode, company_ico FROM public.parties WHERE slug = '${icoSlug}';`);
-    expect(out).toContain("active");
+    expect(out).toContain("pending_approval");
     expect(out).toContain("own_company");
     expect(out).toContain("11223344");
   });
 
-  test("30-03 ICO org storefront is publicly visible immediately", async () => {
+  test("30-03 ICO org storefront resolves while pending (approval banner shown)", async () => {
     const page = icoPage;
     await page.goto(`${BASE}/eshop-${icoSlug}`);
     await page.waitForLoadState("networkidle");
     await expect(page).toHaveURL(`${BASE}/eshop-${icoSlug}`);
   });
 
-  test("30-04 continue to tutorial checklist", async () => {
+  test("30-04 owner approves ICO org, creator continues to tutorial checklist", async () => {
+    // A pending org shows the pending banner instead of the tutorial CTA — approve first.
+    const out = psql(`SELECT id FROM public.parties WHERE slug = '${icoSlug}';`);
+    icoPartyId = out.trim().split("\n").find((l) => /^[0-9a-f-]{36}$/i.test(l.trim()))?.trim() ?? "";
+    expect(icoPartyId).toBeTruthy();
+
+    const ownerPage = await icoPage.context().browser()!.newPage();
+    ownerPage.on("dialog", (d) => d.accept());
+    await loginAs(ownerPage, OWNER.email, OWNER.password);
+    await ownerPage.goto(`${BASE}/admin/parties/${icoPartyId}`);
+    await ownerPage.waitForLoadState("networkidle");
+    await ownerPage.locator("form:has(input[name='action'][value='approve_party']) button[type='submit']").click();
+    await ownerPage.waitForLoadState("networkidle");
+    await expect(ownerPage.locator(".alert-success")).toBeVisible();
+    await ownerPage.close();
+
+    const approved = psql(`SELECT status FROM public.parties WHERE id = '${icoPartyId}';`);
+    expect(approved).toContain("active");
+
     await icoPage.goto(`${BASE}/admin/parties/${icoPartyId}?onboarding=1`);
     await icoPage.waitForLoadState("networkidle");
+    await expect(icoPage.locator(".onboarding-cta")).toBeVisible();
     await icoPage.click(".onboarding-cta a");
     await icoPage.waitForURL(`${BASE}/admin/onboarding/tutorial`, { timeout: 10000 });
     await screenshot(icoPage, "30-04-tutorial");
@@ -132,10 +150,17 @@ test.describe("30 — Self-serve org onboarding", () => {
     await noIcoPage.check("input[name='terms_accepted']");
     await screenshot(noIcoPage, "30-05-noico-form-filled");
     await noIcoPage.locator("form.party-form button[type='submit']").click();
-    await noIcoPage.waitForURL(/\/admin\/parties\/[0-9a-f-]+\?onboarding=1/, { timeout: 10000 });
-    await screenshot(noIcoPage, "30-05-noico-created");
+    // Step 2 of the wizard: the design editor (not the party detail page).
+    await noIcoPage.waitForURL(`${BASE}/admin/onboarding/design`, { timeout: 10000 });
+    await expect(noIcoPage.locator(".design-title")).toBeVisible();
 
-    noIcoPartyId = noIcoPage.url().split("/").pop()!.split("?")[0];
+    const idOut = psql(`SELECT id FROM public.parties WHERE slug = '${noIcoSlug}';`);
+    noIcoPartyId = idOut.trim().split("\n").find((l) => /^[0-9a-f-]{36}$/i.test(l.trim()))?.trim() ?? "";
+    expect(noIcoPartyId).toBeTruthy();
+
+    await noIcoPage.goto(`${BASE}/admin/parties/${noIcoPartyId}?onboarding=1`);
+    await noIcoPage.waitForLoadState("networkidle");
+    await screenshot(noIcoPage, "30-05-noico-created");
     await expect(noIcoPage.locator(".pending-banner")).toBeVisible();
 
     const out = psql(`SELECT status, seller_mode FROM public.parties WHERE slug = '${noIcoSlug}';`);
@@ -145,11 +170,13 @@ test.describe("30 — Self-serve org onboarding", () => {
     expect(agreement).toContain("Jana Testovací");
   });
 
-  test("30-06 pending org storefront is not publicly visible", async () => {
+  test("30-06 pending org storefront resolves with a pending-approval banner", async () => {
     const page = noIcoPage;
     await page.goto(`${BASE}/eshop-${noIcoSlug}`);
     await page.waitForLoadState("networkidle");
-    await expect(page).not.toHaveURL(`${BASE}/eshop-${noIcoSlug}`);
+    // Pending orgs resolve (so the seller can preview) but carry a pending banner.
+    await expect(page).toHaveURL(`${BASE}/eshop-${noIcoSlug}`);
+    await expect(page.locator(".pending-banner")).toBeVisible();
   });
 
   test("30-07 creator cannot self-approve their own pending org", async () => {

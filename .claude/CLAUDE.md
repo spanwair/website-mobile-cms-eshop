@@ -362,8 +362,8 @@ Any entry with perm=0 in the items array is always rendered. Every new page MUST
 1. Owner/admin fills invite form in `/admin/parties/[id]` → picks email + system role + custom role
 2. Server calls `adminClient.auth.admin.inviteUserByEmail` (dev) or `generateLink` (prod)
 3. Metadata embedded: `pending_system_role`, `pending_party_id`, `pending_role_id`
-4. User clicks email link → `/auth/callback` → detects `isNewUser=true` → redirects to `/auth/set-password`
-5. User sets name + password → callback writes profile, party role, system role → `/dashboard`
+4. User clicks email link → `/auth/callback` → detects `isNewUser=true` → redirects to the shared registration page in invite mode (`/login?invite=1`)
+5. That page prefills + locks the email and calls `updateUser({ password })` to set name + password → callback already wrote the party role + pinned `activePartyId` → `/admin` of the inviting org
 
 **Existing user:**
 1. Same form → server finds existing user by email
@@ -373,4 +373,4 @@ Any entry with perm=0 in the items array is always rendered. Every new page MUST
 
 **Existing admin/owner (magic link / Google OAuth):**
 1. Callback detects `isNewUser=false` → redirects directly to `/dashboard`
-2. Never touches `/auth/set-password`
+2. Never enters the invite-mode registration step (`/login?invite=1`)

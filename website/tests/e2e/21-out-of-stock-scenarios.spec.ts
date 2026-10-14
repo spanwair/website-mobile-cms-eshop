@@ -70,7 +70,7 @@ test.describe("21 — Out-of-Stock Scenarios (multiple products)", () => {
     await page.waitForLoadState("networkidle");
     await screenshot(page, "21-01-already-out-of-stock");
     await expect(page.locator(".out-of-stock-badge")).toBeVisible();
-    await expect(page.locator("form.cart-form")).toHaveCount(0);
+    await expect(page.locator("form.cart-form")).toBeHidden();
   });
 
   test("21-02 low-stock product (below threshold, not zero) shows the remaining-stock hint", async () => {
@@ -104,7 +104,7 @@ test.describe("21 — Out-of-Stock Scenarios (multiple products)", () => {
     await page.waitForLoadState("networkidle");
     await screenshot(page, "21-03-now-out-of-stock");
     await expect(page.locator(".out-of-stock-badge")).toBeVisible();
-    await expect(page.locator("form.cart-form")).toHaveCount(0);
+    await expect(page.locator("form.cart-form")).toBeHidden();
   });
 
   test.describe("FINDING: no server-side stock guard at checkout (overselling)", () => {
@@ -143,7 +143,8 @@ test.describe("21 — Out-of-Stock Scenarios (multiple products)", () => {
       await page.waitForLoadState("networkidle");
       await page.locator("form.cart-form input[name='quantity']").fill("1");
       await page.locator("form.cart-form button[type='submit']").click();
-      await page.waitForLoadState("networkidle");
+      // Submit is a client-side fetch — wait for success or the next goto aborts the POST.
+      await expect(page.locator(".cart-success")).toBeVisible({ timeout: 15000 });
       await page.goto(`${BASE}/shop/checkout`);
       await page.waitForLoadState("networkidle");
       await page.fill("input[name='first_name']", "First");

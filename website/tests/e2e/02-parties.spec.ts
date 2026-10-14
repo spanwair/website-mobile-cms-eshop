@@ -48,12 +48,13 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
     await expect(page.locator("h1, .card").filter({ hasText: "E2E Test Org" }).first()).toBeVisible();
   });
 
-  test("02-04 new party appears in list with active badge", async () => {
+  test("02-04 new party appears in list with pending-approval badge", async () => {
     await page.goto(`${BASE}/admin/parties`);
     await page.waitForLoadState("networkidle");
     await expect(page.locator("table.data-table td").filter({ hasText: "E2E Test Org" }).first()).toBeVisible();
     const row = page.locator("tr").filter({ hasText: "E2E Test Org" });
-    await expect(row.locator(".badge-active")).toBeVisible();
+    // Form-created orgs start as pending_approval until an owner activates them.
+    await expect(row.locator(".badge-pending_approval")).toBeVisible();
     await screenshot(page, "02-04-new-party-in-list");
   });
 
@@ -78,7 +79,8 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
     await row.locator("a.btn-ghost").click();
     await page.waitForLoadState("networkidle");
     await screenshot(page, "02-06-party-detail");
-    await expect(page.locator("table.data-table")).toBeVisible();
+    // The detail page shows several data tables (products, members) — scope to members.
+    await expect(page.locator("table.data-table").filter({ hasText: "Role" }).first()).toBeVisible();
     newPartyId = page.url().split("/").pop()!;
   });
 
@@ -98,15 +100,15 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
     } else {
       console.log("[02-07] No available users to invite (all already members)");
     }
-    await expect(page.locator("table.data-table")).toBeVisible();
+    await expect(page.locator("table.data-table").filter({ hasText: "Role" }).first()).toBeVisible();
   });
 
   test("02-08 party detail shows members table", async () => {
     await page.goto(`${BASE}/admin/parties/${PARTY_ID}`);
     await page.waitForLoadState("networkidle");
     await screenshot(page, "02-08-party-members");
-    await expect(page.locator("table.data-table")).toBeVisible();
-    const rows = page.locator("table.data-table tbody tr");
+    await expect(page.locator("table.data-table").filter({ hasText: "Role" }).first()).toBeVisible();
+    const rows = page.locator("table.data-table").filter({ hasText: "Připojen" }).locator("tbody tr");
     const count = await rows.count();
     expect(count).toBeGreaterThanOrEqual(1);
   });
@@ -114,7 +116,7 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
   test("02-09 remove a member from party", async () => {
     await page.goto(`${BASE}/admin/parties/${PARTY_ID}`);
     await page.waitForLoadState("networkidle");
-    const rows = page.locator("table.data-table tbody tr");
+    const rows = page.locator("table.data-table").filter({ hasText: "Připojen" }).locator("tbody tr");
     const count = await rows.count();
     // Guard: only remove if there are more than the 2 seeded members (admin + eshop).
     // Members are ordered by joined_at DESC, so admin (seeded first) sits last —
@@ -129,7 +131,7 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
         await screenshot(page, "02-09-after-remove-member");
       }
     }
-    await expect(page.locator("table.data-table")).toBeVisible();
+    await expect(page.locator("table.data-table").filter({ hasText: "Role" }).first()).toBeVisible();
   });
 
   test("02-10 party info shows correct details", async () => {
@@ -144,7 +146,7 @@ test.describe("02 — Parties: CRUD + Member Management", () => {
   test("02-11 admin user is listed as member", async () => {
     await page.goto(`${BASE}/admin/parties/${PARTY_ID}`);
     await page.waitForLoadState("networkidle");
-    const adminRow = page.locator("table.data-table tbody tr").filter({ hasText: "admin@test.com" });
+    const adminRow = page.locator("table.data-table").filter({ hasText: "Připojen" }).locator("tbody tr").filter({ hasText: "admin@test.com" });
     await screenshot(page, "02-11-admin-member-visible");
     await expect(adminRow.first()).toBeVisible();
   });

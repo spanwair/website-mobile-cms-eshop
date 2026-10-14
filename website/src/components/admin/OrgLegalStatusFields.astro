@@ -41,7 +41,7 @@ const { t, hasIcoValue } = Astro.props;
     <div class="form-group">
       <label class="form-label">{t.admin.parties.onboarding.fieldIco}</label>
       <input class="form-input" name="company_ico" placeholder={t.admin.parties.onboarding.fieldIcoPlaceholder} data-required-in-panel="yes" inputmode="numeric" data-ares-ico />
-      <p class="ares-status hidden" data-ares-status></p>
+      <p class="ares-status ares-status--empty" data-ares-status></p>
     </div>
   </div>
   <div class="form-row">
@@ -149,7 +149,11 @@ const { t, hasIcoValue } = Astro.props;
     const setStatus = (text: string, kind: "muted" | "ok" | "warn") => {
       if (!statusEl) return;
       statusEl.textContent = text;
-      statusEl.className = text ? `ares-status ares-status--${kind}` : "ares-status hidden";
+      // Never display:none the status line: it appears on IČO blur, exactly when the
+      // user moves toward the consent checkboxes below. Collapsing it shifts the whole
+      // form and the click lands off-target (checkbox stays unchecked). Keep the space
+      // reserved and hide invisibly instead.
+      statusEl.className = text ? `ares-status ares-status--${kind}` : "ares-status ares-status--empty";
     };
 
     let icoTimer: ReturnType<typeof setTimeout>;
@@ -230,7 +234,8 @@ const { t, hasIcoValue } = Astro.props;
   .ares-suggest :global(.ares-suggest-item:hover) { background:var(--bg-subtle); }
   .ares-suggest :global(.ares-suggest-name) { font-size:13px; font-weight:600; color:var(--text-primary); }
   .ares-suggest :global(.ares-suggest-meta) { font-size:12px; color:var(--text-muted); }
-  .ares-status { font-size:12px; margin:4px 0 0; }
+  .ares-status { font-size:12px; margin:4px 0 0; min-height:18px; }
+  .ares-status--empty { visibility:hidden; }
   .ares-status--muted { color:var(--text-muted); }
   .ares-status--ok { color:var(--success); }
   .ares-status--warn { color:var(--text-muted); }

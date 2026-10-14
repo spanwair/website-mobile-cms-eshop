@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { BASE, PARTY_ID, WAREHOUSE_ID, USER, USER_ID, loginAs, screenshot, psql, replica, defaultRole } from "./helpers";
+import { BASE, PARTY_ID, WAREHOUSE_ID, USER, USER_ID, loginAs, screenshot, psql, replica, defaultRole, formatCsPrice } from "./helpers";
 
 // Two distinct products bought together in one order — proves per-line quantities,
 // per-line totals, and the order total all stay correct once multiple SKUs are combined,
@@ -60,7 +60,8 @@ test.describe("20 — Customer Multi-Product Checkout: buy 2 different products 
       await page.waitForLoadState("networkidle");
       await page.locator("form.cart-form input[name='quantity']").fill(String(p.buyQty));
       await page.locator("form.cart-form button[type='submit']").click();
-      await page.waitForLoadState("networkidle");
+      // Submit is a client-side fetch — wait for success or the next goto aborts the POST.
+      await expect(page.locator(".cart-success")).toBeVisible({ timeout: 15000 });
     }
     await page.goto(`${BASE}/shop/cart`);
     await page.waitForLoadState("networkidle");
@@ -75,15 +76,21 @@ test.describe("20 — Customer Multi-Product Checkout: buy 2 different products 
 
     const expectedD = PROD_D.price * PROD_D.buyQty;
     const expectedE = PROD_E.price * PROD_E.buyQty;
-    const expectedTotal = expectedD + expectedE;
+    // The grand total adds the default (first enabled) shipping method — currently
+    // Zásilkovna at 79 Kč. Read it from the page so a seed price change fails loudly
+    // here instead of silently asserting a stale total.
+    const shippingText = (await page.locator("#summary-shipping-price").textContent()) ?? "";
+    const expectedShipping = Number(shippingText.replace(/[^\d,]/g, "").replace(",", ".")) || 0;
+    expect(expectedShipping).toBeGreaterThan(0);
+    const expectedTotal = expectedD + expectedE + expectedShipping;
 
     await expect(page.getByText(`${PROD_D.title} × ${PROD_D.buyQty}`)).toBeVisible();
     await expect(page.getByText(`${PROD_E.title} × ${PROD_E.buyQty}`)).toBeVisible();
     await expect(page.locator(".summary-item").filter({ hasText: PROD_D.title }).locator(".summary-price"))
-      .toHaveText(`${expectedD.toFixed(2)} Kč`);
+      .toHaveText(`${formatCsPrice(expectedD)}`);
     await expect(page.locator(".summary-item").filter({ hasText: PROD_E.title }).locator(".summary-price"))
-      .toHaveText(`${expectedE.toFixed(2)} Kč`);
-    await expect(page.locator(".summary-total .total-price")).toHaveText(`${expectedTotal.toFixed(2)} Kč`);
+      .toHaveText(`${formatCsPrice(expectedE)}`);
+    await expect(page.locator(".summary-total .total-price")).toHaveText(`${formatCsPrice(expectedTotal)}`);
   });
 
   test("20-03 submitting the address places the order and redirects to confirmation", async () => {
@@ -92,6 +99,9 @@ test.describe("20 — Customer Multi-Product Checkout: buy 2 different products 
     await page.fill("input[name='line1']", "Nákupní 2");
     await page.fill("input[name='city']", "Brno");
     await page.fill("input[name='postal_code']", "60200");
+    // Default payment is Stripe (leaves the site) — choose cash-on-delivery so the order
+    // completes on-site and lands on the confirmation page.
+    await page.locator("input[name='payment_method'][value='cod']").check();
     await page.locator("form.address-form button[type='submit']").click();
     await page.waitForURL(`${BASE}/shop/order-confirmation**`, { timeout: 15000 });
     await screenshot(page, "20-03-order-confirmation");
