@@ -4,3 +4,6 @@
 
 # Generated docs site (built from ../docs by scripts/build-docs.sh)
 public/docs/
+
+# Local wrangler dev state
+.wrangler/

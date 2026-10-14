@@ -11,13 +11,12 @@ interface Props {
   hasSession: boolean;
   displayName: string | null;
   navInitial: string;
-  cartCount: number;
   currentPath: string;
   navTree?: NavItemWithChildren[];
   partyId?: string | null;
   isAdmin?: boolean;
 }
-const { storeConfig, brandName, brandHref, shopHref, hasSession, displayName, navInitial, cartCount, currentPath, navTree = [], partyId = null, isAdmin = false } = Astro.props;
+const { storeConfig, brandName, brandHref, shopHref, hasSession, displayName, navInitial, currentPath, navTree = [], partyId = null, isAdmin = false } = Astro.props;
 const t = useT(Astro);
 const lang = getLang(Astro);
 
@@ -120,7 +119,7 @@ const accountBase = shopHref.startsWith("/eshop-") ? shopHref : "";
       <a href={`${shopHref}/cart`} class="icon-link icon-link--cart">
         <span class="icon-glyph">🛒</span>
         <span class="icon-label">{t.shop.cart}</span>
-        {cartCount > 0 && <span class="cart-badge">{cartCount}</span>}
+        <span class="cart-badge" data-cart-badge data-party-id={partyId ?? ""} hidden></span>
       </a>
     </div>
   </div>
@@ -132,6 +131,24 @@ const accountBase = shopHref.startsWith("/eshop-") ? shopHref : "";
   import { formatPrice } from "@shared/utils/format";
   import type { AppLanguage } from "@shared/i18n/getT";
   import type { SearchResultCategory, SearchResultProduct } from "@shared/types";
+
+  // Cart badge is filled here (not server-rendered) so the page HTML can be edge-cached.
+  const badge = document.querySelector<HTMLElement>("[data-cart-badge]");
+  if (badge) {
+    const pid = badge.dataset.partyId;
+    if (pid) {
+      fetch(`/api/cart-count?partyId=${encodeURIComponent(pid)}`, { headers: { accept: "application/json" } })
+        .then((r) => (r.ok ? r.json() : { count: 0 }))
+        .then((d: { count?: number }) => {
+          const n = d.count ?? 0;
+          if (n > 0) {
+            badge.textContent = String(n);
+            badge.hidden = false;
+          }
+        })
+        .catch(() => {});
+    }
+  }
 
   const wrap = document.getElementById("nav-search-wrap");
   const input = document.getElementById("nav-search-input") as HTMLInputElement | null;

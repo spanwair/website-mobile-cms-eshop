@@ -7,7 +7,7 @@ import { requireAdminCtx } from "../../lib/admin";
 import { ROLE } from "@shared/constants/permissions";
 import { buildThemeCss, googleFontsUrl } from "../../lib/themeEngine";
 import { fetchStoreMedia } from "@shared/services/storeMediaService";
-import { fetchCartItemCount, mergeGuestCartIntoUser, type CartIdentity } from "@shared/services/cartService";
+import { mergeGuestCartIntoUser } from "@shared/services/cartService";
 import { fetchStorefrontNavTree } from "@shared/services/navItemService";
 import { fetchVisibleFooterLinks } from "@shared/services/footerLinkService";
 import { fetchVisibleFooterBadges } from "@shared/services/footerBadgeService";
@@ -87,16 +87,9 @@ if (session) {
   }
 }
 const navInitial = displayName?.[0]?.toUpperCase() ?? "?";
-// Only reads an existing guest cart cookie here — never creates one just for viewing a page.
-const guestIdentityForCount = session ? null : peekGuestCartId(Astro.cookies);
-const cartIdentity: CartIdentity | null = session
-  ? { userId: session.user.id }
-  : guestIdentityForCount
-    ? { sessionId: guestIdentityForCount }
-    : null;
-const cartCount = isStorefront && storeParty && cartIdentity
-  ? await fetchCartItemCount(session ? supabase : createAdminClient(), cartIdentity, storeParty.id)
-  : 0;
+// The cart badge is filled client-side (StorefrontNav fetches /api/cart-count), never rendered
+// server-side. Two reasons: a per-visitor count must never be baked into an edge-cached page,
+// and it drops one Supabase round-trip from every storefront render.
 const currentPath = Astro.url.pathname + Astro.url.search;
 ---
 
@@ -132,7 +125,6 @@ const currentPath = Astro.url.pathname + Astro.url.search;
         hasSession={!!session}
         displayName={displayName}
         navInitial={navInitial}
-        cartCount={cartCount}
         currentPath={currentPath}
         navTree={navTree}
         partyId={storeParty?.id ?? null}
