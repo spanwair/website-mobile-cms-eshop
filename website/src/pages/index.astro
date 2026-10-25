@@ -1,22 +1,23 @@
 ---
 import LandingLayout from "../components/landing/LandingLayout.astro";
 import Hero from "../components/landing/sections/Hero.astro";
-import LogoMarquee from "../components/landing/LogoMarquee.astro";
+import StatBand from "../components/landing/sections/StatBand.astro";
 import FoundingSellers from "../components/landing/sections/FoundingSellers.astro";
+import LogoMarquee from "../components/landing/LogoMarquee.astro";
 import Features from "../components/landing/sections/Features.astro";
 import HowItWorks from "../components/landing/sections/HowItWorks.astro";
-import RealEshopsShowcase from "../components/landing/sections/RealEshopsShowcase.astro";
-import CreateOwnEshopCta from "../components/landing/sections/CreateOwnEshopCta.astro";
-// TemplatesShowcase temporarily unlisted while real eshops are promoted instead (product
-// decision 2026-09-03) - component and its i18n copy are untouched, just not rendered here.
-// Restore by uncommenting this import and its usage below.
-// import TemplatesShowcase from "../components/landing/sections/TemplatesShowcase.astro";
 import AICapabilities from "../components/landing/sections/AICapabilities.astro";
 import CommissionCalculator from "../components/landing/sections/CommissionCalculator.astro";
-import NoCompanySelling from "../components/landing/sections/NoCompanySelling.astro";
 import ExampleScenarios from "../components/landing/sections/ExampleScenarios.astro";
-import Documentation from "../components/landing/sections/Documentation.astro";
+import NoCompanySelling from "../components/landing/sections/NoCompanySelling.astro";
+import RealEshopsShowcase from "../components/landing/sections/RealEshopsShowcase.astro";
 import FinalCta from "../components/landing/sections/FinalCta.astro";
+// Index block order mirrors Shoptet's homepage structure, mapped to functionality we
+// actually ship and rendered in our own brand. Blocks we can't back with truth (faked
+// shop counts, press logos, growth chart, avatar testimonials) are intentionally dropped
+// or replaced with honest equivalents (StatBand = model numbers; ExampleScenarios =
+// labelled illustrative math instead of fake reviews). These stay on disk, unlisted:
+// CreateOwnEshopCta, Documentation, TemplatesShowcase.
 import { useT } from "../lib/i18n";
 import { createSupabase } from "../lib/supabase";
 import { listLandingFeaturedStores } from "@shared/services/storeConfigService";
@@ -29,17 +30,15 @@ const featuredStores = await listLandingFeaturedStores(supabase);
 
 <LandingLayout title={t.landing.meta.defaultTitle} description={t.landing.meta.defaultDescription}>
   <Hero />
-  <LogoMarquee logos={LANDING_PROVIDER_LOGOS} label={t.landing.logoMarquee.label} />
+  <StatBand />
   <FoundingSellers />
+  <LogoMarquee logos={LANDING_PROVIDER_LOGOS} label={t.landing.logoMarquee.label} />
   <Features />
   <HowItWorks />
-  <RealEshopsShowcase stores={featuredStores} showCreateCard />
-  <CreateOwnEshopCta />
-  <!-- <TemplatesShowcase /> -->
   <AICapabilities />
   <CommissionCalculator />
-  <NoCompanySelling />
   <ExampleScenarios />
-  <Documentation />
+  <NoCompanySelling />
+  <RealEshopsShowcase stores={featuredStores} showCreateCard />
   <FinalCta />
 </LandingLayout>

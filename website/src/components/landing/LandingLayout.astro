@@ -29,12 +29,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? "https://mamtodoma.c
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonical.toString()} />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
+    {/* Self-hosted fonts (global.css @font-face) — no fonts.gstatic.com. Preload the display
+        sans (both subsets): it renders the above-fold hero headline (LCP). Inter (body) swaps
+        in from its own self-hosted files with a system-ui fallback, so it needs no preload. */}
+    <link rel="preload" href="/fonts/jakarta-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/jakarta-latin-ext.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body class="landing">
     <LandingNav />

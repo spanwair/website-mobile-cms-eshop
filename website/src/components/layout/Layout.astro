@@ -23,6 +23,9 @@ const storeConfig = storeParty?.config ?? null;
 const brandName = storeConfig?.brand_name ?? "Template";
 const { title = brandName } = Astro.props;
 const faviconUrl = storeConfig?.favicon_url ?? "/favicon.png";
+// Inter (the app/body font) is self-hosted via global.css @font-face — one woff2 per subset,
+// zero fonts.gstatic.com requests. Only a tenant's *custom* (non-Inter) role font is still
+// fetched from Google, on demand, and only then do we pay the preconnect.
 const customFontsUrl = googleFontsUrl(storeConfig);
 
 // A storefront-shaped page (/shop*, /eshop-[slug]*) with a resolved storeParty (custom
@@ -100,10 +103,13 @@ const currentPath = Astro.url.pathname + Astro.url.search;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <link rel="icon" type="image/png" href={faviconUrl} />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
-    {customFontsUrl && <link href={customFontsUrl} rel="stylesheet" />}
+    {customFontsUrl && (
+      <>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href={customFontsUrl} rel="stylesheet" />
+      </>
+    )}
     <style set:html={buildThemeCss(storeConfig)} />
   </head>
   <body>

@@ -17,6 +17,15 @@ const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.
         mamtodoma<span class="landing-nav-brand-accent">.cz</span>
       </a>
       <p class="footer-tagline">{t.landing.footer.tagline}</p>
+
+      <div class="footer-newsletter">
+        <h4>{t.landing.footer.newsletterTitle}</h4>
+        <p class="footer-newsletter-sub">{t.landing.footer.newsletterSub}</p>
+        <form id="footer-newsletter-form" class="footer-newsletter-form">
+          <input type="email" name="email" required placeholder={t.landing.footer.newsletterPlaceholder} class="form-input" />
+          <button type="submit" class="btn btn-primary">{t.landing.footer.newsletterSubmit}</button>
+        </form>
+      </div>
     </div>
 
     {Object.values(t.landing.footer.columns).map((col) => (
@@ -37,15 +46,6 @@ const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.
         <li>IČO {SMALLJOBS_COMPANY.ico}</li>
         <li>{address}</li>
       </ul>
-    </div>
-
-    <div class="footer-newsletter">
-      <h4>{t.landing.footer.newsletterTitle}</h4>
-      <p class="footer-newsletter-sub">{t.landing.footer.newsletterSub}</p>
-      <form id="footer-newsletter-form" class="footer-newsletter-form">
-        <input type="email" name="email" required placeholder={t.landing.footer.newsletterPlaceholder} class="form-input" />
-        <button type="submit" class="btn btn-primary">{t.landing.footer.newsletterSubmit}</button>
-      </form>
     </div>
   </div>
 
@@ -72,16 +72,27 @@ const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.
   .landing-footer { background: var(--landing-ink, #111827); color: #9CA3AF; padding-block: 64px 32px; }
   .footer-grid { display: grid; gap: 32px; grid-template-columns: 1.4fr repeat(4, 1fr); margin-bottom: 40px; }
   .footer-brand-link { color: #fff; }
-  .footer-tagline { font-size: 13px; margin-top: 8px; max-width: 220px; line-height: 1.6; }
+  .footer-tagline { font-size: 13px; margin-top: 8px; max-width: 240px; line-height: 1.6; }
   .footer-col h4, .footer-newsletter h4 { color: #fff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
   .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
   .footer-col a { color: #9CA3AF; font-size: 14px; }
   .footer-col a:hover { color: var(--landing-mint, #5BD4A8); text-decoration: none; }
   .footer-contact li { font-size: 13px; line-height: 1.6; }
-  .footer-newsletter-sub { font-size: 13px; margin-bottom: 12px; }
-  .footer-newsletter-form { display: flex; gap: 8px; }
-  .footer-newsletter-form .btn-primary { background: var(--landing-mint, #5BD4A8); color: #0B1220; }
-  .footer-newsletter-form .btn-primary:hover { opacity: 0.9; }
+
+  /* Newsletter sits in the left brand rail; stacked form so it never crowds the input
+     and button into a single narrow row. */
+  .footer-newsletter { margin-top: 32px; max-width: 280px; }
+  .footer-newsletter-sub { font-size: 13px; line-height: 1.6; margin-bottom: 14px; }
+  .footer-newsletter-form { display: flex; flex-direction: column; gap: 10px; }
+  .footer-newsletter-form .form-input {
+    width: 100%; padding: 11px 14px; border-radius: var(--radius-full);
+    border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06);
+    color: #fff; font: inherit; font-size: 14px;
+  }
+  .footer-newsletter-form .form-input::placeholder { color: #8A958F; }
+  .footer-newsletter-form .form-input:focus-visible { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(14,143,99,0.25); }
+  .footer-newsletter-form .btn-primary { align-self: flex-start; background: var(--accent-primary); color: #fff; }
+  .footer-newsletter-form .btn-primary:hover { background: var(--accent-primary-hover); }
   .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 24px; font-size: 12px; }
 
   @media (max-width: 900px) {

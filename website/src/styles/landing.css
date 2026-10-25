@@ -1,63 +1,118 @@
 .landing {
-  --landing-dark: #111827;
-  --landing-dark-elevated: #1A2033;
-  --landing-dark-text: #F3F4F6;
-  --landing-dark-text-muted: #9CA3AF;
-  --landing-glow-accent: rgba(91, 212, 168, 0.35);
-  --landing-glow-success: rgba(16, 185, 129, 0.25);
-  --landing-gradient-hero: linear-gradient(180deg, var(--landing-dark) 0%, #0B0F1A 100%);
+  /* ── Clean product-first palette (DESIGN.md · direction C). Scoped to body.landing only,
+     so admin/storefront keep their own themes. Re-declaring the names global.css defines
+     works via the cascade: everything under .landing that reads var(--text-primary) etc.
+     picks these up, with zero markup changes. White, airy, ONE evergreen accent. ── */
+  --bg-page: #FFFFFF;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #F4F7F5;
+  --border-default: #E6ECE9;
+  --border-strong: #D4DEDA;
+  --text-primary: #0F1A16;
+  --text-muted: #566259;
+  --text-placeholder: #9AA8A1;
+  /* Evergreen accent — WCAG AA on white for text, links and focus rings. The brighter
+     decorative mint (--landing-mint) is reserved for fills and gradients, not body text. */
+  --accent-primary: #0E8F63;
+  --accent-primary-hover: #0B7450;
+  --accent: var(--accent-primary);
+  --accent-soft: #E6F4EE;
+  --accent-secondary: #E0894F; /* warm clay, used rarely */
 
-  --display-2xl: clamp(2.75rem, 5vw + 1rem, 4.5rem);
-  --display-xl: clamp(2.25rem, 3.5vw + 1rem, 3.5rem);
-  --display-lg: clamp(1.75rem, 2.5vw + 1rem, 2.5rem);
-  --display-md: clamp(1.375rem, 1.5vw + 1rem, 1.75rem);
+  --landing-mint: #16A571;
+  --landing-mint-soft: #E6F4EE;
+  --landing-cream: #FFFFFF;
+  --landing-ink: #0F1A16;
+  --landing-sky: #4FBF95;   /* kept in-family so gradient-text stays a mint gradient */
+  --landing-coral: #E0894F;
 
-  --landing-section-y: clamp(56px, 8vw, 120px);
+  /* Dark band — deep evergreen-ink, never a flat black inversion. */
+  --landing-dark: #0C1512;
+  --landing-dark-elevated: #15201C;
+  --landing-dark-text: #F3F7F5;
+  --landing-dark-text-muted: #9FB2AB;
+  --landing-glow-accent: rgba(22, 165, 113, 0.28);
+  --landing-glow-success: rgba(14, 143, 99, 0.22);
+  --landing-gradient-hero: linear-gradient(180deg, #0C1512 0%, #07100D 100%);
+  --ink-invert: #FFFFFF;
+
+  /* Rounded, premium radii — larger than global defaults for the product-first register. */
+  --radius-sm: 0.5rem; --radius-md: 0.75rem; --radius-lg: 1.125rem;
+  --radius-xl: 1.5rem; --radius-full: 999px;
+
+  /* ── Fluid type scale — one ratio, roles not sizes. Old --display-* names kept, mapped. ── */
+  --fs-display: clamp(2.75rem, 1.4rem + 6vw, 5.5rem);
+  --fs-h1: clamp(2.25rem, 1.5rem + 3.2vw, 3.75rem);
+  --fs-h2: clamp(1.75rem, 1.2rem + 2.2vw, 2.75rem);
+  --fs-h3: clamp(1.3rem, 1.05rem + 1vw, 1.6rem);
+  --fs-body-lg: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem);
+  --fs-body: 1.0625rem;
+  --fs-sm: 0.9375rem;
+  --fs-label: 0.75rem;
+  --display-2xl: clamp(2.75rem, 1.4rem + 5vw, 5rem);
+  --display-xl: var(--fs-h1);
+  --display-lg: var(--fs-h2);
+  --display-md: var(--fs-h3);
+
+  /* ── Spacing scale (single source) ── */
+  --space-3xs: 0.25rem; --space-2xs: 0.5rem; --space-xs: 0.75rem;
+  --space-s: 1rem; --space-m: 1.5rem; --space-l: 2.5rem;
+  --space-xl: 4rem; --space-2xl: 6rem; --space-3xl: clamp(6rem, 10vw, 10rem);
+
+  /* ── Grid / measure ── */
+  --gutter: clamp(1.25rem, 0.6rem + 1.8vw, 2.5rem);
+  --page: min(100% - var(--gutter) * 2, 1200px);
+  --page-wide: min(100% - var(--gutter) * 2, 1320px);
+  /* Per-section padding-block; top+bottom compound at boundaries, so this is ~half the
+     section-gap rhythm, not the full --space-3xl (which would stack into ~20rem voids). */
+  --landing-section-y: clamp(3.5rem, 6vw, 6.5rem);
   --landing-max-width: 1200px;
 
-  /* MámToDoma visual identity — scoped to .landing only (body.landing), so the admin
-     panel (never rendered inside .landing) keeps its existing indigo theme untouched.
-     Re-declaring the same variable names global.css already defines works because CSS
-     custom properties cascade: everything under body.landing that reads var(--text-primary)
-     etc. picks up these values instead, with zero markup/classname changes needed. */
-  --bg-page: #FAFBF9;
-  --bg-surface: #FDF8EF;
-  --bg-subtle: #E8F5EE;
-  --border-default: #E5E7EB;
-  --border-strong: #D8DEE3;
-  --text-primary: #0B1220;
-  --text-muted: #64748B;
-  --text-placeholder: #94A3B8;
-  /* Accessible dark-mint used for actual text/links/focus rings (WCAG AA on white).
-     The bright decorative mint (--landing-mint) fails 4.5:1 as text and is reserved for
-     backgrounds, badges, underlines and icons instead — see --landing-mint below. */
-  --accent-primary: #0E8F65;
-  --accent-primary-hover: #0B7452;
-  --accent-secondary: #7DD3FC;
+  /* ── Motion language ── */
+  --dur-fast: 0.18s; --dur-base: 0.5s; --dur-slow: 0.9s; --dur-scene: 1.4s;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-snap: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --landing-mint: #5BD4A8;
-  --landing-mint-soft: #E8F5EE;
-  --landing-cream: #FDF8EF;
-  --landing-ink: #0B1220;
-  --landing-sky: #7DD3FC;
-  --landing-coral: #F97B7A;
-  --font-display: "Instrument Serif", Georgia, serif;
-  --font-mono-landing: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  /* System mono stack: zero webfont download. The site holds a strict 2-webfont budget —
+     Plus Jakarta Sans (display) + Inter (body) — both self-hosted; no third family, no mono. */
+  --font-mono-landing: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
-.landing { background: var(--bg-page); color: var(--text-primary); }
+.landing {
+  background: var(--bg-page); color: var(--text-primary);
+  font-size: var(--fs-body); line-height: 1.65;
+  font-synthesis: none; text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
 .landing .font-display { font-family: var(--font-display); }
 .landing .font-mono { font-family: var(--font-mono-landing); }
 
-/* Primary CTA gets the brand's dark-pill-flips-to-mint treatment, scoped so admin's
-   identical .btn.btn-primary markup (indigo, no flip) is completely unaffected. */
+/* Product-first type craft — applies to every heading/paragraph on the landing. Display
+   roles use Plus Jakarta Sans, bold with tight tracking + near-solid leading; body uses a
+   65ch measure in Inter. */
+.landing h1, .landing h2, .landing h3, .landing .font-display {
+  font-family: var(--font-display);
+  text-wrap: balance; color: var(--text-primary);
+}
+.landing h1 { font-size: var(--fs-h1); line-height: 1.04; letter-spacing: -0.03em; font-weight: 800; }
+.landing h2 { font-size: var(--fs-h2); line-height: 1.1; letter-spacing: -0.025em; font-weight: 700; }
+.landing h3 { font-size: var(--fs-h3); line-height: 1.22; letter-spacing: -0.015em; font-weight: 700; }
+.landing p { text-wrap: pretty; }
+.landing .measure { max-width: 65ch; }
+.landing .tnum { font-variant-numeric: tabular-nums; }
+.landing em, .landing .ital { font-style: italic; }
+
+/* Primary CTA — solid evergreen pill, scoped so admin's identical .btn.btn-primary markup
+   (indigo) is completely unaffected. Depth arrives on hover only. */
 .landing .btn-primary {
-  background: var(--landing-ink); color: var(--bg-page);
-  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  background: var(--accent-primary); color: #fff;
+  border-radius: var(--radius-full);
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 .landing .btn-primary:hover:not(:disabled) {
-  background: var(--landing-mint); color: var(--landing-ink);
-  transform: translateY(-1px); box-shadow: var(--shadow-md);
+  background: var(--accent-primary-hover);
+  transform: translateY(-1px); box-shadow: 0 10px 24px -8px var(--landing-glow-success);
 }
 .landing .btn-white { background: var(--bg-page); color: var(--landing-ink); }
 .landing .btn-white:hover { background: var(--landing-mint-soft); }
@@ -118,25 +173,33 @@
 
 .landing section { padding-block: var(--landing-section-y); }
 .landing .container-lg {
-  max-width: var(--landing-max-width);
+  width: var(--page);
   margin-inline: auto;
-  padding-inline: 24px;
 }
 
+/* Editorial label: Inter uppercase + tracking (no mono webfont), led by a short mint tick. */
 .landing .section-eyebrow {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-family: var(--font-mono-landing);
-  font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--accent-primary); margin-bottom: 12px;
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  font-size: var(--fs-label); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  /* Darker green for this small label so it clears AA 4.5:1 on white (the brighter
+     --accent-primary is ~4.1:1, fine for large/bold but not for 12px uppercase). */
+  color: var(--accent-primary-hover); margin-bottom: 0.9rem;
+}
+.landing .section-eyebrow::before {
+  content: ""; width: 1.5rem; height: 1.5px; background: var(--landing-mint); display: inline-block;
 }
 .landing .section-title, .landing h1, .landing h2 {
   font-family: var(--font-display);
-  font-size: var(--display-lg); font-weight: 500; letter-spacing: -0.01em;
-  color: var(--text-primary); margin-bottom: 16px;
+  font-size: var(--fs-h2); font-weight: 700; line-height: 1.1; letter-spacing: -0.025em;
+  text-wrap: balance; color: var(--text-primary); margin: 0 0 1rem;
 }
 .landing .section-sub {
-  font-size: 17px; color: var(--text-muted); max-width: 640px; line-height: 1.6;
+  font-size: var(--fs-body-lg); color: var(--text-muted); max-width: 54ch; line-height: 1.6;
+  text-wrap: pretty;
 }
+/* Centered section header: the ::before tick would break centering, so hide it there. */
+.landing .section-eyebrow--center { justify-content: center; }
+.landing .section-eyebrow--center::before { display: none; }
 .landing .section-eyebrow--center,
 .landing .section-title--center,
 .landing .section-sub--center { margin-inline: auto; text-align: center; }
@@ -158,9 +221,27 @@
 .landing .btn-outline-light:hover { background: rgba(255,255,255,0.08); }
 
 .landing .grid-auto {
-  display: grid; gap: 24px;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  display: grid; gap: var(--space-m);
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
 }
+
+/* Editorial card: warm surface, single hairline, one radius, NO resting shadow — depth
+   arrives only on hover (never shadow + border + gradient at once). */
+.landing .card {
+  background: var(--bg-surface); border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg); box-shadow: none;
+  padding: clamp(1.25rem, 2vw, 1.75rem);
+  transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+}
+.landing .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--border-strong); }
+
+/* Shared card copy — one definition for every card grid (founding, features, scenarios…). */
+.landing .card-title {
+  font-family: var(--font-display);
+  font-size: 1.2rem; font-weight: 700; line-height: 1.25; letter-spacing: -0.015em;
+  color: var(--text-primary); margin: 0 0 0.4rem;
+}
+.landing .card-desc { color: var(--text-muted); font-size: var(--fs-sm); line-height: 1.6; margin: 0; }
 
 @media (max-width: 640px) {
   .landing .container-lg { padding-inline: 16px; }

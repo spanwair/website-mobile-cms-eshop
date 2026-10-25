@@ -1,0 +1,57 @@
+---
+import { useT } from "@/lib/i18n";
+const t = useT(Astro);
+const band = t.landing.statBand;
+---
+
+<section class="landing statband" id="stat-band">
+  <div class="container-lg statband-grid" data-reveal-group>
+    <div class="statband-head" data-reveal>
+      <h2 class="statband-title">{band.title}</h2>
+      <p class="statband-sub">{band.sub}</p>
+    </div>
+    <dl class="statband-stats">
+      {band.stats.map((s) => (
+        <div class="statband-stat" data-reveal>
+          <dt class="statband-value font-display tnum"><span class="statband-dot" aria-hidden="true"></span>{s.value}</dt>
+          <dd class="statband-label">{s.label}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</section>
+
+<style>
+  .statband { padding-block: clamp(2.5rem, 5vw, 4rem); }
+  .statband-grid {
+    display: grid; grid-template-columns: 0.95fr 1.05fr;
+    gap: clamp(1.5rem, 5vw, 4rem); align-items: center;
+  }
+  .statband-title { font-size: var(--fs-h2); margin: 0 0 0.5rem; max-width: 16ch; }
+  .statband-sub { font-size: var(--fs-body); color: var(--text-muted); line-height: 1.55; margin: 0; max-width: 42ch; }
+
+  .statband-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1rem, 3vw, 2rem);
+    margin: 0;
+  }
+  .statband-stat { display: flex; flex-direction: column; gap: 0.3rem; }
+  .statband-value {
+    display: inline-flex; align-items: baseline; gap: 0.5rem;
+    font-size: clamp(1.75rem, 1.2rem + 1.8vw, 2.5rem); font-weight: 800;
+    line-height: 1; color: var(--text-primary); margin: 0;
+  }
+  .statband-dot {
+    width: 9px; height: 9px; border-radius: 3px; background: var(--accent);
+    transform: translateY(-0.15em); flex: none;
+  }
+  .statband-label { font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.4; margin: 0; }
+
+  @media (max-width: 860px) {
+    .statband-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 520px) {
+    .statband-stats { grid-template-columns: 1fr; gap: 1.1rem; }
+    .statband-stat { flex-direction: row; align-items: baseline; gap: 0.75rem; }
+    .statband-label { align-self: center; }
+  }
+</style>

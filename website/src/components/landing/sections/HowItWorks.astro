@@ -1,36 +1,93 @@
 ---
 import { useT } from "@/lib/i18n";
 const t = useT(Astro);
+
+const images = ["/img/happy-laptop.jpg", "/img/product-shoes.jpg", "/img/payment.jpg"];
 ---
 
-<section class="landing" id="how-it-works" style="background:var(--bg-surface)">
-  <div class="container-lg">
-    <p class="section-eyebrow section-eyebrow--center">{t.landing.howItWorks.eyebrow}</p>
-    <h2 class="section-title section-title--center">{t.landing.howItWorks.title}</h2>
-    <p class="section-sub section-sub--center" style="margin-bottom:56px">{t.landing.howItWorks.sub}</p>
+<section class="landing how" id="how-it-works" style="background:var(--bg-subtle)">
+  <div class="container-lg how-grid">
+    <aside class="how-aside">
+      <p class="section-eyebrow">{t.landing.howItWorks.eyebrow}</p>
+      <h2 class="section-title">{t.landing.howItWorks.title}</h2>
+      <p class="section-sub">{t.landing.howItWorks.sub}</p>
+      <ol class="how-rail" aria-hidden="true">
+        {t.landing.howItWorks.steps.map((step, i) => (
+          <li class="how-rail-item" data-rail={i}>
+            <span class="how-rail-dot font-display">{step.step}</span>
+            <span class="how-rail-label">{step.title}</span>
+          </li>
+        ))}
+      </ol>
+    </aside>
 
-    <div class="steps-row" data-reveal-group>
-      {t.landing.howItWorks.steps.map((step) => (
-        <div class="step-card" data-reveal>
-          <span class="step-number">{step.step}</span>
-          <h3 class="step-title">{step.title}</h3>
-          <p class="step-desc">{step.desc}</p>
-        </div>
+    <div class="how-steps">
+      {t.landing.howItWorks.steps.map((step, i) => (
+        <article class="how-step" data-step={i} data-reveal>
+          <div class="how-step-shot">
+            <img src={images[i % images.length]} alt="" loading="lazy" width="620" height="420" />
+            <span class="how-step-num font-display">{step.step}</span>
+          </div>
+          <h3 class="how-step-title">{step.title}</h3>
+          <p class="how-step-desc">{step.desc}</p>
+        </article>
       ))}
     </div>
   </div>
 </section>
 
-<style>
-  .steps-row { display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-  .step-card { text-align: center; padding: var(--space-4); }
-  .step-number {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 52px; height: 52px; border-radius: 50%;
-    background: var(--landing-ink); color: var(--bg-page);
-    font-family: var(--font-display); font-weight: 500; font-size: 20px; margin-bottom: var(--space-4);
-    box-shadow: var(--shadow-md);
+<script>
+  const steps = Array.from(document.querySelectorAll<HTMLElement>("#how-it-works .how-step"));
+  const rail = Array.from(document.querySelectorAll<HTMLElement>("#how-it-works .how-rail-item"));
+  if (steps.length && rail.length && "IntersectionObserver" in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          const i = Number((e.target as HTMLElement).dataset.step);
+          rail.forEach((r, ri) => r.classList.toggle("is-active", ri === i));
+        }
+      },
+      { rootMargin: "-45% 0px -45% 0px" },
+    );
+    steps.forEach((s) => io.observe(s));
   }
-  .step-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
-  .step-desc { color: var(--text-muted); font-size: 14px; line-height: 1.6; max-width: 280px; margin-inline: auto; }
+</script>
+
+<style>
+  .how-grid { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: clamp(2rem, 5vw, 5rem); align-items: start; }
+  .how-aside { position: sticky; top: clamp(5rem, 12vh, 8rem); }
+  .how-aside .section-sub { margin-bottom: 2rem; }
+
+  .how-rail { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+  .how-rail-item { display: flex; align-items: center; gap: 0.85rem; padding: 0.6rem 0; opacity: 0.45; transition: opacity var(--dur-base) var(--ease-out); }
+  .how-rail-item.is-active { opacity: 1; }
+  .how-rail-dot {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 2rem; height: 2rem; border-radius: 50%;
+    border: 1.5px solid var(--border-strong); color: var(--text-muted);
+    font-weight: 700; font-size: 0.95rem;
+    transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+  }
+  .how-rail-item.is-active .how-rail-dot { background: var(--accent-primary); border-color: var(--accent-primary); color: #fff; }
+  .how-rail-label { font-weight: 600; color: var(--text-primary); }
+
+  .how-steps { display: flex; flex-direction: column; gap: clamp(3rem, 7vw, 6rem); }
+  .how-step-shot { position: relative; border-radius: var(--radius-xl); overflow: hidden; margin-bottom: 1.25rem; box-shadow: 0 24px 50px -36px rgba(15, 26, 22, 0.4); }
+  .how-step-shot img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; display: block; }
+  .how-step-num {
+    position: absolute; top: 1rem; left: 1rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2.75rem; height: 2.75rem; border-radius: 50%;
+    background: rgba(255,255,255,0.92); color: var(--accent-primary);
+    font-weight: 800; font-size: 1.25rem; backdrop-filter: blur(4px);
+  }
+  .how-step-title { margin: 0 0 0.4rem; }
+  .how-step-desc { color: var(--text-muted); font-size: var(--fs-body-lg); line-height: 1.6; margin: 0; max-width: 46ch; }
+
+  @media (max-width: 820px) {
+    .how-grid { grid-template-columns: 1fr; }
+    .how-aside { position: static; }
+    .how-rail { display: none; }
+  }
 </style>

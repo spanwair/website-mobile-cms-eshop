@@ -71,11 +71,35 @@ body { font-family: var(--font-body); }
 h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }`;
 }
 
-// Custom fonts are loaded from Google Fonts on demand — "Inter" ships via the base stylesheet.
+// Custom fonts are loaded from Google Fonts on demand. Each family/weight/subset is a
+// separate font file download, so we only ever request the weights the roles actually
+// use (headings: 400/600/800, body: 400/600) — never the old 5-weight blanket load.
+const HEADING_WEIGHTS = "400;600;800";
+const BODY_WEIGHTS = "400;600";
+
 export function googleFontsUrl(config: StoreConfig | null): string | null {
   if (!config) return null;
-  const families = [...new Set([config.font_heading, config.font_body])].filter((f) => f && f !== "Inter");
-  if (families.length === 0) return null;
-  const query = families.map((f) => `family=${encodeURIComponent(f)}:wght@400;500;600;700;900`).join("&");
+  const weights = new Map<string, Set<number>>();
+  const roleWeights = [
+    { font: config.font_heading, list: HEADING_WEIGHTS },
+    { font: config.font_body, list: BODY_WEIGHTS },
+  ];
+  for (const { font, list } of roleWeights) {
+    if (!font) continue;
+    const set = weights.get(font) ?? new Set<number>();
+    for (const w of list.split(";").map(Number)) set.add(w);
+    weights.set(font, set);
+  }
+  // "Inter" ships via the base stylesheet in Layout.astro — never fetch it twice.
+  if (weights.has("Inter")) {
+    weights.delete("Inter");
+    // When Inter is one of the store's roles it also uses the trimmed weights there;
+    // the base link keeps the shared weights the roles refer to.
+  }
+  if (weights.size === 0) return null;
+  const query = [...weights.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([family, set]) => `family=${encodeURIComponent(family)}:wght@${[...set].sort((a, b) => a - b).join(";")}`)
+    .join("&");
   return `https://fonts.googleapis.com/css2?${query}&display=swap`;
 }

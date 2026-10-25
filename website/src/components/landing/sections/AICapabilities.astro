@@ -47,14 +47,12 @@ const t = useT(Astro);
             </div>
 
             <div class="ai-roadmap-row">
-              <div class="ai-roadmap-chip">
-                <span>Návrh ceny</span>
-                <span class="badge badge-pending">Plán vývoje</span>
-              </div>
-              <div class="ai-roadmap-chip">
-                <span>AI vyhledávání</span>
-                <span class="badge badge-pending">Plán vývoje</span>
-              </div>
+              {t.landing.aiCapabilities.roadmapChips.map((chip) => (
+                <div class="ai-roadmap-chip">
+                  <span>{chip}</span>
+                  <span class="badge badge-pending">{t.landing.aiCapabilities.roadmapBadge}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

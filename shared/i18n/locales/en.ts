@@ -1822,8 +1822,17 @@ export const en = {
       formPlaceholder: "you@example.com",
       formCta: "Start selling free",
       formNote: "No credit card. No fixed subscription. Cancel anytime — there's nothing to cancel.",
-      trustLine: "0 Kč to start · 10% only when you sell · drops to 5% above 29,900 Kč/month",
+      trustLine: "5% only when you sell · nothing upfront · live in minutes",
       floatLabel: "only on completed sales",
+    },
+    statBand: {
+      title: "No subscription. No signup fee.",
+      sub: "You pay only a share of what you actually sell — and the more you sell, the smaller that share gets.",
+      stats: [
+        { value: "0 Kč", label: "upfront and every month" },
+        { value: "10 → 5 %", label: "commission drops as you grow" },
+        { value: "minutes", label: "until your store is live" },
+      ],
     },
     foundingSellers: {
       eyebrow: "Founding sellers",
@@ -1845,6 +1854,20 @@ export const en = {
         },
       ],
       cta: "Claim your store name",
+    },
+    foundingPost: {
+      badge: "Founding sellers · 5 spots",
+      title: "We're looking for 5 founding merchants. Registered businesses only.",
+      body:
+        "We're launching, and we want five founding stores to shape the platform with us down to the last detail. One condition — you sell as a registered business (IČO). In return you get 5% commission instead of 10% for the entire founding period, priority support straight from the founders, and a direct say in what we build next.",
+      points: [
+        "5% commission instead of 10% for the whole founding period",
+        "Priority support straight from the founders",
+        "Live today — no agency, no developer",
+      ],
+      cta: "Apply with your store",
+      note: "Registered businesses (IČO) only.",
+      imageAlt: "Founding mamtodoma.cz merchants at work",
     },
     features: {
       eyebrow: "Everything included",
@@ -1902,6 +1925,8 @@ export const en = {
       title: "Built for AI-assisted selling",
       sub: "We're actively building AI tooling into the platform — here's what's already live and what's coming next.",
       roadmapNote: "Marked items are on the near-term roadmap, not yet live — we'd rather tell you than oversell.",
+      roadmapBadge: "On the roadmap",
+      roadmapChips: ["Price suggestions", "AI search"],
       items: [
         { title: "AI product descriptions", desc: "Turn a product name and a few bullet points into a polished listing." },
         { title: "Smart pricing suggestions", desc: "Roadmap — suggested pricing based on your category and margin target." },
@@ -1971,7 +1996,7 @@ export const en = {
       sub: "Create your store, add a product, and see your first order come in. If it doesn't sell, you've paid nothing.",
       primaryCta: "Create your free store",
       secondaryCta: "See pricing details",
-      badges: ["0 Kč to start", "10% only on sales", "Live in minutes"],
+      badges: ["5% only on sales", "Nothing upfront", "Live in minutes"],
     },
     documentation: {
       eyebrow: "Documentation",

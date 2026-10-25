@@ -1823,8 +1823,17 @@ export const cs: Translations = {
       formPlaceholder: "vas@email.cz",
       formCta: "Začít prodávat zdarma",
       formNote: "Bez platební karty. Bez pevného předplatného. Není co rušit.",
-      trustLine: "0 Kč na start · 10 % jen z prodeje · snížení na 5 % nad 29 900 Kč měsíčně",
+      trustLine: "5 % jen z prodeje · nic předem · spuštěno za pár minut",
       floatLabel: "jen z uskutečněného prodeje",
+    },
+    statBand: {
+      title: "Žádné předplatné. Žádný poplatek za založení.",
+      sub: "Platíte jen podíl z toho, co opravdu prodáte — a čím víc prodáte, tím je ten podíl menší.",
+      stats: [
+        { value: "0 Kč", label: "předem i každý měsíc" },
+        { value: "10 → 5 %", label: "provize klesá, jak rostete" },
+        { value: "pár minut", label: "než je e-shop online" },
+      ],
     },
     foundingSellers: {
       eyebrow: "Zakládající prodejci",
@@ -1846,6 +1855,20 @@ export const cs: Translations = {
         },
       ],
       cta: "Zarezervujte si název e-shopu",
+    },
+    foundingPost: {
+      badge: "Zakládající prodejci · 5 míst",
+      title: "Hledáme 5 obchodníků na začátek. Pouze s IČO.",
+      body:
+        "Spouštíme a chceme pět zakládajících e-shopů, se kterými platformu vyladíme do posledního detailu. Podmínka je jediná — prodáváte na IČO. Za to získáte provizi 5 % místo 10 % po celé zakládající období, přednostní podporu napřímo od zakladatelů a přímý vliv na to, co postavíme příště.",
+      points: [
+        "5 % provize místo 10 % po celé zakládající období",
+        "Přednostní podpora napřímo od zakladatelů",
+        "Spuštěno ještě dnes — bez agentury i programátora",
+      ],
+      cta: "Přihlásit svůj e-shop",
+      note: "Jen pro firmy s IČO.",
+      imageAlt: "Zakládající prodejci mamtodoma.cz při práci",
     },
     features: {
       eyebrow: "Vše v ceně",
@@ -1903,6 +1926,8 @@ export const cs: Translations = {
       title: "Postaveno pro prodej s pomocí AI",
       sub: "Aktivně zabudováváme AI nástroje do platformy — tady je, co už funguje, a co se chystá.",
       roadmapNote: "Označené položky jsou na blízkém plánu vývoje, zatím nejsou v provozu — raději vám to řekneme, než abychom slibovali víc, než umíme.",
+      roadmapBadge: "Plán vývoje",
+      roadmapChips: ["Návrh ceny", "AI vyhledávání"],
       items: [
         { title: "AI popisky produktů", desc: "Z názvu produktu a pár odrážek vznikne hotový, čtivý popisek." },
         { title: "Chytré návrhy cen", desc: "Plán vývoje — návrh ceny podle kategorie a cílové marže." },
@@ -1972,7 +1997,7 @@ export const cs: Translations = {
       sub: "Založte e-shop, přidejte produkt a sledujte první objednávku. Pokud se nic neprodá, nezaplatíte nic.",
       primaryCta: "Založit e-shop zdarma",
       secondaryCta: "Zobrazit ceník",
-      badges: ["0 Kč na start", "10 % jen z prodeje", "Spuštěno za pár minut"],
+      badges: ["5 % jen z prodeje", "Nic předem", "Spuštěno za pár minut"],
     },
     documentation: {
       eyebrow: "Dokumentace",
