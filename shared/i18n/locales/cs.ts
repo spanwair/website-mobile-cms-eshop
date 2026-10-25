@@ -1795,6 +1795,7 @@ export const cs: Translations = {
   },
   landing: {
     meta: {
+      lang: "cs",
       defaultTitle: "Mamtodoma — Spusťte si e-shop zdarma",
       defaultDescription:
         "Začněte prodávat online ještě dnes. Bez vstupních nákladů — bereme si 10 % jen z uskutečněného prodeje, se snížením na 5 %, jakmile překročíte 29 900 Kč měsíčně. Zbytek zůstává vám.",

@@ -6,7 +6,6 @@ import FoundingSellers from "../components/landing/sections/FoundingSellers.astr
 import LogoMarquee from "../components/landing/LogoMarquee.astro";
 import Features from "../components/landing/sections/Features.astro";
 import HowItWorks from "../components/landing/sections/HowItWorks.astro";
-import AICapabilities from "../components/landing/sections/AICapabilities.astro";
 import CommissionCalculator from "../components/landing/sections/CommissionCalculator.astro";
 import ExampleScenarios from "../components/landing/sections/ExampleScenarios.astro";
 import NoCompanySelling from "../components/landing/sections/NoCompanySelling.astro";
@@ -28,14 +27,13 @@ const supabase = createSupabase(Astro);
 const featuredStores = await listLandingFeaturedStores(supabase);
 ---
 
-<LandingLayout title={t.landing.meta.defaultTitle} description={t.landing.meta.defaultDescription}>
+<LandingLayout title={t.landing.meta.defaultTitle} description={t.landing.meta.defaultDescription} ambient>
   <Hero />
   <StatBand />
   <FoundingSellers />
   <LogoMarquee logos={LANDING_PROVIDER_LOGOS} label={t.landing.logoMarquee.label} />
   <Features />
   <HowItWorks />
-  <AICapabilities />
   <CommissionCalculator />
   <ExampleScenarios />
   <NoCompanySelling />

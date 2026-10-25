@@ -1794,6 +1794,7 @@ export const en = {
   },
   landing: {
     meta: {
+      lang: "en",
       defaultTitle: "Mamtodoma — Launch your online store for free",
       defaultDescription:
         "Start selling online today. No setup cost — we only take 10% when you make a sale, dropping to 5% once you scale past 29,900 Kč a month. You keep the rest.",

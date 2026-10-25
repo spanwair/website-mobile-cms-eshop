@@ -10,14 +10,18 @@ const t = useT(Astro);
 <LandingLayout title={`${t.landing.about.title} — Mamtodoma`} description={t.landing.about.sub}>
   <PageHero eyebrow={t.landing.about.eyebrow} title={t.landing.about.title} lead={t.landing.about.sub} image="/img/desk-work.jpg" imageAlt="" />
   <section class="landing" style="padding-top:0">
-    <div class="container-lg about-content">
-      {t.landing.about.paragraphs.map((p) => <p class="about-paragraph">{p}</p>)}
+    <div class="container-lg">
+      <div class="about-content">
+        {t.landing.about.paragraphs.map((p) => <p class="about-paragraph">{p}</p>)}
+      </div>
     </div>
   </section>
   <FinalCta />
 </LandingLayout>
 
 <style>
-  .about-content { max-width: 680px; margin-inline: auto; }
+  /* Left-align the prose to the hero's text column above it; auto-centering here clashed
+     with the left-aligned split hero and left the left half of the page empty. */
+  .about-content { max-width: 62ch; margin-inline: 0; }
   .about-paragraph { color: var(--text-muted); line-height: 1.7; margin-bottom: 20px; font-size: 16px; }
 </style>
