@@ -27,3 +27,11 @@ EMAIL_FROM_NAME = "noreply@smalljobs.cz"
 # Non-PUBLIC name on purpose: PUBLIC_* is build-inlined by Vite and would ignore this runtime value.
 # Origin only — no trailing path, no /auth/v1.
 SHOP_URL = "https://mamtodoma.cz"
+# PPL / Packeta pickup-point map widget keys. These are client-exposed (the storefront
+# renders them into the checkout DOM) so they are not secrets — but they live here as runtime
+# [vars], NOT as PUBLIC_* build vars. PUBLIC_* is inlined by Vite from the Cloudflare build
+# machine's env; a stale PPL key there got baked into the bundle and produced the customer-
+# facing "Mapa není nastavena správně" widget error. As runtime [vars] the deployed value is
+# version-controlled here and read via process.env at request time, so it can't drift.
+PPL_WIDGET_API_KEY = "ak_33acd3c466da46b2b8e7ae9c27408cb0"
+PACKETA_WIDGET_API_KEY = "a7e172478d56798f"

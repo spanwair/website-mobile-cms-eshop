@@ -1,9 +1,8 @@
 import { recomputeCheckoutSummary } from "./checkoutSummary";
 
 // Drives the provider radio -> delivery-type radio -> pickup-point widget cascade in
-// ShippingProviderSelector.astro. Mock mode (no real widget scripts) renders a plain
-// <select> per provider instead — this same script wires both paths so Playwright can
-// drive the mock path without depending on ppl.cz/packeta.com being reachable.
+// ShippingProviderSelector.astro. Each carrier opens its real map widget (PPL Widget 2.0 /
+// Packeta) whose selection fills the pickup_point_* hidden inputs.
 export function initShippingSelector() {
   const rootEl = document.getElementById("shipping-selector");
   if (!rootEl) return;
@@ -52,14 +51,6 @@ export function initShippingSelector() {
 
   providerRadios.forEach((r) => r.addEventListener("change", refresh));
   deliveryTypeRadios.forEach((r) => r.addEventListener("change", refresh));
-
-  root.querySelectorAll<HTMLSelectElement>("[data-mock-pickup-select]").forEach((select) => {
-    select.addEventListener("change", () => {
-      const opt = select.selectedOptions[0];
-      if (!opt || !opt.value) return setPickupPoint("", "", "");
-      setPickupPoint(opt.value, opt.dataset.pointName ?? "", opt.dataset.pointAddress ?? "");
-    });
-  });
 
   root.querySelectorAll<HTMLButtonElement>("[data-open-ppl-widget]").forEach((btn) => {
     btn.addEventListener("click", () => openPplWidget(btn.dataset.apiKey ?? "", setPickupPoint));

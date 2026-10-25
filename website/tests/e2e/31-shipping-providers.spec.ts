@@ -1,10 +1,12 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { BASE, PARTY_ID, WAREHOUSE_ID, USER, USER_ID, OWNER, loginAs, screenshot, psql, replica, defaultRole } from "./helpers";
 
-// Real PPL/Packeta credentials aren't self-serve (see .env.production.example) and neither
-// carrier has a usable sandbox, so this drives the actual checkout/admin/label UI end to end
-// against the built-in mock provider (PUBLIC_SHIPPING_MOCK_MODE default) — real Stripe test
-// payment, real order/shipment DB rows, real label upload to the private storage bucket.
+// Real PPL/Packeta booking credentials aren't self-serve (see .env.production.example) and
+// neither carrier has a usable sandbox, so this drives the actual checkout/admin/label UI end
+// to end against the mock booking provider (shipping/index.ts falls back to it when no CPL
+// creds are set) — real Stripe test payment, real order/shipment DB rows, real label upload.
+// The pickup-point map widget is the real PPL/Packeta widget; its external, origin-locked map
+// can't run headless, so 31-04 fills the pickup_point_* hidden inputs the widget would emit.
 // Cart is seeded directly via SQL (existing app convention for test preconditions) so this
 // spec exercises checkout-onward, not the unrelated add-to-cart form.
 //
@@ -66,7 +68,7 @@ async function payWithTestCard(page: Page) {
   await page.waitForURL(/order-confirmation/, { timeout: 20000 });
 }
 
-test.describe("31 — Shipping providers (PPL + Packeta, mock mode)", () => {
+test.describe("31 — Shipping providers (PPL + Packeta)", () => {
   test.describe.configure({ mode: "serial" });
 
   let ownerPage: Page;
@@ -133,12 +135,21 @@ test.describe("31 — Shipping providers (PPL + Packeta, mock mode)", () => {
     await expect(buyerPage.locator(".provider-option").filter({ hasText: "Zásilkovna" })).toContainText("79");
   });
 
-  test("31-04 PPL pickup-point checkout: select provider, mock pickup point, pay, land on order confirmation", async () => {
+  test("31-04 PPL pickup-point checkout: select provider, pick a point, pay, land on order confirmation", async () => {
     await buyerPage.locator('input[name="shipping_provider"][value="ppl"]').check();
     await buyerPage.locator('input[name="delivery_type"][value="pickup"]').check();
     await expect(buyerPage.locator('[data-pickup-block="ppl"]')).toBeVisible();
-    await buyerPage.locator('[data-pickup-block="ppl"] select').selectOption({ index: 1 });
-    await expect(buyerPage.locator("[data-pickup-summary]")).toBeVisible();
+    // The real PPL map widget (external, origin-locked) can't run headless, so simulate the
+    // point it would emit by filling the pickup_point_* hidden inputs the widget populates.
+    await buyerPage.evaluate(() => {
+      const set = (name: string, value: string) => {
+        (document.querySelector(`input[name="${name}"]`) as HTMLInputElement).value = value;
+      };
+      set("pickup_point_id", "KM0001");
+      set("pickup_point_name", "PPL ParcelShop Praha");
+      set("pickup_point_address", "Testovací 1, 110 00 Praha");
+    });
+    await expect(buyerPage.locator('input[name="pickup_point_id"]')).toHaveValue("KM0001");
 
     // Client-side estimate updates live before submit — total = product price + PPL rate.
     await expect(buyerPage.locator("#summary-grand-total")).toContainText((PROD_PICKUP.price + 99).toFixed(2).replace(".", ","));

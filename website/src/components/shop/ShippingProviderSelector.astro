@@ -14,22 +14,14 @@ const { configs, subtotal, currency } = Astro.props;
 const t = useT(Astro);
 const lang = getLang(Astro);
 
-const mockMode = (import.meta.env.PUBLIC_SHIPPING_MOCK_MODE ?? "true") !== "false";
-const packetaWidgetKey = import.meta.env.PUBLIC_PACKETA_WIDGET_API_KEY ?? "";
-const pplWidgetKey = import.meta.env.PUBLIC_PPL_WIDGET_API_KEY ?? "";
-
-const MOCK_POINTS: Record<string, { id: string; name: string; address: string }[]> = {
-  ppl: [
-    { id: "MOCK-PPL-101", name: "PPL ParcelShop Praha - Václavské náměstí", address: "Václavské náměstí 1, 110 00 Praha 1" },
-    { id: "MOCK-PPL-202", name: "PPL ParcelShop Brno - Náměstí Svobody", address: "Náměstí Svobody 8, 602 00 Brno" },
-    { id: "MOCK-PPL-303", name: "PPL ParcelBox Ostrava - Nádraží", address: "Nádražní 685, 702 00 Ostrava" },
-  ],
-  packeta: [
-    { id: "MOCK-ZBOX-401", name: "Zásilkovna Praha - Anděl", address: "Radlická 3185, 150 00 Praha 5" },
-    { id: "MOCK-ZBOX-502", name: "Zásilkovna Brno - Vaňkovka", address: "Ve Vaňkovce 1, 602 00 Brno" },
-    { id: "MOCK-ZBOX-603", name: "Zásilkovna Olomouc - Šantovka", address: "Kavaleristů 936, 779 00 Olomouc" },
-  ],
-};
+// Pickup-point map widget keys. process.env first = the production source: wrangler.toml
+// [vars], version-controlled and read at request time. (PUBLIC_* cannot be used in prod —
+// Vite inlines it at build time from the Cloudflare build machine's env, where a stale PPL key
+// got baked into the bundle and produced the customer-facing "Mapa není nastavena správně"
+// error.) import.meta.env.PUBLIC_* is the local-dev source: astro dev exposes it from
+// .env.development and does not populate process.env. Both resolve to the same real key.
+const packetaWidgetKey = process.env.PACKETA_WIDGET_API_KEY ?? import.meta.env.PUBLIC_PACKETA_WIDGET_API_KEY ?? "";
+const pplWidgetKey = process.env.PPL_WIDGET_API_KEY ?? import.meta.env.PUBLIC_PPL_WIDGET_API_KEY ?? "";
 ---
 
 <div class="shipping-selector card" id="shipping-selector" data-subtotal={subtotal} data-currency={currency} data-lang={lang}>
@@ -64,31 +56,15 @@ const MOCK_POINTS: Record<string, { id: string; name: string; address: string }[
     </label>
   </div>
 
-  {configs.map((cfg) => {
-    // A single global mock flag can't represent "real widget for carrier A, no key yet
-    // for carrier B" — each carrier's widget only renders for real once mock mode is off
-    // AND that specific carrier's key is configured; otherwise it falls back to the mock
-    // picker rather than showing a carrier's "invalid API key" widget error to customers.
-    const hasRealWidget = !mockMode && (cfg.code === "ppl" ? Boolean(pplWidgetKey) : Boolean(packetaWidgetKey));
-    return (
-      <div class="pickup-block" data-pickup-block={cfg.code} style="display:none">
-        {hasRealWidget ? (
-          cfg.code === "ppl" ? (
-            <button type="button" class="btn btn-secondary" data-open-ppl-widget data-api-key={pplWidgetKey}>{t.shop.choosePickupPoint}</button>
-          ) : (
-            <button type="button" class="btn btn-secondary" data-open-packeta-widget data-api-key={packetaWidgetKey}>{t.shop.choosePickupPoint}</button>
-          )
-        ) : (
-          <select data-mock-pickup-select class="form-input">
-            <option value="">{t.shop.choosePickupPoint}</option>
-            {(MOCK_POINTS[cfg.code] ?? []).map((p) => (
-              <option value={p.id} data-point-name={p.name} data-point-address={p.address}>{p.name}</option>
-            ))}
-          </select>
-        )}
-      </div>
-    );
-  })}
+  {configs.map((cfg) => (
+    <div class="pickup-block" data-pickup-block={cfg.code} style="display:none">
+      {cfg.code === "ppl" ? (
+        <button type="button" class="btn btn-secondary" data-open-ppl-widget data-api-key={pplWidgetKey}>{t.shop.choosePickupPoint}</button>
+      ) : (
+        <button type="button" class="btn btn-secondary" data-open-packeta-widget data-api-key={packetaWidgetKey}>{t.shop.choosePickupPoint}</button>
+      )}
+    </div>
+  ))}
 
   <p class="pickup-summary" data-pickup-summary style="display:none">
     {t.shop.pickupPointChosen} <span data-pickup-summary-text></span>

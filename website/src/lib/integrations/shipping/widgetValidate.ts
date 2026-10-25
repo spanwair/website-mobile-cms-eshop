@@ -3,11 +3,10 @@
 // re-checked against the carrier before the id is trusted and stored on the order —
 // per each carrier's own widget docs.
 //
-// verifyPickupPoint() is the single entry point used by checkout. It only enforces a
-// check when a REAL widget produced the point (same condition the selector renders on:
-// mock mode off AND the carrier's widget key present). In mock mode, or when the check
-// API is not configured, the point is trusted — there is nothing authoritative to
-// verify against, which keeps behaviour identical to before a key is provisioned.
+// verifyPickupPoint() is the single entry point used by checkout. It enforces a check
+// whenever the carrier's widget key is configured (the same condition the selector renders
+// the real map on). When the key or the check API is not configured, the point is trusted —
+// there is nothing authoritative to verify against.
 
 import { getAccessToken, getConfig } from "./ppl";
 
@@ -17,8 +16,8 @@ export type PickupPointCheck = { ok: true } | { ok: false; reason: "invalid_pick
 // Packeta's widget-validate endpoint. Throws on transport/HTTP errors so the caller can
 // fail open; returns false only when the API authoritatively reports the point invalid.
 export async function validatePacketaPickupPoint(pointId: string): Promise<boolean> {
-  const apiKey = import.meta.env.PUBLIC_PACKETA_WIDGET_API_KEY;
-  if (!apiKey) throw new Error("PUBLIC_PACKETA_WIDGET_API_KEY not set");
+  const apiKey = widgetKey("packeta");
+  if (!apiKey) throw new Error("Packeta widget key not set");
 
   const res = await fetch("https://widget.packeta.com/v6/pps/api/widget/v1/validate", {
     method: "POST",
@@ -49,11 +48,16 @@ export async function validatePplPickupPoint(code: string, countryCode = "CZ"): 
   return Array.isArray(items) && items.length > 0;
 }
 
+// process.env = prod runtime (wrangler.toml [vars]); import.meta.env.PUBLIC_* = local dev
+// (.env.development). See ShippingProviderSelector.astro for why both are needed.
+function widgetKey(provider: ShippingProviderCode): string | undefined {
+  return provider === "ppl"
+    ? (process.env.PPL_WIDGET_API_KEY ?? import.meta.env.PUBLIC_PPL_WIDGET_API_KEY)
+    : (process.env.PACKETA_WIDGET_API_KEY ?? import.meta.env.PUBLIC_PACKETA_WIDGET_API_KEY);
+}
+
 function realWidgetActive(provider: ShippingProviderCode): boolean {
-  const mockMode = (import.meta.env.PUBLIC_SHIPPING_MOCK_MODE ?? "true") !== "false";
-  if (mockMode) return false;
-  const key = provider === "ppl" ? import.meta.env.PUBLIC_PPL_WIDGET_API_KEY : import.meta.env.PUBLIC_PACKETA_WIDGET_API_KEY;
-  return Boolean(key);
+  return Boolean(widgetKey(provider));
 }
 
 export async function verifyPickupPoint(
