@@ -24,7 +24,7 @@ const packetaWidgetKey = process.env.PACKETA_WIDGET_API_KEY ?? import.meta.env.P
 const pplWidgetKey = process.env.PPL_WIDGET_API_KEY ?? import.meta.env.PUBLIC_PPL_WIDGET_API_KEY ?? "";
 ---
 
-<div class="shipping-selector card" id="shipping-selector" data-subtotal={subtotal} data-currency={currency} data-lang={lang} data-free-label={t.shop.freeShipping} data-pickup-required-msg={t.shop.pickupPointRequired}>
+<div class="shipping-selector card" id="shipping-selector" data-pickup-required-msg={t.shop.pickupPointRequired}>
   <h2 class="section-title">{t.shop.shippingMethod}</h2>
 
   <div class="provider-list">
@@ -111,8 +111,6 @@ const pplWidgetKey = process.env.PPL_WIDGET_API_KEY ?? import.meta.env.PUBLIC_PP
     cursor: pointer;
     accent-color: var(--primary);
   }
-
-  .styled-radio--small { width: 16px; height: 16px; margin-right: 6px; }
 
   .provider-logo {
     flex-shrink: 0;
