@@ -13,12 +13,13 @@ import type {
   CreateReturnShipmentInput,
   CreateReturnShipmentResult,
 } from "./types";
+import { shipEnv } from "./env";
 
 const REST_URL = "https://www.zasilkovna.cz/api/rest";
 
 function getConfig() {
-  const apiPassword = import.meta.env.PACKETA_API_PASSWORD;
-  const senderLabel = import.meta.env.PACKETA_SENDER_LABEL ?? "";
+  const apiPassword = shipEnv("PACKETA_API_PASSWORD");
+  const senderLabel = shipEnv("PACKETA_SENDER_LABEL") ?? "";
   if (!apiPassword) throw new Error("PACKETA_API_PASSWORD not set — add it to .env.production");
   return { apiPassword, senderLabel };
 }

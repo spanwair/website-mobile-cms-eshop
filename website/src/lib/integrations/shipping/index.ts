@@ -3,6 +3,7 @@ import type { ShippingProvider } from "./types";
 import { createPplProvider } from "./ppl";
 import { createPacketaProvider } from "./packeta";
 import { createMockProvider } from "./mock";
+import { shipEnv } from "./env";
 
 // Real credentials aren't self-serve for either carrier (see .env.production.example),
 // so this factory falls back to the mock provider whenever the required secret is
@@ -16,11 +17,11 @@ import { createMockProvider } from "./mock";
 // createShipment/getLabel/cancel/return hit the live carrier — set that in prod only.
 export function getShippingProvider(code: ShippingProviderCode): ShippingProvider {
   if (code === "ppl") {
-    const hasCreds = Boolean(import.meta.env.PPL_CLIENT_ID && import.meta.env.PPL_CLIENT_SECRET);
-    const liveBooking = import.meta.env.PPL_LIVE_BOOKING === "true";
+    const hasCreds = Boolean(shipEnv("PPL_CLIENT_ID") && shipEnv("PPL_CLIENT_SECRET"));
+    const liveBooking = shipEnv("PPL_LIVE_BOOKING") === "true";
     return hasCreds && liveBooking ? createPplProvider() : createMockProvider("ppl");
   }
-  return import.meta.env.PACKETA_API_PASSWORD ? createPacketaProvider() : createMockProvider("packeta");
+  return shipEnv("PACKETA_API_PASSWORD") ? createPacketaProvider() : createMockProvider("packeta");
 }
 
 export type {

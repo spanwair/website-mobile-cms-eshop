@@ -7,6 +7,7 @@
 import CmsLayout from "@/components/cms/CmsLayout.astro";
 import { createSupabase } from "@/lib/supabase";
 import { requireAdminCtx } from "@/lib/admin";
+import { shipEnv } from "@/lib/integrations/shipping/env";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -45,9 +46,10 @@ const rows = keys.map((k) => ({
   key: k,
   importMeta: describe(importMeta[k], SHOW_VALUE.has(k)),
   runtime: describe(runtimeEnv[k], SHOW_VALUE.has(k)),
+  ship: describe(shipEnv(k), SHOW_VALUE.has(k)),
 }));
 
-// Replicate the gate from website/src/lib/integrations/shipping/index.ts, for both sources.
+// Replicate the gate from website/src/lib/integrations/shipping/index.ts, for each source.
 const im_hasCreds = Boolean(importMeta.PPL_CLIENT_ID && importMeta.PPL_CLIENT_SECRET);
 const im_live = importMeta.PPL_LIVE_BOOKING === "true";
 const im_decision = im_hasCreds && im_live ? "REAL (createPplProvider)" : "MOCK (createMockProvider)";
@@ -55,6 +57,11 @@ const im_decision = im_hasCreds && im_live ? "REAL (createPplProvider)" : "MOCK 
 const rt_hasCreds = Boolean(runtimeEnv.PPL_CLIENT_ID && runtimeEnv.PPL_CLIENT_SECRET);
 const rt_live = runtimeEnv.PPL_LIVE_BOOKING === "true";
 const rt_decision = rt_hasCreds && rt_live ? "REAL (createPplProvider)" : "MOCK (createMockProvider)";
+
+// shipEnv() is what the fixed code now uses (process.env ?? import.meta.env).
+const se_hasCreds = Boolean(shipEnv("PPL_CLIENT_ID") && shipEnv("PPL_CLIENT_SECRET"));
+const se_live = shipEnv("PPL_LIVE_BOOKING") === "true";
+const se_decision = se_hasCreds && se_live ? "REAL (createPplProvider)" : "MOCK (createMockProvider)";
 
 const runtimeAvailable = Object.keys(runtimeEnv).length > 0;
 ---
@@ -67,7 +74,8 @@ const runtimeAvailable = Object.keys(runtimeEnv).length > 0;
     <table>
       <thead><tr><th>Source</th><th>hasCreds</th><th>liveBooking</th><th>Provider chosen</th></tr></thead>
       <tbody>
-        <tr><td><code>import.meta.env</code> (used by code)</td><td>{String(im_hasCreds)}</td><td>{String(im_live)}</td><td><strong>{im_decision}</strong></td></tr>
+        <tr><td><code>shipEnv()</code> (now used by code)</td><td>{String(se_hasCreds)}</td><td>{String(se_live)}</td><td><strong>{se_decision}</strong></td></tr>
+        <tr><td><code>import.meta.env</code> (old)</td><td>{String(im_hasCreds)}</td><td>{String(im_live)}</td><td>{im_decision}</td></tr>
         <tr><td><code>Astro.locals.runtime.env</code></td><td>{String(rt_hasCreds)}</td><td>{String(rt_live)}</td><td>{rt_decision}</td></tr>
       </tbody>
     </table>
@@ -77,10 +85,10 @@ const runtimeAvailable = Object.keys(runtimeEnv).length > 0;
   <div class="card">
     <h2>Per-key presence</h2>
     <table>
-      <thead><tr><th>Key</th><th>import.meta.env</th><th>runtime.env</th></tr></thead>
+      <thead><tr><th>Key</th><th>shipEnv()</th><th>import.meta.env</th><th>runtime.env</th></tr></thead>
       <tbody>
         {rows.map((r) => (
-          <tr><td><code>{r.key}</code></td><td>{r.importMeta}</td><td>{r.runtime}</td></tr>
+          <tr><td><code>{r.key}</code></td><td>{r.ship}</td><td>{r.importMeta}</td><td>{r.runtime}</td></tr>
         ))}
       </tbody>
     </table>

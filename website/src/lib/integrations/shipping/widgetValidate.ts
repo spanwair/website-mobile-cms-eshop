@@ -9,6 +9,7 @@
 // there is nothing authoritative to verify against.
 
 import { getAccessToken, getConfig } from "./ppl";
+import { shipEnv } from "./env";
 
 export type ShippingProviderCode = "ppl" | "packeta";
 export type PickupPointCheck = { ok: true } | { ok: false; reason: "invalid_pickup_point" };
@@ -73,7 +74,7 @@ export async function verifyPickupPoint(
     }
     // PPL: the map widget key alone cannot validate a point — that needs the CPL API
     // credentials. Without them there is nothing to check against, so trust the point.
-    if (!import.meta.env.PPL_CLIENT_ID || !import.meta.env.PPL_CLIENT_SECRET) return { ok: true };
+    if (!shipEnv("PPL_CLIENT_ID") || !shipEnv("PPL_CLIENT_SECRET")) return { ok: true };
     return (await validatePplPickupPoint(code, countryCode)) ? { ok: true } : { ok: false, reason: "invalid_pickup_point" };
   } catch {
     // Transport/HTTP failure — do not block a legitimately-selected point on a transient

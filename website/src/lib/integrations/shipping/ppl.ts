@@ -18,14 +18,15 @@ import type {
   CreateReturnShipmentResult,
 } from "./types";
 import { toPplAddress, toCodVarSym } from "./pplHelpers";
+import { shipEnv } from "./env";
 
 // Exported so the pickup-point validator (widgetValidate.ts) reuses the exact same
 // credential resolution and OAuth flow instead of duplicating it.
 export function getConfig() {
-  const clientId = import.meta.env.PPL_CLIENT_ID;
-  const clientSecret = import.meta.env.PPL_CLIENT_SECRET;
+  const clientId = shipEnv("PPL_CLIENT_ID");
+  const clientSecret = shipEnv("PPL_CLIENT_SECRET");
   // Confirmed sandbox base via live network trace of sandbox.ppl.cz: api-sandbox.dhl.com/ecs/ppl/sandbox.
-  const baseUrl = import.meta.env.PPL_API_BASE_URL ?? "https://api.dhl.com/ecs/ppl/myapi2";
+  const baseUrl = shipEnv("PPL_API_BASE_URL") ?? "https://api.dhl.com/ecs/ppl/myapi2";
   if (!clientId || !clientSecret) throw new Error("PPL_CLIENT_ID / PPL_CLIENT_SECRET not set — add them to .env.production");
   return { clientId, clientSecret, baseUrl };
 }
