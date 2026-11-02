@@ -35,3 +35,12 @@ SHOP_URL = "https://mamtodoma.cz"
 # version-controlled here and read via process.env at request time, so it can't drift.
 PPL_WIDGET_API_KEY = "ak_33acd3c466da46b2b8e7ae9c27408cb0"
 PACKETA_WIDGET_API_KEY = "a7e172478d56798f"
+# PPL/Packeta live-booking config. These are non-secret (the CLIENT_ID is an account
+# identifier, not a credential — the credential is PPL_CLIENT_SECRET, kept as a dashboard
+# Secret) so they MUST live here: a plain var added only in the dashboard gets wiped on the
+# next `wrangler deploy`, which silently reverted PPL/Packeta booking to the mock provider.
+# PPL_CLIENT_SECRET and PACKETA_API_PASSWORD stay as encrypted Secrets in the dashboard.
+PPL_CLIENT_ID = "SJ4802046"
+PPL_API_BASE_URL = "https://api.dhl.com/ecs/ppl/myapi2"
+PPL_LIVE_BOOKING = "true"
+PACKETA_SENDER_LABEL = "Smalljobs s.r.o."
