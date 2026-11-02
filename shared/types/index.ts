@@ -450,6 +450,7 @@ export interface ShippingProviderConfig {
   display_name: string;
   enabled: boolean;
   base_price: number;
+  pickup_price: number;
   free_above_amount: number | null;
   sender_name: string;
   sender_street: string;

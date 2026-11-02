@@ -1,4 +1,6 @@
 import { recomputeCheckoutSummary } from "./checkoutSummary";
+import { formatPrice } from "@shared/utils/format";
+import type { AppLanguage } from "@shared/i18n/getT";
 
 // Drives the provider radio -> delivery-type radio -> pickup-point widget cascade in
 // ShippingProviderSelector.astro. Each carrier opens its real map widget (PPL Widget 2.0 /
@@ -15,12 +17,19 @@ export function initShippingSelector() {
   const pickupIdInput = root.querySelector<HTMLInputElement>('input[name="pickup_point_id"]')!;
   const pickupNameInput = root.querySelector<HTMLInputElement>('input[name="pickup_point_name"]')!;
   const pickupAddressInput = root.querySelector<HTMLInputElement>('input[name="pickup_point_address"]')!;
+  const errorEl = root.querySelector<HTMLElement>("[data-pickup-error]");
+  const requiredMsg = root.dataset.pickupRequiredMsg ?? "";
 
   function selectedProvider(): string | null {
     return Array.from(providerRadios).find((r) => r.checked)?.value ?? null;
   }
   function selectedDeliveryType(): string {
     return Array.from(deliveryTypeRadios).find((r) => r.checked)?.value ?? "home";
+  }
+
+  function clearError() {
+    if (errorEl) errorEl.style.display = "none";
+    root.querySelectorAll<HTMLElement>("[data-pickup-block] .btn").forEach((b) => b.classList.remove("pickup-btn-invalid"));
   }
 
   function setPickupPoint(id: string, name: string, address: string) {
@@ -33,24 +42,61 @@ export function initShippingSelector() {
     root.querySelectorAll<HTMLElement>("[data-pickup-summary-text]").forEach((el) => {
       el.textContent = id ? `${name} — ${address}` : "";
     });
+    if (id) clearError();
+  }
+
+  const freeLabel = root.dataset.freeLabel ?? "";
+  const lang = (root.dataset.lang as AppLanguage) || "cs";
+  const currency = root.dataset.currency || undefined;
+
+  // Each carrier carries both an address (home) and a pickup price. When the delivery type
+  // toggles, repoint every radio's data-cost (what recomputeCheckoutSummary reads) and the
+  // visible per-carrier price to the matching one.
+  function applyDeliveryTypePricing(deliveryType: string) {
+    providerRadios.forEach((r) => {
+      const cost = deliveryType === "pickup" ? Number(r.dataset.costPickup ?? 0) : Number(r.dataset.costHome ?? 0);
+      r.dataset.cost = String(cost);
+      const priceEl = r.closest(".provider-option")?.querySelector<HTMLElement>("[data-provider-price]");
+      if (priceEl) priceEl.textContent = cost === 0 ? freeLabel : formatPrice(cost, lang, currency);
+    });
   }
 
   function refresh() {
     const provider = selectedProvider();
     deliveryTypeBlock!.style.display = provider ? "" : "none";
     const deliveryType = selectedDeliveryType();
+    applyDeliveryTypePricing(deliveryType);
     const showPickup = Boolean(provider) && deliveryType === "pickup";
     pickupBlocks.forEach((block) => {
       const match = block.dataset.pickupBlock === provider;
       block.style.display = showPickup && match ? "" : "none";
     });
     if (deliveryType === "home") setPickupPoint("", "", "");
+    if (!showPickup) clearError();
 
     recomputeCheckoutSummary();
   }
 
   providerRadios.forEach((r) => r.addEventListener("change", refresh));
   deliveryTypeRadios.forEach((r) => r.addEventListener("change", refresh));
+
+  // Block checkout submission while "pickup point" is chosen but no actual point is
+  // selected — the server rejects this too, but only after a full round-trip that wipes
+  // the address form. Guarding client-side keeps everything the customer already typed.
+  const form = document.getElementById("checkout-form") as HTMLFormElement | null;
+  form?.addEventListener("submit", (e) => {
+    if (selectedDeliveryType() === "pickup" && !pickupIdInput.value) {
+      e.preventDefault();
+      if (errorEl) {
+        errorEl.textContent = requiredMsg;
+        errorEl.style.display = "";
+      }
+      root
+        .querySelectorAll<HTMLElement>(`[data-pickup-block="${selectedProvider()}"] .btn`)
+        .forEach((b) => b.classList.add("pickup-btn-invalid"));
+      errorEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
 
   root.querySelectorAll<HTMLButtonElement>("[data-open-ppl-widget]").forEach((btn) => {
     btn.addEventListener("click", () => openPplWidget(btn.dataset.apiKey ?? "", setPickupPoint));

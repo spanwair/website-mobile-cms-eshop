@@ -28,6 +28,7 @@ if (Astro.request.method === "POST") {
   const result = await updateShippingConfig(supabase, code, {
     enabled: form.get("enabled") === "on",
     base_price: Number(form.get("base_price") ?? 0),
+    pickup_price: Number(form.get("pickup_price") ?? 0),
     free_above_amount: freeAbove === "" ? null : Number(freeAbove),
     sender_name: form.get("sender_name") as string,
     sender_street: form.get("sender_street") as string,
@@ -65,10 +66,14 @@ const mockActive = (code: "ppl" | "packeta") =>
           {t.admin.settings.shippingEnableProvider}
         </label>
 
-        <div class="form-row">
+        <div class="form-row form-row--prices">
           <div class="form-group">
             <label class="form-label">{t.admin.settings.shippingBasePrice}</label>
             <input class="form-input" type="number" step="0.01" min="0" name="base_price" value={cfg.base_price} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{t.admin.settings.shippingPickupPrice}</label>
+            <input class="form-input" type="number" step="0.01" min="0" name="pickup_price" value={cfg.pickup_price} />
           </div>
           <div class="form-group">
             <label class="form-label">{t.admin.settings.shippingFreeAbove}</label>
@@ -127,5 +132,6 @@ const mockActive = (code: "ppl" | "packeta") =>
   .mock-notice { font-size:12px; color:var(--text-muted); background:var(--bg-subtle); border-radius:6px; padding:8px 10px; margin:0; }
   .checkbox-row { display:flex; align-items:center; gap:8px; font-size:14px; }
   .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  @media(max-width:900px) { .provider-cards { grid-template-columns:1fr; } .form-row { grid-template-columns:1fr; } }
+  .form-row--prices { grid-template-columns:1fr 1fr 1fr; }
+  @media(max-width:900px) { .provider-cards { grid-template-columns:1fr; } .form-row, .form-row--prices { grid-template-columns:1fr; } }
 </style>

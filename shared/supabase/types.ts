@@ -2861,6 +2861,7 @@ export type Database = {
           enabled: boolean
           free_above_amount: number | null
           id: string
+          pickup_price: number
           sender_city: string
           sender_country_code: string
           sender_email: string | null
@@ -2878,6 +2879,7 @@ export type Database = {
           enabled?: boolean
           free_above_amount?: number | null
           id?: string
+          pickup_price?: number
           sender_city?: string
           sender_country_code?: string
           sender_email?: string | null
@@ -2895,6 +2897,7 @@ export type Database = {
           enabled?: boolean
           free_above_amount?: number | null
           id?: string
+          pickup_price?: number
           sender_city?: string
           sender_country_code?: string
           sender_email?: string | null

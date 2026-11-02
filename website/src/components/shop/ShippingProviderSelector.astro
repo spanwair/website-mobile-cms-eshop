@@ -24,22 +24,23 @@ const packetaWidgetKey = process.env.PACKETA_WIDGET_API_KEY ?? import.meta.env.P
 const pplWidgetKey = process.env.PPL_WIDGET_API_KEY ?? import.meta.env.PUBLIC_PPL_WIDGET_API_KEY ?? "";
 ---
 
-<div class="shipping-selector card" id="shipping-selector" data-subtotal={subtotal} data-currency={currency} data-lang={lang}>
+<div class="shipping-selector card" id="shipping-selector" data-subtotal={subtotal} data-currency={currency} data-lang={lang} data-free-label={t.shop.freeShipping} data-pickup-required-msg={t.shop.pickupPointRequired}>
   <h2 class="section-title">{t.shop.shippingMethod}</h2>
 
   <div class="provider-list">
     {configs.map((cfg, i) => {
-      const cost = computeShippingCost(cfg, subtotal);
+      const homeCost = computeShippingCost(cfg, subtotal, "home");
+      const pickupCost = computeShippingCost(cfg, subtotal, "pickup");
       const logo = getProviderLogoSrc(cfg.code);
       return (
         <label class="provider-option">
-          <input type="radio" name="shipping_provider" value={cfg.code} data-cost={cost} data-label={cfg.display_name} form="checkout-form" checked={i === 0} class="styled-radio" required />
+          <input type="radio" name="shipping_provider" value={cfg.code} data-cost={homeCost} data-cost-home={homeCost} data-cost-pickup={pickupCost} data-label={cfg.display_name} form="checkout-form" checked={i === 0} class="styled-radio" required />
           {logo ? (
             <img src={logo} alt={cfg.display_name} title={cfg.display_name} class="provider-logo" />
           ) : (
             <span class="provider-name">{cfg.display_name}</span>
           )}
-          <span class="provider-price">{cost === 0 ? t.shop.freeShipping : formatPrice(cost, lang, currency)}</span>
+          <span class="provider-price" data-provider-price>{homeCost === 0 ? t.shop.freeShipping : formatPrice(homeCost, lang, currency)}</span>
         </label>
       );
     })}
@@ -69,6 +70,8 @@ const pplWidgetKey = process.env.PPL_WIDGET_API_KEY ?? import.meta.env.PUBLIC_PP
   <p class="pickup-summary" data-pickup-summary style="display:none">
     {t.shop.pickupPointChosen} <span data-pickup-summary-text></span>
   </p>
+
+  <p class="pickup-error" data-pickup-error role="alert" style="display:none"></p>
 
   <input type="hidden" name="pickup_point_id" form="checkout-form" />
   <input type="hidden" name="pickup_point_name" form="checkout-form" />
@@ -144,4 +147,6 @@ const pplWidgetKey = process.env.PPL_WIDGET_API_KEY ?? import.meta.env.PUBLIC_PP
 
   .pickup-block { margin-top: 4px; }
   .pickup-summary { font-size:13px; color:var(--text-muted); margin:0; }
+  .pickup-error { font-size:13px; font-weight:600; color:var(--danger, #dc2626); margin:0; }
+  .shipping-selector :global(.btn.pickup-btn-invalid) { border-color: var(--danger, #dc2626); }
 </style>

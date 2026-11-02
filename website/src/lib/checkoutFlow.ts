@@ -29,9 +29,22 @@ export async function startOrderCheckout(opts: {
   successUrl: string;
   cancelUrl: string;
   currency?: string;
+  shippingCost?: number;
+  shippingLabel?: string;
 }): Promise<{ url: string | null; error: string | null }> {
+  const lineItems = buildStripeLineItems(opts.items);
+  // Shipping is a real charge on the order (orders.total_amount = subtotal + shipping
+  // + paymentFee), so it must reach Stripe as its own line item — otherwise the card
+  // charge collects goods only and the shipping revenue is silently lost.
+  if (opts.shippingCost && opts.shippingCost > 0) {
+    lineItems.push({
+      name: opts.shippingLabel ?? "Shipping",
+      amount: Number(opts.shippingCost),
+      quantity: 1,
+    });
+  }
   return createCheckoutSession({
-    lineItems: buildStripeLineItems(opts.items),
+    lineItems,
     orderId: opts.orderId,
     currency: opts.currency,
     successUrl: opts.successUrl,

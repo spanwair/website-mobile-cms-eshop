@@ -81,7 +81,7 @@ if (Astro.request.method === "POST") {
       const check = await verifyPickupPoint(shippingProviderCode as "ppl" | "packeta", pickupPointId, countryCode);
       if (!check.ok) throw new Error(t.shop.pickupPointInvalid);
     }
-    const shippingCost = computeShippingCost(shippingConfig, subtotal);
+    const shippingCost = computeShippingCost(shippingConfig, subtotal, deliveryType === "pickup" ? "pickup" : "home");
     const paymentFee = paymentMethod === PAYMENT_METHOD.COD ? COD_FEE_CZK : 0;
     let { data: customer } = await adminClient
       .from("customers")
