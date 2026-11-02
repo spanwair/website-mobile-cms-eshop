@@ -28,6 +28,10 @@ export async function createCheckoutSession(opts: {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
+      // Stock is reserved at order creation; expire abandoned sessions promptly (30 min is
+      // Stripe's minimum) so checkout.session.expired can release it instead of holding
+      // inventory for Stripe's 24h default.
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
       line_items: opts.lineItems.map(i => ({
         price_data: {
           currency: opts.currency ?? "czk",
@@ -85,6 +89,14 @@ export async function handleWebhookEvent(
       const session = event.data.object as Stripe.Checkout.Session;
       const orderId = session.metadata?.order_id;
       if (orderId) await updateOrderPayment(orderId, "failed");
+      break;
+    }
+    case "checkout.session.expired": {
+      // Customer reached Stripe but never paid and the session lapsed — cancel the order so
+      // the stock reserved at checkout is returned (return_stock_on_order_cancel).
+      const session = event.data.object as Stripe.Checkout.Session;
+      const orderId = session.metadata?.order_id;
+      if (orderId) await updateOrderPayment(orderId, "expired");
       break;
     }
     case "charge.refunded": {

@@ -72,6 +72,12 @@ if (Astro.request.method === "POST") {
   const email = (session?.user.email ?? (form.get("email") as string))?.trim();
   const paymentMethod = ((form.get("payment_method") as string) || PAYMENT_METHOD.STRIPE) as "stripe" | "cod";
 
+  // Stock is deducted the moment order_items are inserted (trg_deduct_stock_on_order_item).
+  // If anything after that throws — most importantly the Stripe session failing to start —
+  // we must cancel the order so return_stock_on_order_cancel gives the reserved units back,
+  // otherwise an abandoned/failed checkout silently consumes inventory.
+  let createdOrderId: string | null = null;
+
   try {
     if (!email) throw new Error(t.shop.emailLabel);
     const shippingConfig = shippingConfigs.find((c) => c.code === shippingProviderCode);
@@ -150,6 +156,7 @@ if (Astro.request.method === "POST") {
       currency: "CZK",
     });
     if (orderErr || !order) throw new Error(orderErr?.message ?? "Order creation failed");
+    createdOrderId = order.id;
 
     // Add items — triggers deduct_stock_on_order_item, which atomically guards against
     // overselling. On failure the order is cancelled (not left half-populated) and any
@@ -231,6 +238,16 @@ if (Astro.request.method === "POST") {
 
     return Astro.redirect(sessionUrl);
   } catch (e: any) {
+    // Release the stock reserved for this order (cancel triggers the restock). Scoped to
+    // unpaid so a late success can never be clobbered; the cancel trigger is idempotent.
+    // Never let a cleanup failure mask the original error or break the page render.
+    if (createdOrderId) {
+      try {
+        await adminClient.from("orders").update({ status: "cancelled" }).eq("id", createdOrderId).eq("payment_status", "unpaid");
+      } catch (cancelErr) {
+        console.error("Failed to cancel order after checkout error:", (cancelErr as Error).message);
+      }
+    }
     checkoutError = e?.message ?? "Checkout failed. Please try again.";
   }
 }

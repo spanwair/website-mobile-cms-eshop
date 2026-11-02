@@ -23,6 +23,13 @@ export const POST: APIRoute = async ({ request }) => {
   const adminClient = createAdminClient();
 
   await handleWebhookEvent(event, async (orderId, status) => {
+    if (status === "expired") {
+      // Session lapsed before payment — cancel the order (scoped to unpaid so a race with a
+      // late success can't clobber a paid order). The cancel trigger returns the stock.
+      await adminClient.from("orders").update({ status: "cancelled" }).eq("id", orderId).eq("payment_status", "unpaid");
+      return;
+    }
+
     await adminClient.from("orders").update({ payment_status: status }).eq("id", orderId);
 
     if (status === "refunded") {
