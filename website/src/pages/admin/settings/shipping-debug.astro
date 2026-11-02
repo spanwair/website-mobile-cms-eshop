@@ -1,0 +1,97 @@
+---
+// TEMPORARY owner-only diagnostic for the PPL/Packeta live-booking env wiring.
+// Shows presence (not values) of credentials, the exact value of the non-secret
+// PPL_LIVE_BOOKING flag, whether each key is visible via import.meta.env vs the
+// Cloudflare runtime binding, and the resulting getShippingProvider() decision.
+// Remove once the live-booking wiring is confirmed.
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import { createSupabase } from "@/lib/supabase";
+import { requireAdminCtx } from "@/lib/admin";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.isOwner) return Astro.redirect("/admin");
+
+const runtimeEnv: Record<string, unknown> = ((Astro.locals as any)?.runtime?.env as Record<string, unknown>) ?? {};
+
+// Static reads so Vite resolves each key (dynamic import.meta.env[k] is not inlined).
+const importMeta: Record<string, unknown> = {
+  PPL_CLIENT_ID: import.meta.env.PPL_CLIENT_ID,
+  PPL_CLIENT_SECRET: import.meta.env.PPL_CLIENT_SECRET,
+  PPL_LIVE_BOOKING: import.meta.env.PPL_LIVE_BOOKING,
+  PPL_API_BASE_URL: import.meta.env.PPL_API_BASE_URL,
+  PACKETA_API_PASSWORD: import.meta.env.PACKETA_API_PASSWORD,
+  PACKETA_SENDER_LABEL: import.meta.env.PACKETA_SENDER_LABEL,
+  STRIPE_SECRET_KEY: import.meta.env.STRIPE_SECRET_KEY,
+  SHOP_URL: import.meta.env.SHOP_URL,
+};
+
+const SHOW_VALUE = new Set(["PPL_LIVE_BOOKING", "PPL_API_BASE_URL", "PACKETA_SENDER_LABEL", "SHOP_URL"]);
+
+function describe(v: unknown, showValue: boolean): string {
+  if (v === undefined) return "undefined";
+  if (v === null) return "null";
+  const s = String(v);
+  if (showValue) return JSON.stringify(s);           // exact, incl. quotes/spaces — non-secret only
+  return s.length ? `present (len ${s.length})` : "empty string";
+}
+
+const keys = Object.keys(importMeta);
+const rows = keys.map((k) => ({
+  key: k,
+  importMeta: describe(importMeta[k], SHOW_VALUE.has(k)),
+  runtime: describe(runtimeEnv[k], SHOW_VALUE.has(k)),
+}));
+
+// Replicate the gate from website/src/lib/integrations/shipping/index.ts, for both sources.
+const im_hasCreds = Boolean(importMeta.PPL_CLIENT_ID && importMeta.PPL_CLIENT_SECRET);
+const im_live = importMeta.PPL_LIVE_BOOKING === "true";
+const im_decision = im_hasCreds && im_live ? "REAL (createPplProvider)" : "MOCK (createMockProvider)";
+
+const rt_hasCreds = Boolean(runtimeEnv.PPL_CLIENT_ID && runtimeEnv.PPL_CLIENT_SECRET);
+const rt_live = runtimeEnv.PPL_LIVE_BOOKING === "true";
+const rt_decision = rt_hasCreds && rt_live ? "REAL (createPplProvider)" : "MOCK (createMockProvider)";
+
+const runtimeAvailable = Object.keys(runtimeEnv).length > 0;
+---
+
+<CmsLayout title="Shipping env debug" userPermissions={ctx.permissions} currentPath="/admin/settings/shipping" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
+  <p class="note">Owner-only diagnostic. No secret values are printed — only presence/length, except the non-secret flag PPL_LIVE_BOOKING whose exact value is shown.</p>
+
+  <div class="card">
+    <h2>Booking gate (from index.ts): <code>hasCreds &amp;&amp; PPL_LIVE_BOOKING === "true"</code></h2>
+    <table>
+      <thead><tr><th>Source</th><th>hasCreds</th><th>liveBooking</th><th>Provider chosen</th></tr></thead>
+      <tbody>
+        <tr><td><code>import.meta.env</code> (used by code)</td><td>{String(im_hasCreds)}</td><td>{String(im_live)}</td><td><strong>{im_decision}</strong></td></tr>
+        <tr><td><code>Astro.locals.runtime.env</code></td><td>{String(rt_hasCreds)}</td><td>{String(rt_live)}</td><td>{rt_decision}</td></tr>
+      </tbody>
+    </table>
+    <p class="note">Runtime binding available: <strong>{String(runtimeAvailable)}</strong> ({Object.keys(runtimeEnv).length} keys)</p>
+  </div>
+
+  <div class="card">
+    <h2>Per-key presence</h2>
+    <table>
+      <thead><tr><th>Key</th><th>import.meta.env</th><th>runtime.env</th></tr></thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr><td><code>{r.key}</code></td><td>{r.importMeta}</td><td>{r.runtime}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</CmsLayout>
+
+<style>
+  .note { font-size:13px; color:var(--text-muted); margin:8px 0 16px; }
+  .card { background:var(--bg-card,#fff); border:1px solid var(--border,#e5e7eb); border-radius:8px; padding:16px; margin-bottom:16px; }
+  h2 { font-size:15px; margin:0 0 12px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--border,#e5e7eb); }
+  code { background:var(--bg-subtle,#f3f4f6); padding:1px 5px; border-radius:4px; font-size:12px; }
+</style>
