@@ -17,6 +17,18 @@ import { shipEnv } from "./env";
 
 const REST_URL = "https://www.zasilkovna.cz/api/rest";
 
+// Packeta home delivery ("doručení na adresu") routes through a per-country home-delivery
+// carrier whose id must be passed as addressId alongside the street/city/zip — without it
+// createPacket rejects the packet (PacketAttributesFault). Pickup-point orders instead pass
+// the pick-up point id as addressId. Ids per Packeta's carrier list: CZ=106, SK=131.
+const HOME_DELIVERY_CARRIER_ID: Record<string, number> = { CZ: 106, SK: 131 };
+
+function homeDeliveryCarrierId(countryCode: string): number {
+  const id = HOME_DELIVERY_CARRIER_ID[countryCode.toUpperCase()];
+  if (!id) throw new Error(`Packeta home delivery is not configured for country ${countryCode}`);
+  return id;
+}
+
 function getConfig() {
   const apiPassword = shipEnv("PACKETA_API_PASSWORD");
   const senderLabel = shipEnv("PACKETA_SENDER_LABEL") ?? "";
@@ -69,7 +81,8 @@ export function createPacketaProvider(): ShippingProvider {
         tag("phone", input.recipient.phone),
         input.pickupPointId
           ? tag("addressId", input.pickupPointId)
-          : tag("street", street) + tag("houseNumber", houseNumber) + tag("city", input.recipient.city) + tag("zip", input.recipient.zip),
+          : tag("addressId", homeDeliveryCarrierId(input.recipient.countryCode)) +
+            tag("street", street) + tag("houseNumber", houseNumber) + tag("city", input.recipient.city) + tag("zip", input.recipient.zip),
         tag("value", input.valueAmount),
         tag("currency", input.currency),
         tag("weight", input.weightKg),
