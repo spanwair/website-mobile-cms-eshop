@@ -28,34 +28,28 @@ const pplWidgetKey = process.env.PPL_WIDGET_API_KEY ?? import.meta.env.PUBLIC_PP
   <h2 class="section-title">{t.shop.shippingMethod}</h2>
 
   <div class="provider-list">
-    {configs.map((cfg, i) => {
-      const homeCost = computeShippingCost(cfg, subtotal, "home");
-      const pickupCost = computeShippingCost(cfg, subtotal, "pickup");
-      const logo = getProviderLogoSrc(cfg.code);
-      return (
-        <label class="provider-option">
-          <input type="radio" name="shipping_provider" value={cfg.code} data-cost={homeCost} data-cost-home={homeCost} data-cost-pickup={pickupCost} data-label={cfg.display_name} form="checkout-form" checked={i === 0} class="styled-radio" required />
-          {logo ? (
-            <img src={logo} alt={cfg.display_name} title={cfg.display_name} class="provider-logo" />
-          ) : (
-            <span class="provider-name">{cfg.display_name}</span>
-          )}
-          <span class="provider-price" data-provider-price>{homeCost === 0 ? t.shop.freeShipping : formatPrice(homeCost, lang, currency)}</span>
-        </label>
-      );
-    })}
+    {configs.flatMap((cfg, ci) =>
+      (["home", "pickup"] as const).map((dt, di) => {
+        const cost = computeShippingCost(cfg, subtotal, dt);
+        const logo = getProviderLogoSrc(cfg.code);
+        const dtLabel = dt === "home" ? t.shop.shippingHome : t.shop.shippingPickup;
+        return (
+          <label class="provider-option">
+            <input type="radio" name="shipping_provider" value={cfg.code} data-cost={cost} data-delivery-type={dt} data-label={cfg.display_name} form="checkout-form" checked={ci === 0 && di === 0} class="styled-radio" required />
+            {logo ? (
+              <img src={logo} alt={cfg.display_name} title={cfg.display_name} class="provider-logo" />
+            ) : (
+              <span class="provider-name">{cfg.display_name}</span>
+            )}
+            <span class="provider-delivery-type">{dtLabel}</span>
+            <span class="provider-price" data-provider-price>{cost === 0 ? t.shop.freeShipping : formatPrice(cost, lang, currency)}</span>
+          </label>
+        );
+      })
+    )}
   </div>
 
-  <div class="delivery-type" data-delivery-type-block style="display:none">
-    <label class="delivery-type-option">
-      <input type="radio" name="delivery_type" value="home" form="checkout-form" class="styled-radio styled-radio--small" checked />
-      <span>{t.shop.shippingHome}</span>
-    </label>
-    <label class="delivery-type-option">
-      <input type="radio" name="delivery_type" value="pickup" form="checkout-form" class="styled-radio styled-radio--small" />
-      <span>{t.shop.shippingPickup}</span>
-    </label>
-  </div>
+  <input type="hidden" name="delivery_type" form="checkout-form" value="home" />
 
   {configs.map((cfg) => (
     <div class="pickup-block" data-pickup-block={cfg.code} style="display:none">
@@ -127,23 +121,9 @@ const pplWidgetKey = process.env.PPL_WIDGET_API_KEY ?? import.meta.env.PUBLIC_PP
     object-fit: contain;
   }
 
-  .provider-name { flex: 1; font-size: 14px; font-weight: 600; }
+  .provider-name { font-size: 14px; font-weight: 600; }
+  .provider-delivery-type { flex: 1; font-size: 14px; font-weight: 600; color: var(--text-primary); }
   .provider-price { font-size: 14px; font-weight: 700; color: var(--primary); white-space: nowrap; }
-
-  .delivery-type { display:flex; gap:8px; padding:4px; background:var(--bg-subtle); border-radius:10px; width:fit-content; }
-  .delivery-type-option {
-    position: relative;
-    display: flex;
-    align-items: center;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: background-color 0.15s, color 0.15s;
-  }
-  .delivery-type-option:has(input:checked) { background: var(--surface, #fff); color: var(--text-primary); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
 
   .pickup-block { margin-top: 4px; }
   .pickup-summary { font-size:13px; color:var(--text-muted); margin:0; }

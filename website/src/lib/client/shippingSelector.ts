@@ -1,18 +1,16 @@
 import { recomputeCheckoutSummary } from "./checkoutSummary";
-import { formatPrice } from "@shared/utils/format";
-import type { AppLanguage } from "@shared/i18n/getT";
 
-// Drives the provider radio -> delivery-type radio -> pickup-point widget cascade in
-// ShippingProviderSelector.astro. Each carrier opens its real map widget (PPL Widget 2.0 /
-// Packeta) whose selection fills the pickup_point_* hidden inputs.
+// Drives the shipping-option button -> pickup-point widget cascade in
+// ShippingProviderSelector.astro. Each button encodes one (carrier, delivery-type) pair;
+// selecting one sets the hidden delivery_type input and, for pickup, reveals that carrier's
+// real map widget (PPL Widget 2.0 / Packeta) whose selection fills the pickup_point_* inputs.
 export function initShippingSelector() {
   const rootEl = document.getElementById("shipping-selector");
   if (!rootEl) return;
   const root = rootEl;
 
   const providerRadios = root.querySelectorAll<HTMLInputElement>('input[name="shipping_provider"]');
-  const deliveryTypeBlock = root.querySelector<HTMLElement>("[data-delivery-type-block]");
-  const deliveryTypeRadios = root.querySelectorAll<HTMLInputElement>('input[name="delivery_type"]');
+  const deliveryTypeInput = root.querySelector<HTMLInputElement>('input[name="delivery_type"]')!;
   const pickupBlocks = root.querySelectorAll<HTMLElement>("[data-pickup-block]");
   const pickupIdInput = root.querySelector<HTMLInputElement>('input[name="pickup_point_id"]')!;
   const pickupNameInput = root.querySelector<HTMLInputElement>('input[name="pickup_point_name"]')!;
@@ -20,11 +18,14 @@ export function initShippingSelector() {
   const errorEl = root.querySelector<HTMLElement>("[data-pickup-error]");
   const requiredMsg = root.dataset.pickupRequiredMsg ?? "";
 
+  function selectedRadio(): HTMLInputElement | null {
+    return Array.from(providerRadios).find((r) => r.checked) ?? null;
+  }
   function selectedProvider(): string | null {
-    return Array.from(providerRadios).find((r) => r.checked)?.value ?? null;
+    return selectedRadio()?.value ?? null;
   }
   function selectedDeliveryType(): string {
-    return Array.from(deliveryTypeRadios).find((r) => r.checked)?.value ?? "home";
+    return selectedRadio()?.dataset.deliveryType ?? "home";
   }
 
   function clearError() {
@@ -45,27 +46,10 @@ export function initShippingSelector() {
     if (id) clearError();
   }
 
-  const freeLabel = root.dataset.freeLabel ?? "";
-  const lang = (root.dataset.lang as AppLanguage) || "cs";
-  const currency = root.dataset.currency || undefined;
-
-  // Each carrier carries both an address (home) and a pickup price. When the delivery type
-  // toggles, repoint every radio's data-cost (what recomputeCheckoutSummary reads) and the
-  // visible per-carrier price to the matching one.
-  function applyDeliveryTypePricing(deliveryType: string) {
-    providerRadios.forEach((r) => {
-      const cost = deliveryType === "pickup" ? Number(r.dataset.costPickup ?? 0) : Number(r.dataset.costHome ?? 0);
-      r.dataset.cost = String(cost);
-      const priceEl = r.closest(".provider-option")?.querySelector<HTMLElement>("[data-provider-price]");
-      if (priceEl) priceEl.textContent = cost === 0 ? freeLabel : formatPrice(cost, lang, currency);
-    });
-  }
-
   function refresh() {
     const provider = selectedProvider();
-    deliveryTypeBlock!.style.display = provider ? "" : "none";
     const deliveryType = selectedDeliveryType();
-    applyDeliveryTypePricing(deliveryType);
+    deliveryTypeInput.value = deliveryType;
     const showPickup = Boolean(provider) && deliveryType === "pickup";
     pickupBlocks.forEach((block) => {
       const match = block.dataset.pickupBlock === provider;
@@ -78,7 +62,6 @@ export function initShippingSelector() {
   }
 
   providerRadios.forEach((r) => r.addEventListener("change", refresh));
-  deliveryTypeRadios.forEach((r) => r.addEventListener("change", refresh));
 
   // Block checkout submission while "pickup point" is chosen but no actual point is
   // selected — the server rejects this too, but only after a full round-trip that wipes
