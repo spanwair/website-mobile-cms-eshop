@@ -55,6 +55,9 @@ GRANT EXECUTE ON FUNCTION get_top_products_paged(UUID, TIMESTAMPTZ, INT, INT) TO
 
 -- 2. Activity log: add entity ids (order_id / return_id / product_id) so each row can link to its
 -- detail page, plus date-range filter, offset, and a window total_count for pagination.
+-- Wrapped in a transaction so the drop + recreate is atomic (no window where the function is absent).
+BEGIN;
+
 DROP FUNCTION IF EXISTS get_product_activity_log(UUID, INT);
 
 CREATE OR REPLACE FUNCTION get_product_activity_log(
@@ -196,3 +199,5 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION get_product_activity_log(UUID, INT, TIMESTAMPTZ, INT) TO authenticated;
+
+COMMIT;
