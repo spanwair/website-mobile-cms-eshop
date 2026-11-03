@@ -3499,7 +3499,7 @@ export type Database = {
       }
       get_my_role: { Args: never; Returns: number }
       get_product_activity_log: {
-        Args: { p_limit?: number; p_party_id: string }
+        Args: { p_limit?: number; p_party_id: string; p_from?: string; p_offset?: number }
         Returns: {
           actor_id: string
           actor_name: string
@@ -3514,11 +3514,26 @@ export type Database = {
           refund_amount: number
           refund_method: string
           to_status: string
+          order_id: string
+          return_id: string
+          product_id: string
+          total_count: number
         }[]
       }
       get_product_overview_stats: {
         Args: { p_days?: number; p_party_id: string }
         Returns: Json
+      }
+      get_top_products_paged: {
+        Args: { p_party_id: string; p_from?: string; p_limit?: number; p_offset?: number }
+        Returns: {
+          id: string
+          title: string
+          qty_sold: number
+          revenue: number
+          profit: number
+          total_count: number
+        }[]
       }
       get_user_permissions: {
         Args: { p_party_id: string; p_user_id: string }

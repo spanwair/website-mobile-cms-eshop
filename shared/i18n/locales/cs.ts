@@ -427,6 +427,18 @@ export const cs: Translations = {
       descStockMovement: "{{action}} · {{product}} · {{qty}} {{unit}}",
       descNoteDashSuffix: " — {{note}}",
     },
+    overviewSection: {
+      range1d: "1 den",
+      range7d: "7 dní",
+      range1m: "1 měsíc",
+      rangeAll: "Vše",
+      viewAll: "Zobrazit vše",
+      exportCsv: "Exportovat CSV",
+      pageOf: "Strana {{page}} z {{pages}} ({{total}})",
+      loading: "Načítání…",
+      empty: "Žádná data.",
+      error: "Nepodařilo se načíst data.",
+    },
     products: {
       title: "Produkty",
       new: "+ Nový produkt",

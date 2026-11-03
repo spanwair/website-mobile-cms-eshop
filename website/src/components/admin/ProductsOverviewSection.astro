@@ -2,18 +2,15 @@
 import ProductStatCards from "./ProductStatCards.astro";
 import ProductLifecycleChart from "./ProductLifecycleChart.astro";
 import ProductRevenueChart from "./ProductRevenueChart.astro";
-import ProductTopList from "./ProductTopList.astro";
-import ProductActivityFeed from "./ProductActivityFeed.astro";
-import type { ProductOverviewStats, ProductActivityEvent } from "@shared/types";
+import OverviewDataSection from "./OverviewDataSection.astro";
+import type { ProductOverviewStats } from "@shared/types";
 import { useT } from "../../lib/i18n";
 
 interface Props {
   stats: ProductOverviewStats;
-  activity: ProductActivityEvent[];
-  locale: string;
 }
 
-const { stats, activity, locale } = Astro.props;
+const { stats } = Astro.props;
 const t = useT(Astro);
 
 const lifecycleStages = [
@@ -59,8 +56,8 @@ const lifecycleStages = [
     </div>
   </div>
   <div class="overview-grid" style="margin-top:20px">
-    <ProductTopList topProducts={stats.top_products} />
-    <ProductActivityFeed events={activity} locale={locale} />
+    <OverviewDataSection section="top-products" title={t.admin.productsOverview.topProductsTitle} />
+    <OverviewDataSection section="activity" title={t.admin.productsOverview.activityTitle} />
   </div>
 </div>
 

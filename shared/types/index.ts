@@ -649,6 +649,17 @@ export interface ProductActivityEvent {
   reason: string | null;
   actor_name: string | null;
   actor_id: string | null;
+  order_id: string | null;
+  return_id: string | null;
+  product_id: string | null;
+}
+
+export interface TopProduct {
+  id: string;
+  title: string;
+  qty_sold: number;
+  revenue: number;
+  profit: number;
 }
 
 export type NotificationType =

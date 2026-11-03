@@ -425,6 +425,18 @@ export const en = {
       descStockMovement: "{{action}} · {{product}} · {{qty}} {{unit}}",
       descNoteDashSuffix: " — {{note}}",
     },
+    overviewSection: {
+      range1d: "1 day",
+      range7d: "7 days",
+      range1m: "1 month",
+      rangeAll: "All",
+      viewAll: "View all",
+      exportCsv: "Export CSV",
+      pageOf: "Page {{page}} of {{pages}} ({{total}})",
+      loading: "Loading…",
+      empty: "No data.",
+      error: "Failed to load data.",
+    },
     products: {
       title: "Products",
       new: "+ New product",
