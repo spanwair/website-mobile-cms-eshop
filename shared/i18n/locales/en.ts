@@ -430,7 +430,6 @@ export const en = {
       range7d: "7 days",
       range1m: "1 month",
       rangeAll: "All",
-      viewAll: "View all",
       exportCsv: "Export CSV",
       pageOf: "Page {{page}} of {{pages}} ({{total}})",
       loading: "Loading…",

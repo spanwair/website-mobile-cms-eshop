@@ -4,7 +4,7 @@ type Payload = { total: number; page: number; pageSize: number; columns: string[
 
 interface Labels {
   range1d: string; range7d: string; range1m: string; rangeAll: string;
-  viewAll: string; exportCsv: string; prev: string; next: string;
+  exportCsv: string; prev: string; next: string;
   pageOf: string; loading: string; empty: string; error: string; total: string;
 }
 
@@ -21,7 +21,7 @@ class OverviewSection extends HTMLElement {
   private pageSize = 5;
   private modalPageSize = 20;
   private labels!: Labels;
-  private inlineRange = "all";
+  private inlineRange = "7d";
   private modalRange = "all";
   private modalPage = 1;
   private modal: HTMLElement | null = null;
@@ -101,13 +101,7 @@ class OverviewSection extends HTMLElement {
     h.textContent = this.sectionTitle;
     const controls = document.createElement("div");
     controls.className = "os-controls";
-    controls.appendChild(this.rangeButtons(this.inlineRange, (key) => { this.inlineRange = key; this.loadInline(); }));
-    const viewAll = document.createElement("button");
-    viewAll.type = "button";
-    viewAll.className = "btn btn-ghost os-viewall";
-    viewAll.textContent = this.labels.viewAll;
-    viewAll.addEventListener("click", () => this.openModal());
-    controls.appendChild(viewAll);
+    controls.appendChild(this.rangeButtons(this.inlineRange, (key) => this.onInlineRange(key)));
     header.append(h, controls);
     const bodyEl = document.createElement("div");
     bodyEl.className = "os-body";
@@ -116,10 +110,18 @@ class OverviewSection extends HTMLElement {
     this.appendChild(card);
   }
 
+  // The "all" range isn't an inline filter — it opens the full paginated modal instead
+  // (showing every row inline would be unbounded). The other ranges filter the inline preview.
+  private onInlineRange(key: string) {
+    if (key === "all") { this.openModal(); return; }
+    this.inlineRange = key;
+    this.loadInline();
+  }
+
   private async loadInline() {
     const body = this.querySelector(".os-body") as HTMLElement;
     const ranges = this.querySelector(".os-header .os-ranges") as HTMLElement;
-    ranges.replaceWith(this.rangeButtons(this.inlineRange, (key) => { this.inlineRange = key; this.loadInline(); }));
+    ranges.replaceWith(this.rangeButtons(this.inlineRange, (key) => this.onInlineRange(key)));
     body.innerHTML = `<p class="os-empty">${this.labels.loading}</p>`;
     try {
       const data = await this.fetchData(this.inlineRange, 1, this.pageSize);
@@ -130,7 +132,7 @@ class OverviewSection extends HTMLElement {
   }
 
   private openModal() {
-    this.modalRange = this.inlineRange;
+    this.modalRange = "all";
     this.modalPage = 1;
     if (!this.modal) this.buildModal();
     this.modal!.style.display = "flex";
