@@ -45,135 +45,131 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="/favicon.png" />
-    <title>{t.auth.signIn} - Mamtodoma</title>
+    <title>{t.auth.signInOrCreate} - Mamtodoma</title>
   </head>
   <body class="auth-body">
-    <main class="auth-main">
-    <div class="auth-blob auth-blob--a"></div>
-    <div class="auth-blob auth-blob--b"></div>
-    <div class="auth-shell">
-      <div class="auth-illustration">
-        <a href="/" class="auth-brand">mamtodoma.cz</a>
-        <p class="auth-tagline">{t.auth.illustrationTagline}</p>
-
-        <div id="auth-carousel" class="auth-carousel" aria-hidden="true">
-          <img class="auth-carousel-slide is-active" src="/img/hero-eshop.jpg" alt="" width="1600" height="1068" loading="eager" />
-          <img class="auth-carousel-slide" src="/img/template-store.jpg" alt="" width="1200" height="800" loading="lazy" />
-          <img class="auth-carousel-slide" src="/img/product-shoes.jpg" alt="" width="1200" height="800" loading="lazy" />
-          <img class="auth-carousel-slide" src="/img/product-headphones.jpg" alt="" width="1200" height="800" loading="lazy" />
-          <img class="auth-carousel-slide" src="/img/product-watch.jpg" alt="" width="800" height="581" loading="lazy" />
-          <div class="auth-carousel-overlay"></div>
-        </div>
+    <header class="auth-topbar">
+      <a href="/" class="auth-brand">mamtodoma.cz</a>
+      <div class="lang-select">
+        <select id="lang-select" aria-label="Language">
+          <option value="cs" selected={lang === "cs"}>Čeština</option>
+          <option value="en" selected={lang === "en"}>English</option>
+        </select>
+        <svg class="lang-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="m6 9 6 6 6-6"/></svg>
       </div>
+    </header>
 
-      <div
-        class="auth-panel"
-        data-signing-in={t.auth.signingIn}
-        data-sign-in={t.auth.signIn}
-        data-creating={t.auth.creatingAccount}
-        data-create={t.auth.createAccount}
-        data-err-name={t.auth.errorNameTooShort}
-        data-err-pw-short={t.auth.errorPasswordTooShort}
-        data-err-pw-mismatch={t.auth.errorPasswordMismatch}
-        data-err-already={t.auth.errorAlreadyRegistered}
-        data-success-signup={t.auth.successSignUp}
-        data-lang={lang}
-        data-redirect={redirectTo}
-        data-sp={signupPartyId}
-        data-invite={inviteMode ? "1" : ""}
-      >
-        <div id="mode-signin" class:list={[{ hidden: initialMode === "signup" }]}>
-          <h1 class="auth-title">{t.auth.welcomeBack}</h1>
-          <p class="auth-sub">{t.auth.signInSubtitle}</p>
+    <main class="auth-main">
+      <div class="auth-shell">
+        <section class="auth-hero" aria-hidden="true">
+          <img class="auth-hero-img" src="/img/happy-laptop.jpg" alt="" width="1200" height="900" loading="eager" />
+          <div class="auth-hero-badge auth-hero-badge--a">{t.auth.heroBadgeFree}</div>
+          <div class="auth-hero-badge auth-hero-badge--b">{t.auth.heroBadgeNoFees}</div>
+          <div class="auth-hero-badge auth-hero-badge--c">{t.auth.heroBadgeCards}</div>
+          <p class="auth-hero-caption">{t.auth.heroCaption}</p>
+        </section>
 
-          <p id="error-si" class="auth-error hidden"></p>
+        <section
+          class="auth-col"
+          data-signing-in={t.auth.signingIn}
+          data-sign-in={t.auth.signIn}
+          data-creating={t.auth.creatingAccount}
+          data-create={t.auth.createAccount}
+          data-err-name={t.auth.errorNameTooShort}
+          data-err-pw-short={t.auth.errorPasswordTooShort}
+          data-err-pw-mismatch={t.auth.errorPasswordMismatch}
+          data-err-already={t.auth.errorAlreadyRegistered}
+          data-success-signup={t.auth.successSignUp}
+          data-lang={lang}
+          data-redirect={redirectTo}
+          data-sp={signupPartyId}
+          data-invite={inviteMode ? "1" : ""}
+        >
+          <h1 class="auth-title">{inviteMode ? t.auth.finishRegistrationTitle : t.auth.signInOrCreate}</h1>
 
-          <form id="signin-form" class="auth-form">
-            <div class="input-icon-group">
-              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>
-              <input id="si-email" type="email" placeholder={t.auth.emailPlaceholder} required autocomplete="email" />
-            </div>
-            <div class="input-icon-group">
-              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-              <input id="si-password" type="password" placeholder={t.auth.passwordPlaceholder} required autocomplete="current-password" />
-              <button type="button" class="input-toggle" id="toggle-si-password" aria-label="toggle password visibility">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block" id="signin-btn">{t.auth.signIn}</button>
-            <button type="button" class="btn btn-secondary btn-block" id="to-signup">{t.auth.createAccount}</button>
-          </form>
-
-          <div class="auth-divider"><span>{t.common.or}</span></div>
-          <button id="google-btn-si" class="social-btn social-btn--wide" type="button">
-            <span class="google-icon">G</span> {t.auth.continueWithGoogle}
-          </button>
-        </div>
-
-        <div id="mode-signup" class:list={[{ hidden: initialMode === "signin" }]}>
-          <h1 class="auth-title">{inviteMode ? t.auth.finishRegistrationTitle : t.auth.createAccount}</h1>
           {inviteMode ? (
             <>
               <p class="auth-sub">{t.auth.inviteSubtitlePrefix}</p>
               {invitePartyName && <div class="org-chip">{invitePartyName}</div>}
             </>
           ) : (
-            <p class="auth-sub">{t.auth.createAccountSubtitle}</p>
-          )}
-
-          <p id="error-su" class="auth-error hidden"></p>
-          <p id="success-su" class="auth-success hidden"></p>
-
-          <form id="signup-form" class="auth-form">
-            <div class="input-icon-group">
-              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-4 4-6 7.5-6s6.5 2 7.5 6"/></svg>
-              <input id="su-name" type="text" placeholder={t.auth.fullNamePlaceholder} required autocomplete="name" minlength="2" maxlength="100" />
-            </div>
-            <div class="input-icon-group">
-              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>
-              <input id="su-email" type="email" value={prefillEmail} placeholder={t.auth.emailPlaceholder} required autocomplete="email" disabled={inviteMode} class:list={[{ "disabled-input": inviteMode }]} />
-            </div>
-            <div class="input-icon-group">
-              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-              <input id="su-password" type="password" placeholder={t.auth.passwordPlaceholder} required autocomplete="new-password" minlength="8" />
-            </div>
-            <div class="input-icon-group">
-              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-              <input id="su-confirm" type="password" placeholder={t.auth.confirmPasswordPlaceholder} required autocomplete="new-password" />
-            </div>
-            <button type="submit" class="btn btn-primary btn-block" id="signup-btn">{inviteMode ? t.auth.setPasswordBtn : t.auth.createAccount}</button>
-            {!inviteMode && <button type="button" class="btn btn-secondary btn-block" id="to-signin">{t.auth.signIn}</button>}
-          </form>
-
-          {!inviteMode && (
             <>
+              <p id="error-social" class="auth-error hidden"></p>
+              <div class="social-stack">
+                <button id="google-btn" class="social-btn" type="button">
+                  <svg class="social-ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.44-1.7 4.2-5.5 4.2-3.3 0-6-2.74-6-6.1s2.7-6.1 6-6.1c1.88 0 3.14.8 3.86 1.49l2.63-2.53C16.9 3.52 14.68 2.5 12 2.5 6.98 2.5 2.9 6.58 2.9 11.6S6.98 20.7 12 20.7c5.76 0 9.56-4.05 9.56-9.75 0-.66-.07-1.16-.16-1.66H12z"/></svg>
+                  <span>{t.auth.continueWithGoogle}</span>
+                </button>
+                <button id="facebook-btn" class="social-btn" type="button">
+                  <svg class="social-ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#1877F2" d="M24 12c0-6.63-5.37-12-12-12S0 5.37 0 12c0 5.99 4.39 10.95 10.13 11.85v-8.38H7.08V12h3.05V9.36c0-3 1.79-4.67 4.53-4.67 1.31 0 2.68.24 2.68.24v2.95h-1.51c-1.49 0-1.95.93-1.95 1.87V12h3.32l-.53 3.47h-2.79v8.38C19.61 22.95 24 17.99 24 12z"/></svg>
+                  <span>{t.auth.continueWithFacebook}</span>
+                </button>
+                <button id="linkedin-btn" class="social-btn" type="button">
+                  <svg class="social-ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#0A66C2" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.8 0 0 .78 0 1.74v20.52C0 23.22.8 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.74V1.74C24 .78 23.2 0 22.22 0z"/></svg>
+                  <span>{t.auth.continueWithLinkedin}</span>
+                </button>
+              </div>
               <div class="auth-divider"><span>{t.common.or}</span></div>
-              <button id="google-btn-su" class="social-btn social-btn--wide" type="button">
-                <span class="google-icon">G</span> {t.auth.continueWithGoogle}
-              </button>
             </>
           )}
-        </div>
+
+          <div id="mode-signin" class:list={[{ hidden: initialMode === "signup" }]}>
+            <p id="error-si" class="auth-error hidden"></p>
+            <form id="signin-form" class="auth-form">
+              <div class="input-icon-group">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>
+                <input id="si-email" type="email" placeholder={t.auth.emailPlaceholder} required autocomplete="email" />
+              </div>
+              <div class="input-icon-group">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                <input id="si-password" type="password" placeholder={t.auth.passwordPlaceholder} required autocomplete="current-password" />
+                <button type="button" class="input-toggle" id="toggle-si-password" aria-label="toggle password visibility">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block" id="signin-btn">{t.auth.signIn}</button>
+            </form>
+            <p class="auth-switch">{t.auth.noAccount}<button type="button" class="auth-link" id="to-signup">{t.auth.noAccountLink}</button></p>
+          </div>
+
+          <div id="mode-signup" class:list={[{ hidden: initialMode === "signin" }]}>
+            <p id="error-su" class="auth-error hidden"></p>
+            <p id="success-su" class="auth-success hidden"></p>
+            <form id="signup-form" class="auth-form">
+              <div class="input-icon-group">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-4 4-6 7.5-6s6.5 2 7.5 6"/></svg>
+                <input id="su-name" type="text" placeholder={t.auth.fullNamePlaceholder} required autocomplete="name" minlength="2" maxlength="100" />
+              </div>
+              <div class="input-icon-group">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>
+                <input id="su-email" type="email" value={prefillEmail} placeholder={t.auth.emailPlaceholder} required autocomplete="email" disabled={inviteMode} class:list={[{ "disabled-input": inviteMode }]} />
+              </div>
+              <div class="input-icon-group">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                <input id="su-password" type="password" placeholder={t.auth.passwordPlaceholder} required autocomplete="new-password" minlength="8" />
+              </div>
+              <div class="input-icon-group">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                <input id="su-confirm" type="password" placeholder={t.auth.confirmPasswordPlaceholder} required autocomplete="new-password" />
+              </div>
+              <button type="submit" class="btn btn-primary btn-block" id="signup-btn">{inviteMode ? t.auth.setPasswordBtn : t.auth.createAccount}</button>
+            </form>
+            {!inviteMode && (
+              <p class="auth-switch">{t.auth.haveAccount}<button type="button" class="auth-link" id="to-signin">{t.auth.haveAccountLink}</button></p>
+            )}
+          </div>
+        </section>
       </div>
-    </div>
     </main>
 
     <div class="landing"><LandingFooter /></div>
 
     <script>
-      const carousel = document.getElementById("auth-carousel");
-      if (carousel) {
-        const slides = Array.from(carousel.querySelectorAll<HTMLImageElement>(".auth-carousel-slide"));
-        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        if (slides.length > 1 && !reduceMotion) {
-          let active = 0;
-          setInterval(() => {
-            slides[active].classList.remove("is-active");
-            active = (active + 1) % slides.length;
-            slides[active].classList.add("is-active");
-          }, 4500);
-        }
-      }
+      const sel = document.getElementById("lang-select") as HTMLSelectElement | null;
+      sel?.addEventListener("change", () => {
+        document.cookie = `lang=${sel.value};path=/;max-age=31536000`;
+        window.location.reload();
+      });
     </script>
 
     <script>
@@ -183,7 +179,7 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
       const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? "";
       const supabase = createBrowserClient(url, key);
 
-      const panel = document.querySelector(".auth-panel") as HTMLElement;
+      const panel = document.querySelector(".auth-col") as HTMLElement;
       const d = panel.dataset;
 
       const redirectPath = (d.redirect && d.redirect.startsWith("/") && !d.redirect.startsWith("//")) ? d.redirect : "";
@@ -191,7 +187,7 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
       const inviteMode = d.invite === "1";
       const callbackParams = new URLSearchParams();
       if (redirectPath) callbackParams.set("redirect", redirectPath);
-      // Carried for the OAuth path only: Google signups can't set user_metadata, so the callback
+      // Carried for the OAuth path only: social signups can't set user_metadata, so the callback
       // reads `sp` from the URL to classify a brand-new OAuth account as a storefront customer.
       // Email/OTP signups classify via signUp metadata (handle_new_user) and ignore this.
       if (signupPartyId) callbackParams.set("sp", signupPartyId);
@@ -201,7 +197,7 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
       const modeSignin = document.getElementById("mode-signin")!;
       const modeSignup = document.getElementById("mode-signup")!;
 
-      document.getElementById("to-signup")!.addEventListener("click", () => {
+      document.getElementById("to-signup")?.addEventListener("click", () => {
         modeSignin.classList.add("hidden");
         modeSignup.classList.remove("hidden");
       });
@@ -227,15 +223,18 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
         document.getElementById(id)!.classList.add("hidden");
       }
 
-      async function googleSignIn() {
+      type OAuthProvider = "google" | "facebook" | "linkedin_oidc";
+      async function oauthSignIn(provider: OAuthProvider) {
+        clearEl("error-social");
         const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
+          provider,
           options: { redirectTo: callbackUrl },
         });
-        if (error) showError("error-si", error.message);
+        if (error) showError("error-social", error.message);
       }
-      document.getElementById("google-btn-si")!.addEventListener("click", googleSignIn);
-      document.getElementById("google-btn-su")?.addEventListener("click", googleSignIn);
+      document.getElementById("google-btn")?.addEventListener("click", () => oauthSignIn("google"));
+      document.getElementById("facebook-btn")?.addEventListener("click", () => oauthSignIn("facebook"));
+      document.getElementById("linkedin-btn")?.addEventListener("click", () => oauthSignIn("linkedin_oidc"));
 
       document.getElementById("signin-form")!.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -331,49 +330,82 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
 
     <style>
       .auth-body {
+        /* landing.css scopes the evergreen palette to .landing; this page isn't .landing,
+           so pull the brand accent in explicitly instead of falling back to global indigo. */
+        --accent-primary: #0E8F63;
+        --accent-primary-hover: #0B7450;
+        --accent-subtle: #E6F4EE;
         min-height: 100vh; display: flex; flex-direction: column;
-        background: var(--bg-subtle);
+        background: var(--bg-page);
       }
+      .auth-body input:focus, .auth-body select:focus {
+        box-shadow: 0 0 0 4px rgba(14, 143, 99, 0.12);
+      }
+      .auth-topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: var(--space-5) var(--space-6); max-width: 1200px; width: 100%; margin: 0 auto;
+      }
+      .auth-brand { color: var(--accent-primary); font-weight: 800; font-size: 22px; letter-spacing: -0.02em; }
+      .lang-select { position: relative; display: inline-flex; align-items: center; }
+      .lang-select select {
+        appearance: none; -webkit-appearance: none;
+        padding: 8px 34px 8px 14px; font: inherit; font-size: 14px; font-weight: 600;
+        color: var(--text-primary); background: var(--bg-page);
+        border: 1.5px solid var(--border-default); border-radius: var(--radius-sm); cursor: pointer;
+      }
+      .lang-select select:hover { border-color: var(--border-strong); }
+      .lang-caret { position: absolute; right: 10px; pointer-events: none; color: var(--text-muted); }
+
       .auth-main {
         flex: 1; display: flex; align-items: center; justify-content: center;
-        padding: var(--space-6) var(--space-4);
-        position: relative; overflow: hidden;
+        padding: var(--space-5) var(--space-6) var(--space-8);
       }
-      .auth-blob {
-        position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.35; z-index: 0;
-      }
-      .auth-blob--a { width: 420px; height: 420px; background: var(--accent-primary); top: -120px; left: -100px; }
-      .auth-blob--b { width: 380px; height: 380px; background: var(--success); bottom: -140px; right: -100px; }
-
       .auth-shell {
-        position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr;
-        max-width: 920px; width: 100%; background: var(--bg-page);
-        border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden;
-      }
-      .auth-illustration {
-        position: relative; background: #111827;
-        padding: var(--space-6); display: flex; flex-direction: column; overflow: hidden;
-      }
-      .auth-brand { color: #fff; font-weight: 800; font-size: 18px; position: relative; z-index: 2; }
-      .auth-tagline { color: rgba(255,255,255,0.72); font-size: 13px; margin-top: 4px; position: relative; z-index: 2; }
-
-      .auth-carousel { position: absolute; inset: 0; z-index: 0; }
-      .auth-carousel-slide {
-        position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-        opacity: 0; transition: opacity 1.1s ease;
-      }
-      .auth-carousel-slide.is-active { opacity: 1; }
-      .auth-carousel-overlay {
-        position: absolute; inset: 0;
-        background: linear-gradient(180deg, rgba(17,24,39,0.35) 0%, rgba(11,15,26,0.55) 55%, rgba(11,15,26,0.85) 100%);
+        display: grid; grid-template-columns: 1.15fr 0.85fr; gap: var(--space-8);
+        align-items: center; max-width: 1120px; width: 100%;
       }
 
-      .auth-panel { padding: var(--space-7) var(--space-6); }
-      .auth-title { font-size: 28px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; }
-      .auth-sub { font-size: 14px; color: var(--text-muted); margin-bottom: var(--space-5); }
+      .auth-hero { position: relative; border-radius: var(--radius-xl); overflow: hidden; aspect-ratio: 4 / 3.4; }
+      .auth-hero-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .auth-hero-badge {
+        position: absolute; z-index: 2; background: rgba(255,255,255,0.96);
+        backdrop-filter: blur(4px); padding: 12px 16px 12px 14px;
+        border-left: 4px solid var(--accent-primary); border-radius: 10px;
+        font-weight: 700; font-size: 15px; color: var(--text-primary);
+        box-shadow: var(--shadow-md); white-space: nowrap;
+      }
+      .auth-hero-badge--a { left: 7%; top: 52%; }
+      .auth-hero-badge--b { right: 6%; top: 38%; }
+      .auth-hero-badge--c { left: 22%; bottom: 16%; }
+      .auth-hero-caption {
+        position: absolute; left: 20px; bottom: 16px; z-index: 2;
+        color: rgba(255,255,255,0.9); font-size: 12px; text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      }
+
+      .auth-col { width: 100%; max-width: 400px; margin: 0 auto; }
+      .auth-title { font-size: 26px; font-weight: 800; color: var(--text-primary); margin-bottom: var(--space-5); letter-spacing: -0.02em; }
+      .auth-sub { font-size: 14px; color: var(--text-muted); margin-bottom: var(--space-4); }
+
+      .social-stack { display: flex; flex-direction: column; gap: var(--space-3); }
+      .social-btn {
+        position: relative; width: 100%; display: flex; align-items: center; justify-content: center;
+        gap: var(--space-2); padding: 13px 44px; font-size: 14px; font-weight: 700;
+        color: var(--text-primary); background: var(--bg-page);
+        border: 1.5px solid var(--border-default); border-radius: var(--radius-sm); cursor: pointer;
+        transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+      }
+      .social-btn:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+      .social-ic { position: absolute; left: 16px; flex-shrink: 0; }
+
+      .auth-divider {
+        display: flex; align-items: center; gap: var(--space-3); margin: var(--space-5) 0;
+        color: var(--text-placeholder); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+      }
+      .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border-default); }
+
       .auth-form { display: flex; flex-direction: column; gap: var(--space-3); }
       .auth-form input[type="password"] { padding-right: 42px; }
-      .btn-block { width: 100%; }
+      .btn-block { width: 100%; padding: 13px; font-size: 15px; }
       .input-toggle {
         position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
         background: none; border: none; padding: 6px; cursor: pointer;
@@ -383,31 +415,25 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
       .disabled-input { background: var(--bg-subtle); color: var(--text-muted); cursor: not-allowed; }
       .org-chip {
         display: block; width: fit-content; max-width: 100%; margin: 0 0 var(--space-5);
-        padding: 8px 16px; background: var(--accent-subtle, #EEF2FF); color: var(--accent-primary);
+        padding: 8px 16px; background: var(--accent-subtle, #E6F4EE); color: var(--accent-primary);
         font-weight: 700; font-size: 15px; border-radius: 10px;
       }
       .auth-error { font-size: 13px; color: var(--error); margin-bottom: var(--space-2); }
       .auth-success { font-size: 13px; color: var(--success); margin-bottom: var(--space-2); }
-      .auth-divider {
-        display: flex; align-items: center; gap: var(--space-3); margin: var(--space-5) 0;
-        color: var(--text-placeholder); font-size: 12px;
+      .auth-switch { margin-top: var(--space-4); font-size: 14px; color: var(--text-muted); text-align: center; }
+      .auth-link {
+        background: none; border: none; padding: 0; font: inherit; font-weight: 700;
+        color: var(--accent-primary); cursor: pointer;
       }
-      .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border-default); }
-      .social-btn--wide { width: 100%; border-radius: var(--radius-sm); gap: var(--space-2); font-size: 14px; font-weight: 600; color: var(--text-primary); }
-      .google-icon { font-size: 15px; font-weight: 800; }
+      .auth-link:hover { text-decoration: underline; }
 
-      @media (min-width: 1024px) {
-        .auth-main { padding: var(--space-8) var(--space-4); }
-        .auth-shell { max-width: 1080px; }
-        .auth-illustration { padding: var(--space-7); }
-        .auth-panel { padding: var(--space-8) var(--space-7); }
-        .auth-title { font-size: 32px; }
+      @media (max-width: 860px) {
+        .auth-shell { grid-template-columns: 1fr; gap: var(--space-6); max-width: 440px; }
+        .auth-hero { display: none; }
       }
-
-      @media (max-width: 760px) {
-        .auth-shell { grid-template-columns: 1fr; }
-        .auth-illustration { display: none; }
-        .auth-panel { padding: var(--space-6) var(--space-5); }
+      @media (max-width: 520px) {
+        .auth-topbar { padding: var(--space-4); }
+        .auth-main { padding: var(--space-4) var(--space-4) var(--space-6); }
       }
     </style>
   </body>

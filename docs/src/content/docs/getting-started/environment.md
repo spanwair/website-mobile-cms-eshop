@@ -37,9 +37,9 @@ export SUPABASE_ACCESS_TOKEN=<your personal access token>
 
 Spusťte `direnv allow` po vytvoření tohoto souboru.
 
-## Dva projekty Supabase
+## Dvě prostředí
 
-Projekt je navržen s dvěma oddělenými instancemi Supabase:
+Projekt používá dva oddělené Supabase backendy:
 
 | Prostředí | Účel | Hvětvík |
 |------------|---------|--------|
@@ -48,8 +48,8 @@ Projekt je navržen s dvěma oddělenými instancemi Supabase:
 
 **Nikdy nevykonávejte `db-push.sh production` z větve s funkcí.** Skript to vynucuje.
 
-## Supabase lokální vs cloud
+## Supabase lokální vs produkce
 
 Během vývoje spustí `supabase start` vše lokálně - žádný cloud, žádné náklady. Vaše databáze je na `localhost:54322`, API na `localhost:54321`.
 
-Když nasazujete do produkce, používáte cloudový projekt Supabase a vaše soubory prostředí ukazují na cloudové URL.
+V produkci běží stejný Supabase stack **self-hostovaný na VM v Oracle Cloud** (`https://api-oci.mamtodoma.cz`) - nikoli na Supabase Cloud. Váš `.env.production` (a `PUBLIC_SUPABASE_URL` Cloudflare Workeru) ukazuje tam. Samotný web stále běží jako Astro SSR Cloudflare Worker; na Oracle je jen backend.

@@ -9,7 +9,7 @@ Tato platforma je **hotový backend pro e-commerce**, navržený pro malé a st�
 
 - **Webový panel administrátora** pro správu vašeho celého obchodu přímo z prohlížeče
 - **Mobilní aplikace React Native**, kterou si mohou vaši zákazníci nainstalovat na Androidu nebo iOS
-- **Databáze PostgreSQL** (hostovaná na Supabase) pro všechna vaše data
+- **Databáze PostgreSQL** (stack Supabase, v produkci self-hostovaná na Oracle Cloud) pro všechna vaše data
 - **Kontrolu přístupu založenou na rolech**, takže váš tým vidí pouze to, co potřebuje
 - **Automatizované E2E testy**, které ověřují, že vše funguje před nasazením
 
@@ -43,7 +43,7 @@ To znamená, že to napíšete jednou a funguje všude.
 |-------|-----------|-----|
 | Webová stránka | Astro 5 SSR | Rychlý, serverově vykreslený, minimální JS |
 | Mobilní | React Native + Expo | Jeden kód pro Android + iOS |
-| Databáze | Supabase (PostgreSQL) | Správně hostovaný, vestavěná autentizace, RLS |
+| Databáze | Supabase (PostgreSQL) | V produkci self-hostovaná na Oracle Cloud, vestavěná autentizace, RLS |
 | Autentizace | Magic link + Google OAuth | Dostupné bez hesla |
 | Správce paketů | pnpm | Rychlý, efektivní pro disk |
 | Typy | TypeScript strict mode | Zachytí chyby před nasazením do produkce |

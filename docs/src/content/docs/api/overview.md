@@ -3,14 +3,14 @@ title: Přehled API
 description: Jak připojit svůj vlastní eshop k CMS API.
 ---
 
-CMS poskytuje dva typy API endpointů. Oba jsou poskytovány vaším projektem Supabase - nemáte spuštět samostatný API server.
+CMS poskytuje dva typy API endpointů. Oba jsou poskytovány vaším backendem Supabase - nemáte spuštět samostatný API server.
 
 | Typ | Základní URL | Co dělá |
 |---|---|---|
-| **PostgREST** | `https://{ref}.supabase.co/rest/v1` | Přímý přístup k tabulce - produkty, kategorie, košík, objednávky |
-| **Edge Functions** | `https://{ref}.supabase.co/functions/v1` | Vlastní logika - smazání účtu, webhooks, integrace |
+| **PostgREST** | `https://api-oci.mamtodoma.cz/rest/v1` | Přímý přístup k tabulce - produkty, kategorie, košík, objednávky |
+| **Edge Functions** | `https://api-oci.mamtodoma.cz/functions/v1` | Vlastní logika - smazání účtu, webhooks, integrace |
 
-Váš projekt `ref` je viditelný v nastavení vašeho projektu Supabase a v `.env.development` jako `PUBLIC_SUPABASE_URL`.
+Základní URL je vaše `PUBLIC_SUPABASE_URL`: `https://api-oci.mamtodoma.cz` v produkci (self-hostovaná Supabase na Oracle Cloud) a `http://127.0.0.1:54321` v lokálním vývoji.
 
 ## Autentizace
 
@@ -82,7 +82,7 @@ Najděte své `party_id` v panelu administrátora na **[Administrátor → Organ
 ## Rychlý start - seznamte své produkty
 
 ```javascript
-const SUPABASE_URL = 'https://your-ref.supabase.co'
+const SUPABASE_URL = 'https://api-oci.mamtodoma.cz'
 const ANON_KEY = 'your-anon-key'
 const PARTY_ID = 'your-party-uuid'  // from Admin → Organizations
 
@@ -136,16 +136,13 @@ const { error } = await supabase
 
 ## Limity rychlosti
 
-| Plán Supabase | Limit |
-|---|---|
-| Free | ~500 požadavků/sekundu na projekt |
-| Pro a vyšší | Vyšší limity - podívejte se na svou nástěnku Supabase |
+Produkční backend je self-hostovaný Supabase stack na VM v Oracle Cloud, takže neexistují žádné kvóty podle tarifu - propustnost je omezena konfigurací API brány (Kong) a kapacitou VM.
 
 PostgREST vrátí chybu `413`, pokud by odpověď překročila 2 MB. Použijte `?select` k redukci velikosti zátěže a `?limit` pro paginaci.
 
 ## CORS
 
-PostgREST výchozíně povoluje všechny domény. Edge Functions zahrnují explicitní CORS hlavičky. Pokud potřebujete omezit domény, nakonfigurujte to v nastavení vašeho projektu Supabase pod **API → CORS**.
+PostgREST výchozíně povoluje všechny domény. Edge Functions zahrnují explicitní CORS hlavičky. Pokud potřebujete omezit domény, nakonfigurujte to v konfiguraci Kong / PostgREST self-hostovaného stacku na VM v Oracle Cloud.
 
 ## Kompletní reference API
 

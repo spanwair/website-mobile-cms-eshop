@@ -29,7 +29,7 @@ enabled = true
 port = 54323
 api_url = "http://127.0.0.1"
 
-[inbucket]
+[local_smtp]
 enabled = true
 port = 54324
 smtp_port = 54325
@@ -56,7 +56,7 @@ double_confirm_changes = true
 # Email/password signups must confirm their address before they get a session — signUp()
 # returns session=null until the emailed link is clicked (handled by /auth/callback).
 # Google OAuth and invited users are unaffected (already verified via provider/invite link).
-# Prod: enable the equivalent "Confirm email" toggle in the Supabase dashboard Auth settings.
+# Prod: the self-hosted GoTrue on the OCI VM enforces this via its own env (ENABLE_EMAIL_AUTOCONFIRM=false).
 enable_confirmations = true
 
 # Custom bilingual templates (branch on .Data.lang, set via inviteUserByEmail/signInWithOtp
@@ -77,8 +77,8 @@ content_path = "./supabase/templates/confirmation.html"
 # Send Email Hook — in PRODUCTION, GoTrue delegates every auth email to our endpoint
 # (website /api/auth/send-email-hook), which renders the templates in
 # authEmailTemplates.ts and sends them via OCI Email Delivery. This is what removes
-# Supabase's own email delivery entirely — enable it in the Supabase Dashboard
-# (Auth → Hooks → Send Email) with the same secret as SEND_EMAIL_HOOK_SECRET.
+# GoTrue's own email delivery entirely — in prod enable it in the self-hosted GoTrue env on the
+# OCI VM (GOTRUE_HOOK_SEND_EMAIL_ENABLED=true + GOTRUE_HOOK_SEND_EMAIL_SECRETS) matching SEND_EMAIL_HOOK_SECRET.
 # Left disabled for LOCAL dev so signup/magic-link/recovery still land in Mailpit
 # (the E2E helpers scrape it); the templates above are only rendered in local dev.
 [auth.hook.send_email]
@@ -116,10 +116,10 @@ secret = ""
 redirect_uri = ""
 
 [auth.external.facebook]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
+enabled = true
+client_id = "env(FACEBOOK_CLIENT_ID)"
+secret = "env(FACEBOOK_CLIENT_SECRET)"
+redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"
 
 [auth.external.figma]
 enabled = false
@@ -157,11 +157,11 @@ client_id = ""
 secret = ""
 redirect_uri = ""
 
-[auth.external.linkedin]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
+[auth.external.linkedin_oidc]
+enabled = true
+client_id = "env(LINKEDIN_CLIENT_ID)"
+secret = "env(LINKEDIN_CLIENT_SECRET)"
+redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"
 
 [auth.external.notion]
 enabled = false
@@ -169,7 +169,7 @@ client_id = ""
 secret = ""
 redirect_uri = ""
 
-[auth.external.slack]
+[auth.external.slack_oidc]
 enabled = false
 client_id = ""
 secret = ""

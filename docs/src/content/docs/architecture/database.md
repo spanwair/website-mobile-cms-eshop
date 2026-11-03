@@ -5,7 +5,7 @@ description: Tabulky, vztahy a způsob uspořádání dat.
 
 ## Přehled
 
-Databáze je PostgreSQL hostovaná na Supabase. Vše běží přes API Supabase - žádné přímé připojení k DB z aplikace.
+Databáze je PostgreSQL ze stacku Supabase - v produkci **self-hostovaná na Oracle Cloud** (`api-oci.mamtodoma.cz`), ve vývoji lokální Supabase stack (nikoli Supabase Cloud). Vše běží přes API Supabase - žádné přímé připojení k DB z aplikace.
 
 ## Základní tabulky
 

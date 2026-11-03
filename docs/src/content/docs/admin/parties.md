@@ -198,7 +198,7 @@ Akce zveřejňování se rozvětvuje podle toho, zda e-mail již existuje, a pod
   Jinak je záznam jeho `user_party_roles` aktualizován, jeho `profiles.role` je zvýšena na zvolenou systémovou roli a oznámení e-mail uvádí všechny jeho organizace.
   Nesílá se žádný odkaz pro registraci, protože účet již existuje.
 - **Nový uživatel**: je vydáno zveřejnění.
-  V vývoji (`inviteUserByEmail`) Supabase GoTrue vykreslí šablonu zveřejnění do Mailpit; v produkci (`generateLink` + Resend) je odeslán stylový e-mail s odkazem na akci.
+  V vývoji (`inviteUserByEmail`) Supabase GoTrue vykreslí šablonu zveřejnění do Mailpit; v produkci (`generateLink` + send-email hook přes OCI Email Delivery) je odeslán stylový e-mail s odkazem na akci.
   Metainformace o zveřejnění (`pending_party_id`, `pending_role_id`, `pending_system_role`, `invited_by`) jsou vloženy, aby byl účet správně připojen, když uživatel klikne na `/auth/callback` a nastaví heslo.
 
 Při přidělování rolí se vždy dodržuje `canAssignRole`: odeslaná systémová role je uznána pouze tehdy, pokud jste oprávněni ji přidělit.

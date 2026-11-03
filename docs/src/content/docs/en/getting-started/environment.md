@@ -37,9 +37,9 @@ export SUPABASE_ACCESS_TOKEN=<your personal access token>
 
 Run `direnv allow` after creating this file.
 
-## Two Supabase projects
+## Two environments
 
-The project is designed with two separate Supabase instances:
+The project runs two separate Supabase backends:
 
 | Environment | Purpose | Branch |
 |------------|---------|--------|
@@ -48,8 +48,8 @@ The project is designed with two separate Supabase instances:
 
 **Never run `db-push.sh production` from a feature branch.** The script enforces this.
 
-## Supabase local vs cloud
+## Supabase local vs production
 
 During development, `supabase start` runs everything locally — no cloud, no cost. Your database is on `localhost:54322`, the API on `localhost:54321`.
 
-When you deploy to production, you use a cloud Supabase project and your environment files point to the cloud URLs.
+In production, the same Supabase stack runs **self-hosted on an Oracle Cloud VM** (`https://api-oci.mamtodoma.cz`) — not Supabase Cloud. Your `.env.production` (and the Cloudflare Worker's `PUBLIC_SUPABASE_URL`) point there. The website itself still runs as an Astro SSR Cloudflare Worker; only the backend lives on Oracle.

@@ -9,7 +9,7 @@ This platform is a **ready-to-use e-commerce backend** built for small-to-medium
 
 - A **web admin panel** to manage your entire shop from a browser
 - A **React Native mobile app** your customers can install on Android or iOS
-- A **PostgreSQL database** (hosted on Supabase) for all your data
+- A **PostgreSQL database** (Supabase stack, self-hosted on Oracle Cloud in production) for all your data
 - **Role-based access control** so your team only sees what they need to
 - **Automated E2E tests** that verify everything works before you deploy
 
@@ -43,7 +43,7 @@ This means you only write it once and it works everywhere.
 |-------|-----------|-----|
 | Website | Astro 5 SSR | Fast, server-rendered, minimal JS |
 | Mobile | React Native + Expo | One codebase for Android + iOS |
-| Database | Supabase (PostgreSQL) | Managed hosting, built-in auth, RLS |
+| Database | Supabase (PostgreSQL) | Self-hosted on Oracle Cloud in prod, built-in auth, RLS |
 | Auth | Magic link + Google OAuth | Passwordless option available |
 | Package manager | pnpm | Fast, disk-efficient |
 | Types | TypeScript strict mode | Catch errors before they hit production |

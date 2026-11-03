@@ -21,13 +21,13 @@ Full-stack template: React Native mobile app (Android APK) + Astro website + Sup
 3. **No comments** unless the WHY is non-obvious.
 4. **No fallback mechanisms** — they hide failures.
 5. **Credentials only in** `.env.development`, `.env.production`, `.envrc` — never hardcode.
-6. **All DB changes** go through `supabase/migrations/`, never the Supabase dashboard.
+6. **All DB changes** go through `supabase/migrations/` — never by hand (prod is self-hosted on Oracle and has no dashboard anyway).
 
 ## Tech stack
 
 - Mobile: **React Native 0.83 / Expo 55** — package manager **pnpm**
 - Website: **Astro 5** (SSR mode) — pnpm
-- Database: **Supabase (PostgreSQL)** — two projects: dev + prod
+- Database: **Supabase (PostgreSQL)** — dev = local `supabase` stack; prod = **self-hosted Supabase on Oracle Cloud** (`api-oci.mamtodoma.cz`), NOT Supabase Cloud
 - Auth: magic link + Google OAuth (via Supabase Auth)
 - Types: TypeScript strict mode
 - Tests: Jest (mobile), Playwright (website E2E)
@@ -64,14 +64,26 @@ cp .env.production.example .env.production
 cp .envrc.example .envrc && direnv allow
 ```
 
-## Supabase
+## Supabase (hosting)
 
-Two Supabase projects — **never mix them**:
+Supabase here means the **stack** (Postgres + GoTrue auth + Storage + PostgREST auto-API + Edge
+Functions), not Supabase Cloud. In production it is **self-hosted on Oracle**, not a managed
+Supabase project:
 
-| Environment | Project ref |
-|------------|-------------|
-| development | `YOUR_DEV_PROJECT_REF` |
-| production  | `YOUR_PROD_PROJECT_REF` |
+| Environment | Where it runs |
+|------------|---------------|
+| development | Local `supabase start` stack at `http://127.0.0.1:54321` |
+| production  | **Self-hosted Supabase (Docker) on an Oracle Cloud VM** — `https://api-oci.mamtodoma.cz` |
+
+Production cut over from Supabase Cloud (`ilcnqtbfgpxsxrenuaeb`) to the Oracle self-hosted stack on
+2026-10-23. The old Supabase Cloud project is retained only as a cold rollback and is **not** in
+the serving path. There is **no production Supabase dashboard** — all prod config lives in the
+stack's env on the VM and in `supabase/migrations/`.
+
+The **website** did NOT move: it still runs as an Astro SSR **Cloudflare Worker**
+(`mamtodoma-website`), and Cloudflare still does CI/CD (build + `wrangler deploy`). Only the
+backend moved to Oracle — the Worker reaches it via `PUBLIC_SUPABASE_URL=https://api-oci.mamtodoma.cz`.
+Migrations and Edge Functions now deploy to the Oracle stack, not to Supabase Cloud.
 
 After any schema change: `supabase gen types > shared/supabase/types.ts`
 

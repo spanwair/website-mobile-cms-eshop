@@ -198,7 +198,7 @@ The invite action branches on whether the email already exists and on the chosen
   Otherwise their `user_party_roles` entry is upserted, their `profiles.role` is raised to the chosen system role, and a notification email lists all their organizations.
   No sign-up link is sent because the account already exists.
 - **New user**: an invite is issued.
-  In development (`inviteUserByEmail`) Supabase GoTrue renders the invite template into Mailpit; in production (`generateLink` + Resend) a styled email with the action link is sent.
+  In development (`inviteUserByEmail`) Supabase GoTrue renders the invite template into Mailpit; in production (`generateLink` + the OCI Email Delivery send-email hook) a styled email with the action link is sent.
   Invitation metadata (`pending_party_id`, `pending_role_id`, `pending_system_role`, `invited_by`) is embedded so the account is wired up correctly when the user clicks through `/auth/callback` and sets a password.
 
 Role assignment always respects `canAssignRole`: the submitted system role is only honoured if you are allowed to assign it.

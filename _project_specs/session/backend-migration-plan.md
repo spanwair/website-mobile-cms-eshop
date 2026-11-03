@@ -2,7 +2,10 @@
 
 Date: 2026-10-22.
 Strategy: **A - self-host the identical Supabase stack on an OCI compute VM** (eu-frankfurt-1).
-Status: PLAN ONLY. Nothing provisioned. Awaiting approval to start Phase 0.
+Status: **DONE — cutover complete 2026-10-23.** Production backend now runs on the self-hosted
+Supabase stack on OCI (`https://api-oci.mamtodoma.cz`); Supabase Cloud kept as cold rollback.
+The phase-by-phase execution log lives in agent memory (`project_backend_migration_oci`). The
+plan below is the original pre-execution design, kept for reference.
 
 ## Decisions locked with Jan
 - This is the live mamtodoma.cz repo. smalljobs-looking values are mamtodoma's - do not chase them.

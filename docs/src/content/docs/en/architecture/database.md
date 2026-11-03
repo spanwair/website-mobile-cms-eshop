@@ -5,7 +5,7 @@ description: The tables, relationships, and how data is organized.
 
 ## Overview
 
-The database is PostgreSQL hosted on Supabase. Everything runs through Supabase's API — no direct DB connections from the app.
+The database is PostgreSQL from the Supabase stack — **self-hosted on Oracle Cloud** in production (`api-oci.mamtodoma.cz`) and a local Supabase stack in development (not Supabase Cloud). Everything runs through the Supabase API — no direct DB connections from the app.
 
 ## Core tables
 

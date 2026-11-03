@@ -3,14 +3,14 @@ title: API Overview
 description: How to connect your custom eshop to the CMS API.
 ---
 
-The CMS exposes two types of API endpoints. Both are provided by your Supabase project — you do not run a separate API server.
+The CMS exposes two types of API endpoints. Both are provided by your Supabase backend — you do not run a separate API server.
 
 | Type | Base URL | What it does |
 |---|---|---|
-| **PostgREST** | `https://{ref}.supabase.co/rest/v1` | Direct table access — products, categories, cart, orders |
-| **Edge Functions** | `https://{ref}.supabase.co/functions/v1` | Custom logic — account deletion, webhooks, integrations |
+| **PostgREST** | `https://api-oci.mamtodoma.cz/rest/v1` | Direct table access — products, categories, cart, orders |
+| **Edge Functions** | `https://api-oci.mamtodoma.cz/functions/v1` | Custom logic — account deletion, webhooks, integrations |
 
-Your project `ref` is visible in your Supabase project settings and in `.env.development` as `PUBLIC_SUPABASE_URL`.
+The base URL is your `PUBLIC_SUPABASE_URL`: `https://api-oci.mamtodoma.cz` in production (self-hosted Supabase on Oracle Cloud) and `http://127.0.0.1:54321` in local development.
 
 ## Authentication
 
@@ -82,7 +82,7 @@ Find your `party_id` in the admin panel at **[Admin → Organizations](/docs/en/
 ## Quick start — list your products
 
 ```javascript
-const SUPABASE_URL = 'https://your-ref.supabase.co'
+const SUPABASE_URL = 'https://api-oci.mamtodoma.cz'
 const ANON_KEY = 'your-anon-key'
 const PARTY_ID = 'your-party-uuid'  // from Admin → Organizations
 
@@ -136,16 +136,13 @@ const { error } = await supabase
 
 ## Rate limits
 
-| Supabase plan | Limit |
-|---|---|
-| Free | ~500 requests/second per project |
-| Pro and above | Higher limits — see your Supabase dashboard |
+The production backend is a self-hosted Supabase stack on an Oracle Cloud VM, so there are no plan-based request quotas — throughput is bounded by the stack's API gateway (Kong) configuration and the VM's capacity.
 
 PostgREST returns a `413` error if the response would exceed 2MB. Use `?select` to reduce payload size and `?limit` to paginate.
 
 ## CORS
 
-PostgREST allows all origins by default. Edge Functions include explicit CORS headers. If you need to restrict origins, configure this in your Supabase project settings under **API → CORS**.
+PostgREST allows all origins by default. Edge Functions include explicit CORS headers. If you need to restrict origins, configure this in the self-hosted stack's Kong / PostgREST configuration on the Oracle VM.
 
 ## Full API reference
 

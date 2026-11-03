@@ -38,17 +38,17 @@ info:
     | Pagination | `?limit=20&offset=0` |
 
 servers:
-  - url: https://{project_ref}.supabase.co/rest/v1
+  - url: https://{supabase_host}/rest/v1
     description: PostgREST — table endpoints
     variables:
-      project_ref:
-        default: your_project_ref
-        description: Your Supabase project reference (found in project settings)
-  - url: https://{project_ref}.supabase.co/functions/v1
+      supabase_host:
+        default: api-oci.mamtodoma.cz
+        description: Supabase host (prod = api-oci.mamtodoma.cz, self-hosted on Oracle Cloud; local dev = 127.0.0.1:54321). Equals your PUBLIC_SUPABASE_URL host.
+  - url: https://{supabase_host}/functions/v1
     description: Edge Functions — custom logic endpoints
     variables:
-      project_ref:
-        default: your_project_ref
+      supabase_host:
+        default: api-oci.mamtodoma.cz
 
 components:
   securitySchemes:
@@ -920,7 +920,7 @@ paths:
         This action is irreversible. All associated data may be cascade-deleted
         depending on your database FK policies.
 
-        **Base URL for this endpoint:** `https://{project_ref}.supabase.co/functions/v1`
+        **Base URL for this endpoint:** `https://api-oci.mamtodoma.cz/functions/v1`
       tags:
         - Account (Edge Functions)
       security:
@@ -971,7 +971,7 @@ paths:
         Returns a hello message and the current user's ID if authenticated.
         Used to verify that Edge Functions are deployed and reachable.
 
-        **Base URL for this endpoint:** `https://{project_ref}.supabase.co/functions/v1`
+        **Base URL for this endpoint:** `https://api-oci.mamtodoma.cz/functions/v1`
       tags:
         - Account (Edge Functions)
       security:
