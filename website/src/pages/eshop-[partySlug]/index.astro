@@ -58,6 +58,10 @@ const homeLayout = sanitizeLayout(storeConfig?.homepage_layout);
 const gridIdx = homeLayout.indexOf("product_grid");
 const sectionsBeforeGrid = gridIdx === -1 ? homeLayout : homeLayout.slice(0, gridIdx);
 const sectionsAfterGrid = gridIdx === -1 ? [] : homeLayout.slice(gridIdx + 1);
+// Only the clean homepage view gets its own description — filtered/search/paginated views of
+// the same listing stay titled distinctly but canonicalize (Layout's default) to the plain URL,
+// so they never compete with the homepage for the same query in the index.
+const metaDescription = isHomepageView ? storeConfig?.tagline ?? undefined : undefined;
 const sectionProps = {
   storeConfig,
   categories: categories.filter((c) => !c.parent_id),
@@ -72,7 +76,11 @@ const sectionProps = {
 };
 ---
 
-<Layout title={`${storeConfig?.brand_name ?? "Shop"}${search ? ` — ${search}` : ""}${categorySlug ? ` — ${categorySlug}` : ""}`}>
+<Layout
+  title={`${storeConfig?.brand_name ?? "Shop"}${search ? ` — ${search}` : ""}${categorySlug ? ` — ${categorySlug}` : ""}`}
+  description={metaDescription}
+  ogImage={storeConfig?.logo_url}
+>
   <div id="shop-app">
     {isHomepageView && sectionsBeforeGrid.length > 0 && (
       <Sections layout={sectionsBeforeGrid} {...sectionProps} />

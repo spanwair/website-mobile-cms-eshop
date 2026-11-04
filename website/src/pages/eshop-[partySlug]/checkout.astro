@@ -258,7 +258,7 @@ const defaultShippingConfig = shippingConfigs[0];
 const defaultShippingCost = defaultShippingConfig ? computeShippingCost(defaultShippingConfig, subtotal) : 0;
 ---
 
-<Layout title={t.shop.checkoutTitle}>
+<Layout title={t.shop.checkoutTitle} noindex>
   <div class="checkout-page">
     <h1 class="page-title">{t.shop.checkoutTitle}</h1>
 

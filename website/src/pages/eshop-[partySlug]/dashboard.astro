@@ -14,7 +14,7 @@ if (view.redirect) return Astro.redirect(view.redirect);
 const t = useT(Astro);
 ---
 
-<Layout title={`${t.dashboard.welcomeBack} — ${view.brandName}`}>
+<Layout title={`${t.dashboard.welcomeBack} — ${view.brandName}`} noindex>
   <div class="account-page">
     <DashboardBody
       displayName={view.displayName}

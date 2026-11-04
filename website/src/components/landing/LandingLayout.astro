@@ -9,10 +9,20 @@ interface Props {
   title: string;
   description: string;
   ambient?: boolean;
+  noindex?: boolean;
 }
-const { title, description, ambient = false } = Astro.props;
+const { title, description, ambient = false, noindex = false } = Astro.props;
 const t = useT(Astro);
 const canonical = new URL(Astro.url.pathname, Astro.site ?? "https://mamtodoma.cz");
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Mamtodoma",
+  url: new URL("/", Astro.site ?? "https://mamtodoma.cz").toString(),
+  logo: new URL("/apple-touch-icon.png", Astro.site ?? "https://mamtodoma.cz").toString(),
+};
+const toJsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, "\\u003c");
 ---
 
 <!doctype html>
@@ -25,6 +35,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? "https://mamtodoma.c
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical.toString()} />
+    {noindex && <meta name="robots" content="noindex,follow" />}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
@@ -35,6 +46,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? "https://mamtodoma.c
         in from its own self-hosted files with a system-ui fallback, so it needs no preload. */}
     <link rel="preload" href="/fonts/jakarta-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/jakarta-latin-ext.woff2" as="font" type="font/woff2" crossorigin />
+    <script type="application/ld+json" set:html={toJsonLd(organizationSchema)} />
   </head>
   <body class:list={["landing", { "landing--ambient": ambient }]}>
     <LandingNav />

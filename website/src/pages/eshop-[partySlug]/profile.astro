@@ -13,7 +13,7 @@ if (result.redirect) return Astro.redirect(result.redirect);
 const t = useT(Astro);
 ---
 
-<Layout title={t.profile.title}>
+<Layout title={t.profile.title} noindex>
   <div class="account-page">
     <ProfilePanel profile={result.profile} email={result.email} saved={result.saved} saveError={result.saveError} />
   </div>

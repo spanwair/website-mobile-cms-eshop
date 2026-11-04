@@ -62,6 +62,18 @@ function applyCharset(response: Response): Response {
   return response;
 }
 
+// Baseline security headers absent from every document response (confirmed via live curl —
+// Cloudflare's edge adds none of these on its own). No Content-Security-Policy here: the
+// storefront legitimately loads Supabase Storage images, per-tenant Google Fonts, and Stripe —
+// a CSP needs that allowlist built and tested deliberately, not bolted on as a side effect.
+function applySecurityHeaders(response: Response): Response {
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
+  response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  return response;
+}
+
 // The documentation is a Starlight site (base=/docs) published as static assets into
 // public/docs by scripts/build-docs.sh. In production Cloudflare's asset layer serves
 // /docs/** before this Worker ever runs, resolving directory index.html natively. But
@@ -161,7 +173,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Cloudflare's Worker Response defaults to "Content-Type: text/html" with no charset,
   // which SEO/accessibility checkers flag since the byte encoding is left implicit.
-  const response = applyCharset(await next());
+  const response = applySecurityHeaders(applyCharset(await next()));
 
   if (cache && cacheKey && isStorableResponse(response)) {
     const body = await response.arrayBuffer();

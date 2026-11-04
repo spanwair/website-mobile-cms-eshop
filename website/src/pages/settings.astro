@@ -10,7 +10,7 @@ if (result.redirect) return Astro.redirect(result.redirect);
 const t = useT(Astro);
 ---
 
-<LandingLayout title={`${t.settings.title} — Mamtodoma`} description={t.landing.meta.defaultDescription}>
+<LandingLayout title={`${t.settings.title} — Mamtodoma`} description={t.landing.meta.defaultDescription} noindex>
   <section class="landing">
     <SettingsPanel
       displayName={result.displayName}

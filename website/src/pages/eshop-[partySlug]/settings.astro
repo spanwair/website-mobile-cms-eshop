@@ -15,7 +15,7 @@ if (result.redirect) return Astro.redirect(result.redirect);
 const t = useT(Astro);
 ---
 
-<Layout title={t.settings.title}>
+<Layout title={t.settings.title} noindex>
   <div class="account-page">
     <SettingsPanel
       displayName={result.displayName}

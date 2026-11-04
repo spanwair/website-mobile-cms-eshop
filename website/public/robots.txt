@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /settings
+Disallow: /profile
+Disallow: /dashboard
+
+Sitemap: https://mamtodoma.cz/sitemap.xml

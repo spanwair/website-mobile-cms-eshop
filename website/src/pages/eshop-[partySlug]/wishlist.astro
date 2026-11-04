@@ -37,7 +37,7 @@ const items = await fetchWishlistItems(supabase, storeParty.id, session.user.id)
 const cardVariant = storeParty.config?.product_card_variant ?? "classic";
 ---
 
-<Layout title={t.shop.wishlist}>
+<Layout title={t.shop.wishlist} noindex>
   <div class="wishlist-page">
     <h1 class="page-title">{t.shop.wishlist}</h1>
 

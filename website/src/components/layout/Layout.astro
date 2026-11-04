@@ -2,7 +2,7 @@
 import "../../styles/global.css";
 import { createSupabase, createAdminClient } from "../../lib/supabase";
 import { peekGuestCartId, clearGuestCartId } from "../../lib/guestCart";
-import { useT } from "../../lib/i18n";
+import { useT, getLang } from "../../lib/i18n";
 import { requireAdminCtx } from "../../lib/admin";
 import { ROLE } from "@shared/constants/permissions";
 import { buildThemeCss, googleFontsUrl } from "../../lib/themeEngine";
@@ -17,12 +17,30 @@ import ProfileMenu from "./ProfileMenu.astro";
 
 interface Props {
   title?: string;
+  description?: string;
+  canonical?: string;
+  ogImage?: string;
+  ogType?: string;
+  noindex?: boolean;
 }
 const storeParty = Astro.locals.storeParty;
 const storeConfig = storeParty?.config ?? null;
 const brandName = storeConfig?.brand_name ?? "Template";
-const { title = brandName } = Astro.props;
+const {
+  title = brandName,
+  description,
+  canonical,
+  ogImage,
+  ogType = "website",
+  noindex = false,
+} = Astro.props;
 const faviconUrl = storeConfig?.favicon_url ?? "/favicon.png";
+const lang = getLang(Astro);
+// Multi-tenant pages are served under whatever host resolved this request (custom domain,
+// subdomain, or the shared /eshop-[slug] path) — canonicalize against that real origin, not a
+// fixed site constant, and drop the query string so filter/sort/pagination variants of the
+// same listing don't get indexed as separate pages.
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.url.origin).toString();
 // Inter (the app/body font) is self-hosted via global.css @font-face — one woff2 per subset,
 // zero fonts.gstatic.com requests. Only a tenant's *custom* (non-Inter) role font is still
 // fetched from Google, on demand, and only then do we pay the preconnect.
@@ -39,6 +57,9 @@ const partySlug = Astro.params.partySlug as string | undefined;
 const isStorefrontPage = pathname === "/shop" || pathname.startsWith("/shop/") || !!partySlug;
 const isStorefront = isStorefrontPage && !!storeParty;
 const isPendingStore = isStorefront && storeParty?.status === "pending_approval";
+// A store still in pending_approval is publicly viewable (preview banner) but not yet reviewed
+// — it must never get indexed under its own merit before an owner has approved it.
+const shouldNoindex = noindex || isPendingStore;
 const shopHref = partySlug ? `/eshop-${partySlug}` : "/shop";
 const brandHref = isStorefront ? shopHref : "/";
 
@@ -97,11 +118,24 @@ const currentPath = Astro.url.pathname + Astro.url.search;
 ---
 
 <!doctype html>
-<html lang="cs">
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={canonicalUrl} />
+    {shouldNoindex && <meta name="robots" content="noindex,follow" />}
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content={brandName} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
+    <meta name="twitter:title" content={title} />
+    {description && <meta name="twitter:description" content={description} />}
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
     <link rel="icon" type="image/png" href={faviconUrl} />
     {customFontsUrl && (
       <>

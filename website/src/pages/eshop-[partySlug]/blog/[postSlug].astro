@@ -5,6 +5,7 @@ import { fetchBlogPostBySlug, fetchPublishedBlogPosts } from "@shared/services/b
 import { fetchStoreMedia } from "@shared/services/storeMediaService";
 import { renderContent, resolveMediaUrl } from "@/lib/contentRenderer";
 import { useT } from "@/lib/i18n";
+import { truncateDescription } from "@/lib/seoMeta";
 
 const { partySlug } = Astro.params;
 const storeParty = Astro.locals.storeParty;
@@ -28,9 +29,25 @@ function formatDate(iso: string | null) {
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
 }
+
+const metaDescription = post.seo_description
+  ?? (post.excerpt ? truncateDescription(post.excerpt) : undefined);
+const postUrl = new URL(`${linkBase}/blog/${postSlug}`, Astro.url.origin).toString();
+const blogSchema = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: post.title,
+  description: metaDescription ?? post.title,
+  url: postUrl,
+  ...(post.published_at && { datePublished: post.published_at }),
+  ...(featuredImage && { image: [featuredImage] }),
+  ...(post.author_name && { author: { "@type": "Person", name: post.author_name } }),
+};
+const toJsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, "\\u003c");
 ---
 
-<Layout title={post.seo_title ?? post.title}>
+<Layout title={post.seo_title ?? post.title} description={metaDescription} ogImage={featuredImage ?? undefined}>
+  <script type="application/ld+json" set:html={toJsonLd(blogSchema)} />
   <article class="blog-article container">
     <a href={`${linkBase}/blog`} class="back-link">{t.blog.backToBlog}</a>
     <h1 class="article-title">{post.title}</h1>

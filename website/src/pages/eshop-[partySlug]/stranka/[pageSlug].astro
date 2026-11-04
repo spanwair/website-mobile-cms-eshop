@@ -8,6 +8,7 @@ import { fetchVisibleFaqItems } from "@shared/services/faqService";
 import { fetchStoreMedia } from "@shared/services/storeMediaService";
 import { renderContent, resolveMediaUrl } from "@/lib/contentRenderer";
 import { useT } from "@/lib/i18n";
+import { truncateDescription } from "@/lib/seoMeta";
 
 const storeParty = Astro.locals.storeParty;
 if (!storeParty) return Astro.redirect("/shop");
@@ -23,9 +24,11 @@ const bodyHtml = renderContent(page.body, page.body_format, media);
 const team = page.template === "about" ? await fetchActiveTeamMembers(supabase, storeParty.id) : [];
 const faqItems = page.template === "faq" ? await fetchVisibleFaqItems(supabase, storeParty.id) : [];
 const config = storeParty.config;
+const metaDescription = page.seo_description
+  ?? (page.body ? truncateDescription(page.body.replace(/<[^>]+>/g, " ")) : undefined);
 ---
 
-<Layout title={page.seo_title ?? page.title}>
+<Layout title={page.seo_title ?? page.title} description={metaDescription}>
   <div class="content-page container">
     <h1 class="page-title">{page.title}</h1>
     {bodyHtml && <div class="page-body" set:html={bodyHtml} />}

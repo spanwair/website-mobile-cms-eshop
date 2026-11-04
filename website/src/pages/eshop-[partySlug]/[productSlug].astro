@@ -12,6 +12,7 @@ import { variantImages, resolvePrimaryMedia } from "@shared/services/productImag
 import { getOrCreateCart, addToCart, fetchCartItemCount, type CartIdentity } from "@shared/services/cartService";
 import { addToWishlist, removeFromWishlist, isInWishlist } from "@shared/services/wishlistService";
 import { fetchVisibleBenefitItems } from "@shared/services/benefitItemService";
+import { truncateDescription } from "../../lib/seoMeta";
 
 const { partySlug, productSlug } = Astro.params;
 const storeParty = Astro.locals.storeParty;
@@ -197,9 +198,64 @@ if (categories.length > 0) {
 }
 
 const trustBadges = (await fetchVisibleBenefitItems(supabase, partyId)).slice(0, 4);
+
+const metaDescription = product.seo_description
+  ?? (product.description ? truncateDescription(product.description) : undefined);
+const currency = storeParty.config?.currency_code ?? "CZK";
+const effectivePrice = defaultVariant?.price ?? product.discount_price ?? product.price;
+const productUrl = new URL(`${linkBase}/${productSlug}`, Astro.url.origin).toString();
+const primaryImageUrl = images[0]?.url;
+const shopUrl = new URL(linkBase, Astro.url.origin).toString();
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: storeParty.config?.brand_name ?? "Shop", item: shopUrl },
+    ...(categories[0]
+      ? [{ "@type": "ListItem", position: 2, name: categories[0].name, item: `${shopUrl}?category=${categories[0].slug}` }]
+      : []),
+    { "@type": "ListItem", position: categories[0] ? 3 : 2, name: product.title },
+  ],
+};
+
+const productSchema = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name: product.title,
+  description: metaDescription ?? product.title,
+  sku: product.sku ?? product.id,
+  ...(primaryImageUrl && { image: [primaryImageUrl] }),
+  ...(brand?.name && { brand: { "@type": "Brand", name: brand.name } }),
+  offers: {
+    "@type": "Offer",
+    url: productUrl,
+    priceCurrency: currency,
+    price: effectivePrice.toFixed(2),
+    availability: isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+  },
+  ...(reviewTotal > 0 && {
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: averageRating?.toFixed(1),
+      reviewCount: reviewTotal,
+    },
+  }),
+};
+
+// Neutralize "</script>" sequences in user-authored text (title/description) so they can
+// never break out of the JSON-LD script tag they're embedded in.
+const toJsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, "\\u003c");
 ---
 
-<Layout title={product.seo_title ?? product.title}>
+<Layout
+  title={product.seo_title ?? product.title}
+  description={metaDescription}
+  ogImage={primaryImageUrl}
+  ogType="product"
+>
+  <script type="application/ld+json" set:html={toJsonLd(productSchema)} />
+  <script type="application/ld+json" set:html={toJsonLd(breadcrumbSchema)} />
   <nav class="breadcrumb">
     <a href={linkBase}>Shop</a>
     {categories[0] && <><span>/</span><a href={`${linkBase}?category=${categories[0].slug}`}>{categories[0].name}</a></>}

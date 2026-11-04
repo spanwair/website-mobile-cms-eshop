@@ -25,9 +25,18 @@ import { LANDING_PROVIDER_LOGOS } from "@shared/constants/providerLogos";
 const t = useT(Astro);
 const supabase = createSupabase(Astro);
 const featuredStores = await listLandingFeaturedStores(supabase);
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Mamtodoma",
+  url: new URL("/", Astro.site ?? "https://mamtodoma.cz").toString(),
+};
+const toJsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, "\\u003c");
 ---
 
 <LandingLayout title={t.landing.meta.defaultTitle} description={t.landing.meta.defaultDescription} ambient>
+  <script type="application/ld+json" set:html={toJsonLd(websiteSchema)} />
   <Hero />
   <StatBand />
   <FoundingSellers />
