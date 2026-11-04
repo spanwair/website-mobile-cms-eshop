@@ -1943,7 +1943,6 @@ export const cs: Translations = {
     },
     aiCapabilities: {
       eyebrow: "Chytřejší každý měsíc",
-      title: "Postaveno pro prodej s pomocí AI",
       sub: "Aktivně zabudováváme AI nástroje do platformy — tady je, co už funguje, a co se chystá.",
       roadmapNote: "Označené položky jsou na blízkém plánu vývoje, zatím nejsou v provozu — raději vám to řekneme, než abychom slibovali víc, než umíme.",
       roadmapBadge: "Plán vývoje",

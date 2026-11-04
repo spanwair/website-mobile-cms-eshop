@@ -1942,7 +1942,6 @@ export const en = {
     },
     aiCapabilities: {
       eyebrow: "Smarter every month",
-      title: "Built for AI-assisted selling",
       sub: "We're actively building AI tooling into the platform — here's what's already live and what's coming next.",
       roadmapNote: "Marked items are on the near-term roadmap, not yet live — we'd rather tell you than oversell.",
       roadmapBadge: "On the roadmap",
