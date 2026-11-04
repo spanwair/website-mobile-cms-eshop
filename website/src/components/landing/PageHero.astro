@@ -13,20 +13,20 @@ interface Props {
 const { eyebrow, title, titleHtml, lead, image, imageAlt = "" } = Astro.props;
 ---
 
-<section class="landing page-hero" data-reveal-group>
+<section class="landing page-hero" data-hero-reveal>
   <div class="container-lg page-hero-grid">
     <div class="page-hero-copy">
-      <span class="section-eyebrow font-mono" data-reveal>{eyebrow}</span>
+      <span class="section-eyebrow font-mono">{eyebrow}</span>
       {titleHtml ? (
-        <h1 class="page-hero-title font-display" data-reveal set:html={titleHtml} />
+        <h1 class="page-hero-title font-display" set:html={titleHtml} />
       ) : (
-        <h1 class="page-hero-title font-display" data-reveal>{title}</h1>
+        <h1 class="page-hero-title font-display">{title}</h1>
       )}
-      {lead && <p class="page-hero-lead" data-reveal>{lead}</p>}
+      {lead && <p class="page-hero-lead">{lead}</p>}
       <slot />
     </div>
     {image && (
-      <div class="page-hero-media" data-reveal>
+      <div class="page-hero-media">
         <img src={image} alt={imageAlt} width="640" height="480" loading="eager" />
       </div>
     )}
@@ -47,5 +47,17 @@ const { eyebrow, title, titleHtml, lead, image, imageAlt = "" } = Astro.props;
 
   @media (max-width: 900px) {
     .page-hero-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Load-time entrance, not the scroll-triggered [data-reveal]/IntersectionObserver system
+     every other section uses: this hero is already in the initial viewport, so gating its
+     visibility on client JS (which [data-reveal] does, defaulting to opacity:0 until observed)
+     left it blank for however long JS took to load/run — the only content above the fold,
+     looking like a broken, unstyled page. A plain CSS animation needs nothing but the
+     already-render-blocking stylesheet to resolve. */
+  [data-hero-reveal] { opacity: 0; transform: translateY(16px); animation: page-hero-rise 0.6s var(--ease-out) forwards; }
+  @keyframes page-hero-rise { to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    [data-hero-reveal] { opacity: 1; transform: none; animation: none; }
   }
 </style>

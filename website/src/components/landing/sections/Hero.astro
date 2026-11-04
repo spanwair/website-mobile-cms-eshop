@@ -25,7 +25,7 @@ const commissionPct = 5;
       <p class="hero-trust tnum">{t.landing.hero.trustLine}</p>
     </div>
 
-    <figure class="hero-visual" data-reveal>
+    <figure class="hero-visual" data-hero-reveal>
       <span class="hero-block hero-block--accent" aria-hidden="true"></span>
       <span class="hero-block hero-block--soft" aria-hidden="true"></span>
       <div class="hero-frame">
@@ -106,10 +106,17 @@ const commissionPct = 5;
   .hero-float-pct { font-size: 0.55em; font-weight: 700; }
   .hero-float-label { font-size: var(--fs-sm); color: var(--text-muted); max-width: 14ch; }
 
-  /* Load-time entrance — above-fold, so it animates on load (not scroll) and never blocks LCP. */
+  /* Load-time entrance — above-fold, so it animates on load (not scroll) and never blocks LCP.
+     Deliberately a plain CSS animation, not the scroll-triggered [data-reveal]/IntersectionObserver
+     system every other section uses: that system defaults to opacity:0 until client JS runs and
+     observes the element, so on a slow connection/device the hero (headline + photo, the only thing
+     visible above the fold) stayed blank for up to a second or more — looking like a broken/unstyled
+     page. A self-contained animation needs nothing but the already-render-blocking CSS to resolve.
+     The hero-visual figure uses the same mechanism (below) so photo and headline enter together. */
   [data-hero-reveal] .hero-line { opacity: 0; transform: translateY(0.4em); animation: hero-rise 0.9s var(--ease-out) forwards; }
   [data-hero-reveal] .hero-line:nth-child(1) { animation-delay: 0.05s; }
   [data-hero-reveal] .hero-line:nth-child(2) { animation-delay: 0.15s; }
+  figure[data-hero-reveal] { opacity: 0; transform: translateY(0.4em); animation: hero-rise 0.9s var(--ease-out) forwards; animation-delay: 0.1s; }
   @keyframes hero-rise { to { opacity: 1; transform: none; } }
 
   @media (max-width: 860px) {
@@ -124,6 +131,6 @@ const commissionPct = 5;
     .hero-form { flex-direction: column; }
   }
   @media (prefers-reduced-motion: reduce) {
-    [data-hero-reveal] .hero-line { opacity: 1; transform: none; animation: none; }
+    [data-hero-reveal] .hero-line, figure[data-hero-reveal] { opacity: 1; transform: none; animation: none; }
   }
 </style>
