@@ -23,7 +23,14 @@ const t = useT(Astro);
           const desc = store.landing_description ?? store.tagline ?? "";
           const alt = t.landing.realEshops.screenshotAlt.replace("{name}", name);
           return (
-            <a href={`/eshop-${store.slug}`} class="card karta eshop-card" data-reveal target="_blank" rel="noopener">
+            <a
+              href={`/eshop-${store.slug}`}
+              class="card karta eshop-card"
+              data-reveal
+              target="_blank"
+              rel="noopener"
+              aria-label={`${t.landing.realEshops.visitCta} ${name}`}
+            >
               <div class="eshop-card-shot">
                 {store.landing_screenshot_url ? (
                   <img src={store.landing_screenshot_url} alt={alt} loading="lazy" />
@@ -40,7 +47,13 @@ const t = useT(Astro);
           );
         })}
         {showCreateCard && (
-          <a href="/login?mode=signup" class="card karta eshop-card eshop-card--create" data-reveal>
+          <a
+            href="/login?mode=signup"
+            rel="nofollow"
+            class="card karta eshop-card eshop-card--create"
+            data-reveal
+            aria-label={t.landing.realEshops.createCardCta}
+          >
             <div class="eshop-card-shot eshop-card-shot--create">
               <span class="eshop-card-plus" aria-hidden="true">+</span>
             </div>

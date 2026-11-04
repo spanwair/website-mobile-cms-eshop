@@ -1,5 +1,6 @@
 ---
 import Layout from "@/components/layout/Layout.astro";
+import ShareButtons from "@/components/shop/ShareButtons.astro";
 import { createSupabase } from "@/lib/supabase";
 import { fetchBlogPostBySlug, fetchPublishedBlogPosts } from "@shared/services/blogService";
 import { fetchStoreMedia } from "@shared/services/storeMediaService";
@@ -54,6 +55,7 @@ const toJsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, "\\u003c"
     <p class="article-date">{formatDate(post.published_at)}{post.author_name && ` · ${post.author_name}`}</p>
     {featuredImage && <img src={featuredImage} alt={post.title} class="article-image" />}
     {bodyHtml && <div class="article-body" set:html={bodyHtml} />}
+    <ShareButtons url={postUrl} title={post.title} />
 
     {relatedPosts.length > 0 && (
       <div class="related">

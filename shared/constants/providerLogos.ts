@@ -18,7 +18,16 @@ export const PROVIDER_LOGO_SRCS: Record<string, string> = {
 export interface ProviderLogo {
   name: string;
   src: string;
+  url?: string;
 }
+
+// Official homepage per provider - used to make the landing page's partner badges real,
+// honest outbound links instead of bare logo images.
+export const PROVIDER_HOMEPAGE_URLS: Record<string, string> = {
+  [SHIPPING_PROVIDERS.PPL]: "https://www.ppl.cz",
+  [SHIPPING_PROVIDERS.PACKETA]: "https://www.zasilkovna.cz",
+  [PAYMENT_METHOD.STRIPE]: "https://stripe.com",
+};
 
 // Strip diacritics so "Zasilkovna" matches the "zasilkovna" alias.
 function normalizeKey(codeOrName: string): string {
@@ -36,7 +45,7 @@ export function getProviderLogoSrc(codeOrName: string): string | undefined {
 
 // Landing marquee content - display names paired with the shared logo paths above.
 export const LANDING_PROVIDER_LOGOS: ProviderLogo[] = [
-  { name: "PPL", src: PROVIDER_LOGO_SRCS[SHIPPING_PROVIDERS.PPL] },
-  { name: "Zásilkovna", src: PROVIDER_LOGO_SRCS[SHIPPING_PROVIDERS.PACKETA] },
-  { name: "Stripe", src: PROVIDER_LOGO_SRCS[PAYMENT_METHOD.STRIPE] },
+  { name: "PPL", src: PROVIDER_LOGO_SRCS[SHIPPING_PROVIDERS.PPL], url: PROVIDER_HOMEPAGE_URLS[SHIPPING_PROVIDERS.PPL] },
+  { name: "Zásilkovna", src: PROVIDER_LOGO_SRCS[SHIPPING_PROVIDERS.PACKETA], url: PROVIDER_HOMEPAGE_URLS[SHIPPING_PROVIDERS.PACKETA] },
+  { name: "Stripe", src: PROVIDER_LOGO_SRCS[PAYMENT_METHOD.STRIPE], url: PROVIDER_HOMEPAGE_URLS[PAYMENT_METHOD.STRIPE] },
 ];

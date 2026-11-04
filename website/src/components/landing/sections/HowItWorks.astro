@@ -2,7 +2,11 @@
 import { useT } from "@/lib/i18n";
 const t = useT(Astro);
 
-const images = ["/img/happy-laptop.jpg", "/img/product-shoes.jpg", "/img/payment.jpg"];
+const images = [
+  { src: "/img/happy-laptop.jpg", alt: "Spokojená prodejkyně pracující na notebooku" },
+  { src: "/img/product-shoes.jpg", alt: "Produktová fotografie bot v e-shopu" },
+  { src: "/img/payment.jpg", alt: "Platba kartou v e-shopu" },
+];
 ---
 
 <section class="landing how" id="how-it-works">
@@ -25,7 +29,7 @@ const images = ["/img/happy-laptop.jpg", "/img/product-shoes.jpg", "/img/payment
       {t.landing.howItWorks.steps.map((step, i) => (
         <article class="how-step" data-step={i} data-reveal>
           <div class="how-step-shot">
-            <img src={images[i % images.length]} alt="" loading="lazy" width="620" height="420" />
+            <img src={images[i % images.length].src} alt={images[i % images.length].alt} loading="lazy" width="620" height="420" />
             <span class="how-step-num font-display">{step.step}</span>
           </div>
           <h3 class="how-step-title">{step.title}</h3>

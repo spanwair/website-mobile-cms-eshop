@@ -3,12 +3,12 @@ import { useT } from "@/lib/i18n";
 const t = useT(Astro);
 
 const images = [
-  "/img/template-store.jpg",
-  "/img/desk-work.jpg",
-  "/img/support-team.jpg",
-  "/img/admin-analytics.jpg",
-  "/img/payment.jpg",
-  "/img/template-fashion.jpg",
+  { src: "/img/template-store.jpg", alt: "Ukázka šablony e-shopu na platformě mamtodoma.cz" },
+  { src: "/img/desk-work.jpg", alt: "Správa e-shopu na notebooku" },
+  { src: "/img/support-team.jpg", alt: "Tým podpory mamtodoma.cz" },
+  { src: "/img/admin-analytics.jpg", alt: "Přehled statistik a objednávek v administraci e-shopu" },
+  { src: "/img/payment.jpg", alt: "Platba kartou v e-shopu" },
+  { src: "/img/template-fashion.jpg", alt: "Šablona e-shopu pro módní značku" },
 ];
 ---
 
@@ -22,7 +22,7 @@ const images = [
       {t.landing.features.items.map((item, i) => (
         <article class="card karta feature-card" data-reveal>
           <div class="feature-shot">
-            <img src={images[i % images.length]} alt="" loading="lazy" width="440" height="300" />
+            <img src={images[i % images.length].src} alt={images[i % images.length].alt} loading="lazy" width="440" height="300" />
           </div>
           <div class="feature-text">
             <h3 class="card-title">{item.title}</h3>

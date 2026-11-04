@@ -1,0 +1,53 @@
+---
+// Plain share-intent links - no third-party sharing-plugin script, no tracking pixel.
+// Each href is a standard, documented share-intent URL; no API key or app registration needed.
+interface Props {
+  url: string;
+  title: string;
+}
+const { url, title } = Astro.props;
+const encodedUrl = encodeURIComponent(url);
+const encodedTitle = encodeURIComponent(title);
+---
+
+<div class="share-buttons">
+  <span class="share-label">Sdílet:</span>
+  <a
+    href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
+    target="_blank"
+    rel="noopener noreferrer nofollow"
+    class="share-btn"
+    aria-label="Sdílet na Facebooku"
+  >Facebook</a>
+  <a
+    href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`}
+    target="_blank"
+    rel="noopener noreferrer nofollow"
+    class="share-btn"
+    aria-label="Sdílet na X (Twitter)"
+  >X</a>
+  <a
+    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
+    target="_blank"
+    rel="noopener noreferrer nofollow"
+    class="share-btn"
+    aria-label="Sdílet na LinkedInu"
+  >LinkedIn</a>
+  <a
+    href={`https://wa.me/?text=${encodedTitle}%20${encodedUrl}`}
+    target="_blank"
+    rel="noopener noreferrer nofollow"
+    class="share-btn"
+    aria-label="Sdílet přes WhatsApp"
+  >WhatsApp</a>
+</div>
+
+<style>
+  .share-buttons { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 24px 0; }
+  .share-label { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-right: 4px; }
+  .share-btn {
+    font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--text-primary); text-decoration: none;
+  }
+  .share-btn:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+</style>

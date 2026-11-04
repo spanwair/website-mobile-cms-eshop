@@ -1817,7 +1817,7 @@ export const cs: Translations = {
       lang: "cs",
       defaultTitle: "Mamtodoma — Spusťte si e-shop zdarma",
       defaultDescription:
-        "Začněte prodávat online ještě dnes. Bez vstupních nákladů — bereme si 10 % jen z uskutečněného prodeje, se snížením na 5 %, jakmile překročíte 29 900 Kč měsíčně. Zbytek zůstává vám.",
+        "Založte si e-shop zdarma. Bez vstupních nákladů, provize jen 10 % z prodeje, od 29 900 Kč měsíčně snížená na 5 %.",
     },
     logoMarquee: {
       label: "Napojeno na",

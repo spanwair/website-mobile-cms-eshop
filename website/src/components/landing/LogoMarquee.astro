@@ -8,6 +8,7 @@ import { getProviderLogoSrc, type ProviderLogo } from "@shared/constants/provide
 interface LogoItem {
   name: string;
   src?: string;
+  url?: string;
 }
 
 interface Props {
@@ -36,17 +37,21 @@ const items = [...new Map(logos.map((logo) => {
   <div class="container-lg">
     <p class="integrations-label font-mono">{label}</p>
     <div class="integrations-row">
-      {items.map((item) => (
-        <div class="integrations-item" title={item.name}>
-          {item.src ? (
-            <img src={item.src} alt={item.name} class="integrations-logo" loading="lazy" />
-          ) : (
-            <span class="integrations-icon" title={item.name} style={`color:${item.color}; background:${item.bg}`}>
-              <Icon name={item.icon} size={22} />
-            </span>
-          )}
-        </div>
-      ))}
+      {items.map((item) => {
+        const Tag = item.url ? "a" : "div";
+        const linkProps = item.url ? { href: item.url, target: "_blank", rel: "noopener" } : {};
+        return (
+          <Tag class="integrations-item" title={item.name} {...linkProps}>
+            {item.src ? (
+              <img src={item.src} alt={item.name} class="integrations-logo" loading="lazy" />
+            ) : (
+              <span class="integrations-icon" title={item.name} style={`color:${item.color}; background:${item.bg}`}>
+                <Icon name={item.icon} size={22} />
+              </span>
+            )}
+          </Tag>
+        );
+      })}
     </div>
   </div>
 </section>
@@ -64,6 +69,7 @@ const items = [...new Map(logos.map((logo) => {
     display: flex; align-items: center;
     padding: 10px 20px; border: 1px solid var(--border-default); border-radius: var(--radius-full);
     background: var(--bg-page); transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    text-decoration: none; color: inherit;
   }
   .integrations-item:hover { box-shadow: var(--shadow-sm); border-color: var(--border-strong); transform: translateY(-1px); }
   .integrations-icon {
