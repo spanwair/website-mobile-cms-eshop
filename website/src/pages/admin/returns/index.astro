@@ -76,7 +76,7 @@ function reasonLabel(r: string) {
 }
 ---
 
-<CmsLayout title={t.admin.returns.title} userPermissions={permissions} currentPath="/admin/returns" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.returns.title} userPermissions={permissions} currentPath="/admin/returns" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="toolbar">
     <h1 class="page-title">{t.admin.returns.title}</h1>
     <span class="toolbar-count">{total}</span>

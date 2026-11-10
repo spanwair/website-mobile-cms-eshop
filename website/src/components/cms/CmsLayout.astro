@@ -4,6 +4,7 @@ import Sidebar from "./Sidebar.astro";
 import PartySwitcher from "./PartySwitcher.astro";
 import HomepageMapButton from "./HomepageMapButton.astro";
 import MediaPickerModal from "./MediaPickerModal.astro";
+import BugReportWidget from "./BugReportWidget.astro";
 
 interface Props {
   title: string;
@@ -35,6 +36,7 @@ const storeHref = activeParty ? `/eshop-${activeParty.slug}` : null;
     </div>
   </div>
   {partyId && <MediaPickerModal />}
+  <BugReportWidget />
 </Layout>
 
 <style>

@@ -1,0 +1,26 @@
+---
+interface Props { active: "active" | "archived" }
+const { active } = Astro.props;
+import { useT } from "../../lib/i18n";
+const t = useT(Astro);
+const tabs = [
+  { key: "active",   href: "/admin/bugs",          label: t.admin.bugs.tabActive },
+  { key: "archived", href: "/admin/bugs/archived", label: t.admin.bugs.tabArchived },
+];
+---
+
+<div class="settings-tabs">
+  <div class="settings-tabs-list">
+    {tabs.map((tab) => (
+      <a href={tab.href} class={`settings-tab${tab.key === active ? " settings-tab--active" : ""}`}>{tab.label}</a>
+    ))}
+  </div>
+</div>
+
+<style>
+  .settings-tabs { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; border-bottom: 1px solid var(--border-default); }
+  .settings-tabs-list { display: flex; gap: 4px; flex-wrap: wrap; }
+  .settings-tab { padding: 10px 16px; font-size: 14px; font-weight: 600; color: var(--text-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .settings-tab:hover { color: var(--text-primary); text-decoration: none; }
+  .settings-tab--active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+</style>

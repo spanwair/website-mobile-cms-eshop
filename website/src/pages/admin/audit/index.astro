@@ -58,7 +58,7 @@ function actionLabel(action: string) {
 }
 ---
 
-<CmsLayout title={t.admin.audit.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.audit.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="toolbar">
     <form method="GET" class="filter-form">
       <select class="form-input" name="table" style="width:200px">

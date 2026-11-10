@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 # Resolve the production (self-hosted Supabase on Oracle Cloud) pooler connection URL and print it
-# on stdout. Access goes through the Supavisor pooler (session mode) over an SSH tunnel to the VM:
-#   ssh -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -i ~/.ssh/oci_phase0 -fN \
-#       -L 5433:localhost:5432 ubuntu@api-oci.mamtodoma.cz
-# See scripts/oci-prod-db.md for the full procedure.
+# on stdout. Access goes through the Supavisor pooler (session mode) over an SSH tunnel to the VM,
+# which this script ensures is up (and actually working, not just "a process exists") by calling
+# scripts/oci-tunnel.sh - see that file for why ("-f" backgrounding on a failed bind, other local
+# Docker projects squatting low ports, etc). See scripts/oci-prod-db.md for background.
 #
 # Resolution (first match wins):
 #   1. Build from POSTGRES_PASSWORD + POOLER_TENANT_ID (source-of-truth keys from the VM's
 #      /opt/phase0/supabase/docker/.env). The pooler user MUST carry the tenant
 #      (supabase_admin.<tenant>), and the password is URL-encoded so special characters can't
-#      corrupt the URL. Override the tunnelled port with OCI_TUNNEL_PORT (default 5433).
-#   2. Otherwise fall back to a full, ready-to-use OCI_DB_URL (you encode it yourself).
+#      corrupt the URL. The tunnelled port is whatever oci-tunnel.sh actually secured (starts
+#      from OCI_TUNNEL_PORT, default 5433, auto-advancing past anything already occupied).
+#   2. Otherwise fall back to a full, ready-to-use OCI_DB_URL (you encode it yourself) - this path
+#      skips the auto-tunnel, so only use it if you're managing the tunnel yourself.
 set -euo pipefail
+
+cd "$(dirname "$0")/.."
 
 ENV_FILE="${PROD_ENV_FILE:-.env.production}"
 
@@ -31,7 +35,10 @@ unquote() { local v="${1%$'\r'}"; v="${v%\"}"; v="${v#\"}"; v="${v%\'}"; v="${v#
 PG_PW=$(unquote "$(grep '^POSTGRES_PASSWORD=' "$ENV_FILE" 2>/dev/null | cut -d= -f2-)")
 TENANT=$(unquote "$(grep '^POOLER_TENANT_ID=' "$ENV_FILE" 2>/dev/null | cut -d= -f2-)")
 if [[ -n "$PG_PW" && -n "$TENANT" ]]; then
-  PORT="${OCI_TUNNEL_PORT:-5433}"
+  PORT=$(bash scripts/oci-tunnel.sh up) || {
+    echo "Could not establish the OCI tunnel - see diagnostics above." >&2
+    exit 1
+  }
   printf 'postgresql://supabase_admin.%s:%s@127.0.0.1:%s/postgres' "$TENANT" "$(urlencode "$PG_PW")" "$PORT"
 else
   URL=$(unquote "$(grep '^OCI_DB_URL=' "$ENV_FILE" 2>/dev/null | cut -d= -f2-)")

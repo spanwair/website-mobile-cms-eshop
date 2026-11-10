@@ -2,6 +2,7 @@
 import LandingLayout from "../components/landing/LandingLayout.astro";
 import PageHero from "../components/landing/PageHero.astro";
 import CommissionCalculator from "../components/landing/sections/CommissionCalculator.astro";
+import OrderValueBreakdown from "../components/landing/sections/OrderValueBreakdown.astro";
 import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
 import {
@@ -34,6 +35,7 @@ const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
     </div>
   </PageHero>
   <CommissionCalculator />
+  <OrderValueBreakdown />
   <section class="landing" id="faq">
     <div class="container-lg faq-list">
       {t.landing.pricingPage.faq.map((item) => (

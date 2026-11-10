@@ -74,7 +74,7 @@ const columnOptions = [
 ];
 ---
 
-<CmsLayout title={t.admin.settings.title} userPermissions={permissions} currentPath="/admin/settings/footer" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.settings.title} userPermissions={permissions} currentPath="/admin/settings/footer" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <SettingsTabs active="footer" partySlug={partySlug} />
   {error && <div class="alert-error">{error}</div>}
   <p class="content-hint">{t.admin.settings.footerLinksHint}</p>

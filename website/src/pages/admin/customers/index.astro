@@ -31,7 +31,7 @@ const total = customersResult.total;
 const totalPages = Math.ceil(total / pageSize);
 ---
 
-<CmsLayout title={t.admin.customers.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.customers.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="toolbar">
     <form method="GET" class="search-form">
       <input class="form-input" name="search" placeholder={t.admin.customers.searchPlaceholder} value={search} style="width:280px" />

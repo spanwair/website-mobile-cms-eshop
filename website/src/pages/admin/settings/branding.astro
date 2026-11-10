@@ -65,7 +65,7 @@ const media = await fetchStoreMedia(supabase, partyId);
 const customPresets = await fetchColorPresets(supabase, partyId);
 ---
 
-<CmsLayout title={t.admin.settings.title} userPermissions={permissions} currentPath="/admin/settings/branding" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.settings.title} userPermissions={permissions} currentPath="/admin/settings/branding" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <SettingsTabs active="branding" partySlug={partySlug} />
   {error && <div class="alert-error">{error}</div>}
   {success && <div class="alert-success">{success}</div>}

@@ -29,7 +29,7 @@ if (Astro.request.method === "POST") {
 const pages = await fetchContentPages(supabase, partyId);
 ---
 
-<CmsLayout title={t.admin.cms.pagesTitle} userPermissions={permissions} currentPath="/admin/cms/pages" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.cms.pagesTitle} userPermissions={permissions} currentPath="/admin/cms/pages" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <CmsTabs active="pages" />
   <div class="toolbar">
     <span class="total-label">{pages.length} {t.admin.cms.pagesTitle.toLowerCase()}</span>

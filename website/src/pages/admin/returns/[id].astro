@@ -81,7 +81,7 @@ const REFUND_METHOD_LABELS: Record<string, string> = {
 };
 ---
 
-<CmsLayout title={t.admin.returns.detailTitle.replace("{{number}}", rma.return_number)} userPermissions={permissions} currentPath="/admin/returns" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.returns.detailTitle.replace("{{number}}", rma.return_number)} userPermissions={permissions} currentPath="/admin/returns" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="toolbar">
     <a href="/admin/returns" class="btn btn-ghost">{t.admin.returns.back}</a>
     <h1 class="page-title">{rma.return_number}</h1>

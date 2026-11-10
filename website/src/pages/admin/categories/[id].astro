@@ -56,7 +56,7 @@ const categories = (await fetchCategories(supabase, partyId)).filter((c) => c.id
 const media = await fetchStoreMedia(supabase, partyId);
 ---
 
-<CmsLayout title={t.admin.categories.editTitle} userPermissions={permissions} currentPath="/admin/categories" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.categories.editTitle} userPermissions={permissions} currentPath="/admin/categories" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="card" style="max-width:560px">
     <a href="/admin/categories" class="back-link">{t.admin.categories.back}</a>
     {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}

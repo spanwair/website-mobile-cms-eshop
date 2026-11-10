@@ -222,7 +222,7 @@ const recentMovements = inventoryItem
   : [];
 ---
 
-<CmsLayout title={t.admin.products.editTitle} userPermissions={permissions} currentPath="/admin/products" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.products.editTitle} userPermissions={permissions} currentPath="/admin/products" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <a href="/admin/products" class="back-link">{t.admin.products.back}</a>
   {error && <div class="form-error" style="margin-bottom:16px;max-width:720px">{error}</div>}
 

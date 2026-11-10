@@ -26,7 +26,7 @@ const hasCategory = (categoryCount ?? 0) > 0;
 const hasProduct = (productCount ?? 0) > 0;
 ---
 
-<CmsLayout title={t.admin.onboardingWizard.tutorialTitle} userPermissions={0xffff} currentPath="/admin/onboarding" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.onboardingWizard.tutorialTitle} userPermissions={0xffff} currentPath="/admin/onboarding" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="card tutorial-card">
     <h1 class="tutorial-title">{t.admin.onboardingWizard.tutorialTitle}</h1>
     <p class="tutorial-intro">{t.admin.onboardingWizard.tutorialIntro}</p>

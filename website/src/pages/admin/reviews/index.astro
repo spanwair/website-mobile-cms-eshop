@@ -81,7 +81,7 @@ function statusLabel(s: string) {
 }
 ---
 
-<CmsLayout title={t.admin.reviews.title} userPermissions={permissions} currentPath="/admin/reviews" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.reviews.title} userPermissions={permissions} currentPath="/admin/reviews" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="toolbar">
     <h1 class="page-title">{t.admin.reviews.title}</h1>
     <span class="toolbar-count">{total}</span>

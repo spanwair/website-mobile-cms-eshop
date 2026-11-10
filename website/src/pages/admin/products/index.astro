@@ -64,7 +64,7 @@ function stockDisplay(stock: number | null): { variant: StockVariant; label: str
 const filterQs = `&search=${encodeURIComponent(search)}&status=${status}&category=${categoryId}`;
 ---
 
-<CmsLayout title={t.admin.products.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.products.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="toolbar">
     <form method="GET" class="search-form">
       <input class="form-input" name="search" placeholder={t.admin.products.searchPlaceholder} value={search} style="width:220px" />

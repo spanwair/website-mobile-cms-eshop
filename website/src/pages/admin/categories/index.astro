@@ -34,7 +34,7 @@ function renderRows(nodes: CategoryTree[], depth = 0): { node: CategoryTree; dep
 const rows = renderRows(tree);
 ---
 
-<CmsLayout title={t.admin.categories.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.categories.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="toolbar">
     <span class="total-label">{rows.length} {t.admin.categories.title.toLowerCase()}</span>
     <a href="/admin/categories/new" class="btn btn-primary">{t.admin.categories.new}</a>

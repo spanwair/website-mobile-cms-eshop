@@ -29,7 +29,7 @@ if (Astro.request.method === "POST") {
 const posts = await fetchBlogPosts(supabase, partyId);
 ---
 
-<CmsLayout title={t.admin.cms.blogTitle} userPermissions={permissions} currentPath="/admin/cms/blog" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.cms.blogTitle} userPermissions={permissions} currentPath="/admin/cms/blog" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <CmsTabs active="blog" />
   <div class="toolbar">
     <span class="total-label">{posts.length} {t.admin.cms.blogTitle.toLowerCase()}</span>

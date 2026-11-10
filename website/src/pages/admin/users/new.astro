@@ -142,7 +142,7 @@ const allRoles = await fetchRoles(supabase);
 const roles = allRoles.filter(r => !r.is_system);
 ---
 
-<CmsLayout title={t.admin.users.inviteTitle} userPermissions={permissions} currentPath="/admin/users" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.users.inviteTitle} userPermissions={permissions} currentPath="/admin/users" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <a href="/admin/users" class="back-link">{t.admin.users.back}</a>
   {error && <div class="alert-error">{error}</div>}
   {success && <div class="alert-success">{success}</div>}

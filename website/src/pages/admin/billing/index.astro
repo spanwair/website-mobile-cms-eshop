@@ -82,7 +82,7 @@ const rows = (partyRows ?? []).map((party) => {
 });
 ---
 
-<CmsLayout title={t.admin.billing.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.billing.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <p class="content-hint">{t.admin.billing.hint}</p>
 
   <div class="card" style="padding:0;overflow:hidden">

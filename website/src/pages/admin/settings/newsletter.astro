@@ -54,7 +54,7 @@ const subscribers = await fetchNewsletterSubscribers(supabase, partyId);
 const activeCount = await countNewsletterSubscribers(supabase, partyId);
 ---
 
-<CmsLayout title={t.admin.settings.newsletterTitle} userPermissions={permissions} currentPath="/admin/settings/newsletter" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.settings.newsletterTitle} userPermissions={permissions} currentPath="/admin/settings/newsletter" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <SettingsTabs active="newsletter" partySlug={partySlug} />
   {error && <div class="alert-error">{error}</div>}
   {success && <div class="alert-success">{success}</div>}

@@ -1,0 +1,226 @@
+---
+// Public pricing calculator — Phase 1 (display only), same pattern as CommissionCalculator.astro.
+// Unlike that component (monthly turnover), this one walks through a SINGLE order.
+//
+// This shows a PROPOSED model, not what the backend does today: today commission is charged on
+// item price + delivery combined (shared/utils/billingFeeCalc.ts / website/src/pages/eshop-
+// [partySlug]/checkout.astro, where total_amount = subtotal + shipping_amount). Per Jan's
+// 2026-11-04 direction, commission applies to the item price only — delivery is a pass-through
+// the customer pays, but it is MámToDoma (not the seller) who pays the carrier for it: the
+// platform owns the one shared carrier account per provider (see shared/services/
+// shippingConfigService.ts / supabase/migrations/20260103000069_shipping_providers.sql — sellers
+// never hold their own carrier account). So the delivery amount never reaches the seller's
+// payout either way — it is money that passes from the customer, through the platform, to the
+// carrier. Stripe still charges its fee on the WHOLE payment (item + delivery, that's how Stripe
+// works) and that fee stays a platform cost, never passed to the customer or deducted from the
+// seller's payout (one central Stripe account, no Stripe Connect — see shared/constants/
+// payment.ts) — which is exactly why the break-even note below matters: with delivery no longer
+// padding the commission base, the commission has less room to cover Stripe's cut on small
+// orders.
+import { useT } from "@/lib/i18n";
+import { COMMISSION_RATE, REDUCED_COMMISSION_RATE } from "@shared/constants/sellerMode";
+import { STRIPE_FEE_PERCENT_EU, STRIPE_FEE_FIXED_CZK } from "@shared/constants/payment";
+
+const t = useT(Astro);
+
+const commissionPct = Math.round(COMMISSION_RATE * 100);
+const reducedPct = Math.round(REDUCED_COMMISSION_RATE * 100);
+const stripePct = STRIPE_FEE_PERCENT_EU * 100;
+
+const rowStripe = t.landing.orderBreakdown.rowStripe
+  .replace("{pct}", String(stripePct))
+  .replace("{fixed}", String(STRIPE_FEE_FIXED_CZK));
+const rowCommission = t.landing.orderBreakdown.rowCommission.replace("{rate}", String(commissionPct));
+---
+
+<section class="landing landing--dark" id="order-breakdown">
+  <div class="container-lg">
+    <p class="section-eyebrow section-eyebrow--center">{t.landing.orderBreakdown.eyebrow}</p>
+    <h2 class="section-title section-title--center">{t.landing.orderBreakdown.title}</h2>
+    <p class="section-sub section-sub--center" style="margin-bottom:48px">{t.landing.orderBreakdown.sub}</p>
+
+    <div
+      class="ob-card"
+      data-standard-rate={COMMISSION_RATE}
+      data-reduced-rate={REDUCED_COMMISSION_RATE}
+      data-stripe-pct={STRIPE_FEE_PERCENT_EU}
+      data-stripe-fixed={STRIPE_FEE_FIXED_CZK}
+      data-row-commission-standard={rowCommission}
+      data-row-commission-reduced={t.landing.orderBreakdown.rowCommission.replace("{rate}", String(reducedPct))}
+      data-row-stripe-note-template={t.landing.orderBreakdown.rowStripeNote}
+      data-margin-note-template={t.landing.orderBreakdown.marginNote}
+      data-break-even-template={t.landing.orderBreakdown.breakEvenNote}
+    >
+      <label class="ob-label" for="ob-item-price">{t.landing.orderBreakdown.itemPriceLabel}</label>
+      <input id="ob-item-price" type="range" min="100" max="3000" step="50" value="500" class="ob-slider" />
+
+      <div class="ob-field-row">
+        <span class="ob-field-label">{t.landing.orderBreakdown.deliveryLabel}</span>
+        <div class="ob-segmented" role="group">
+          <button type="button" class="ob-segmented-btn ob-segmented-btn--active" data-delivery="69">{t.landing.orderBreakdown.deliveryPickup}</button>
+          <button type="button" class="ob-segmented-btn" data-delivery="119">{t.landing.orderBreakdown.deliveryHome}</button>
+        </div>
+      </div>
+
+      <label class="ob-toggle">
+        <span class="ob-toggle-label">{t.landing.orderBreakdown.rateToggleLabel}</span>
+        <span class="ob-switch">
+          <input type="checkbox" id="ob-rate-toggle" class="ob-switch-input" />
+          <span class="ob-switch-track"><span class="ob-switch-thumb"></span></span>
+        </span>
+      </label>
+
+      <div class="ob-waterfall">
+        <div class="ob-row"><span>{t.landing.orderBreakdown.rowItem}</span><span id="ob-row-item">500 Kč</span></div>
+        <div class="ob-row ob-row--sub">
+          <span id="ob-row-commission-label">{rowCommission}</span><span id="ob-row-commission">−50 Kč</span>
+        </div>
+        <div class="ob-row ob-row--net"><span>{t.landing.orderBreakdown.rowNet}</span><span id="ob-row-net">450 Kč</span></div>
+      </div>
+
+      <div class="ob-waterfall ob-waterfall--muted">
+        <p class="ob-section-label">{t.landing.orderBreakdown.deliverySectionLabel}</p>
+        <div class="ob-row"><span>{t.landing.orderBreakdown.rowDeliveryCharged}</span><span id="ob-row-delivery">69 Kč</span></div>
+        <p class="ob-note">{t.landing.orderBreakdown.deliveryPassthroughNote}</p>
+        <div class="ob-row ob-row--sub">
+          <span id="ob-row-stripe-label">{rowStripe}</span><span id="ob-row-stripe">−12 Kč</span>
+        </div>
+        <p class="ob-note" id="ob-row-stripe-note"></p>
+      </div>
+
+      <p class="ob-note ob-note--margin" id="ob-margin-note"></p>
+      <p class="ob-note ob-note--warn ob-note--hidden" id="ob-margin-warning">{t.landing.orderBreakdown.marginWarning}</p>
+      <p class="ob-note" id="ob-break-even"></p>
+      <p class="ob-disclaimer">{t.landing.orderBreakdown.disclaimer}</p>
+    </div>
+  </div>
+</section>
+
+<script>
+  const card = document.querySelector<HTMLElement>(".ob-card");
+  const itemInput = document.getElementById("ob-item-price") as HTMLInputElement | null;
+  const rateToggle = document.getElementById("ob-rate-toggle") as HTMLInputElement | null;
+  const deliveryBtns = Array.from(document.querySelectorAll<HTMLButtonElement>(".ob-segmented-btn"));
+
+  let deliveryPrice = 69;
+
+  function formatKc(n: number) {
+    return `${Math.round(n).toLocaleString("cs-CZ")} Kč`;
+  }
+  function formatSignedKc(n: number) {
+    const rounded = Math.round(n);
+    return `${rounded < 0 ? "−" : ""}${Math.abs(rounded).toLocaleString("cs-CZ")} Kč`;
+  }
+
+  function update() {
+    if (!card || !itemInput) return;
+    const standardRate = Number(card.dataset.standardRate);
+    const reducedRate = Number(card.dataset.reducedRate);
+    const stripePct = Number(card.dataset.stripePct);
+    const stripeFixed = Number(card.dataset.stripeFixed);
+    const usingReduced = rateToggle?.checked ?? false;
+    const rate = usingReduced ? reducedRate : standardRate;
+
+    const itemPrice = Number(itemInput.value);
+    const totalPayment = itemPrice + deliveryPrice;
+    const commission = itemPrice * rate;
+    const netItem = itemPrice - commission;
+    const stripeFee = totalPayment * stripePct + stripeFixed;
+    const platformMargin = commission - stripeFee;
+    const breakEven = (deliveryPrice * stripePct + stripeFixed) / (rate - stripePct);
+
+    document.getElementById("ob-row-item")!.textContent = formatKc(itemPrice);
+    document.getElementById("ob-row-net")!.textContent = formatKc(netItem);
+    document.getElementById("ob-row-delivery")!.textContent = formatKc(deliveryPrice);
+    document.getElementById("ob-row-stripe")!.textContent = formatSignedKc(-stripeFee);
+
+    const stripeNote = document.getElementById("ob-row-stripe-note");
+    if (stripeNote) {
+      stripeNote.textContent = (card.dataset.rowStripeNoteTemplate ?? "").replace("{total}", formatKc(totalPayment));
+    }
+
+    const commissionLabel = document.getElementById("ob-row-commission-label");
+    if (commissionLabel) {
+      commissionLabel.textContent = usingReduced
+        ? card.dataset.rowCommissionReduced ?? ""
+        : card.dataset.rowCommissionStandard ?? "";
+    }
+    document.getElementById("ob-row-commission")!.textContent = formatSignedKc(-commission);
+
+    const marginNote = document.getElementById("ob-margin-note");
+    if (marginNote) {
+      marginNote.textContent = (card.dataset.marginNoteTemplate ?? "")
+        .replace("{amount}", formatKc(Math.max(platformMargin, 0)))
+        .replace("{commission}", formatKc(commission));
+    }
+
+    const warning = document.getElementById("ob-margin-warning");
+    warning?.classList.toggle("ob-note--hidden", platformMargin >= 0);
+
+    const breakEvenNote = document.getElementById("ob-break-even");
+    if (breakEvenNote) {
+      breakEvenNote.textContent = (card.dataset.breakEvenTemplate ?? "")
+        .replace("{rate}", String(Math.round(rate * 100)))
+        .replace("{amount}", formatKc(breakEven));
+    }
+  }
+
+  itemInput?.addEventListener("input", update);
+  rateToggle?.addEventListener("change", update);
+  deliveryBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      deliveryBtns.forEach((b) => b.classList.remove("ob-segmented-btn--active"));
+      btn.classList.add("ob-segmented-btn--active");
+      deliveryPrice = Number(btn.dataset.delivery);
+      update();
+    });
+  });
+
+  update();
+</script>
+
+<style>
+  .ob-card {
+    max-width: 560px; margin-inline: auto; padding: 40px;
+    background: var(--landing-dark-elevated); border-radius: var(--radius-xl);
+  }
+  .ob-label { display: block; font-size: 13px; color: var(--landing-dark-text-muted); margin-bottom: 12px; }
+  .ob-slider { width: 100%; margin-bottom: 20px; accent-color: var(--landing-mint); }
+
+  .ob-field-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .ob-field-label { font-size: 13px; color: var(--landing-dark-text-muted); }
+  .ob-segmented { display: flex; gap: 8px; }
+  .ob-segmented-btn {
+    flex: 1; padding: 10px 12px; font-size: 13px; border-radius: var(--radius-md);
+    border: 1px solid rgba(255,255,255,0.15); background: transparent; color: var(--landing-dark-text);
+    cursor: pointer; transition: background .15s ease, border-color .15s ease;
+  }
+  .ob-segmented-btn--active { background: var(--landing-mint); border-color: var(--landing-mint); color: #06281d; font-weight: 700; }
+
+  .ob-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--landing-dark-text-muted); margin-bottom: 24px; cursor: pointer; }
+  .ob-switch { position: relative; display: inline-flex; flex: none; }
+  .ob-switch-input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+  .ob-switch-track { display: inline-flex; align-items: center; padding: 2px; box-sizing: border-box; width: 38px; height: 22px; border-radius: 999px; background: var(--landing-dark-text-muted); opacity: 0.5; transition: background .2s ease, opacity .2s ease; }
+  .ob-switch-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s ease; }
+  .ob-switch-input:checked + .ob-switch-track { background: var(--landing-mint); opacity: 1; }
+  .ob-switch-input:checked + .ob-switch-track .ob-switch-thumb { transform: translateX(16px); }
+
+  .ob-waterfall { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .ob-waterfall--muted { margin-top: 20px; }
+  .ob-section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--landing-dark-text-muted); opacity: 0.7; margin: 0 0 2px; }
+  .ob-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--landing-dark-text); }
+  .ob-row--sub { color: var(--landing-dark-text-muted); font-size: 13px; }
+  .ob-row--sub span:last-child { color: var(--landing-coral); font-weight: 600; }
+  .ob-row--net { font-weight: 700; font-size: 18px; color: var(--landing-mint); border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px; }
+  .ob-waterfall--muted .ob-row > span:first-child { color: var(--landing-dark-text-muted); }
+
+  .ob-note { margin-top: 4px; font-size: 12px; color: var(--landing-dark-text-muted); line-height: 1.5; }
+  .ob-note--margin { margin-top: 20px; font-size: 13px; color: var(--landing-dark-text); }
+  .ob-note--warn { color: var(--landing-coral); font-weight: 600; }
+  .ob-note--hidden { display: none; }
+  .ob-disclaimer { margin-top: 16px; font-size: 11px; color: var(--landing-dark-text-muted); opacity: 0.7; font-style: italic; }
+
+  @media (max-width: 640px) {
+    .ob-card { padding: 28px 20px; }
+  }
+</style>

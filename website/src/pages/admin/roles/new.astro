@@ -55,7 +55,7 @@ const PERMS = [
 ];
 ---
 
-<CmsLayout title={t.admin.roles.newTitle} userPermissions={permissions} currentPath="/admin/roles" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.roles.newTitle} userPermissions={permissions} currentPath="/admin/roles" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="card" style="max-width:560px">
     <a href="/admin/roles" class="back-link">{t.admin.roles.back}</a>
     {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}

@@ -113,7 +113,7 @@ const productOptions = (productRows ?? []) as Array<{ slug: string; title: strin
 const blogOptions = (blogRows ?? []) as Array<{ slug: string; title: string }>;
 ---
 
-<CmsLayout title={t.admin.settings.title} userPermissions={permissions} currentPath="/admin/settings/content" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.settings.title} userPermissions={permissions} currentPath="/admin/settings/content" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <SettingsTabs active="content" partySlug={partySlug} />
   {error && <div class="alert-error">{error}</div>}
   {success && <div class="alert-success">{success}</div>}

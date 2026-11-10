@@ -53,7 +53,7 @@ if (!coupon || coupon.party_id !== partyId) return Astro.redirect("/admin/pricin
 const discountRules = await fetchDiscountRules(supabase, partyId);
 ---
 
-<CmsLayout title={t.admin.pricing.editCouponTitle} userPermissions={permissions} currentPath="/admin/pricing" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.pricing.editCouponTitle} userPermissions={permissions} currentPath="/admin/pricing" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="container">
     <a href="/admin/pricing?tab=coupons" class="back-link">{t.admin.pricing.back}</a>
     {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}

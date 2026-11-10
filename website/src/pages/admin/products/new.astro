@@ -68,7 +68,7 @@ if (Astro.request.method === "POST") {
 const categories = await fetchCategories(supabase, selectedPartyId!);
 ---
 
-<CmsLayout title={t.admin.products.newTitle} userPermissions={permissions} currentPath="/admin/products" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.products.newTitle} userPermissions={permissions} currentPath="/admin/products" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="card" style="max-width:720px">
     <a href="/admin/products" class="back-link">{t.admin.products.back}</a>
     {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}

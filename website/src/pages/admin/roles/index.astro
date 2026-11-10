@@ -50,7 +50,7 @@ function activePerms(bits: number) {
 }
 ---
 
-<CmsLayout title={t.admin.roles.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.roles.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="toolbar">
     <span class="total-label" id="roles-count">{roles.length} {t.admin.roles.title.toLowerCase()}</span>
     <a href="/admin/roles/new" class="btn btn-primary">{t.admin.roles.new}</a>

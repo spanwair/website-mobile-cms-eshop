@@ -1,0 +1,167 @@
+---
+import { useT } from "../../lib/i18n";
+const t = useT(Astro);
+const i18n = {
+  button: t.admin.bugReport.button,
+  title: t.admin.bugReport.title,
+  descriptionLabel: t.admin.bugReport.descriptionLabel,
+  descriptionPlaceholder: t.admin.bugReport.descriptionPlaceholder,
+  screenshotLabel: t.admin.bugReport.screenshotLabel,
+  captureScreenshot: t.admin.bugReport.captureScreenshot,
+  videoLabel: t.admin.bugReport.videoLabel,
+  startRecording: t.admin.bugReport.startRecording,
+  recordingInPopup: t.admin.bugReport.recordingInPopup,
+  recordingBlocked: t.admin.bugReport.recordingBlocked,
+  videoAttached: t.admin.bugReport.videoAttached,
+  remove: t.admin.bugReport.remove,
+  openFull: t.admin.bugReport.openFull,
+  submit: t.admin.bugReport.submit,
+  submitting: t.admin.bugReport.submitting,
+  success: t.admin.bugReport.success,
+  error: t.admin.bugReport.error,
+  captureError: t.admin.bugReport.captureError,
+  close: t.common.close,
+};
+---
+
+<div class="bug-widget" data-bug-widget>
+  <button type="button" class="bug-fab" data-bug-open aria-label={i18n.button} title={i18n.button}>🐛</button>
+
+  <div class="bug-panel" data-bug-panel hidden role="dialog" aria-modal="false" aria-label={i18n.title}>
+    <div class="bug-panel-header">
+      <span class="bug-panel-title">🐛 {i18n.title}</span>
+      <button type="button" class="bug-panel-close" data-bug-close aria-label={i18n.close}>&times;</button>
+    </div>
+
+    <div class="bug-body">
+      <div class="bug-field">
+        <label class="bug-label" for="bug-description">{i18n.descriptionLabel}</label>
+        <textarea id="bug-description" class="bug-textarea" data-bug-description placeholder={i18n.descriptionPlaceholder} rows="3"></textarea>
+      </div>
+
+      <div class="bug-field">
+        <span class="bug-label">{i18n.screenshotLabel}</span>
+        <button type="button" class="bug-capture-btn" data-bug-capture-screenshot>📷 {i18n.captureScreenshot}</button>
+        <div class="bug-preview" data-bug-screenshot-preview hidden>
+          <img data-bug-screenshot-img alt="" />
+          <button type="button" class="bug-expand" data-bug-expand-screenshot aria-label={i18n.openFull} title={i18n.openFull}>⛶</button>
+          <button type="button" class="bug-remove" data-bug-remove-screenshot aria-label={i18n.remove}>&times;</button>
+        </div>
+      </div>
+
+      <div class="bug-field">
+        <span class="bug-label">{i18n.videoLabel}</span>
+        <button type="button" class="bug-capture-btn" data-bug-start-video>🎥 {i18n.startRecording}</button>
+        <p class="bug-recording-hint" data-bug-recording-hint hidden>
+          <span class="bug-recording-dot"></span>
+          {i18n.recordingInPopup}
+        </p>
+        <div class="bug-preview" data-bug-video-preview hidden>
+          <video data-bug-video-el controls></video>
+          <button type="button" class="bug-expand" data-bug-expand-video aria-label={i18n.openFull} title={i18n.openFull}>⛶</button>
+          <button type="button" class="bug-remove" data-bug-remove-video aria-label={i18n.remove}>&times;</button>
+        </div>
+      </div>
+
+      <p class="bug-status" data-bug-status hidden></p>
+    </div>
+
+    <div class="bug-footer">
+      <button type="button" class="bug-submit" data-bug-submit>{i18n.submit}</button>
+    </div>
+  </div>
+
+  <div class="bug-toast" data-bug-toast hidden>
+    <span>✅</span>
+    <span data-bug-toast-text></span>
+  </div>
+</div>
+
+<script define:vars={{ i18n }}>
+  window.__bugReportI18n = i18n;
+</script>
+
+<script>
+  import { initBugReportWidget } from "../../lib/bugReportWidget";
+  initBugReportWidget();
+</script>
+
+<style is:global>
+  /* Fixed to the viewport, intentionally outside .cms-shell's flex flow so it floats above
+     sidebar/content on every admin page. No backdrop by design — it must not block the rest
+     of the screen while the reporter is still looking at the bug they're describing. */
+  .bug-widget { position: fixed; left: 20px; bottom: 20px; z-index: 2000; }
+  .bug-fab {
+    width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--accent-primary, #4F46E5); color: #fff; font-size: 22px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  }
+  .bug-fab:hover { background: var(--accent-primary-hover, #4338CA); }
+  .bug-panel[hidden] { display: none; }
+  /* The class rules below (display: flex, etc.) outrank the UA [hidden] default on
+     source order, so hidden sub-elements need an explicit, higher-priority override. */
+  .bug-panel [hidden] { display: none !important; }
+  .bug-panel {
+    position: absolute; left: 0; bottom: 60px; width: 320px; max-height: 70vh;
+    background: var(--bg-page, #fff); border: 1px solid var(--border-default, #E9ECEF);
+    border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .bug-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border-bottom: 1px solid var(--border-default, #E9ECEF); flex-shrink: 0;
+  }
+  .bug-panel-title { font-size: 13px; font-weight: 700; }
+  .bug-panel-close { background: none; border: none; font-size: 18px; line-height: 1; cursor: pointer; color: var(--text-muted); padding: 2px; }
+  .bug-panel-close:hover { color: var(--text-primary); }
+  .bug-body { padding: 12px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  .bug-field { display: flex; flex-direction: column; gap: 6px; }
+  .bug-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+  .bug-textarea {
+    width: 100%; resize: vertical; font-size: 13px; padding: 8px 10px;
+    border: 1px solid var(--border-default, #E9ECEF); border-radius: 8px; font-family: inherit;
+  }
+  .bug-capture-btn {
+    border: 1px solid var(--border-default, #E9ECEF); border-radius: 8px; background: var(--bg-subtle, #F8F9FA);
+    padding: 7px 10px; font-size: 13px; cursor: pointer; text-align: left; color: var(--text-primary);
+  }
+  .bug-capture-btn:hover { background: var(--bg-page, #fff); border-color: var(--accent-primary, #4F46E5); }
+  .bug-recording-hint {
+    display: flex; align-items: flex-start; gap: 8px; margin: 0; font-size: 12px; color: var(--text-muted);
+    background: var(--bg-subtle, #F8F9FA); border-radius: 8px; padding: 8px 10px;
+  }
+  .bug-recording-dot { flex-shrink: 0; margin-top: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--error, #EF4444); animation: bug-pulse 1s infinite; }
+  @keyframes bug-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .bug-preview { position: relative; margin-top: 4px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-default, #E9ECEF); }
+  .bug-preview img, .bug-preview video { width: 100%; max-height: 140px; display: block; object-fit: contain; background: #000; }
+  .bug-preview img { cursor: pointer; }
+  .bug-remove, .bug-expand {
+    position: absolute; top: 4px; width: 20px; height: 20px; padding: 0; border-radius: 50%;
+    border: none; background: rgba(0,0,0,0.6); color: #fff; font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .bug-remove { right: 4px; }
+  .bug-expand { left: 4px; }
+  .bug-remove:hover { background: var(--error, #EF4444); }
+  .bug-expand:hover { background: var(--accent-primary, #4F46E5); }
+  .bug-status { margin: 0; font-size: 12px; color: var(--text-muted); }
+  .bug-status.is-error { color: var(--error, #EF4444); }
+  .bug-status.is-success { color: #16a34a; }
+  .bug-footer { padding: 10px 14px; border-top: 1px solid var(--border-default, #E9ECEF); flex-shrink: 0; }
+  .bug-submit {
+    width: 100%; border: none; border-radius: 8px; background: var(--accent-primary, #4F46E5); color: #fff;
+    font-size: 13px; font-weight: 600; padding: 9px 0; cursor: pointer;
+  }
+  .bug-submit:hover { background: var(--accent-primary-hover, #4338CA); }
+  .bug-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+  .bug-toast {
+    position: fixed; left: 20px; bottom: 80px; z-index: 2100;
+    display: flex; align-items: center; gap: 8px;
+    background: #16a34a; color: #fff; padding: 10px 16px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    animation: bug-toast-in 0.15s ease-out;
+  }
+  .bug-toast[hidden] { display: none; }
+  @keyframes bug-toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+</style>

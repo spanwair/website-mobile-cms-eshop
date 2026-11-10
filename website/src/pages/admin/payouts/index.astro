@@ -154,7 +154,7 @@ if (isCommissionMode) {
 }
 ---
 
-<CmsLayout title={t.admin.payouts.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.payouts.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <p class="content-hint">{isCommissionMode ? t.admin.payouts.hint : t.admin.payouts.monthlyFeesHint}</p>
   {error && <div class="alert-error">{error}</div>}
   {success && <div class="alert-success">{success}</div>}

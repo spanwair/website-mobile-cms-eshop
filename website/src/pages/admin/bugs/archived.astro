@@ -1,0 +1,41 @@
+---
+import CmsLayout from "@/components/cms/CmsLayout.astro";
+import BugsTabs from "@/components/cms/BugsTabs.astro";
+import BugReportsTable from "@/components/cms/BugReportsTable.astro";
+import { createSupabase } from "@/lib/supabase";
+import { requireAdminCtx } from "@/lib/admin";
+import { useT, getLang } from "@/lib/i18n";
+import { fetchBugReports, getBugReportMediaUrl } from "@shared/services/bugReportService";
+import { processBugReportAction } from "@/lib/bugReportActions";
+
+const supabase = createSupabase(Astro);
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) return Astro.redirect("/login");
+
+const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
+const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
+if (!ctx) return Astro.redirect("/dashboard");
+if (!ctx.isOwner) return Astro.redirect("/admin");
+
+const t = useT(Astro);
+const lang = getLang(Astro);
+const dateLocale = lang === "en" ? "en-US" : "cs-CZ";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  await processBugReportAction(supabase, form);
+}
+
+const reports = await fetchBugReports(supabase, true);
+const mediaUrls = await Promise.all(
+  reports.map(async (r) => ({
+    screenshot: r.screenshot_path ? await getBugReportMediaUrl(supabase, r.screenshot_path) : null,
+    video: r.video_path ? await getBugReportMediaUrl(supabase, r.video_path) : null,
+  }))
+);
+---
+
+<CmsLayout title={t.admin.bugs.title} userPermissions={ctx.permissions} currentPath="/admin/bugs" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
+  <BugsTabs active="archived" />
+  <BugReportsTable reports={reports} mediaUrls={mediaUrls} dateLocale={dateLocale} archived={true} />
+</CmsLayout>

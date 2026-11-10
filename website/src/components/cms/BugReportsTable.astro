@@ -1,0 +1,128 @@
+---
+import { useT } from "../../lib/i18n";
+import type { BugReportWithParty } from "@shared/services/bugReportService";
+
+interface Props {
+  reports: BugReportWithParty[];
+  mediaUrls: { screenshot: string | null; video: string | null }[];
+  dateLocale: string;
+  archived: boolean;
+}
+const { reports, mediaUrls, dateLocale, archived } = Astro.props;
+const t = useT(Astro);
+---
+
+<div class="card" style="padding:0;overflow:hidden">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>{t.admin.audit.colTimestamp}</th>
+        <th>{t.admin.bugs.colReporter}</th>
+        <th>{t.admin.bugs.colOrg}</th>
+        <th>{t.admin.bugs.colDescription}</th>
+        <th>{t.admin.bugs.colPage}</th>
+        <th>{t.admin.bugs.colMedia}</th>
+        <th>{t.common.status}</th>
+        <th>{t.admin.bugs.colResolution}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {reports.map((r, i) => (
+        <tr>
+          <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">
+            {new Date(r.created_at).toLocaleString(dateLocale)}
+          </td>
+          <td style="font-size:13px">{r.reporter_email}</td>
+          <td style="font-size:13px;color:var(--text-muted)">{r.party?.name ?? "—"}</td>
+          <td style="font-size:13px;max-width:220px">{r.description || "—"}</td>
+          <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis">
+            <a href={r.page_url} target="_blank" rel="noopener noreferrer">{r.page_url}</a>
+          </td>
+          <td style="font-size:12px;white-space:nowrap">
+            {mediaUrls[i].screenshot && <a href={mediaUrls[i].screenshot} target="_blank" rel="noopener noreferrer">{t.admin.bugs.viewScreenshot}</a>}
+            {mediaUrls[i].screenshot && mediaUrls[i].video && " · "}
+            {mediaUrls[i].video && <a href={mediaUrls[i].video} target="_blank" rel="noopener noreferrer">{t.admin.bugs.viewVideo}</a>}
+            {!mediaUrls[i].screenshot && !mediaUrls[i].video && "—"}
+          </td>
+          <td>
+            {r.status === "resolved"
+              ? <span class="badge badge-inactive">{t.admin.bugs.statusResolved}</span>
+              : <span class="badge badge-active">{t.admin.bugs.statusOpen}</span>
+            }
+          </td>
+          <td style="font-size:12px;max-width:200px;color:var(--text-muted)">{r.resolution_note || "—"}</td>
+          <td style="white-space:nowrap">
+            {!archived && r.status === "open" && (
+              <button type="button" class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-bug-resolve-open data-bug-id={r.id}>
+                {t.admin.bugs.markResolved}
+              </button>
+            )}
+            {!archived && r.status === "resolved" && (
+              <form method="POST" style="display:inline">
+                <input type="hidden" name="id" value={r.id} />
+                <input type="hidden" name="action" value="reopen" />
+                <button type="submit" class="btn btn-ghost" style="font-size:12px;padding:4px 10px">{t.admin.bugs.markOpen}</button>
+              </form>
+            )}
+            <form method="POST" style="display:inline">
+              <input type="hidden" name="id" value={r.id} />
+              <input type="hidden" name="action" value={archived ? "unarchive" : "archive"} />
+              <button type="submit" class="btn btn-ghost" style="font-size:12px;padding:4px 10px">
+                {archived ? t.admin.bugs.unarchive : t.admin.bugs.archive}
+              </button>
+            </form>
+          </td>
+        </tr>
+      ))}
+      {reports.length === 0 && (
+        <tr>
+          <td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted)">
+            {archived ? t.admin.bugs.noArchivedReports : t.admin.bugs.noReports}
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+
+{!archived && (
+  <dialog id="bug-resolve-dialog" class="bug-resolve-dialog">
+    <form method="POST">
+      <h2 class="bug-resolve-title">{t.admin.bugs.resolveModalTitle}</h2>
+      <p class="bug-resolve-hint">{t.admin.bugs.resolveModalHint}</p>
+      <input type="hidden" name="id" data-bug-resolve-id />
+      <input type="hidden" name="action" value="resolve" />
+      <textarea
+        name="resolution_note"
+        class="form-input bug-resolve-textarea"
+        rows="4"
+        required
+        placeholder={t.admin.bugs.resolutionNotePlaceholder}
+      ></textarea>
+      <div class="bug-resolve-actions">
+        <button type="button" class="btn btn-ghost" data-bug-resolve-cancel>{t.common.cancel}</button>
+        <button type="submit" class="btn btn-primary">{t.admin.bugs.confirmResolve}</button>
+      </div>
+    </form>
+  </dialog>
+)}
+
+<script>
+  import { initBugsResolveModal } from "../../lib/bugsResolveModal";
+  initBugsResolveModal();
+</script>
+
+<style>
+  .bug-resolve-dialog {
+    border: none; border-radius: 12px; padding: 0; width: 100%; max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position: fixed; top: 50%; left: 50%; margin: 0; transform: translate(-50%, -50%);
+  }
+  .bug-resolve-dialog::backdrop { background: rgba(0,0,0,0.5); }
+  .bug-resolve-dialog form { padding: 24px; display: flex; flex-direction: column; gap: 10px; }
+  .bug-resolve-title { margin: 0; font-size: 16px; font-weight: 700; }
+  .bug-resolve-hint { margin: 0; font-size: 13px; color: var(--text-muted); }
+  .bug-resolve-textarea { width: 100%; resize: vertical; font-family: inherit; }
+  .bug-resolve-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+</style>

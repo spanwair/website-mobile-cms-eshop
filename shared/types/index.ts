@@ -178,6 +178,25 @@ export interface StoreMedia {
   created_at: string;
 }
 
+export type BugReportStatus = 'open' | 'resolved';
+
+export interface BugReport {
+  id: string;
+  reporter_id: string | null;
+  reporter_email: string;
+  party_id: string | null;
+  page_url: string;
+  description: string | null;
+  screenshot_path: string | null;
+  video_path: string | null;
+  user_agent: string | null;
+  status: BugReportStatus;
+  archived: boolean;
+  resolution_note: string | null;
+  resolved_at: string | null;
+  created_at: string;
+}
+
 export interface PartyColorPreset {
   id: string;
   party_id: string;

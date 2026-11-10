@@ -55,7 +55,7 @@ const editId = Astro.url.searchParams.get("edit");
 const editing = editId ? members.find((m) => m.id === editId) ?? null : null;
 ---
 
-<CmsLayout title={t.admin.cms.teamTitle} userPermissions={permissions} currentPath="/admin/cms/team" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.cms.teamTitle} userPermissions={permissions} currentPath="/admin/cms/team" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <CmsTabs active="team" />
   {error && <div class="alert-error">{error}</div>}
   <p class="content-hint">{t.admin.cms.teamHint}</p>

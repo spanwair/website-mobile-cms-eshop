@@ -20,7 +20,7 @@ if (ctx.role !== ROLE.ADMIN) return Astro.redirect("/admin/setup");
 const t = useT(Astro);
 ---
 
-<CmsLayout title={t.admin.onboardingWizard.welcomeTitle} userPermissions={0} currentPath="/admin/onboarding" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.onboardingWizard.welcomeTitle} userPermissions={0} currentPath="/admin/onboarding" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="card welcome-card">
     <div class="welcome-icon">🚀</div>
     <h1 class="welcome-title">{t.admin.onboardingWizard.welcomeTitle}</h1>

@@ -22,7 +22,7 @@ if (!hasPermission(permissions, PERMISSIONS.MANAGE_USERS)) return Astro.redirect
 const parties = await fetchParties(supabase);
 ---
 
-<CmsLayout title={t.admin.parties.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.parties.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="toolbar">
     <span class="total-label">{parties.length} {t.admin.parties.title.toLowerCase()}</span>
     {ctx.role >= ROLE.ADMIN && <a href="/admin/parties/new" class="btn btn-primary">{t.admin.parties.new}</a>}

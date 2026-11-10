@@ -407,3 +407,29 @@ export async function sendAbandonedCartRecovery(opts: {
     `,
   });
 }
+
+export async function sendBugReportResolved(opts: {
+  to: string;
+  pageUrl: string;
+  description: string | null;
+  resolutionNote: string;
+  lang?: AppLanguage;
+}): Promise<void> {
+  const lang = opts.lang ?? 'cs';
+  const t = getT(lang);
+
+  const html = `
+    <h1>${t.email.bugReportResolved.heading}</h1>
+    <p>${t.email.bugReportResolved.intro}</p>
+    ${opts.description ? `<p style="color:#555"><strong>${t.email.bugReportResolved.yourReportLabel}</strong> ${opts.description}</p>` : ""}
+    <p style="font-size:13px;color:#9ca3af">${t.email.bugReportResolved.pageLabel} ${opts.pageUrl}</p>
+    <p><strong>${t.email.bugReportResolved.resolutionLabel}</strong><br/>${opts.resolutionNote}</p>
+    <p>${t.email.bugReportResolved.thanksNote}</p>
+  `;
+
+  if (!ociConfigured()) {
+    console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${t.email.bugReportResolved.subject}\n`);
+    return;
+  }
+  await sendEmail({ to: opts.to, subject: t.email.bugReportResolved.subject, html });
+}

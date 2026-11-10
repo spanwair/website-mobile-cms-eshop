@@ -16,9 +16,9 @@ if [[ "$ENV" == "production" ]]; then
   fi
   # Production is the SELF-HOSTED Supabase stack on the Oracle Cloud VM (api-oci.mamtodoma.cz),
   # NOT Supabase Cloud. Raw Postgres on the VM is not exposed publicly: access goes through the
-  # Supavisor pooler (session mode) over an SSH tunnel to the VM, e.g.
-  #   ssh -i ~/.ssh/oci_phase0 -fN -L 5433:localhost:5432 ubuntu@api-oci.mamtodoma.cz
-  # See scripts/oci-prod-db.md for the full procedure.
+  # Supavisor pooler (session mode) over an SSH tunnel to the VM. _prod-db-url.sh ensures that
+  # tunnel itself (scripts/oci-tunnel.sh) - no manual "open a tunnel in another terminal" step
+  # needed. See scripts/oci-prod-db.md for background.
   #
   # The pooler connection URL is resolved by scripts/_prod-db-url.sh (shared with the history-repair
   # script). The pooler does not accept TLS, so default PGSSLMODE=disable (override by exporting it).

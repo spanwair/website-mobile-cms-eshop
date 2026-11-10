@@ -52,7 +52,7 @@ const editId = Astro.url.searchParams.get("edit");
 const editing = editId ? items.find((b) => b.id === editId) ?? null : null;
 ---
 
-<CmsLayout title={t.admin.settings.title} userPermissions={permissions} currentPath="/admin/settings/benefits" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.settings.title} userPermissions={permissions} currentPath="/admin/settings/benefits" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <SettingsTabs active="benefits" partySlug={partySlug} />
   {error && <div class="alert-error">{error}</div>}
 

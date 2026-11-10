@@ -146,7 +146,7 @@ if (ctx.isOwner && tablesReady) {
 
 ---
 
-<CmsLayout title={t.admin.dashboard} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.dashboard} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   {!tablesReady && (
     <div class="info-banner">⚠️ {t.admin.infoBanner}</div>
   )}

@@ -4,3615 +4,3776 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[]
+  | Json[];
 
 export type Database = {
   graphql_public: {
     Tables: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Views: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Functions: {
       graphql: {
         Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
     Enums: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       addresses: {
         Row: {
-          city: string
-          company: string | null
-          country_code: string
-          created_at: string
-          customer_id: string
-          first_name: string
-          id: string
-          is_default: boolean
-          last_name: string
-          line1: string
-          line2: string | null
-          postal_code: string
-          state: string | null
-          type: string
-          updated_at: string
-        }
+          city: string;
+          company: string | null;
+          country_code: string;
+          created_at: string;
+          customer_id: string;
+          first_name: string;
+          id: string;
+          is_default: boolean;
+          last_name: string;
+          line1: string;
+          line2: string | null;
+          postal_code: string;
+          state: string | null;
+          type: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          city: string
-          company?: string | null
-          country_code?: string
-          created_at?: string
-          customer_id: string
-          first_name: string
-          id?: string
-          is_default?: boolean
-          last_name: string
-          line1: string
-          line2?: string | null
-          postal_code: string
-          state?: string | null
-          type?: string
-          updated_at?: string
-        }
+          city: string;
+          company?: string | null;
+          country_code?: string;
+          created_at?: string;
+          customer_id: string;
+          first_name: string;
+          id?: string;
+          is_default?: boolean;
+          last_name: string;
+          line1: string;
+          line2?: string | null;
+          postal_code: string;
+          state?: string | null;
+          type?: string;
+          updated_at?: string;
+        };
         Update: {
-          city?: string
-          company?: string | null
-          country_code?: string
-          created_at?: string
-          customer_id?: string
-          first_name?: string
-          id?: string
-          is_default?: boolean
-          last_name?: string
-          line1?: string
-          line2?: string | null
-          postal_code?: string
-          state?: string | null
-          type?: string
-          updated_at?: string
-        }
+          city?: string;
+          company?: string | null;
+          country_code?: string;
+          created_at?: string;
+          customer_id?: string;
+          first_name?: string;
+          id?: string;
+          is_default?: boolean;
+          last_name?: string;
+          line1?: string;
+          line2?: string | null;
+          postal_code?: string;
+          state?: string | null;
+          type?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "addresses_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
+            foreignKeyName: "addresses_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       audit_logs: {
         Row: {
-          action: string
-          created_at: string
-          device_info: string | null
-          id: string
-          ip_address: unknown
-          new_value: Json | null
-          old_value: Json | null
-          party_id: string | null
-          record_id: string | null
-          table_name: string
-          user_id: string | null
-        }
+          action: string;
+          created_at: string;
+          device_info: string | null;
+          id: string;
+          ip_address: unknown;
+          new_value: Json | null;
+          old_value: Json | null;
+          party_id: string | null;
+          record_id: string | null;
+          table_name: string;
+          user_id: string | null;
+        };
+        ComputedFields: never;
         Insert: {
-          action: string
-          created_at?: string
-          device_info?: string | null
-          id?: string
-          ip_address?: unknown
-          new_value?: Json | null
-          old_value?: Json | null
-          party_id?: string | null
-          record_id?: string | null
-          table_name: string
-          user_id?: string | null
-        }
+          action: string;
+          created_at?: string;
+          device_info?: string | null;
+          id?: string;
+          ip_address?: unknown;
+          new_value?: Json | null;
+          old_value?: Json | null;
+          party_id?: string | null;
+          record_id?: string | null;
+          table_name: string;
+          user_id?: string | null;
+        };
         Update: {
-          action?: string
-          created_at?: string
-          device_info?: string | null
-          id?: string
-          ip_address?: unknown
-          new_value?: Json | null
-          old_value?: Json | null
-          party_id?: string | null
-          record_id?: string | null
-          table_name?: string
-          user_id?: string | null
-        }
+          action?: string;
+          created_at?: string;
+          device_info?: string | null;
+          id?: string;
+          ip_address?: unknown;
+          new_value?: Json | null;
+          old_value?: Json | null;
+          party_id?: string | null;
+          record_id?: string | null;
+          table_name?: string;
+          user_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "audit_logs_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "audit_logs_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       benefit_items: {
         Row: {
-          created_at: string
-          description: string | null
-          icon: string
-          id: string
-          is_visible: boolean
-          party_id: string
-          sort_order: number
-          title: string
-          updated_at: string
-        }
+          created_at: string;
+          description: string | null;
+          icon: string;
+          id: string;
+          is_visible: boolean;
+          party_id: string;
+          sort_order: number;
+          title: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          description?: string | null
-          icon?: string
-          id?: string
-          is_visible?: boolean
-          party_id: string
-          sort_order?: number
-          title: string
-          updated_at?: string
-        }
+          created_at?: string;
+          description?: string | null;
+          icon?: string;
+          id?: string;
+          is_visible?: boolean;
+          party_id: string;
+          sort_order?: number;
+          title: string;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          description?: string | null
-          icon?: string
-          id?: string
-          is_visible?: boolean
-          party_id?: string
-          sort_order?: number
-          title?: string
-          updated_at?: string
-        }
+          created_at?: string;
+          description?: string | null;
+          icon?: string;
+          id?: string;
+          is_visible?: boolean;
+          party_id?: string;
+          sort_order?: number;
+          title?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "benefit_items_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "benefit_items_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       blog_posts: {
         Row: {
-          author_name: string | null
-          content: string | null
-          content_format: string
-          created_at: string
-          excerpt: string | null
-          featured_image_url: string | null
-          id: string
-          party_id: string
-          published_at: string | null
-          seo_description: string | null
-          seo_title: string | null
-          slug: string
-          status: string
-          title: string
-          updated_at: string
-        }
+          author_name: string | null;
+          content: string | null;
+          content_format: string;
+          created_at: string;
+          excerpt: string | null;
+          featured_image_url: string | null;
+          id: string;
+          party_id: string;
+          published_at: string | null;
+          seo_description: string | null;
+          seo_title: string | null;
+          slug: string;
+          status: string;
+          title: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          author_name?: string | null
-          content?: string | null
-          content_format?: string
-          created_at?: string
-          excerpt?: string | null
-          featured_image_url?: string | null
-          id?: string
-          party_id: string
-          published_at?: string | null
-          seo_description?: string | null
-          seo_title?: string | null
-          slug: string
-          status?: string
-          title: string
-          updated_at?: string
-        }
+          author_name?: string | null;
+          content?: string | null;
+          content_format?: string;
+          created_at?: string;
+          excerpt?: string | null;
+          featured_image_url?: string | null;
+          id?: string;
+          party_id: string;
+          published_at?: string | null;
+          seo_description?: string | null;
+          seo_title?: string | null;
+          slug: string;
+          status?: string;
+          title: string;
+          updated_at?: string;
+        };
         Update: {
-          author_name?: string | null
-          content?: string | null
-          content_format?: string
-          created_at?: string
-          excerpt?: string | null
-          featured_image_url?: string | null
-          id?: string
-          party_id?: string
-          published_at?: string | null
-          seo_description?: string | null
-          seo_title?: string | null
-          slug?: string
-          status?: string
-          title?: string
-          updated_at?: string
-        }
+          author_name?: string | null;
+          content?: string | null;
+          content_format?: string;
+          created_at?: string;
+          excerpt?: string | null;
+          featured_image_url?: string | null;
+          id?: string;
+          party_id?: string;
+          published_at?: string | null;
+          seo_description?: string | null;
+          seo_title?: string | null;
+          slug?: string;
+          status?: string;
+          title?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "blog_posts_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "blog_posts_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       brands: {
         Row: {
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean
-          logo_url: string | null
-          name: string
-          party_id: string
-          slug: string
-          updated_at: string
-        }
+          created_at: string;
+          description: string | null;
+          id: string;
+          is_active: boolean;
+          logo_url: string | null;
+          name: string;
+          party_id: string;
+          slug: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          logo_url?: string | null
-          name: string
-          party_id: string
-          slug: string
-          updated_at?: string
-        }
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean;
+          logo_url?: string | null;
+          name: string;
+          party_id: string;
+          slug: string;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          logo_url?: string | null
-          name?: string
-          party_id?: string
-          slug?: string
-          updated_at?: string
-        }
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean;
+          logo_url?: string | null;
+          name?: string;
+          party_id?: string;
+          slug?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "brands_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "brands_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
+      bug_reports: {
+        Row: {
+          archived: boolean;
+          created_at: string;
+          description: string | null;
+          id: string;
+          page_url: string;
+          party_id: string | null;
+          reporter_email: string;
+          reporter_id: string | null;
+          resolution_note: string | null;
+          resolved_at: string | null;
+          screenshot_path: string | null;
+          status: string;
+          user_agent: string | null;
+          video_path: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          archived?: boolean;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          page_url: string;
+          party_id?: string | null;
+          reporter_email: string;
+          reporter_id?: string | null;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          screenshot_path?: string | null;
+          status?: string;
+          user_agent?: string | null;
+          video_path?: string | null;
+        };
+        Update: {
+          archived?: boolean;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          page_url?: string;
+          party_id?: string | null;
+          reporter_email?: string;
+          reporter_id?: string | null;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          screenshot_path?: string | null;
+          status?: string;
+          user_agent?: string | null;
+          video_path?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "bug_reports_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       cart_items: {
         Row: {
-          cart_id: string
-          created_at: string
-          id: string
-          product_id: string
-          quantity: number
-          unit_price: number
-          updated_at: string
-          variant_id: string | null
-        }
+          cart_id: string;
+          created_at: string;
+          id: string;
+          product_id: string;
+          quantity: number;
+          unit_price: number;
+          updated_at: string;
+          variant_id: string | null;
+        };
+        ComputedFields: never;
         Insert: {
-          cart_id: string
-          created_at?: string
-          id?: string
-          product_id: string
-          quantity?: number
-          unit_price: number
-          updated_at?: string
-          variant_id?: string | null
-        }
+          cart_id: string;
+          created_at?: string;
+          id?: string;
+          product_id: string;
+          quantity?: number;
+          unit_price: number;
+          updated_at?: string;
+          variant_id?: string | null;
+        };
         Update: {
-          cart_id?: string
-          created_at?: string
-          id?: string
-          product_id?: string
-          quantity?: number
-          unit_price?: number
-          updated_at?: string
-          variant_id?: string | null
-        }
+          cart_id?: string;
+          created_at?: string;
+          id?: string;
+          product_id?: string;
+          quantity?: number;
+          unit_price?: number;
+          updated_at?: string;
+          variant_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "cart_items_cart_id_fkey"
-            columns: ["cart_id"]
-            isOneToOne: false
-            referencedRelation: "carts"
-            referencedColumns: ["id"]
+            foreignKeyName: "cart_items_cart_id_fkey";
+            columns: ["cart_id"];
+            isOneToOne: false;
+            referencedRelation: "carts";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "cart_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "cart_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "cart_items_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
-            referencedColumns: ["id"]
+            foreignKeyName: "cart_items_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       carts: {
         Row: {
-          abandoned_at: string | null
-          coupon_code: string | null
-          coupon_id: string | null
-          created_at: string
-          id: string
-          notes: string | null
-          party_id: string
-          recovery_sent_at: string | null
-          session_id: string | null
-          updated_at: string
-          user_id: string | null
-        }
+          abandoned_at: string | null;
+          coupon_code: string | null;
+          coupon_id: string | null;
+          created_at: string;
+          id: string;
+          notes: string | null;
+          party_id: string;
+          recovery_sent_at: string | null;
+          session_id: string | null;
+          updated_at: string;
+          user_id: string | null;
+        };
+        ComputedFields: never;
         Insert: {
-          abandoned_at?: string | null
-          coupon_code?: string | null
-          coupon_id?: string | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          party_id: string
-          recovery_sent_at?: string | null
-          session_id?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
+          abandoned_at?: string | null;
+          coupon_code?: string | null;
+          coupon_id?: string | null;
+          created_at?: string;
+          id?: string;
+          notes?: string | null;
+          party_id: string;
+          recovery_sent_at?: string | null;
+          session_id?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+        };
         Update: {
-          abandoned_at?: string | null
-          coupon_code?: string | null
-          coupon_id?: string | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          party_id?: string
-          recovery_sent_at?: string | null
-          session_id?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
+          abandoned_at?: string | null;
+          coupon_code?: string | null;
+          coupon_id?: string | null;
+          created_at?: string;
+          id?: string;
+          notes?: string | null;
+          party_id?: string;
+          recovery_sent_at?: string | null;
+          session_id?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "carts_coupon_id_fkey"
-            columns: ["coupon_id"]
-            isOneToOne: false
-            referencedRelation: "coupons"
-            referencedColumns: ["id"]
+            foreignKeyName: "carts_coupon_id_fkey";
+            columns: ["coupon_id"];
+            isOneToOne: false;
+            referencedRelation: "coupons";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "carts_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "carts_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       categories: {
         Row: {
-          created_at: string
-          icon: string | null
-          id: string
-          image_url: string | null
-          is_visible: boolean
-          name: string
-          parent_id: string | null
-          party_id: string
-          seo_description: string | null
-          seo_title: string | null
-          show_in_nav: boolean
-          slug: string
-          sort_order: number
-          updated_at: string
-        }
+          created_at: string;
+          icon: string | null;
+          id: string;
+          image_url: string | null;
+          is_visible: boolean;
+          name: string;
+          parent_id: string | null;
+          party_id: string;
+          seo_description: string | null;
+          seo_title: string | null;
+          show_in_nav: boolean;
+          slug: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          icon?: string | null
-          id?: string
-          image_url?: string | null
-          is_visible?: boolean
-          name: string
-          parent_id?: string | null
-          party_id: string
-          seo_description?: string | null
-          seo_title?: string | null
-          show_in_nav?: boolean
-          slug: string
-          sort_order?: number
-          updated_at?: string
-        }
+          created_at?: string;
+          icon?: string | null;
+          id?: string;
+          image_url?: string | null;
+          is_visible?: boolean;
+          name: string;
+          parent_id?: string | null;
+          party_id: string;
+          seo_description?: string | null;
+          seo_title?: string | null;
+          show_in_nav?: boolean;
+          slug: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          icon?: string | null
-          id?: string
-          image_url?: string | null
-          is_visible?: boolean
-          name?: string
-          parent_id?: string | null
-          party_id?: string
-          seo_description?: string | null
-          seo_title?: string | null
-          show_in_nav?: boolean
-          slug?: string
-          sort_order?: number
-          updated_at?: string
-        }
+          created_at?: string;
+          icon?: string | null;
+          id?: string;
+          image_url?: string | null;
+          is_visible?: boolean;
+          name?: string;
+          parent_id?: string | null;
+          party_id?: string;
+          seo_description?: string | null;
+          seo_title?: string | null;
+          show_in_nav?: boolean;
+          slug?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "categories_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
+            foreignKeyName: "categories_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "categories_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "categories_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       commissionaire_agreements: {
         Row: {
-          accepted_at: string
-          accepted_by: string
-          address_city: string
-          address_country_code: string
-          address_line1: string
-          address_postal_code: string
-          bank_account: string
-          created_at: string
-          id: string
-          legal_full_name: string
-          party_id: string
-          personal_id_note: string | null
-          revoked_at: string | null
-          status: string
-          terms_version: string
-          updated_at: string
-        }
+          accepted_at: string;
+          accepted_by: string;
+          address_city: string;
+          address_country_code: string;
+          address_line1: string;
+          address_postal_code: string;
+          bank_account: string;
+          created_at: string;
+          id: string;
+          legal_full_name: string;
+          party_id: string;
+          personal_id_note: string | null;
+          revoked_at: string | null;
+          status: string;
+          terms_version: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          accepted_at?: string
-          accepted_by: string
-          address_city: string
-          address_country_code?: string
-          address_line1: string
-          address_postal_code: string
-          bank_account: string
-          created_at?: string
-          id?: string
-          legal_full_name: string
-          party_id: string
-          personal_id_note?: string | null
-          revoked_at?: string | null
-          status?: string
-          terms_version: string
-          updated_at?: string
-        }
+          accepted_at?: string;
+          accepted_by: string;
+          address_city: string;
+          address_country_code?: string;
+          address_line1: string;
+          address_postal_code: string;
+          bank_account: string;
+          created_at?: string;
+          id?: string;
+          legal_full_name: string;
+          party_id: string;
+          personal_id_note?: string | null;
+          revoked_at?: string | null;
+          status?: string;
+          terms_version: string;
+          updated_at?: string;
+        };
         Update: {
-          accepted_at?: string
-          accepted_by?: string
-          address_city?: string
-          address_country_code?: string
-          address_line1?: string
-          address_postal_code?: string
-          bank_account?: string
-          created_at?: string
-          id?: string
-          legal_full_name?: string
-          party_id?: string
-          personal_id_note?: string | null
-          revoked_at?: string | null
-          status?: string
-          terms_version?: string
-          updated_at?: string
-        }
+          accepted_at?: string;
+          accepted_by?: string;
+          address_city?: string;
+          address_country_code?: string;
+          address_line1?: string;
+          address_postal_code?: string;
+          bank_account?: string;
+          created_at?: string;
+          id?: string;
+          legal_full_name?: string;
+          party_id?: string;
+          personal_id_note?: string | null;
+          revoked_at?: string | null;
+          status?: string;
+          terms_version?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "commissionaire_agreements_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: true
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "commissionaire_agreements_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: true;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       content_pages: {
         Row: {
-          body: string | null
-          body_format: string
-          created_at: string
-          id: string
-          is_visible: boolean
-          party_id: string
-          seo_description: string | null
-          seo_title: string | null
-          show_in_footer_column: string | null
-          slug: string
-          sort_order: number
-          template: string
-          title: string
-          updated_at: string
-        }
+          body: string | null;
+          body_format: string;
+          created_at: string;
+          id: string;
+          is_visible: boolean;
+          party_id: string;
+          seo_description: string | null;
+          seo_title: string | null;
+          show_in_footer_column: string | null;
+          slug: string;
+          sort_order: number;
+          template: string;
+          title: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          body?: string | null
-          body_format?: string
-          created_at?: string
-          id?: string
-          is_visible?: boolean
-          party_id: string
-          seo_description?: string | null
-          seo_title?: string | null
-          show_in_footer_column?: string | null
-          slug: string
-          sort_order?: number
-          template?: string
-          title: string
-          updated_at?: string
-        }
+          body?: string | null;
+          body_format?: string;
+          created_at?: string;
+          id?: string;
+          is_visible?: boolean;
+          party_id: string;
+          seo_description?: string | null;
+          seo_title?: string | null;
+          show_in_footer_column?: string | null;
+          slug: string;
+          sort_order?: number;
+          template?: string;
+          title: string;
+          updated_at?: string;
+        };
         Update: {
-          body?: string | null
-          body_format?: string
-          created_at?: string
-          id?: string
-          is_visible?: boolean
-          party_id?: string
-          seo_description?: string | null
-          seo_title?: string | null
-          show_in_footer_column?: string | null
-          slug?: string
-          sort_order?: number
-          template?: string
-          title?: string
-          updated_at?: string
-        }
+          body?: string | null;
+          body_format?: string;
+          created_at?: string;
+          id?: string;
+          is_visible?: boolean;
+          party_id?: string;
+          seo_description?: string | null;
+          seo_title?: string | null;
+          show_in_footer_column?: string | null;
+          slug?: string;
+          sort_order?: number;
+          template?: string;
+          title?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "content_pages_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "content_pages_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       coupons: {
         Row: {
-          code: string
-          created_at: string
-          discount_rule_id: string
-          id: string
-          is_active: boolean
-          max_uses: number | null
-          party_id: string
-          updated_at: string
-          uses_count: number
-        }
+          code: string;
+          created_at: string;
+          discount_rule_id: string;
+          id: string;
+          is_active: boolean;
+          max_uses: number | null;
+          party_id: string;
+          updated_at: string;
+          uses_count: number;
+        };
+        ComputedFields: never;
         Insert: {
-          code: string
-          created_at?: string
-          discount_rule_id: string
-          id?: string
-          is_active?: boolean
-          max_uses?: number | null
-          party_id: string
-          updated_at?: string
-          uses_count?: number
-        }
+          code: string;
+          created_at?: string;
+          discount_rule_id: string;
+          id?: string;
+          is_active?: boolean;
+          max_uses?: number | null;
+          party_id: string;
+          updated_at?: string;
+          uses_count?: number;
+        };
         Update: {
-          code?: string
-          created_at?: string
-          discount_rule_id?: string
-          id?: string
-          is_active?: boolean
-          max_uses?: number | null
-          party_id?: string
-          updated_at?: string
-          uses_count?: number
-        }
+          code?: string;
+          created_at?: string;
+          discount_rule_id?: string;
+          id?: string;
+          is_active?: boolean;
+          max_uses?: number | null;
+          party_id?: string;
+          updated_at?: string;
+          uses_count?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "coupons_discount_rule_id_fkey"
-            columns: ["discount_rule_id"]
-            isOneToOne: false
-            referencedRelation: "discount_rules"
-            referencedColumns: ["id"]
+            foreignKeyName: "coupons_discount_rule_id_fkey";
+            columns: ["discount_rule_id"];
+            isOneToOne: false;
+            referencedRelation: "discount_rules";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "coupons_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "coupons_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       customers: {
         Row: {
-          created_at: string
-          customer_group: string
-          date_of_birth: string | null
-          email: string
-          first_name: string
-          gdpr_consent: boolean
-          gdpr_consent_at: string | null
-          gdpr_consent_ip: unknown
-          gender: string | null
-          id: string
-          is_active: boolean
-          last_name: string
-          lifetime_value: number
-          loyalty_points: number
-          marketing_opt_in: boolean
-          notes: string | null
-          party_id: string
-          phone: string | null
-          preferred_language: string
-          tags: string[]
-          updated_at: string
-          user_id: string | null
-        }
+          created_at: string;
+          customer_group: string;
+          date_of_birth: string | null;
+          email: string;
+          first_name: string;
+          gdpr_consent: boolean;
+          gdpr_consent_at: string | null;
+          gdpr_consent_ip: unknown;
+          gender: string | null;
+          id: string;
+          is_active: boolean;
+          last_name: string;
+          lifetime_value: number;
+          loyalty_points: number;
+          marketing_opt_in: boolean;
+          notes: string | null;
+          party_id: string;
+          phone: string | null;
+          preferred_language: string;
+          tags: string[];
+          updated_at: string;
+          user_id: string | null;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          customer_group?: string
-          date_of_birth?: string | null
-          email: string
-          first_name: string
-          gdpr_consent?: boolean
-          gdpr_consent_at?: string | null
-          gdpr_consent_ip?: unknown
-          gender?: string | null
-          id?: string
-          is_active?: boolean
-          last_name: string
-          lifetime_value?: number
-          loyalty_points?: number
-          marketing_opt_in?: boolean
-          notes?: string | null
-          party_id: string
-          phone?: string | null
-          preferred_language?: string
-          tags?: string[]
-          updated_at?: string
-          user_id?: string | null
-        }
+          created_at?: string;
+          customer_group?: string;
+          date_of_birth?: string | null;
+          email: string;
+          first_name: string;
+          gdpr_consent?: boolean;
+          gdpr_consent_at?: string | null;
+          gdpr_consent_ip?: unknown;
+          gender?: string | null;
+          id?: string;
+          is_active?: boolean;
+          last_name: string;
+          lifetime_value?: number;
+          loyalty_points?: number;
+          marketing_opt_in?: boolean;
+          notes?: string | null;
+          party_id: string;
+          phone?: string | null;
+          preferred_language?: string;
+          tags?: string[];
+          updated_at?: string;
+          user_id?: string | null;
+        };
         Update: {
-          created_at?: string
-          customer_group?: string
-          date_of_birth?: string | null
-          email?: string
-          first_name?: string
-          gdpr_consent?: boolean
-          gdpr_consent_at?: string | null
-          gdpr_consent_ip?: unknown
-          gender?: string | null
-          id?: string
-          is_active?: boolean
-          last_name?: string
-          lifetime_value?: number
-          loyalty_points?: number
-          marketing_opt_in?: boolean
-          notes?: string | null
-          party_id?: string
-          phone?: string | null
-          preferred_language?: string
-          tags?: string[]
-          updated_at?: string
-          user_id?: string | null
-        }
+          created_at?: string;
+          customer_group?: string;
+          date_of_birth?: string | null;
+          email?: string;
+          first_name?: string;
+          gdpr_consent?: boolean;
+          gdpr_consent_at?: string | null;
+          gdpr_consent_ip?: unknown;
+          gender?: string | null;
+          id?: string;
+          is_active?: boolean;
+          last_name?: string;
+          lifetime_value?: number;
+          loyalty_points?: number;
+          marketing_opt_in?: boolean;
+          notes?: string | null;
+          party_id?: string;
+          phone?: string | null;
+          preferred_language?: string;
+          tags?: string[];
+          updated_at?: string;
+          user_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "customers_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "customers_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       discount_rules: {
         Row: {
-          applies_to: string
-          applies_to_ids: string[]
-          created_at: string
-          customer_group: string | null
-          ends_at: string | null
-          id: string
-          is_active: boolean
-          min_order_amount: number | null
-          min_quantity: number | null
-          name: string
-          party_id: string
-          starts_at: string | null
-          type: string
-          updated_at: string
-          usage_count: number
-          usage_limit: number | null
-          value: number
-        }
+          applies_to: string;
+          applies_to_ids: string[];
+          created_at: string;
+          customer_group: string | null;
+          ends_at: string | null;
+          id: string;
+          is_active: boolean;
+          min_order_amount: number | null;
+          min_quantity: number | null;
+          name: string;
+          party_id: string;
+          starts_at: string | null;
+          type: string;
+          updated_at: string;
+          usage_count: number;
+          usage_limit: number | null;
+          value: number;
+        };
+        ComputedFields: never;
         Insert: {
-          applies_to?: string
-          applies_to_ids?: string[]
-          created_at?: string
-          customer_group?: string | null
-          ends_at?: string | null
-          id?: string
-          is_active?: boolean
-          min_order_amount?: number | null
-          min_quantity?: number | null
-          name: string
-          party_id: string
-          starts_at?: string | null
-          type: string
-          updated_at?: string
-          usage_count?: number
-          usage_limit?: number | null
-          value: number
-        }
+          applies_to?: string;
+          applies_to_ids?: string[];
+          created_at?: string;
+          customer_group?: string | null;
+          ends_at?: string | null;
+          id?: string;
+          is_active?: boolean;
+          min_order_amount?: number | null;
+          min_quantity?: number | null;
+          name: string;
+          party_id: string;
+          starts_at?: string | null;
+          type: string;
+          updated_at?: string;
+          usage_count?: number;
+          usage_limit?: number | null;
+          value: number;
+        };
         Update: {
-          applies_to?: string
-          applies_to_ids?: string[]
-          created_at?: string
-          customer_group?: string | null
-          ends_at?: string | null
-          id?: string
-          is_active?: boolean
-          min_order_amount?: number | null
-          min_quantity?: number | null
-          name?: string
-          party_id?: string
-          starts_at?: string | null
-          type?: string
-          updated_at?: string
-          usage_count?: number
-          usage_limit?: number | null
-          value?: number
-        }
+          applies_to?: string;
+          applies_to_ids?: string[];
+          created_at?: string;
+          customer_group?: string | null;
+          ends_at?: string | null;
+          id?: string;
+          is_active?: boolean;
+          min_order_amount?: number | null;
+          min_quantity?: number | null;
+          name?: string;
+          party_id?: string;
+          starts_at?: string | null;
+          type?: string;
+          updated_at?: string;
+          usage_count?: number;
+          usage_limit?: number | null;
+          value?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "discount_rules_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "discount_rules_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       eshop_billing_periods: {
         Row: {
-          computed_at: string | null
-          created_at: string
-          currency: string
-          fee_amount: number
-          fee_mode: string
-          fee_paid_at: string | null
-          fee_rate: number | null
-          gross_revenue: number
-          id: string
-          net_payout: number
-          net_revenue: number
-          party_id: string
-          period_end: string
-          period_start: string
-          real_costs: number
-          seller_mode: string
-          status: string
-          updated_at: string
-        }
+          computed_at: string | null;
+          created_at: string;
+          currency: string;
+          fee_amount: number;
+          fee_mode: string;
+          fee_paid_at: string | null;
+          fee_rate: number | null;
+          gross_revenue: number;
+          id: string;
+          net_payout: number;
+          net_revenue: number;
+          party_id: string;
+          period_end: string;
+          period_start: string;
+          real_costs: number;
+          seller_mode: string;
+          status: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          computed_at?: string | null
-          created_at?: string
-          currency?: string
-          fee_amount?: number
-          fee_mode?: string
-          fee_paid_at?: string | null
-          fee_rate?: number | null
-          gross_revenue?: number
-          id?: string
-          net_payout?: number
-          net_revenue?: number
-          party_id: string
-          period_end: string
-          period_start: string
-          real_costs?: number
-          seller_mode: string
-          status?: string
-          updated_at?: string
-        }
+          computed_at?: string | null;
+          created_at?: string;
+          currency?: string;
+          fee_amount?: number;
+          fee_mode?: string;
+          fee_paid_at?: string | null;
+          fee_rate?: number | null;
+          gross_revenue?: number;
+          id?: string;
+          net_payout?: number;
+          net_revenue?: number;
+          party_id: string;
+          period_end: string;
+          period_start: string;
+          real_costs?: number;
+          seller_mode: string;
+          status?: string;
+          updated_at?: string;
+        };
         Update: {
-          computed_at?: string | null
-          created_at?: string
-          currency?: string
-          fee_amount?: number
-          fee_mode?: string
-          fee_paid_at?: string | null
-          fee_rate?: number | null
-          gross_revenue?: number
-          id?: string
-          net_payout?: number
-          net_revenue?: number
-          party_id?: string
-          period_end?: string
-          period_start?: string
-          real_costs?: number
-          seller_mode?: string
-          status?: string
-          updated_at?: string
-        }
+          computed_at?: string | null;
+          created_at?: string;
+          currency?: string;
+          fee_amount?: number;
+          fee_mode?: string;
+          fee_paid_at?: string | null;
+          fee_rate?: number | null;
+          gross_revenue?: number;
+          id?: string;
+          net_payout?: number;
+          net_revenue?: number;
+          party_id?: string;
+          period_end?: string;
+          period_start?: string;
+          real_costs?: number;
+          seller_mode?: string;
+          status?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "eshop_billing_periods_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "eshop_billing_periods_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       eshop_fee_tier_events: {
         Row: {
-          changed: boolean
-          created_at: string
-          gross_revenue: number
-          id: string
-          new_fee_mode: string
-          notified_email: boolean
-          notified_in_app: boolean
-          party_id: string
-          period_start: string
-          previous_fee_mode: string
-          threshold_amount: number
-        }
+          changed: boolean;
+          created_at: string;
+          gross_revenue: number;
+          id: string;
+          new_fee_mode: string;
+          notified_email: boolean;
+          notified_in_app: boolean;
+          party_id: string;
+          period_start: string;
+          previous_fee_mode: string;
+          threshold_amount: number;
+        };
+        ComputedFields: never;
         Insert: {
-          changed: boolean
-          created_at?: string
-          gross_revenue: number
-          id?: string
-          new_fee_mode: string
-          notified_email?: boolean
-          notified_in_app?: boolean
-          party_id: string
-          period_start: string
-          previous_fee_mode: string
-          threshold_amount: number
-        }
+          changed: boolean;
+          created_at?: string;
+          gross_revenue: number;
+          id?: string;
+          new_fee_mode: string;
+          notified_email?: boolean;
+          notified_in_app?: boolean;
+          party_id: string;
+          period_start: string;
+          previous_fee_mode: string;
+          threshold_amount: number;
+        };
         Update: {
-          changed?: boolean
-          created_at?: string
-          gross_revenue?: number
-          id?: string
-          new_fee_mode?: string
-          notified_email?: boolean
-          notified_in_app?: boolean
-          party_id?: string
-          period_start?: string
-          previous_fee_mode?: string
-          threshold_amount?: number
-        }
+          changed?: boolean;
+          created_at?: string;
+          gross_revenue?: number;
+          id?: string;
+          new_fee_mode?: string;
+          notified_email?: boolean;
+          notified_in_app?: boolean;
+          party_id?: string;
+          period_start?: string;
+          previous_fee_mode?: string;
+          threshold_amount?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "eshop_fee_tier_events_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "eshop_fee_tier_events_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       faq_items: {
         Row: {
-          answer: string
-          context: string
-          created_at: string
-          id: string
-          is_visible: boolean
-          party_id: string
-          question: string
-          sort_order: number
-          updated_at: string
-        }
+          answer: string;
+          context: string;
+          created_at: string;
+          id: string;
+          is_visible: boolean;
+          party_id: string;
+          question: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          answer: string
-          context?: string
-          created_at?: string
-          id?: string
-          is_visible?: boolean
-          party_id: string
-          question: string
-          sort_order?: number
-          updated_at?: string
-        }
+          answer: string;
+          context?: string;
+          created_at?: string;
+          id?: string;
+          is_visible?: boolean;
+          party_id: string;
+          question: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
         Update: {
-          answer?: string
-          context?: string
-          created_at?: string
-          id?: string
-          is_visible?: boolean
-          party_id?: string
-          question?: string
-          sort_order?: number
-          updated_at?: string
-        }
+          answer?: string;
+          context?: string;
+          created_at?: string;
+          id?: string;
+          is_visible?: boolean;
+          party_id?: string;
+          question?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "faq_items_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "faq_items_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       footer_badges: {
         Row: {
-          created_at: string
-          icon: string | null
-          id: string
-          is_visible: boolean
-          kind: string
-          label: string
-          party_id: string
-          provider_key: string | null
-          sort_order: number
-          updated_at: string
-          url: string | null
-        }
+          created_at: string;
+          icon: string | null;
+          id: string;
+          is_visible: boolean;
+          kind: string;
+          label: string;
+          party_id: string;
+          provider_key: string | null;
+          sort_order: number;
+          updated_at: string;
+          url: string | null;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          icon?: string | null
-          id?: string
-          is_visible?: boolean
-          kind: string
-          label: string
-          party_id: string
-          provider_key?: string | null
-          sort_order?: number
-          updated_at?: string
-          url?: string | null
-        }
+          created_at?: string;
+          icon?: string | null;
+          id?: string;
+          is_visible?: boolean;
+          kind: string;
+          label: string;
+          party_id: string;
+          provider_key?: string | null;
+          sort_order?: number;
+          updated_at?: string;
+          url?: string | null;
+        };
         Update: {
-          created_at?: string
-          icon?: string | null
-          id?: string
-          is_visible?: boolean
-          kind?: string
-          label?: string
-          party_id?: string
-          provider_key?: string | null
-          sort_order?: number
-          updated_at?: string
-          url?: string | null
-        }
+          created_at?: string;
+          icon?: string | null;
+          id?: string;
+          is_visible?: boolean;
+          kind?: string;
+          label?: string;
+          party_id?: string;
+          provider_key?: string | null;
+          sort_order?: number;
+          updated_at?: string;
+          url?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "footer_badges_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "footer_badges_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       footer_links: {
         Row: {
-          column_key: string
-          created_at: string
-          id: string
-          is_visible: boolean
-          label: string
-          party_id: string
-          sort_order: number
-          updated_at: string
-          url: string
-        }
+          column_key: string;
+          created_at: string;
+          id: string;
+          is_visible: boolean;
+          label: string;
+          party_id: string;
+          sort_order: number;
+          updated_at: string;
+          url: string;
+        };
+        ComputedFields: never;
         Insert: {
-          column_key: string
-          created_at?: string
-          id?: string
-          is_visible?: boolean
-          label: string
-          party_id: string
-          sort_order?: number
-          updated_at?: string
-          url: string
-        }
+          column_key: string;
+          created_at?: string;
+          id?: string;
+          is_visible?: boolean;
+          label: string;
+          party_id: string;
+          sort_order?: number;
+          updated_at?: string;
+          url: string;
+        };
         Update: {
-          column_key?: string
-          created_at?: string
-          id?: string
-          is_visible?: boolean
-          label?: string
-          party_id?: string
-          sort_order?: number
-          updated_at?: string
-          url?: string
-        }
+          column_key?: string;
+          created_at?: string;
+          id?: string;
+          is_visible?: boolean;
+          label?: string;
+          party_id?: string;
+          sort_order?: number;
+          updated_at?: string;
+          url?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "footer_links_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "footer_links_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       hero_slides: {
         Row: {
-          created_at: string
-          cta_link: string | null
-          cta_text: string | null
-          headline: string
-          id: string
-          image_url: string | null
-          is_visible: boolean
-          overlay_opacity: number
-          party_id: string
-          sort_order: number
-          subheadline: string | null
-          updated_at: string
-        }
+          created_at: string;
+          cta_link: string | null;
+          cta_text: string | null;
+          headline: string;
+          id: string;
+          image_url: string | null;
+          is_visible: boolean;
+          overlay_opacity: number;
+          party_id: string;
+          sort_order: number;
+          subheadline: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          cta_link?: string | null
-          cta_text?: string | null
-          headline: string
-          id?: string
-          image_url?: string | null
-          is_visible?: boolean
-          overlay_opacity?: number
-          party_id: string
-          sort_order?: number
-          subheadline?: string | null
-          updated_at?: string
-        }
+          created_at?: string;
+          cta_link?: string | null;
+          cta_text?: string | null;
+          headline: string;
+          id?: string;
+          image_url?: string | null;
+          is_visible?: boolean;
+          overlay_opacity?: number;
+          party_id: string;
+          sort_order?: number;
+          subheadline?: string | null;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          cta_link?: string | null
-          cta_text?: string | null
-          headline?: string
-          id?: string
-          image_url?: string | null
-          is_visible?: boolean
-          overlay_opacity?: number
-          party_id?: string
-          sort_order?: number
-          subheadline?: string | null
-          updated_at?: string
-        }
+          created_at?: string;
+          cta_link?: string | null;
+          cta_text?: string | null;
+          headline?: string;
+          id?: string;
+          image_url?: string | null;
+          is_visible?: boolean;
+          overlay_opacity?: number;
+          party_id?: string;
+          sort_order?: number;
+          subheadline?: string | null;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "hero_slides_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "hero_slides_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       inventory_items: {
         Row: {
-          created_at: string
-          id: string
-          is_low_stock: boolean | null
-          is_overstock: boolean | null
-          low_stock_threshold: number
-          max_threshold: number | null
-          party_id: string
-          product_id: string
-          qty_incoming: number
-          qty_on_hand: number
-          qty_reserved: number
-          track_inventory: boolean
-          updated_at: string
-          variant_id: string | null
-          warehouse_id: string
-        }
+          created_at: string;
+          id: string;
+          is_low_stock: boolean | null;
+          is_overstock: boolean | null;
+          low_stock_threshold: number;
+          max_threshold: number | null;
+          party_id: string;
+          product_id: string;
+          qty_incoming: number;
+          qty_on_hand: number;
+          qty_reserved: number;
+          track_inventory: boolean;
+          updated_at: string;
+          variant_id: string | null;
+          warehouse_id: string;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          id?: string
-          is_low_stock?: boolean | null
-          is_overstock?: boolean | null
-          low_stock_threshold?: number
-          max_threshold?: number | null
-          party_id: string
-          product_id: string
-          qty_incoming?: number
-          qty_on_hand?: number
-          qty_reserved?: number
-          track_inventory?: boolean
-          updated_at?: string
-          variant_id?: string | null
-          warehouse_id: string
-        }
+          created_at?: string;
+          id?: string;
+          is_low_stock?: never;
+          is_overstock?: never;
+          low_stock_threshold?: number;
+          max_threshold?: number | null;
+          party_id: string;
+          product_id: string;
+          qty_incoming?: number;
+          qty_on_hand?: number;
+          qty_reserved?: number;
+          track_inventory?: boolean;
+          updated_at?: string;
+          variant_id?: string | null;
+          warehouse_id: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          is_low_stock?: boolean | null
-          is_overstock?: boolean | null
-          low_stock_threshold?: number
-          max_threshold?: number | null
-          party_id?: string
-          product_id?: string
-          qty_incoming?: number
-          qty_on_hand?: number
-          qty_reserved?: number
-          track_inventory?: boolean
-          updated_at?: string
-          variant_id?: string | null
-          warehouse_id?: string
-        }
+          created_at?: string;
+          id?: string;
+          is_low_stock?: never;
+          is_overstock?: never;
+          low_stock_threshold?: number;
+          max_threshold?: number | null;
+          party_id?: string;
+          product_id?: string;
+          qty_incoming?: number;
+          qty_on_hand?: number;
+          qty_reserved?: number;
+          track_inventory?: boolean;
+          updated_at?: string;
+          variant_id?: string | null;
+          warehouse_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "inventory_items_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "inventory_items_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "inventory_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "inventory_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "inventory_items_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
-            referencedColumns: ["id"]
+            foreignKeyName: "inventory_items_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "inventory_items_warehouse_id_fkey"
-            columns: ["warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "warehouses"
-            referencedColumns: ["id"]
+            foreignKeyName: "inventory_items_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       items: {
         Row: {
-          created_at: string
-          created_by: string
-          description: string | null
-          id: string
-          status: Database["public"]["Enums"]["item_status"]
-          title: string
-          updated_at: string
-        }
+          created_at: string;
+          created_by: string;
+          description: string | null;
+          id: string;
+          status: Database["public"]["Enums"]["item_status"];
+          title: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          created_by: string
-          description?: string | null
-          id?: string
-          status?: Database["public"]["Enums"]["item_status"]
-          title: string
-          updated_at?: string
-        }
+          created_at?: string;
+          created_by: string;
+          description?: string | null;
+          id?: string;
+          status?: Database["public"]["Enums"]["item_status"];
+          title: string;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          created_by?: string
-          description?: string | null
-          id?: string
-          status?: Database["public"]["Enums"]["item_status"]
-          title?: string
-          updated_at?: string
-        }
+          created_at?: string;
+          created_by?: string;
+          description?: string | null;
+          id?: string;
+          status?: Database["public"]["Enums"]["item_status"];
+          title?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "items_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "items_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       loyalty_transactions: {
         Row: {
-          balance_after: number
-          created_at: string
-          customer_id: string
-          id: string
-          note: string | null
-          order_id: string | null
-          party_id: string
-          points: number
-          type: string
-        }
+          balance_after: number;
+          created_at: string;
+          customer_id: string;
+          id: string;
+          note: string | null;
+          order_id: string | null;
+          party_id: string;
+          points: number;
+          type: string;
+        };
+        ComputedFields: never;
         Insert: {
-          balance_after: number
-          created_at?: string
-          customer_id: string
-          id?: string
-          note?: string | null
-          order_id?: string | null
-          party_id: string
-          points: number
-          type: string
-        }
+          balance_after: number;
+          created_at?: string;
+          customer_id: string;
+          id?: string;
+          note?: string | null;
+          order_id?: string | null;
+          party_id: string;
+          points: number;
+          type: string;
+        };
         Update: {
-          balance_after?: number
-          created_at?: string
-          customer_id?: string
-          id?: string
-          note?: string | null
-          order_id?: string | null
-          party_id?: string
-          points?: number
-          type?: string
-        }
+          balance_after?: number;
+          created_at?: string;
+          customer_id?: string;
+          id?: string;
+          note?: string | null;
+          order_id?: string | null;
+          party_id?: string;
+          points?: number;
+          type?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "loyalty_transactions_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
+            foreignKeyName: "loyalty_transactions_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "loyalty_transactions_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
+            foreignKeyName: "loyalty_transactions_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "loyalty_transactions_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "loyalty_transactions_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       media_categories: {
         Row: {
-          created_at: string
-          id: string
-          name: string
-          party_id: string
-        }
+          created_at: string;
+          id: string;
+          name: string;
+          party_id: string;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          id?: string
-          name: string
-          party_id: string
-        }
+          created_at?: string;
+          id?: string;
+          name: string;
+          party_id: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          party_id?: string
-        }
+          created_at?: string;
+          id?: string;
+          name?: string;
+          party_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "media_categories_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "media_categories_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       media_category_assignments: {
         Row: {
-          category_id: string
-          media_id: string
-        }
+          category_id: string;
+          media_id: string;
+        };
+        ComputedFields: never;
         Insert: {
-          category_id: string
-          media_id: string
-        }
+          category_id: string;
+          media_id: string;
+        };
         Update: {
-          category_id?: string
-          media_id?: string
-        }
+          category_id?: string;
+          media_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "media_category_assignments_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "media_categories"
-            referencedColumns: ["id"]
+            foreignKeyName: "media_category_assignments_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "media_categories";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "media_category_assignments_media_id_fkey"
-            columns: ["media_id"]
-            isOneToOne: false
-            referencedRelation: "store_media"
-            referencedColumns: ["id"]
+            foreignKeyName: "media_category_assignments_media_id_fkey";
+            columns: ["media_id"];
+            isOneToOne: false;
+            referencedRelation: "store_media";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       monthly_platform_fees: {
         Row: {
-          created_at: string
-          currency: string
-          fee_amount: number
-          fee_rate: number
-          id: string
-          notified_at: string | null
-          paid_at: string | null
-          paid_by: string | null
-          party_id: string
-          payment_reference: string | null
-          period_month: string
-          status: string
-          turnover_amount: number
-          updated_at: string
-        }
+          created_at: string;
+          currency: string;
+          fee_amount: number;
+          fee_rate: number;
+          id: string;
+          notified_at: string | null;
+          paid_at: string | null;
+          paid_by: string | null;
+          party_id: string;
+          payment_reference: string | null;
+          period_month: string;
+          status: string;
+          turnover_amount: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          currency?: string
-          fee_amount: number
-          fee_rate: number
-          id?: string
-          notified_at?: string | null
-          paid_at?: string | null
-          paid_by?: string | null
-          party_id: string
-          payment_reference?: string | null
-          period_month: string
-          status?: string
-          turnover_amount: number
-          updated_at?: string
-        }
+          created_at?: string;
+          currency?: string;
+          fee_amount: number;
+          fee_rate: number;
+          id?: string;
+          notified_at?: string | null;
+          paid_at?: string | null;
+          paid_by?: string | null;
+          party_id: string;
+          payment_reference?: string | null;
+          period_month: string;
+          status?: string;
+          turnover_amount: number;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          currency?: string
-          fee_amount?: number
-          fee_rate?: number
-          id?: string
-          notified_at?: string | null
-          paid_at?: string | null
-          paid_by?: string | null
-          party_id?: string
-          payment_reference?: string | null
-          period_month?: string
-          status?: string
-          turnover_amount?: number
-          updated_at?: string
-        }
+          created_at?: string;
+          currency?: string;
+          fee_amount?: number;
+          fee_rate?: number;
+          id?: string;
+          notified_at?: string | null;
+          paid_at?: string | null;
+          paid_by?: string | null;
+          party_id?: string;
+          payment_reference?: string | null;
+          period_month?: string;
+          status?: string;
+          turnover_amount?: number;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "monthly_platform_fees_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "monthly_platform_fees_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       nav_items: {
         Row: {
-          category_id: string | null
-          column_label: string | null
-          created_at: string
-          id: string
-          is_mega: boolean
-          is_visible: boolean
-          label: string
-          parent_id: string | null
-          party_id: string
-          sort_order: number
-          updated_at: string
-          url: string | null
-        }
+          category_id: string | null;
+          column_label: string | null;
+          created_at: string;
+          id: string;
+          is_mega: boolean;
+          is_visible: boolean;
+          label: string;
+          parent_id: string | null;
+          party_id: string;
+          sort_order: number;
+          updated_at: string;
+          url: string | null;
+        };
+        ComputedFields: never;
         Insert: {
-          category_id?: string | null
-          column_label?: string | null
-          created_at?: string
-          id?: string
-          is_mega?: boolean
-          is_visible?: boolean
-          label: string
-          parent_id?: string | null
-          party_id: string
-          sort_order?: number
-          updated_at?: string
-          url?: string | null
-        }
+          category_id?: string | null;
+          column_label?: string | null;
+          created_at?: string;
+          id?: string;
+          is_mega?: boolean;
+          is_visible?: boolean;
+          label: string;
+          parent_id?: string | null;
+          party_id: string;
+          sort_order?: number;
+          updated_at?: string;
+          url?: string | null;
+        };
         Update: {
-          category_id?: string | null
-          column_label?: string | null
-          created_at?: string
-          id?: string
-          is_mega?: boolean
-          is_visible?: boolean
-          label?: string
-          parent_id?: string | null
-          party_id?: string
-          sort_order?: number
-          updated_at?: string
-          url?: string | null
-        }
+          category_id?: string | null;
+          column_label?: string | null;
+          created_at?: string;
+          id?: string;
+          is_mega?: boolean;
+          is_visible?: boolean;
+          label?: string;
+          parent_id?: string | null;
+          party_id?: string;
+          sort_order?: number;
+          updated_at?: string;
+          url?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "nav_items_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
+            foreignKeyName: "nav_items_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "nav_items_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "nav_items"
-            referencedColumns: ["id"]
+            foreignKeyName: "nav_items_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "nav_items";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "nav_items_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "nav_items_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       newsletter_subscribers: {
         Row: {
-          email: string
-          id: string
-          party_id: string
-          subscribed_at: string
-          unsubscribed_at: string | null
-        }
+          email: string;
+          id: string;
+          party_id: string;
+          subscribed_at: string;
+          unsubscribed_at: string | null;
+        };
+        ComputedFields: never;
         Insert: {
-          email: string
-          id?: string
-          party_id: string
-          subscribed_at?: string
-          unsubscribed_at?: string | null
-        }
+          email: string;
+          id?: string;
+          party_id: string;
+          subscribed_at?: string;
+          unsubscribed_at?: string | null;
+        };
         Update: {
-          email?: string
-          id?: string
-          party_id?: string
-          subscribed_at?: string
-          unsubscribed_at?: string | null
-        }
+          email?: string;
+          id?: string;
+          party_id?: string;
+          subscribed_at?: string;
+          unsubscribed_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "newsletter_subscribers_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "newsletter_subscribers_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       notifications: {
         Row: {
-          body: string | null
-          created_at: string
-          id: string
-          metadata: Json
-          party_id: string | null
-          title: string | null
-          type: Database["public"]["Enums"]["notification_type"]
-        }
+          body: string | null;
+          created_at: string;
+          id: string;
+          metadata: NonNullable<Json>;
+          party_id: string | null;
+          title: string | null;
+          type: Database["public"]["Enums"]["notification_type"];
+        };
+        ComputedFields: never;
         Insert: {
-          body?: string | null
-          created_at?: string
-          id?: string
-          metadata?: Json
-          party_id?: string | null
-          title?: string | null
-          type: Database["public"]["Enums"]["notification_type"]
-        }
+          body?: string | null;
+          created_at?: string;
+          id?: string;
+          metadata?: NonNullable<Json>;
+          party_id?: string | null;
+          title?: string | null;
+          type: Database["public"]["Enums"]["notification_type"];
+        };
         Update: {
-          body?: string | null
-          created_at?: string
-          id?: string
-          metadata?: Json
-          party_id?: string | null
-          title?: string | null
-          type?: Database["public"]["Enums"]["notification_type"]
-        }
+          body?: string | null;
+          created_at?: string;
+          id?: string;
+          metadata?: NonNullable<Json>;
+          party_id?: string | null;
+          title?: string | null;
+          type?: Database["public"]["Enums"]["notification_type"];
+        };
         Relationships: [
           {
-            foreignKeyName: "notifications_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "notifications_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       order_commission_ledger: {
         Row: {
-          commission_amount: number
-          commission_rate: number
-          created_at: string
-          currency: string
-          gross_amount: number
-          hold_until: string
-          id: string
-          net_payable: number
-          order_id: string
-          paid_at: string | null
-          paid_by: string | null
-          party_id: string
-          payout_reference: string | null
-          reversed_at: string | null
-          reversed_reason: string | null
-          status: string
-          tax_amount: number
-          tax_rate: number
-          updated_at: string
-          withheld_amount: number
-          withheld_expires_at: string | null
-        }
+          commission_amount: number;
+          commission_rate: number;
+          created_at: string;
+          currency: string;
+          gross_amount: number;
+          hold_until: string;
+          id: string;
+          net_payable: number;
+          order_id: string;
+          paid_at: string | null;
+          paid_by: string | null;
+          party_id: string;
+          payout_reference: string | null;
+          reversed_at: string | null;
+          reversed_reason: string | null;
+          status: string;
+          tax_amount: number;
+          tax_rate: number;
+          updated_at: string;
+          withheld_amount: number;
+          withheld_expires_at: string | null;
+        };
+        ComputedFields: never;
         Insert: {
-          commission_amount: number
-          commission_rate?: number
-          created_at?: string
-          currency?: string
-          gross_amount: number
-          hold_until: string
-          id?: string
-          net_payable: number
-          order_id: string
-          paid_at?: string | null
-          paid_by?: string | null
-          party_id: string
-          payout_reference?: string | null
-          reversed_at?: string | null
-          reversed_reason?: string | null
-          status?: string
-          tax_amount?: number
-          tax_rate?: number
-          updated_at?: string
-          withheld_amount?: number
-          withheld_expires_at?: string | null
-        }
+          commission_amount: number;
+          commission_rate?: number;
+          created_at?: string;
+          currency?: string;
+          gross_amount: number;
+          hold_until: string;
+          id?: string;
+          net_payable: number;
+          order_id: string;
+          paid_at?: string | null;
+          paid_by?: string | null;
+          party_id: string;
+          payout_reference?: string | null;
+          reversed_at?: string | null;
+          reversed_reason?: string | null;
+          status?: string;
+          tax_amount?: number;
+          tax_rate?: number;
+          updated_at?: string;
+          withheld_amount?: number;
+          withheld_expires_at?: string | null;
+        };
         Update: {
-          commission_amount?: number
-          commission_rate?: number
-          created_at?: string
-          currency?: string
-          gross_amount?: number
-          hold_until?: string
-          id?: string
-          net_payable?: number
-          order_id?: string
-          paid_at?: string | null
-          paid_by?: string | null
-          party_id?: string
-          payout_reference?: string | null
-          reversed_at?: string | null
-          reversed_reason?: string | null
-          status?: string
-          tax_amount?: number
-          tax_rate?: number
-          updated_at?: string
-          withheld_amount?: number
-          withheld_expires_at?: string | null
-        }
+          commission_amount?: number;
+          commission_rate?: number;
+          created_at?: string;
+          currency?: string;
+          gross_amount?: number;
+          hold_until?: string;
+          id?: string;
+          net_payable?: number;
+          order_id?: string;
+          paid_at?: string | null;
+          paid_by?: string | null;
+          party_id?: string;
+          payout_reference?: string | null;
+          reversed_at?: string | null;
+          reversed_reason?: string | null;
+          status?: string;
+          tax_amount?: number;
+          tax_rate?: number;
+          updated_at?: string;
+          withheld_amount?: number;
+          withheld_expires_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "order_commission_ledger_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: true
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
+            foreignKeyName: "order_commission_ledger_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: true;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "order_commission_ledger_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "order_commission_ledger_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       order_items: {
         Row: {
-          created_at: string
-          discount_amount: number
-          id: string
-          order_id: string
-          product_id: string
-          quantity: number
-          sku: string | null
-          tax_amount: number
-          title: string
-          total_price: number
-          unit_price: number
-          variant_id: string | null
-        }
+          created_at: string;
+          discount_amount: number;
+          id: string;
+          order_id: string;
+          product_id: string;
+          quantity: number;
+          sku: string | null;
+          tax_amount: number;
+          title: string;
+          total_price: number;
+          unit_price: number;
+          variant_id: string | null;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          discount_amount?: number
-          id?: string
-          order_id: string
-          product_id: string
-          quantity?: number
-          sku?: string | null
-          tax_amount?: number
-          title: string
-          total_price: number
-          unit_price: number
-          variant_id?: string | null
-        }
+          created_at?: string;
+          discount_amount?: number;
+          id?: string;
+          order_id: string;
+          product_id: string;
+          quantity?: number;
+          sku?: string | null;
+          tax_amount?: number;
+          title: string;
+          total_price: number;
+          unit_price: number;
+          variant_id?: string | null;
+        };
         Update: {
-          created_at?: string
-          discount_amount?: number
-          id?: string
-          order_id?: string
-          product_id?: string
-          quantity?: number
-          sku?: string | null
-          tax_amount?: number
-          title?: string
-          total_price?: number
-          unit_price?: number
-          variant_id?: string | null
-        }
+          created_at?: string;
+          discount_amount?: number;
+          id?: string;
+          order_id?: string;
+          product_id?: string;
+          quantity?: number;
+          sku?: string | null;
+          tax_amount?: number;
+          title?: string;
+          total_price?: number;
+          unit_price?: number;
+          variant_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "order_items_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
+            foreignKeyName: "order_items_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "order_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "order_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "order_items_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
-            referencedColumns: ["id"]
+            foreignKeyName: "order_items_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       order_shipments: {
         Row: {
-          cancelled_at: string | null
-          consignment_code: string | null
-          created_at: string
-          error_message: string | null
-          id: string
-          is_mock: boolean
-          label_storage_path: string | null
-          last_status_raw: Json | null
-          order_id: string
-          party_id: string
-          pickup_point_address: string | null
-          pickup_point_id: string | null
-          pickup_point_name: string | null
-          provider: string
-          provider_shipment_id: string | null
-          return_created_at: string | null
-          return_label_storage_path: string | null
-          return_password: string | null
-          return_provider_shipment_id: string | null
-          return_tracking_number: string | null
-          shipping_cost: number
-          status: string
-          tracking_number: string | null
-          updated_at: string
-          weight_kg: number
-        }
+          cancelled_at: string | null;
+          consignment_code: string | null;
+          created_at: string;
+          error_message: string | null;
+          id: string;
+          is_mock: boolean;
+          label_storage_path: string | null;
+          last_status_raw: Json | null;
+          order_id: string;
+          party_id: string;
+          pickup_point_address: string | null;
+          pickup_point_id: string | null;
+          pickup_point_name: string | null;
+          provider: string;
+          provider_shipment_id: string | null;
+          return_created_at: string | null;
+          return_label_storage_path: string | null;
+          return_password: string | null;
+          return_provider_shipment_id: string | null;
+          return_tracking_number: string | null;
+          shipping_cost: number;
+          status: string;
+          tracking_number: string | null;
+          updated_at: string;
+          weight_kg: number;
+        };
+        ComputedFields: never;
         Insert: {
-          cancelled_at?: string | null
-          consignment_code?: string | null
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          is_mock?: boolean
-          label_storage_path?: string | null
-          last_status_raw?: Json | null
-          order_id: string
-          party_id: string
-          pickup_point_address?: string | null
-          pickup_point_id?: string | null
-          pickup_point_name?: string | null
-          provider: string
-          provider_shipment_id?: string | null
-          return_created_at?: string | null
-          return_label_storage_path?: string | null
-          return_password?: string | null
-          return_provider_shipment_id?: string | null
-          return_tracking_number?: string | null
-          shipping_cost?: number
-          status?: string
-          tracking_number?: string | null
-          updated_at?: string
-          weight_kg?: number
-        }
+          cancelled_at?: string | null;
+          consignment_code?: string | null;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          is_mock?: boolean;
+          label_storage_path?: string | null;
+          last_status_raw?: Json | null;
+          order_id: string;
+          party_id: string;
+          pickup_point_address?: string | null;
+          pickup_point_id?: string | null;
+          pickup_point_name?: string | null;
+          provider: string;
+          provider_shipment_id?: string | null;
+          return_created_at?: string | null;
+          return_label_storage_path?: string | null;
+          return_password?: string | null;
+          return_provider_shipment_id?: string | null;
+          return_tracking_number?: string | null;
+          shipping_cost?: number;
+          status?: string;
+          tracking_number?: string | null;
+          updated_at?: string;
+          weight_kg?: number;
+        };
         Update: {
-          cancelled_at?: string | null
-          consignment_code?: string | null
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          is_mock?: boolean
-          label_storage_path?: string | null
-          last_status_raw?: Json | null
-          order_id?: string
-          party_id?: string
-          pickup_point_address?: string | null
-          pickup_point_id?: string | null
-          pickup_point_name?: string | null
-          provider?: string
-          provider_shipment_id?: string | null
-          return_created_at?: string | null
-          return_label_storage_path?: string | null
-          return_password?: string | null
-          return_provider_shipment_id?: string | null
-          return_tracking_number?: string | null
-          shipping_cost?: number
-          status?: string
-          tracking_number?: string | null
-          updated_at?: string
-          weight_kg?: number
-        }
+          cancelled_at?: string | null;
+          consignment_code?: string | null;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          is_mock?: boolean;
+          label_storage_path?: string | null;
+          last_status_raw?: Json | null;
+          order_id?: string;
+          party_id?: string;
+          pickup_point_address?: string | null;
+          pickup_point_id?: string | null;
+          pickup_point_name?: string | null;
+          provider?: string;
+          provider_shipment_id?: string | null;
+          return_created_at?: string | null;
+          return_label_storage_path?: string | null;
+          return_password?: string | null;
+          return_provider_shipment_id?: string | null;
+          return_tracking_number?: string | null;
+          shipping_cost?: number;
+          status?: string;
+          tracking_number?: string | null;
+          updated_at?: string;
+          weight_kg?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "order_shipments_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: true
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
+            foreignKeyName: "order_shipments_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: true;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "order_shipments_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "order_shipments_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       order_status_history: {
         Row: {
-          changed_by: string | null
-          created_at: string
-          from_status: string | null
-          id: string
-          note: string | null
-          order_id: string
-          to_status: string
-        }
+          changed_by: string | null;
+          created_at: string;
+          from_status: string | null;
+          id: string;
+          note: string | null;
+          order_id: string;
+          to_status: string;
+        };
+        ComputedFields: never;
         Insert: {
-          changed_by?: string | null
-          created_at?: string
-          from_status?: string | null
-          id?: string
-          note?: string | null
-          order_id: string
-          to_status: string
-        }
+          changed_by?: string | null;
+          created_at?: string;
+          from_status?: string | null;
+          id?: string;
+          note?: string | null;
+          order_id: string;
+          to_status: string;
+        };
         Update: {
-          changed_by?: string | null
-          created_at?: string
-          from_status?: string | null
-          id?: string
-          note?: string | null
-          order_id?: string
-          to_status?: string
-        }
+          changed_by?: string | null;
+          created_at?: string;
+          from_status?: string | null;
+          id?: string;
+          note?: string | null;
+          order_id?: string;
+          to_status?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "order_status_history_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
+            foreignKeyName: "order_status_history_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       orders: {
         Row: {
-          billing_address_id: string | null
-          created_at: string
-          currency: string
-          customer_id: string
-          delivered_at: string | null
-          discount_amount: number
-          id: string
-          internal_notes: string | null
-          notes: string | null
-          order_number: string
-          paid_at: string | null
-          party_id: string
-          payment_fee: number
-          payment_method: string
-          payment_status: string
-          shipped_at: string | null
-          shipping_address_id: string | null
-          shipping_amount: number
-          status: string
-          subtotal: number
-          tax_amount: number
-          total_amount: number
-          tracking_number: string | null
-          updated_at: string
-        }
+          billing_address_id: string | null;
+          created_at: string;
+          currency: string;
+          customer_id: string;
+          delivered_at: string | null;
+          discount_amount: number;
+          id: string;
+          internal_notes: string | null;
+          notes: string | null;
+          order_number: string;
+          paid_at: string | null;
+          party_id: string;
+          payment_fee: number;
+          payment_method: string;
+          payment_status: string;
+          shipped_at: string | null;
+          shipping_address_id: string | null;
+          shipping_amount: number;
+          status: string;
+          subtotal: number;
+          tax_amount: number;
+          total_amount: number;
+          tracking_number: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          billing_address_id?: string | null
-          created_at?: string
-          currency?: string
-          customer_id: string
-          delivered_at?: string | null
-          discount_amount?: number
-          id?: string
-          internal_notes?: string | null
-          notes?: string | null
-          order_number: string
-          paid_at?: string | null
-          party_id: string
-          payment_fee?: number
-          payment_method?: string
-          payment_status?: string
-          shipped_at?: string | null
-          shipping_address_id?: string | null
-          shipping_amount?: number
-          status?: string
-          subtotal?: number
-          tax_amount?: number
-          total_amount?: number
-          tracking_number?: string | null
-          updated_at?: string
-        }
+          billing_address_id?: string | null;
+          created_at?: string;
+          currency?: string;
+          customer_id: string;
+          delivered_at?: string | null;
+          discount_amount?: number;
+          id?: string;
+          internal_notes?: string | null;
+          notes?: string | null;
+          order_number: string;
+          paid_at?: string | null;
+          party_id: string;
+          payment_fee?: number;
+          payment_method?: string;
+          payment_status?: string;
+          shipped_at?: string | null;
+          shipping_address_id?: string | null;
+          shipping_amount?: number;
+          status?: string;
+          subtotal?: number;
+          tax_amount?: number;
+          total_amount?: number;
+          tracking_number?: string | null;
+          updated_at?: string;
+        };
         Update: {
-          billing_address_id?: string | null
-          created_at?: string
-          currency?: string
-          customer_id?: string
-          delivered_at?: string | null
-          discount_amount?: number
-          id?: string
-          internal_notes?: string | null
-          notes?: string | null
-          order_number?: string
-          paid_at?: string | null
-          party_id?: string
-          payment_fee?: number
-          payment_method?: string
-          payment_status?: string
-          shipped_at?: string | null
-          shipping_address_id?: string | null
-          shipping_amount?: number
-          status?: string
-          subtotal?: number
-          tax_amount?: number
-          total_amount?: number
-          tracking_number?: string | null
-          updated_at?: string
-        }
+          billing_address_id?: string | null;
+          created_at?: string;
+          currency?: string;
+          customer_id?: string;
+          delivered_at?: string | null;
+          discount_amount?: number;
+          id?: string;
+          internal_notes?: string | null;
+          notes?: string | null;
+          order_number?: string;
+          paid_at?: string | null;
+          party_id?: string;
+          payment_fee?: number;
+          payment_method?: string;
+          payment_status?: string;
+          shipped_at?: string | null;
+          shipping_address_id?: string | null;
+          shipping_amount?: number;
+          status?: string;
+          subtotal?: number;
+          tax_amount?: number;
+          total_amount?: number;
+          tracking_number?: string | null;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "orders_billing_address_id_fkey"
-            columns: ["billing_address_id"]
-            isOneToOne: false
-            referencedRelation: "addresses"
-            referencedColumns: ["id"]
+            foreignKeyName: "orders_billing_address_id_fkey";
+            columns: ["billing_address_id"];
+            isOneToOne: false;
+            referencedRelation: "addresses";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "orders_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
+            foreignKeyName: "orders_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "orders_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "orders_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "orders_shipping_address_id_fkey"
-            columns: ["shipping_address_id"]
-            isOneToOne: false
-            referencedRelation: "addresses"
-            referencedColumns: ["id"]
+            foreignKeyName: "orders_shipping_address_id_fkey";
+            columns: ["shipping_address_id"];
+            isOneToOne: false;
+            referencedRelation: "addresses";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       parties: {
         Row: {
-          billing_email: string | null
-          commission_rate_override: number | null
-          commission_threshold_override: number | null
-          company_ico: string | null
-          company_name: string | null
-          created_at: string
-          id: string
-          lang: string
-          logo_url: string | null
-          name: string
-          reduced_commission_rate_override: number | null
-          seller_mode: string
-          settings: Json
-          slug: string
-          status: string
-          terms_accepted_at: string | null
-          terms_version: string | null
-          updated_at: string
-          vat_number: string | null
-        }
+          billing_email: string | null;
+          commission_rate_override: number | null;
+          commission_threshold_override: number | null;
+          company_ico: string | null;
+          company_name: string | null;
+          created_at: string;
+          id: string;
+          lang: string;
+          logo_url: string | null;
+          name: string;
+          reduced_commission_rate_override: number | null;
+          seller_mode: string;
+          settings: NonNullable<Json>;
+          slug: string;
+          status: string;
+          terms_accepted_at: string | null;
+          terms_version: string | null;
+          updated_at: string;
+          vat_number: string | null;
+        };
+        ComputedFields: never;
         Insert: {
-          billing_email?: string | null
-          commission_rate_override?: number | null
-          commission_threshold_override?: number | null
-          company_ico?: string | null
-          company_name?: string | null
-          created_at?: string
-          id?: string
-          lang?: string
-          logo_url?: string | null
-          name: string
-          reduced_commission_rate_override?: number | null
-          seller_mode?: string
-          settings?: Json
-          slug: string
-          status?: string
-          terms_accepted_at?: string | null
-          terms_version?: string | null
-          updated_at?: string
-          vat_number?: string | null
-        }
+          billing_email?: string | null;
+          commission_rate_override?: number | null;
+          commission_threshold_override?: number | null;
+          company_ico?: string | null;
+          company_name?: string | null;
+          created_at?: string;
+          id?: string;
+          lang?: string;
+          logo_url?: string | null;
+          name: string;
+          reduced_commission_rate_override?: number | null;
+          seller_mode?: string;
+          settings?: NonNullable<Json>;
+          slug: string;
+          status?: string;
+          terms_accepted_at?: string | null;
+          terms_version?: string | null;
+          updated_at?: string;
+          vat_number?: string | null;
+        };
         Update: {
-          billing_email?: string | null
-          commission_rate_override?: number | null
-          commission_threshold_override?: number | null
-          company_ico?: string | null
-          company_name?: string | null
-          created_at?: string
-          id?: string
-          lang?: string
-          logo_url?: string | null
-          name?: string
-          reduced_commission_rate_override?: number | null
-          seller_mode?: string
-          settings?: Json
-          slug?: string
-          status?: string
-          terms_accepted_at?: string | null
-          terms_version?: string | null
-          updated_at?: string
-          vat_number?: string | null
-        }
-        Relationships: []
-      }
+          billing_email?: string | null;
+          commission_rate_override?: number | null;
+          commission_threshold_override?: number | null;
+          company_ico?: string | null;
+          company_name?: string | null;
+          created_at?: string;
+          id?: string;
+          lang?: string;
+          logo_url?: string | null;
+          name?: string;
+          reduced_commission_rate_override?: number | null;
+          seller_mode?: string;
+          settings?: NonNullable<Json>;
+          slug?: string;
+          status?: string;
+          terms_accepted_at?: string | null;
+          terms_version?: string | null;
+          updated_at?: string;
+          vat_number?: string | null;
+        };
+        Relationships: [];
+      };
       party_color_presets: {
         Row: {
-          color_background: string
-          color_border: string
-          color_primary: string
-          color_secondary: string
-          color_surface: string
-          color_text_primary: string
-          color_text_secondary: string
-          created_at: string
-          created_by: string | null
-          id: string
-          name: string
-          party_id: string
-        }
+          color_background: string;
+          color_border: string;
+          color_primary: string;
+          color_secondary: string;
+          color_surface: string;
+          color_text_primary: string;
+          color_text_secondary: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          party_id: string;
+        };
+        ComputedFields: never;
         Insert: {
-          color_background: string
-          color_border: string
-          color_primary: string
-          color_secondary: string
-          color_surface: string
-          color_text_primary: string
-          color_text_secondary: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          name: string
-          party_id: string
-        }
+          color_background: string;
+          color_border: string;
+          color_primary: string;
+          color_secondary: string;
+          color_surface: string;
+          color_text_primary: string;
+          color_text_secondary: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          party_id: string;
+        };
         Update: {
-          color_background?: string
-          color_border?: string
-          color_primary?: string
-          color_secondary?: string
-          color_surface?: string
-          color_text_primary?: string
-          color_text_secondary?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          name?: string
-          party_id?: string
-        }
+          color_background?: string;
+          color_border?: string;
+          color_primary?: string;
+          color_secondary?: string;
+          color_surface?: string;
+          color_text_primary?: string;
+          color_text_secondary?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          party_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "party_color_presets_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "party_color_presets_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
+      platform_owners: {
+        Row: {
+          created_at: string;
+          email: string;
+          note: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          email: string;
+          note?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          note?: string | null;
+        };
+        Relationships: [];
+      };
       price_list_items: {
         Row: {
-          id: string
-          price: number
-          price_list_id: string
-          product_id: string
-          variant_id: string | null
-        }
+          id: string;
+          price: number;
+          price_list_id: string;
+          product_id: string;
+          variant_id: string | null;
+        };
+        ComputedFields: never;
         Insert: {
-          id?: string
-          price: number
-          price_list_id: string
-          product_id: string
-          variant_id?: string | null
-        }
+          id?: string;
+          price: number;
+          price_list_id: string;
+          product_id: string;
+          variant_id?: string | null;
+        };
         Update: {
-          id?: string
-          price?: number
-          price_list_id?: string
-          product_id?: string
-          variant_id?: string | null
-        }
+          id?: string;
+          price?: number;
+          price_list_id?: string;
+          product_id?: string;
+          variant_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "price_list_items_price_list_id_fkey"
-            columns: ["price_list_id"]
-            isOneToOne: false
-            referencedRelation: "price_lists"
-            referencedColumns: ["id"]
+            foreignKeyName: "price_list_items_price_list_id_fkey";
+            columns: ["price_list_id"];
+            isOneToOne: false;
+            referencedRelation: "price_lists";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "price_list_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "price_list_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "price_list_items_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
-            referencedColumns: ["id"]
+            foreignKeyName: "price_list_items_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       price_lists: {
         Row: {
-          created_at: string
-          currency: string
-          id: string
-          is_active: boolean
-          is_default: boolean
-          name: string
-          party_id: string
-          updated_at: string
-          valid_from: string | null
-          valid_to: string | null
-        }
+          created_at: string;
+          currency: string;
+          id: string;
+          is_active: boolean;
+          is_default: boolean;
+          name: string;
+          party_id: string;
+          updated_at: string;
+          valid_from: string | null;
+          valid_to: string | null;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          currency?: string
-          id?: string
-          is_active?: boolean
-          is_default?: boolean
-          name: string
-          party_id: string
-          updated_at?: string
-          valid_from?: string | null
-          valid_to?: string | null
-        }
+          created_at?: string;
+          currency?: string;
+          id?: string;
+          is_active?: boolean;
+          is_default?: boolean;
+          name: string;
+          party_id: string;
+          updated_at?: string;
+          valid_from?: string | null;
+          valid_to?: string | null;
+        };
         Update: {
-          created_at?: string
-          currency?: string
-          id?: string
-          is_active?: boolean
-          is_default?: boolean
-          name?: string
-          party_id?: string
-          updated_at?: string
-          valid_from?: string | null
-          valid_to?: string | null
-        }
+          created_at?: string;
+          currency?: string;
+          id?: string;
+          is_active?: boolean;
+          is_default?: boolean;
+          name?: string;
+          party_id?: string;
+          updated_at?: string;
+          valid_from?: string | null;
+          valid_to?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "price_lists_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "price_lists_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       product_categories: {
         Row: {
-          category_id: string
-          product_id: string
-        }
+          category_id: string;
+          product_id: string;
+        };
+        ComputedFields: never;
         Insert: {
-          category_id: string
-          product_id: string
-        }
+          category_id: string;
+          product_id: string;
+        };
         Update: {
-          category_id?: string
-          product_id?: string
-        }
+          category_id?: string;
+          product_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "product_categories_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
+            foreignKeyName: "product_categories_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "product_categories_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "product_categories_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       product_conditions: {
         Row: {
-          code: string
-          color_hex: string
-          created_at: string
-          id: string
-          is_active: boolean
-          label: string
-          party_id: string
-          sort_order: number
-          updated_at: string
-        }
+          code: string;
+          color_hex: string;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          label: string;
+          party_id: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          code: string
-          color_hex?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          label: string
-          party_id: string
-          sort_order?: number
-          updated_at?: string
-        }
+          code: string;
+          color_hex?: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          label: string;
+          party_id: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
         Update: {
-          code?: string
-          color_hex?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          label?: string
-          party_id?: string
-          sort_order?: number
-          updated_at?: string
-        }
+          code?: string;
+          color_hex?: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          label?: string;
+          party_id?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "product_conditions_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "product_conditions_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       product_images: {
         Row: {
-          alt: string | null
-          created_at: string
-          id: string
-          is_primary: boolean
-          media_type: string
-          product_id: string
-          sort_order: number
-          url: string
-          variant_id: string | null
-        }
+          alt: string | null;
+          created_at: string;
+          id: string;
+          is_primary: boolean;
+          media_type: string;
+          product_id: string;
+          sort_order: number;
+          url: string;
+          variant_id: string | null;
+        };
+        ComputedFields: never;
         Insert: {
-          alt?: string | null
-          created_at?: string
-          id?: string
-          is_primary?: boolean
-          media_type?: string
-          product_id: string
-          sort_order?: number
-          url: string
-          variant_id?: string | null
-        }
+          alt?: string | null;
+          created_at?: string;
+          id?: string;
+          is_primary?: boolean;
+          media_type?: string;
+          product_id: string;
+          sort_order?: number;
+          url: string;
+          variant_id?: string | null;
+        };
         Update: {
-          alt?: string | null
-          created_at?: string
-          id?: string
-          is_primary?: boolean
-          media_type?: string
-          product_id?: string
-          sort_order?: number
-          url?: string
-          variant_id?: string | null
-        }
+          alt?: string | null;
+          created_at?: string;
+          id?: string;
+          is_primary?: boolean;
+          media_type?: string;
+          product_id?: string;
+          sort_order?: number;
+          url?: string;
+          variant_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "product_images_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "product_images_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "product_images_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
-            referencedColumns: ["id"]
+            foreignKeyName: "product_images_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       product_reviews: {
         Row: {
-          author_email: string
-          author_name: string
-          body: string | null
-          cons: string[]
-          created_at: string
-          customer_id: string | null
-          helpful_count: number
-          id: string
-          image_urls: string[]
-          is_verified: boolean
-          order_id: string | null
-          party_id: string
-          product_id: string
-          pros: string[]
-          rating: number
-          status: string
-          updated_at: string
-        }
+          author_email: string;
+          author_name: string;
+          body: string | null;
+          cons: string[];
+          created_at: string;
+          customer_id: string | null;
+          helpful_count: number;
+          id: string;
+          image_urls: string[];
+          is_verified: boolean;
+          order_id: string | null;
+          party_id: string;
+          product_id: string;
+          pros: string[];
+          rating: number;
+          status: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          author_email: string
-          author_name: string
-          body?: string | null
-          cons?: string[]
-          created_at?: string
-          customer_id?: string | null
-          helpful_count?: number
-          id?: string
-          image_urls?: string[]
-          is_verified?: boolean
-          order_id?: string | null
-          party_id: string
-          product_id: string
-          pros?: string[]
-          rating: number
-          status?: string
-          updated_at?: string
-        }
+          author_email: string;
+          author_name: string;
+          body?: string | null;
+          cons?: string[];
+          created_at?: string;
+          customer_id?: string | null;
+          helpful_count?: number;
+          id?: string;
+          image_urls?: string[];
+          is_verified?: boolean;
+          order_id?: string | null;
+          party_id: string;
+          product_id: string;
+          pros?: string[];
+          rating: number;
+          status?: string;
+          updated_at?: string;
+        };
         Update: {
-          author_email?: string
-          author_name?: string
-          body?: string | null
-          cons?: string[]
-          created_at?: string
-          customer_id?: string | null
-          helpful_count?: number
-          id?: string
-          image_urls?: string[]
-          is_verified?: boolean
-          order_id?: string | null
-          party_id?: string
-          product_id?: string
-          pros?: string[]
-          rating?: number
-          status?: string
-          updated_at?: string
-        }
+          author_email?: string;
+          author_name?: string;
+          body?: string | null;
+          cons?: string[];
+          created_at?: string;
+          customer_id?: string | null;
+          helpful_count?: number;
+          id?: string;
+          image_urls?: string[];
+          is_verified?: boolean;
+          order_id?: string | null;
+          party_id?: string;
+          product_id?: string;
+          pros?: string[];
+          rating?: number;
+          status?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "product_reviews_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
+            foreignKeyName: "product_reviews_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "product_reviews_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
+            foreignKeyName: "product_reviews_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "product_reviews_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "product_reviews_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "product_reviews_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "product_reviews_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       product_tags: {
         Row: {
-          product_id: string
-          tag: string
-        }
+          product_id: string;
+          tag: string;
+        };
+        ComputedFields: never;
         Insert: {
-          product_id: string
-          tag: string
-        }
+          product_id: string;
+          tag: string;
+        };
         Update: {
-          product_id?: string
-          tag?: string
-        }
+          product_id?: string;
+          tag?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "product_tags_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "product_tags_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       product_variants: {
         Row: {
-          attributes: Json
-          barcode: string | null
-          condition_id: string | null
-          created_at: string
-          id: string
-          is_active: boolean
-          name: string
-          price: number | null
-          product_id: string
-          sku: string | null
-          sort_order: number
-          updated_at: string
-        }
+          attributes: NonNullable<Json>;
+          barcode: string | null;
+          condition_id: string | null;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          name: string;
+          price: number | null;
+          product_id: string;
+          sku: string | null;
+          sort_order: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          attributes?: Json
-          barcode?: string | null
-          condition_id?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name: string
-          price?: number | null
-          product_id: string
-          sku?: string | null
-          sort_order?: number
-          updated_at?: string
-        }
+          attributes?: NonNullable<Json>;
+          barcode?: string | null;
+          condition_id?: string | null;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          price?: number | null;
+          product_id: string;
+          sku?: string | null;
+          sort_order?: number;
+          updated_at?: string;
+        };
         Update: {
-          attributes?: Json
-          barcode?: string | null
-          condition_id?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name?: string
-          price?: number | null
-          product_id?: string
-          sku?: string | null
-          sort_order?: number
-          updated_at?: string
-        }
+          attributes?: NonNullable<Json>;
+          barcode?: string | null;
+          condition_id?: string | null;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          price?: number | null;
+          product_id?: string;
+          sku?: string | null;
+          sort_order?: number;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "product_variants_condition_id_fkey"
-            columns: ["condition_id"]
-            isOneToOne: false
-            referencedRelation: "product_conditions"
-            referencedColumns: ["id"]
+            foreignKeyName: "product_variants_condition_id_fkey";
+            columns: ["condition_id"];
+            isOneToOne: false;
+            referencedRelation: "product_conditions";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "product_variants_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "product_variants_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       products: {
         Row: {
-          barcode: string | null
-          brand_id: string | null
-          condition_id: string | null
-          cost_price: number
-          created_at: string
-          description: string | null
-          description_rich: Json | null
-          discount_price: number | null
-          id: string
-          is_featured: boolean
-          is_visible: boolean
-          party_id: string
-          price: number
-          rating_avg: number
-          review_count: number
-          seo_description: string | null
-          seo_title: string | null
-          sku: string | null
-          slug: string
-          status: string
-          tax_rate: number
-          title: string
-          updated_at: string
-          weight: number | null
-        }
+          barcode: string | null;
+          brand_id: string | null;
+          condition_id: string | null;
+          cost_price: number;
+          created_at: string;
+          description: string | null;
+          description_rich: Json | null;
+          discount_price: number | null;
+          id: string;
+          is_featured: boolean;
+          is_visible: boolean;
+          party_id: string;
+          price: number;
+          rating_avg: number;
+          review_count: number;
+          seo_description: string | null;
+          seo_title: string | null;
+          sku: string | null;
+          slug: string;
+          status: string;
+          tax_rate: number;
+          title: string;
+          updated_at: string;
+          weight: number | null;
+        };
+        ComputedFields: never;
         Insert: {
-          barcode?: string | null
-          brand_id?: string | null
-          condition_id?: string | null
-          cost_price?: number
-          created_at?: string
-          description?: string | null
-          description_rich?: Json | null
-          discount_price?: number | null
-          id?: string
-          is_featured?: boolean
-          is_visible?: boolean
-          party_id: string
-          price?: number
-          rating_avg?: number
-          review_count?: number
-          seo_description?: string | null
-          seo_title?: string | null
-          sku?: string | null
-          slug: string
-          status?: string
-          tax_rate?: number
-          title: string
-          updated_at?: string
-          weight?: number | null
-        }
+          barcode?: string | null;
+          brand_id?: string | null;
+          condition_id?: string | null;
+          cost_price?: number;
+          created_at?: string;
+          description?: string | null;
+          description_rich?: Json | null;
+          discount_price?: number | null;
+          id?: string;
+          is_featured?: boolean;
+          is_visible?: boolean;
+          party_id: string;
+          price?: number;
+          rating_avg?: number;
+          review_count?: number;
+          seo_description?: string | null;
+          seo_title?: string | null;
+          sku?: string | null;
+          slug: string;
+          status?: string;
+          tax_rate?: number;
+          title: string;
+          updated_at?: string;
+          weight?: number | null;
+        };
         Update: {
-          barcode?: string | null
-          brand_id?: string | null
-          condition_id?: string | null
-          cost_price?: number
-          created_at?: string
-          description?: string | null
-          description_rich?: Json | null
-          discount_price?: number | null
-          id?: string
-          is_featured?: boolean
-          is_visible?: boolean
-          party_id?: string
-          price?: number
-          rating_avg?: number
-          review_count?: number
-          seo_description?: string | null
-          seo_title?: string | null
-          sku?: string | null
-          slug?: string
-          status?: string
-          tax_rate?: number
-          title?: string
-          updated_at?: string
-          weight?: number | null
-        }
+          barcode?: string | null;
+          brand_id?: string | null;
+          condition_id?: string | null;
+          cost_price?: number;
+          created_at?: string;
+          description?: string | null;
+          description_rich?: Json | null;
+          discount_price?: number | null;
+          id?: string;
+          is_featured?: boolean;
+          is_visible?: boolean;
+          party_id?: string;
+          price?: number;
+          rating_avg?: number;
+          review_count?: number;
+          seo_description?: string | null;
+          seo_title?: string | null;
+          sku?: string | null;
+          slug?: string;
+          status?: string;
+          tax_rate?: number;
+          title?: string;
+          updated_at?: string;
+          weight?: number | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "products_brand_id_fkey"
-            columns: ["brand_id"]
-            isOneToOne: false
-            referencedRelation: "brands"
-            referencedColumns: ["id"]
+            foreignKeyName: "products_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "products_condition_id_fkey"
-            columns: ["condition_id"]
-            isOneToOne: false
-            referencedRelation: "product_conditions"
-            referencedColumns: ["id"]
+            foreignKeyName: "products_condition_id_fkey";
+            columns: ["condition_id"];
+            isOneToOne: false;
+            referencedRelation: "product_conditions";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "products_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "products_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       profiles: {
         Row: {
-          admin_assigned_by: string | null
-          avatar_url: string | null
-          created_at: string
-          display_name: string | null
-          email: string | null
-          full_name: string | null
-          google_id: string | null
-          id: string
-          is_active: boolean
-          lang: string
-          last_login_at: string | null
-          phone: string | null
-          role: number
-          signup_party_id: string | null
-          updated_at: string
-        }
+          admin_assigned_by: string | null;
+          avatar_url: string | null;
+          created_at: string;
+          display_name: string | null;
+          email: string | null;
+          full_name: string | null;
+          google_id: string | null;
+          id: string;
+          is_active: boolean;
+          lang: string;
+          last_login_at: string | null;
+          phone: string | null;
+          role: number;
+          signup_party_id: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          admin_assigned_by?: string | null
-          avatar_url?: string | null
-          created_at?: string
-          display_name?: string | null
-          email?: string | null
-          full_name?: string | null
-          google_id?: string | null
-          id: string
-          is_active?: boolean
-          lang?: string
-          last_login_at?: string | null
-          phone?: string | null
-          role?: number
-          signup_party_id?: string | null
-          updated_at?: string
-        }
+          admin_assigned_by?: string | null;
+          avatar_url?: string | null;
+          created_at?: string;
+          display_name?: string | null;
+          email?: string | null;
+          full_name?: string | null;
+          google_id?: string | null;
+          id: string;
+          is_active?: boolean;
+          lang?: string;
+          last_login_at?: string | null;
+          phone?: string | null;
+          role?: number;
+          signup_party_id?: string | null;
+          updated_at?: string;
+        };
         Update: {
-          admin_assigned_by?: string | null
-          avatar_url?: string | null
-          created_at?: string
-          display_name?: string | null
-          email?: string | null
-          full_name?: string | null
-          google_id?: string | null
-          id?: string
-          is_active?: boolean
-          lang?: string
-          last_login_at?: string | null
-          phone?: string | null
-          role?: number
-          signup_party_id?: string | null
-          updated_at?: string
-        }
+          admin_assigned_by?: string | null;
+          avatar_url?: string | null;
+          created_at?: string;
+          display_name?: string | null;
+          email?: string | null;
+          full_name?: string | null;
+          google_id?: string | null;
+          id?: string;
+          is_active?: boolean;
+          lang?: string;
+          last_login_at?: string | null;
+          phone?: string | null;
+          role?: number;
+          signup_party_id?: string | null;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "profiles_signup_party_id_fkey"
-            columns: ["signup_party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "profiles_signup_party_id_fkey";
+            columns: ["signup_party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       promotions: {
         Row: {
-          banner_image_url: string | null
-          created_at: string
-          description: string | null
-          discount_rule_id: string
-          ends_at: string | null
-          id: string
-          is_active: boolean
-          name: string
-          party_id: string
-          starts_at: string | null
-          updated_at: string
-        }
+          banner_image_url: string | null;
+          created_at: string;
+          description: string | null;
+          discount_rule_id: string;
+          ends_at: string | null;
+          id: string;
+          is_active: boolean;
+          name: string;
+          party_id: string;
+          starts_at: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          banner_image_url?: string | null
-          created_at?: string
-          description?: string | null
-          discount_rule_id: string
-          ends_at?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          party_id: string
-          starts_at?: string | null
-          updated_at?: string
-        }
+          banner_image_url?: string | null;
+          created_at?: string;
+          description?: string | null;
+          discount_rule_id: string;
+          ends_at?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          party_id: string;
+          starts_at?: string | null;
+          updated_at?: string;
+        };
         Update: {
-          banner_image_url?: string | null
-          created_at?: string
-          description?: string | null
-          discount_rule_id?: string
-          ends_at?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          party_id?: string
-          starts_at?: string | null
-          updated_at?: string
-        }
+          banner_image_url?: string | null;
+          created_at?: string;
+          description?: string | null;
+          discount_rule_id?: string;
+          ends_at?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          party_id?: string;
+          starts_at?: string | null;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "promotions_discount_rule_id_fkey"
-            columns: ["discount_rule_id"]
-            isOneToOne: false
-            referencedRelation: "discount_rules"
-            referencedColumns: ["id"]
+            foreignKeyName: "promotions_discount_rule_id_fkey";
+            columns: ["discount_rule_id"];
+            isOneToOne: false;
+            referencedRelation: "discount_rules";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "promotions_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "promotions_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       return_items: {
         Row: {
-          condition: string | null
-          created_at: string
-          id: string
-          order_item_id: string
-          quantity: number
-          restock: boolean
-          return_request_id: string
-        }
+          condition: string | null;
+          created_at: string;
+          id: string;
+          order_item_id: string;
+          quantity: number;
+          restock: boolean;
+          return_request_id: string;
+        };
+        ComputedFields: never;
         Insert: {
-          condition?: string | null
-          created_at?: string
-          id?: string
-          order_item_id: string
-          quantity?: number
-          restock?: boolean
-          return_request_id: string
-        }
+          condition?: string | null;
+          created_at?: string;
+          id?: string;
+          order_item_id: string;
+          quantity?: number;
+          restock?: boolean;
+          return_request_id: string;
+        };
         Update: {
-          condition?: string | null
-          created_at?: string
-          id?: string
-          order_item_id?: string
-          quantity?: number
-          restock?: boolean
-          return_request_id?: string
-        }
+          condition?: string | null;
+          created_at?: string;
+          id?: string;
+          order_item_id?: string;
+          quantity?: number;
+          restock?: boolean;
+          return_request_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "return_items_order_item_id_fkey"
-            columns: ["order_item_id"]
-            isOneToOne: false
-            referencedRelation: "order_items"
-            referencedColumns: ["id"]
+            foreignKeyName: "return_items_order_item_id_fkey";
+            columns: ["order_item_id"];
+            isOneToOne: false;
+            referencedRelation: "order_items";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "return_items_return_request_id_fkey"
-            columns: ["return_request_id"]
-            isOneToOne: false
-            referencedRelation: "return_requests"
-            referencedColumns: ["id"]
+            foreignKeyName: "return_items_return_request_id_fkey";
+            columns: ["return_request_id"];
+            isOneToOne: false;
+            referencedRelation: "return_requests";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       return_requests: {
         Row: {
-          completed_at: string | null
-          created_at: string
-          customer_id: string
-          customer_notes: string | null
-          id: string
-          notes: string | null
-          order_id: string
-          party_id: string
-          processed_by: string | null
-          reason: string
-          received_at: string | null
-          refund_amount: number | null
-          refund_method: string | null
-          resolution: string | null
-          return_number: string
-          shipping_label_url: string | null
-          status: string
-          updated_at: string
-        }
+          completed_at: string | null;
+          created_at: string;
+          customer_id: string;
+          customer_notes: string | null;
+          id: string;
+          notes: string | null;
+          order_id: string;
+          party_id: string;
+          processed_by: string | null;
+          reason: string;
+          received_at: string | null;
+          refund_amount: number | null;
+          refund_method: string | null;
+          resolution: string | null;
+          return_number: string;
+          shipping_label_url: string | null;
+          status: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          completed_at?: string | null
-          created_at?: string
-          customer_id: string
-          customer_notes?: string | null
-          id?: string
-          notes?: string | null
-          order_id: string
-          party_id: string
-          processed_by?: string | null
-          reason: string
-          received_at?: string | null
-          refund_amount?: number | null
-          refund_method?: string | null
-          resolution?: string | null
-          return_number: string
-          shipping_label_url?: string | null
-          status?: string
-          updated_at?: string
-        }
+          completed_at?: string | null;
+          created_at?: string;
+          customer_id: string;
+          customer_notes?: string | null;
+          id?: string;
+          notes?: string | null;
+          order_id: string;
+          party_id: string;
+          processed_by?: string | null;
+          reason: string;
+          received_at?: string | null;
+          refund_amount?: number | null;
+          refund_method?: string | null;
+          resolution?: string | null;
+          return_number: string;
+          shipping_label_url?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
         Update: {
-          completed_at?: string | null
-          created_at?: string
-          customer_id?: string
-          customer_notes?: string | null
-          id?: string
-          notes?: string | null
-          order_id?: string
-          party_id?: string
-          processed_by?: string | null
-          reason?: string
-          received_at?: string | null
-          refund_amount?: number | null
-          refund_method?: string | null
-          resolution?: string | null
-          return_number?: string
-          shipping_label_url?: string | null
-          status?: string
-          updated_at?: string
-        }
+          completed_at?: string | null;
+          created_at?: string;
+          customer_id?: string;
+          customer_notes?: string | null;
+          id?: string;
+          notes?: string | null;
+          order_id?: string;
+          party_id?: string;
+          processed_by?: string | null;
+          reason?: string;
+          received_at?: string | null;
+          refund_amount?: number | null;
+          refund_method?: string | null;
+          resolution?: string | null;
+          return_number?: string;
+          shipping_label_url?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "return_requests_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
+            foreignKeyName: "return_requests_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "return_requests_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
+            foreignKeyName: "return_requests_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "return_requests_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "return_requests_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       roles: {
         Row: {
-          created_at: string
-          created_by: string | null
-          description: string | null
-          id: string
-          is_system: boolean
-          name: string
-          party_id: string | null
-          permissions: number
-          updated_at: string
-        }
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          is_system: boolean;
+          name: string;
+          party_id: string | null;
+          permissions: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_system?: boolean
-          name: string
-          party_id?: string | null
-          permissions?: number
-          updated_at?: string
-        }
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_system?: boolean;
+          name: string;
+          party_id?: string | null;
+          permissions?: number;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_system?: boolean
-          name?: string
-          party_id?: string | null
-          permissions?: number
-          updated_at?: string
-        }
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_system?: boolean;
+          name?: string;
+          party_id?: string | null;
+          permissions?: number;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "roles_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "roles_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       shipping_provider_configs: {
         Row: {
-          base_price: number
-          code: string
-          created_at: string
-          display_name: string
-          enabled: boolean
-          free_above_amount: number | null
-          id: string
-          pickup_price: number
-          sender_city: string
-          sender_country_code: string
-          sender_email: string | null
-          sender_name: string
-          sender_phone: string | null
-          sender_postal_code: string
-          sender_street: string
-          updated_at: string
-        }
+          base_price: number;
+          code: string;
+          created_at: string;
+          display_name: string;
+          enabled: boolean;
+          free_above_amount: number | null;
+          id: string;
+          pickup_price: number;
+          sender_city: string;
+          sender_country_code: string;
+          sender_email: string | null;
+          sender_name: string;
+          sender_phone: string | null;
+          sender_postal_code: string;
+          sender_street: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          base_price?: number
-          code: string
-          created_at?: string
-          display_name: string
-          enabled?: boolean
-          free_above_amount?: number | null
-          id?: string
-          pickup_price?: number
-          sender_city?: string
-          sender_country_code?: string
-          sender_email?: string | null
-          sender_name?: string
-          sender_phone?: string | null
-          sender_postal_code?: string
-          sender_street?: string
-          updated_at?: string
-        }
+          base_price?: number;
+          code: string;
+          created_at?: string;
+          display_name: string;
+          enabled?: boolean;
+          free_above_amount?: number | null;
+          id?: string;
+          pickup_price?: number;
+          sender_city?: string;
+          sender_country_code?: string;
+          sender_email?: string | null;
+          sender_name?: string;
+          sender_phone?: string | null;
+          sender_postal_code?: string;
+          sender_street?: string;
+          updated_at?: string;
+        };
         Update: {
-          base_price?: number
-          code?: string
-          created_at?: string
-          display_name?: string
-          enabled?: boolean
-          free_above_amount?: number | null
-          id?: string
-          pickup_price?: number
-          sender_city?: string
-          sender_country_code?: string
-          sender_email?: string | null
-          sender_name?: string
-          sender_phone?: string | null
-          sender_postal_code?: string
-          sender_street?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          base_price?: number;
+          code?: string;
+          created_at?: string;
+          display_name?: string;
+          enabled?: boolean;
+          free_above_amount?: number | null;
+          id?: string;
+          pickup_price?: number;
+          sender_city?: string;
+          sender_country_code?: string;
+          sender_email?: string | null;
+          sender_name?: string;
+          sender_phone?: string | null;
+          sender_postal_code?: string;
+          sender_street?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       stock_movements: {
         Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          inventory_item_id: string
-          note: string | null
-          party_id: string
-          quantity: number
-          reference_id: string | null
-          reference_type: string | null
-          type: string
-        }
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          inventory_item_id: string;
+          note: string | null;
+          party_id: string;
+          quantity: number;
+          reference_id: string | null;
+          reference_type: string | null;
+          type: string;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          inventory_item_id: string
-          note?: string | null
-          party_id: string
-          quantity: number
-          reference_id?: string | null
-          reference_type?: string | null
-          type: string
-        }
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          inventory_item_id: string;
+          note?: string | null;
+          party_id: string;
+          quantity: number;
+          reference_id?: string | null;
+          reference_type?: string | null;
+          type: string;
+        };
         Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          inventory_item_id?: string
-          note?: string | null
-          party_id?: string
-          quantity?: number
-          reference_id?: string | null
-          reference_type?: string | null
-          type?: string
-        }
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          inventory_item_id?: string;
+          note?: string | null;
+          party_id?: string;
+          quantity?: number;
+          reference_id?: string | null;
+          reference_type?: string | null;
+          type?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "stock_movements_inventory_item_id_fkey"
-            columns: ["inventory_item_id"]
-            isOneToOne: false
-            referencedRelation: "inventory_alerts"
-            referencedColumns: ["id"]
+            foreignKeyName: "stock_movements_inventory_item_id_fkey";
+            columns: ["inventory_item_id"];
+            isOneToOne: false;
+            referencedRelation: "inventory_alerts";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "stock_movements_inventory_item_id_fkey"
-            columns: ["inventory_item_id"]
-            isOneToOne: false
-            referencedRelation: "inventory_items"
-            referencedColumns: ["id"]
+            foreignKeyName: "stock_movements_inventory_item_id_fkey";
+            columns: ["inventory_item_id"];
+            isOneToOne: false;
+            referencedRelation: "inventory_items";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "stock_movements_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "stock_movements_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       store_configs: {
         Row: {
-          brand_name: string | null
-          business_hours: string | null
-          buyback_content: string | null
-          buyback_format: string
-          color_background: string
-          color_border: string
-          color_primary: string
-          color_secondary: string
-          color_surface: string
-          color_text_primary: string
-          color_text_secondary: string
-          contact_email: string | null
-          contact_phone: string | null
-          created_at: string
-          currency_code: string
-          enable_reviews: boolean
-          enable_wishlists: boolean
-          favicon_url: string | null
-          font_body: string
-          font_heading: string
-          footer_content: string | null
-          footer_format: string
-          footer_newsletter_enabled: boolean
-          footer_theme: string
-          hero_content: string | null
-          hero_format: string
-          homepage_layout: Json
-          id: string
-          landing_description: string | null
-          landing_featured: boolean
-          landing_screenshot_url: string | null
-          landing_sort_order: number
-          logo_url: string | null
-          party_id: string
-          product_card_variant: string
-          radius_scale: string
-          store_address: string | null
-          store_map_url: string | null
-          store_photo_url: string | null
-          subhero_content: string | null
-          subhero_format: string
-          tagline: string | null
-          updated_at: string
-        }
+          brand_name: string | null;
+          business_hours: string | null;
+          buyback_content: string | null;
+          buyback_format: string;
+          color_background: string;
+          color_border: string;
+          color_primary: string;
+          color_secondary: string;
+          color_surface: string;
+          color_text_primary: string;
+          color_text_secondary: string;
+          contact_email: string | null;
+          contact_phone: string | null;
+          created_at: string;
+          currency_code: string;
+          enable_reviews: boolean;
+          enable_wishlists: boolean;
+          favicon_url: string | null;
+          font_body: string;
+          font_heading: string;
+          footer_content: string | null;
+          footer_format: string;
+          footer_newsletter_enabled: boolean;
+          footer_theme: string;
+          hero_content: string | null;
+          hero_format: string;
+          homepage_layout: NonNullable<Json>;
+          id: string;
+          landing_description: string | null;
+          landing_featured: boolean;
+          landing_screenshot_url: string | null;
+          landing_sort_order: number;
+          logo_url: string | null;
+          party_id: string;
+          product_card_variant: string;
+          radius_scale: string;
+          store_address: string | null;
+          store_map_url: string | null;
+          store_photo_url: string | null;
+          subhero_content: string | null;
+          subhero_format: string;
+          tagline: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          brand_name?: string | null
-          business_hours?: string | null
-          buyback_content?: string | null
-          buyback_format?: string
-          color_background?: string
-          color_border?: string
-          color_primary?: string
-          color_secondary?: string
-          color_surface?: string
-          color_text_primary?: string
-          color_text_secondary?: string
-          contact_email?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          currency_code?: string
-          enable_reviews?: boolean
-          enable_wishlists?: boolean
-          favicon_url?: string | null
-          font_body?: string
-          font_heading?: string
-          footer_content?: string | null
-          footer_format?: string
-          footer_newsletter_enabled?: boolean
-          footer_theme?: string
-          hero_content?: string | null
-          hero_format?: string
-          homepage_layout?: Json
-          id?: string
-          landing_description?: string | null
-          landing_featured?: boolean
-          landing_screenshot_url?: string | null
-          landing_sort_order?: number
-          logo_url?: string | null
-          party_id: string
-          product_card_variant?: string
-          radius_scale?: string
-          store_address?: string | null
-          store_map_url?: string | null
-          store_photo_url?: string | null
-          subhero_content?: string | null
-          subhero_format?: string
-          tagline?: string | null
-          updated_at?: string
-        }
+          brand_name?: string | null;
+          business_hours?: string | null;
+          buyback_content?: string | null;
+          buyback_format?: string;
+          color_background?: string;
+          color_border?: string;
+          color_primary?: string;
+          color_secondary?: string;
+          color_surface?: string;
+          color_text_primary?: string;
+          color_text_secondary?: string;
+          contact_email?: string | null;
+          contact_phone?: string | null;
+          created_at?: string;
+          currency_code?: string;
+          enable_reviews?: boolean;
+          enable_wishlists?: boolean;
+          favicon_url?: string | null;
+          font_body?: string;
+          font_heading?: string;
+          footer_content?: string | null;
+          footer_format?: string;
+          footer_newsletter_enabled?: boolean;
+          footer_theme?: string;
+          hero_content?: string | null;
+          hero_format?: string;
+          homepage_layout?: NonNullable<Json>;
+          id?: string;
+          landing_description?: string | null;
+          landing_featured?: boolean;
+          landing_screenshot_url?: string | null;
+          landing_sort_order?: number;
+          logo_url?: string | null;
+          party_id: string;
+          product_card_variant?: string;
+          radius_scale?: string;
+          store_address?: string | null;
+          store_map_url?: string | null;
+          store_photo_url?: string | null;
+          subhero_content?: string | null;
+          subhero_format?: string;
+          tagline?: string | null;
+          updated_at?: string;
+        };
         Update: {
-          brand_name?: string | null
-          business_hours?: string | null
-          buyback_content?: string | null
-          buyback_format?: string
-          color_background?: string
-          color_border?: string
-          color_primary?: string
-          color_secondary?: string
-          color_surface?: string
-          color_text_primary?: string
-          color_text_secondary?: string
-          contact_email?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          currency_code?: string
-          enable_reviews?: boolean
-          enable_wishlists?: boolean
-          favicon_url?: string | null
-          font_body?: string
-          font_heading?: string
-          footer_content?: string | null
-          footer_format?: string
-          footer_newsletter_enabled?: boolean
-          footer_theme?: string
-          hero_content?: string | null
-          hero_format?: string
-          homepage_layout?: Json
-          id?: string
-          landing_description?: string | null
-          landing_featured?: boolean
-          landing_screenshot_url?: string | null
-          landing_sort_order?: number
-          logo_url?: string | null
-          party_id?: string
-          product_card_variant?: string
-          radius_scale?: string
-          store_address?: string | null
-          store_map_url?: string | null
-          store_photo_url?: string | null
-          subhero_content?: string | null
-          subhero_format?: string
-          tagline?: string | null
-          updated_at?: string
-        }
+          brand_name?: string | null;
+          business_hours?: string | null;
+          buyback_content?: string | null;
+          buyback_format?: string;
+          color_background?: string;
+          color_border?: string;
+          color_primary?: string;
+          color_secondary?: string;
+          color_surface?: string;
+          color_text_primary?: string;
+          color_text_secondary?: string;
+          contact_email?: string | null;
+          contact_phone?: string | null;
+          created_at?: string;
+          currency_code?: string;
+          enable_reviews?: boolean;
+          enable_wishlists?: boolean;
+          favicon_url?: string | null;
+          font_body?: string;
+          font_heading?: string;
+          footer_content?: string | null;
+          footer_format?: string;
+          footer_newsletter_enabled?: boolean;
+          footer_theme?: string;
+          hero_content?: string | null;
+          hero_format?: string;
+          homepage_layout?: NonNullable<Json>;
+          id?: string;
+          landing_description?: string | null;
+          landing_featured?: boolean;
+          landing_screenshot_url?: string | null;
+          landing_sort_order?: number;
+          logo_url?: string | null;
+          party_id?: string;
+          product_card_variant?: string;
+          radius_scale?: string;
+          store_address?: string | null;
+          store_map_url?: string | null;
+          store_photo_url?: string | null;
+          subhero_content?: string | null;
+          subhero_format?: string;
+          tagline?: string | null;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "store_configs_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: true
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "store_configs_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: true;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       store_domains: {
         Row: {
-          created_at: string
-          domain: string
-          id: string
-          party_id: string
-          verification_token: string
-          verified: boolean
-        }
+          created_at: string;
+          domain: string;
+          id: string;
+          party_id: string;
+          verification_token: string;
+          verified: boolean;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          domain: string
-          id?: string
-          party_id: string
-          verification_token?: string
-          verified?: boolean
-        }
+          created_at?: string;
+          domain: string;
+          id?: string;
+          party_id: string;
+          verification_token?: string;
+          verified?: boolean;
+        };
         Update: {
-          created_at?: string
-          domain?: string
-          id?: string
-          party_id?: string
-          verification_token?: string
-          verified?: boolean
-        }
+          created_at?: string;
+          domain?: string;
+          id?: string;
+          party_id?: string;
+          verification_token?: string;
+          verified?: boolean;
+        };
         Relationships: [
           {
-            foreignKeyName: "store_domains_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "store_domains_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       store_media: {
         Row: {
-          alt: string | null
-          created_at: string
-          id: string
-          media_type: string
-          party_id: string
-          slug: string
-          url: string
-        }
+          alt: string | null;
+          created_at: string;
+          id: string;
+          media_type: string;
+          party_id: string;
+          slug: string;
+          url: string;
+        };
+        ComputedFields: never;
         Insert: {
-          alt?: string | null
-          created_at?: string
-          id?: string
-          media_type: string
-          party_id: string
-          slug: string
-          url: string
-        }
+          alt?: string | null;
+          created_at?: string;
+          id?: string;
+          media_type: string;
+          party_id: string;
+          slug: string;
+          url: string;
+        };
         Update: {
-          alt?: string | null
-          created_at?: string
-          id?: string
-          media_type?: string
-          party_id?: string
-          slug?: string
-          url?: string
-        }
+          alt?: string | null;
+          created_at?: string;
+          id?: string;
+          media_type?: string;
+          party_id?: string;
+          slug?: string;
+          url?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "store_media_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "store_media_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       team_members: {
         Row: {
-          bio: string | null
-          created_at: string
-          id: string
-          is_active: boolean
-          name: string
-          party_id: string
-          photo_url: string | null
-          position: string | null
-          sort_order: number
-          updated_at: string
-        }
+          bio: string | null;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          name: string;
+          party_id: string;
+          photo_url: string | null;
+          position: string | null;
+          sort_order: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          bio?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name: string
-          party_id: string
-          photo_url?: string | null
-          position?: string | null
-          sort_order?: number
-          updated_at?: string
-        }
+          bio?: string | null;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          party_id: string;
+          photo_url?: string | null;
+          position?: string | null;
+          sort_order?: number;
+          updated_at?: string;
+        };
         Update: {
-          bio?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name?: string
-          party_id?: string
-          photo_url?: string | null
-          position?: string | null
-          sort_order?: number
-          updated_at?: string
-        }
+          bio?: string | null;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          party_id?: string;
+          photo_url?: string | null;
+          position?: string | null;
+          sort_order?: number;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "team_members_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "team_members_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       user_notifications: {
         Row: {
-          notification_id: string
-          read_at: string | null
-          user_id: string
-        }
+          notification_id: string;
+          read_at: string | null;
+          user_id: string;
+        };
+        ComputedFields: never;
         Insert: {
-          notification_id: string
-          read_at?: string | null
-          user_id: string
-        }
+          notification_id: string;
+          read_at?: string | null;
+          user_id: string;
+        };
         Update: {
-          notification_id?: string
-          read_at?: string | null
-          user_id?: string
-        }
+          notification_id?: string;
+          read_at?: string | null;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "user_notifications_notification_id_fkey"
-            columns: ["notification_id"]
-            isOneToOne: false
-            referencedRelation: "notifications"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_notifications_notification_id_fkey";
+            columns: ["notification_id"];
+            isOneToOne: false;
+            referencedRelation: "notifications";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       user_party_roles: {
         Row: {
-          invited_by: string | null
-          joined_at: string
-          party_id: string
-          role_id: string
-          user_id: string
-        }
+          invited_by: string | null;
+          joined_at: string;
+          party_id: string;
+          role_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
         Insert: {
-          invited_by?: string | null
-          joined_at?: string
-          party_id: string
-          role_id: string
-          user_id: string
-        }
+          invited_by?: string | null;
+          joined_at?: string;
+          party_id: string;
+          role_id: string;
+          user_id: string;
+        };
         Update: {
-          invited_by?: string | null
-          joined_at?: string
-          party_id?: string
-          role_id?: string
-          user_id?: string
-        }
+          invited_by?: string | null;
+          joined_at?: string;
+          party_id?: string;
+          role_id?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "user_party_roles_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_party_roles_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_party_roles_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_party_roles_role_id_fkey";
+            columns: ["role_id"];
+            isOneToOne: false;
+            referencedRelation: "roles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       warehouses: {
         Row: {
-          address: Json
-          code: string
-          created_at: string
-          id: string
-          is_active: boolean
-          is_default: boolean
-          name: string
-          party_id: string
-          updated_at: string
-        }
+          address: NonNullable<Json>;
+          code: string;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          is_default: boolean;
+          name: string;
+          party_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
         Insert: {
-          address?: Json
-          code: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          is_default?: boolean
-          name: string
-          party_id: string
-          updated_at?: string
-        }
+          address?: NonNullable<Json>;
+          code: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          is_default?: boolean;
+          name: string;
+          party_id: string;
+          updated_at?: string;
+        };
         Update: {
-          address?: Json
-          code?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          is_default?: boolean
-          name?: string
-          party_id?: string
-          updated_at?: string
-        }
+          address?: NonNullable<Json>;
+          code?: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          is_default?: boolean;
+          name?: string;
+          party_id?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "warehouses_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "warehouses_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       wishlist_items: {
         Row: {
-          added_at: string
-          id: string
-          notified_at: string | null
-          product_id: string
-          variant_id: string | null
-          wishlist_id: string
-        }
+          added_at: string;
+          id: string;
+          notified_at: string | null;
+          product_id: string;
+          variant_id: string | null;
+          wishlist_id: string;
+        };
+        ComputedFields: never;
         Insert: {
-          added_at?: string
-          id?: string
-          notified_at?: string | null
-          product_id: string
-          variant_id?: string | null
-          wishlist_id: string
-        }
+          added_at?: string;
+          id?: string;
+          notified_at?: string | null;
+          product_id: string;
+          variant_id?: string | null;
+          wishlist_id: string;
+        };
         Update: {
-          added_at?: string
-          id?: string
-          notified_at?: string | null
-          product_id?: string
-          variant_id?: string | null
-          wishlist_id?: string
-        }
+          added_at?: string;
+          id?: string;
+          notified_at?: string | null;
+          product_id?: string;
+          variant_id?: string | null;
+          wishlist_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "wishlist_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "wishlist_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wishlist_items_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
-            referencedColumns: ["id"]
+            foreignKeyName: "wishlist_items_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wishlist_items_wishlist_id_fkey"
-            columns: ["wishlist_id"]
-            isOneToOne: false
-            referencedRelation: "wishlists"
-            referencedColumns: ["id"]
+            foreignKeyName: "wishlist_items_wishlist_id_fkey";
+            columns: ["wishlist_id"];
+            isOneToOne: false;
+            referencedRelation: "wishlists";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       wishlists: {
         Row: {
-          created_at: string
-          id: string
-          party_id: string
-          user_id: string
-        }
+          created_at: string;
+          id: string;
+          party_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
         Insert: {
-          created_at?: string
-          id?: string
-          party_id: string
-          user_id: string
-        }
+          created_at?: string;
+          id?: string;
+          party_id: string;
+          user_id: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          party_id?: string
-          user_id?: string
-        }
+          created_at?: string;
+          id?: string;
+          party_id?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "wishlists_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "wishlists_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
-        ]
-      }
-    }
+        ];
+      };
+    };
     Views: {
       inventory_alerts: {
         Row: {
-          created_at: string | null
-          id: string | null
-          low_stock_threshold: number | null
-          party_id: string | null
-          product_id: string | null
-          product_title: string | null
-          qty_available: number | null
-          qty_incoming: number | null
-          qty_on_hand: number | null
-          qty_reserved: number | null
-          track_inventory: boolean | null
-          updated_at: string | null
-          variant_id: string | null
-          variant_name: string | null
-          warehouse_id: string | null
-          warehouse_name: string | null
-        }
+          created_at: string;
+          id: string;
+          low_stock_threshold: number;
+          party_id: string;
+          product_id: string;
+          product_title: string;
+          qty_available: number | null;
+          qty_incoming: number;
+          qty_on_hand: number;
+          qty_reserved: number;
+          track_inventory: boolean;
+          updated_at: string;
+          variant_id: string | null;
+          variant_name: string | null;
+          warehouse_id: string;
+          warehouse_name: string;
+        };
+        ComputedFields: never;
         Relationships: [
           {
-            foreignKeyName: "inventory_items_party_id_fkey"
-            columns: ["party_id"]
-            isOneToOne: false
-            referencedRelation: "parties"
-            referencedColumns: ["id"]
+            foreignKeyName: "inventory_items_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "inventory_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "inventory_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "inventory_items_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
-            referencedColumns: ["id"]
+            foreignKeyName: "inventory_items_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "inventory_items_warehouse_id_fkey"
-            columns: ["warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "warehouses"
-            referencedColumns: ["id"]
+            foreignKeyName: "inventory_items_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["id"];
           },
-        ]
-      }
-    }
+        ];
+      };
+    };
     Functions: {
       audit_log: {
         Args: {
-          p_action: string
-          p_new_val?: Json
-          p_old_val?: Json
-          p_party_id: string
-          p_record_id: string
-          p_table_name: string
-        }
-        Returns: undefined
-      }
-      can_access_admin: { Args: never; Returns: boolean }
+          p_action: string;
+          p_new_val?: Json;
+          p_old_val?: Json;
+          p_party_id: string;
+          p_record_id: string;
+          p_table_name: string;
+        };
+        Returns: undefined;
+      };
+      can_access_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       ensure_variant_inventory_item: {
-        Args: { p_variant_id: string }
-        Returns: undefined
-      }
+        Args: { p_variant_id: string };
+        Returns: undefined;
+      };
       get_billing_period_totals: {
-        Args: { p_party_id: string; p_range_end: string; p_range_start: string }
-        Returns: Json
-      }
-      get_my_role: { Args: never; Returns: number }
+        Args: {
+          p_party_id: string;
+          p_range_end: string;
+          p_range_start: string;
+        };
+        Returns: Json;
+      };
+      get_my_role: { Args: Record<PropertyKey, never>; Returns: number };
       get_product_activity_log: {
-        Args: { p_limit?: number; p_party_id: string; p_from?: string; p_offset?: number }
+        Args: {
+          p_from?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_party_id: string;
+        };
         Returns: {
-          actor_id: string
-          actor_name: string
-          entity_number: string
-          event_time: string
-          event_type: string
-          from_status: string
-          note: string
-          product_title: string
-          quantity: number
-          reason: string
-          refund_amount: number
-          refund_method: string
-          to_status: string
-          order_id: string
-          return_id: string
-          product_id: string
-          total_count: number
-        }[]
-      }
+          actor_id: string;
+          actor_name: string;
+          entity_number: string;
+          event_time: string;
+          event_type: string;
+          from_status: string;
+          note: string;
+          order_id: string;
+          product_id: string;
+          product_title: string;
+          quantity: number;
+          reason: string;
+          refund_amount: number;
+          refund_method: string;
+          return_id: string;
+          to_status: string;
+          total_count: number;
+        }[];
+      };
       get_product_overview_stats: {
-        Args: { p_days?: number; p_party_id: string }
-        Returns: Json
-      }
+        Args: { p_days?: number; p_party_id: string };
+        Returns: Json;
+      };
       get_top_products_paged: {
-        Args: { p_party_id: string; p_from?: string; p_limit?: number; p_offset?: number }
+        Args: {
+          p_from?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_party_id: string;
+        };
         Returns: {
-          id: string
-          title: string
-          qty_sold: number
-          revenue: number
-          profit: number
-          total_count: number
-        }[]
-      }
+          id: string;
+          profit: number;
+          qty_sold: number;
+          revenue: number;
+          title: string;
+          total_count: number;
+        }[];
+      };
       get_user_permissions: {
-        Args: { p_party_id: string; p_user_id: string }
-        Returns: number
-      }
-      is_admin: { Args: never; Returns: boolean }
-      is_admin_of: { Args: { p_party_id: string }; Returns: boolean }
-      is_owner: { Args: never; Returns: boolean }
+        Args: { p_party_id: string; p_user_id: string };
+        Returns: number;
+      };
+      is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      is_admin_of: { Args: { p_party_id: string }; Returns: boolean };
+      is_owner: { Args: Record<PropertyKey, never>; Returns: boolean };
       list_active_stores: {
-        Args: never
+        Args: Record<PropertyKey, never>;
         Returns: {
-          brand_name: string
-          logo_url: string
-          party_id: string
-          slug: string
-          tagline: string
-        }[]
-      }
+          brand_name: string;
+          logo_url: string;
+          party_id: string;
+          slug: string;
+          tagline: string;
+        }[];
+      };
       list_landing_featured_stores: {
-        Args: never
+        Args: Record<PropertyKey, never>;
         Returns: {
-          brand_name: string
-          landing_description: string
-          landing_screenshot_url: string
-          logo_url: string
-          party_id: string
-          slug: string
-          tagline: string
-        }[]
-      }
-      party_is_active: { Args: { p_party_id: string }; Returns: boolean }
+          brand_name: string;
+          landing_description: string;
+          landing_screenshot_url: string;
+          logo_url: string;
+          party_id: string;
+          slug: string;
+          tagline: string;
+        }[];
+      };
+      party_is_active: { Args: { p_party_id: string }; Returns: boolean };
       report_customer_stats: {
-        Args: { p_months?: number; p_party_id: string }
-        Returns: Json
-      }
+        Args: { p_months?: number; p_party_id: string };
+        Returns: Json;
+      };
       report_monthly_series: {
-        Args: { p_months?: number; p_party_id: string }
+        Args: { p_months?: number; p_party_id: string };
         Returns: {
-          month: string
-          orders: number
-          revenue: number
-        }[]
-      }
+          month: string;
+          orders: number;
+          revenue: number;
+        }[];
+      };
       report_top_products: {
-        Args: { p_limit?: number; p_months?: number; p_party_id: string }
+        Args: { p_limit?: number; p_months?: number; p_party_id: string };
         Returns: {
-          product_id: string
-          revenue: number
-          title: string
-          units: number
-        }[]
-      }
+          product_id: string;
+          revenue: number;
+          title: string;
+          units: number;
+        }[];
+      };
       resolve_storefront_party_by_slug: {
-        Args: { p_slug: string }
-        Returns: { id: string; status: string }[]
-      }
-      subscribe_to_newsletter: {
-        Args: { p_email: string; p_party_id: string }
-        Returns: undefined
-      }
-      user_has_permission: {
-        Args: { p_party_id: string; p_permission: number; p_user_id: string }
-        Returns: boolean
-      }
-      validate_coupon_for_party: {
-        Args: { p_code: string; p_party_id: string }
+        Args: { p_slug: string };
         Returns: {
-          code: string
-          discount_rule_id: string
-          id: string
-          is_active: boolean
-          max_uses: number
-          party_id: string
-          uses_count: number
-        }[]
-      }
-    }
+          id: string;
+          status: string;
+        }[];
+      };
+      seed_integrated_footer_badges: {
+        Args: { target_party: string };
+        Returns: undefined;
+      };
+      subscribe_to_newsletter: {
+        Args: { p_email: string; p_party_id: string };
+        Returns: undefined;
+      };
+      user_has_permission: {
+        Args: { p_party_id: string; p_permission: number; p_user_id: string };
+        Returns: boolean;
+      };
+      validate_coupon_for_party: {
+        Args: { p_code: string; p_party_id: string };
+        Returns: {
+          code: string;
+          discount_rule_id: string;
+          id: string;
+          is_active: boolean;
+          max_uses: number;
+          party_id: string;
+          uses_count: number;
+        }[];
+      };
+    };
     Enums: {
-      item_status: "draft" | "active" | "inactive"
+      item_status: "draft" | "active" | "inactive";
       notification_type:
         | "low_inventory"
         | "new_order"
@@ -3621,33 +3782,37 @@ export type Database = {
         | "system_alert"
         | "role_invitation"
         | "fee_tier_change"
-    }
+        | "bug_report";
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
+      [_ in never]: never;
+    };
+  };
+};
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<
+  keyof Database,
+  "public"
+>];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
+      Row: infer R;
     }
     ? R
     : never
@@ -3655,95 +3820,92 @@ export type Tables<
         DefaultSchema["Views"])
     ? (DefaultSchema["Tables"] &
         DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
+        Row: infer R;
       }
       ? R
       : never
-    : never
+    : never;
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
+      Insert: infer I;
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
+        Insert: infer I;
       }
       ? I
       : never
-    : never
+    : never;
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
+      Update: infer U;
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
+        Update: infer U;
       }
       ? U
       : never
-    : never
+    : never;
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+    : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+    : never;
 
 export const Constants = {
   graphql_public: {
@@ -3760,8 +3922,8 @@ export const Constants = {
         "system_alert",
         "role_invitation",
         "fee_tier_change",
+        "bug_report",
       ],
     },
   },
-} as const
-
+} as const;

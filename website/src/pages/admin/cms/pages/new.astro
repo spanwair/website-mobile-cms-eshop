@@ -46,7 +46,7 @@ const prefillSlug = Astro.url.searchParams.get("slug") ?? "";
 const prefillTitle = Astro.url.searchParams.get("title") ?? "";
 ---
 
-<CmsLayout title={t.admin.cms.newPageTitle} userPermissions={permissions} currentPath="/admin/cms/pages" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.cms.newPageTitle} userPermissions={permissions} currentPath="/admin/cms/pages" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="card" style="max-width:720px">
     <a href="/admin/cms/pages" class="back-link">{t.admin.cms.back}</a>
     {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}

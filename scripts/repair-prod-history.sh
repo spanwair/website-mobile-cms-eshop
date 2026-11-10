@@ -10,7 +10,8 @@
 # the history table, it never runs the migration bodies) so that db-push.sh production afterward
 # only ever sees genuinely-new migrations as pending.
 #
-# Requires the keepalive SSH tunnel up on port 5433 (see scripts/oci-prod-db.md).
+# Tunnel to the prod pooler is established automatically by scripts/_prod-db-url.sh
+# (scripts/oci-tunnel.sh) - nothing to set up by hand. See scripts/oci-prod-db.md.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

@@ -20,7 +20,7 @@ const dateLocale = lang === "en" ? "en-US" : "cs-CZ";
 const notifications = await fetchUserNotifications(supabase, session.user.id);
 ---
 
-<CmsLayout title={t.admin.notifications.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.notifications.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="card" style="padding:0;overflow:hidden">
     <table class="data-table">
       <thead>

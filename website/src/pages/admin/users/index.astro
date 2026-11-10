@@ -120,7 +120,7 @@ function roleClass(r: number) {
 }
 ---
 
-<CmsLayout title={t.admin.users.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.users.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   {error && <div class="alert-error">{error}</div>}
   <div class="toolbar">
     <span class="total-label">{users.length} {t.admin.users.title.toLowerCase()}</span>

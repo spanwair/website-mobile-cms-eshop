@@ -103,7 +103,7 @@ if (Astro.request.method === "POST") {
 }
 ---
 
-<CmsLayout title={t.admin.parties.newTitle} userPermissions={permissions} currentPath="/admin/parties" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.parties.newTitle} userPermissions={permissions} currentPath="/admin/parties" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="card" style="max-width:680px">
     <a href="/admin/parties" class="back-link">{t.admin.parties.back}</a>
     {onboarding && <p class="onboarding-banner">{t.admin.parties.onboarding.formIntro}</p>}

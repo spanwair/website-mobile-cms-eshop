@@ -114,7 +114,7 @@ const reports = [
 ];
 ---
 
-<CmsLayout title={t.admin.reports.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.reports.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="reports-grid">
     {reports.map((r) => (
       <div class="card report-card">

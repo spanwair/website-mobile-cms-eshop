@@ -40,7 +40,7 @@ function discountTypeLabel(type: string) {
 }
 ---
 
-<CmsLayout title={t.admin.pricing.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.pricing.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <div class="tabs">
     <a href="?tab=pricelists" class={`tab ${tab === "pricelists" ? "tab--active" : ""}`}>{t.admin.sidebar.pricing} ({priceLists.length})</a>
     <a href="?tab=discounts" class={`tab ${tab === "discounts" ? "tab--active" : ""}`}>{t.admin.pricing.colType} ({discountRules.length})</a>

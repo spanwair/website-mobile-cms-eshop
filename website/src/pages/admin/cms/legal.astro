@@ -47,7 +47,7 @@ const existingPages = await fetchContentPages(supabase, partyId);
 const bySlug = new Map(existingPages.map((p) => [p.slug, p]));
 ---
 
-<CmsLayout title={t.admin.cms.legalTitle} userPermissions={permissions} currentPath="/admin/cms/legal" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.cms.legalTitle} userPermissions={permissions} currentPath="/admin/cms/legal" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <CmsTabs active="legal" />
   <p class="content-hint">{t.admin.cms.legalHint}</p>
 

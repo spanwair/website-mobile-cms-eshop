@@ -123,6 +123,7 @@ export default defineConfig({
           items: [
             { label: 'Reports', translations: { cs: 'Reporty' }, slug: 'admin/reports' },
             { label: 'Audit Log', translations: { cs: 'Protokol auditu' }, slug: 'admin/audit' },
+            { label: 'Reported Bugs', translations: { cs: 'Nahlášené chyby' }, slug: 'admin/bugs' },
           ],
         },
         {

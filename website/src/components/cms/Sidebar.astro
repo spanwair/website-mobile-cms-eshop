@@ -82,6 +82,9 @@ const groups = [
       // Platform-wide (not per-party) — gated by role, not a permission bit, same as
       // party creation/closing. Only ever included in the sidebar for the owner.
       ...(isOwner ? [{ href: "/admin/settings/shipping", label: t.admin.sidebar.shipping, icon: "🚚", perm: 0 }] : []),
+      // Owner-only, same precedent as shipping above — bug reports/screenshots can contain
+      // sensitive data from any org, so no permission bit can grant access to this.
+      ...(isOwner ? [{ href: "/admin/bugs", label: t.admin.sidebar.reportedBugs, icon: "🐛", perm: 0 }] : []),
       { href: "/admin/payouts",           label: t.admin.sidebar.payouts,       icon: "💸", perm: PERMISSIONS.MANAGE_AUDIT },
       { href: "/admin/billing",           label: t.admin.sidebar.billing,       icon: "🧾", perm: PERMISSIONS.MANAGE_AUDIT },
       { href: "/admin/audit",             label: t.admin.sidebar.audit,         icon: "📝", perm: PERMISSIONS.MANAGE_AUDIT },

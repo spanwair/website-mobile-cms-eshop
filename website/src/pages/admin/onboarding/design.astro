@@ -43,7 +43,7 @@ const colorFields: [Field, string][] = [
 ];
 ---
 
-<CmsLayout title={d.title} userPermissions={0} currentPath="/admin/onboarding" parties={ctx.parties} partyId={partyId}>
+<CmsLayout title={d.title} userPermissions={0} currentPath="/admin/onboarding" parties={ctx.parties} partyId={partyId} isOwner={ctx.isOwner}>
   <OnboardingStepper active={2} labels={{ org: t.admin.onboardingWizard.welcomeStep1Title.replace(/^1\.\s*/, ""), design: d.stepperLabel, catalogue: d.stepperCatalogue }} />
 
   <div class="design-head">

@@ -84,7 +84,7 @@ const outCount = inventoryResult.data.filter((i) => i.qty_on_hand <= 0).length;
 const isLowMap = new Map(items.map((i) => [i.id, i.qty_on_hand <= i.low_stock_threshold]));
 ---
 
-<CmsLayout title={t.admin.inventory.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.inventory.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   {error && <div class="alert-error">{error}</div>}
 
   <div class="toolbar">

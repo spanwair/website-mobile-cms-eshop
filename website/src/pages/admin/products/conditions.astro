@@ -50,7 +50,7 @@ const editId = Astro.url.searchParams.get("edit");
 const editing = editId ? conditions.find((c) => c.id === editId) ?? null : null;
 ---
 
-<CmsLayout title={t.admin.conditions.title} userPermissions={permissions} currentPath="/admin/products/conditions" parties={ctx.parties} partyId={ctx.partyId}>
+<CmsLayout title={t.admin.conditions.title} userPermissions={permissions} currentPath="/admin/products/conditions" parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
   <a href="/admin/products" class="back-link">{t.admin.products.title}</a>
   {error && <div class="form-error" style="margin-bottom:16px">{error}</div>}
 
