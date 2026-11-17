@@ -1,10 +1,12 @@
 ---
-// Platform-level, cross-party billing overview — every party's current pricing state (10% of
-// turnover dropping to 5% above the threshold for own_company, 30%/12,000-payout-limit for smalljobs_commission) and
+// Platform-level, cross-party billing overview — every party's current pricing state (5%
+// commission for own_company, 30%/12,000-payout-limit for smalljobs_commission) and
 // outstanding balance in one place, so whoever holds MANAGE_AUDIT doesn't have to switch
 // active party and hunt through /admin/payouts for each org individually. Always scoped to
 // ctx.parties (owner sees every party, admin sees only their assigned ones) — never queries
-// beyond that set.
+// beyond that set. Both seller modes read from the same order_commission_ledger now (see
+// shared/services/commissionLedgerService.ts) — own_company no longer has its own separate
+// monthly-fee table.
 import CmsLayout from "@/components/cms/CmsLayout.astro";
 import { createSupabase } from "@/lib/supabase";
 import { requireAdminCtx } from "@/lib/admin";
@@ -32,53 +34,48 @@ function fmt(n: number) {
 }
 
 const { data: partyRows } = await supabase.from("parties").select("id, name, seller_mode").in("id", partyIds);
-const ownCompanyIds = (partyRows ?? []).filter((p) => p.seller_mode === SELLER_MODE.OWN_COMPANY).map((p) => p.id);
-const commissionIds = (partyRows ?? []).filter((p) => p.seller_mode === SELLER_MODE.SMALLJOBS_COMMISSION).map((p) => p.id);
-
 const monthStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString();
-const periodMonthDate = monthStart.slice(0, 10);
 
-const feesByParty = new Map<string, { thisMonth: any; unpaidTotal: number; unpaidCount: number }>();
-if (ownCompanyIds.length > 0) {
-  const { data: feeRows } = await supabase.from("monthly_platform_fees").select("*").in("party_id", ownCompanyIds);
-  for (const partyId of ownCompanyIds) {
-    const rows = (feeRows ?? []).filter((f) => f.party_id === partyId);
-    const thisMonth = rows.find((f) => f.period_month === periodMonthDate) ?? null;
-    const unpaid = rows.filter((f) => f.status === "unpaid");
-    feesByParty.set(partyId, {
-      thisMonth,
-      unpaidTotal: unpaid.reduce((sum, f) => sum + Number(f.fee_amount), 0),
-      unpaidCount: unpaid.length,
-    });
-  }
+interface PartyLedgerSummary {
+  thisMonthGross: number;
+  thisMonthCommission: number;
+  thisMonthWithheld: number;
+  eligibleTotal: number;
+  eligibleCount: number;
+  heldFutureCount: number;
+  hasActivity: boolean;
 }
 
-const ledgerByParty = new Map<string, { payoutThisMonth: number; withheldThisMonth: number; eligibleTotal: number; eligibleCount: number }>();
-if (commissionIds.length > 0) {
+const byParty = new Map<string, PartyLedgerSummary>();
+if (partyIds.length > 0) {
   const { data: ledgerRows } = await supabase
     .from("order_commission_ledger")
-    .select("party_id, net_payable, withheld_amount, status, hold_until, created_at")
-    .in("party_id", commissionIds)
+    .select("party_id, gross_amount, commission_amount, net_payable, withheld_amount, status, hold_until, created_at")
+    .in("party_id", partyIds)
     .neq("status", "reversed");
+
   const now = Date.now();
-  for (const partyId of commissionIds) {
+  for (const partyId of partyIds) {
     const rows = (ledgerRows ?? []).filter((r) => r.party_id === partyId);
     const thisMonthRows = rows.filter((r) => r.created_at >= monthStart);
     const eligible = rows.filter((r) => r.status === "held" && new Date(r.hold_until).getTime() <= now);
-    ledgerByParty.set(partyId, {
-      payoutThisMonth: thisMonthRows.reduce((sum, r) => sum + Number(r.net_payable), 0),
-      withheldThisMonth: thisMonthRows.reduce((sum, r) => sum + Number(r.withheld_amount ?? 0), 0),
+    const heldFuture = rows.filter((r) => r.status === "held" && new Date(r.hold_until).getTime() > now);
+    byParty.set(partyId, {
+      thisMonthGross: thisMonthRows.reduce((sum, r) => sum + Number(r.gross_amount), 0),
+      thisMonthCommission: thisMonthRows.reduce((sum, r) => sum + Number(r.commission_amount), 0),
+      thisMonthWithheld: thisMonthRows.reduce((sum, r) => sum + Number(r.withheld_amount ?? 0), 0),
       eligibleTotal: eligible.reduce((sum, r) => sum + Number(r.net_payable), 0),
       eligibleCount: eligible.length,
+      heldFutureCount: heldFuture.length,
+      hasActivity: rows.length > 0,
     });
   }
 }
 
 const rows = (partyRows ?? []).map((party) => {
   const isCommission = party.seller_mode === SELLER_MODE.SMALLJOBS_COMMISSION;
-  const fee = feesByParty.get(party.id);
-  const ledger = ledgerByParty.get(party.id);
-  return { party, isCommission, fee, ledger };
+  const summary = byParty.get(party.id) ?? null;
+  return { party, isCommission, summary };
 });
 ---
 
@@ -93,7 +90,7 @@ const rows = (partyRows ?? []).map((party) => {
         </tr>
       </thead>
       <tbody>
-        {rows.map(({ party, isCommission, fee, ledger }) => (
+        {rows.map(({ party, isCommission, summary }) => (
           <tr>
             <td style="font-weight:600">{party.name}</td>
             <td>
@@ -102,34 +99,25 @@ const rows = (partyRows ?? []).map((party) => {
               </span>
             </td>
             <td>
-              {isCommission ? (
+              {!summary?.hasActivity ? (
+                <span class="muted">{t.admin.billing.noActivityYet}</span>
+              ) : isCommission ? (
                 <div>
-                  <div class="progress-line">{fmt(ledger?.payoutThisMonth ?? 0)} {t.admin.billing.of} {fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK)}</div>
-                  <div class="cap-bar"><div class="cap-bar-fill" style={`width:${Math.min(((ledger?.payoutThisMonth ?? 0) / NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK) * 100, 100)}%`}></div></div>
-                  {(ledger?.withheldThisMonth ?? 0) > 0 && (
-                    <div class="withheld-note">{t.admin.billing.withheldLabel}: {fmt(ledger!.withheldThisMonth)}</div>
+                  <div class="progress-line">{fmt((summary.eligibleTotal))} {t.admin.billing.of} {fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK)}</div>
+                  <div class="cap-bar"><div class="cap-bar-fill" style={`width:${Math.min((summary.eligibleTotal / NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK) * 100, 100)}%`}></div></div>
+                  {summary.thisMonthWithheld > 0 && (
+                    <div class="withheld-note">{t.admin.billing.withheldLabel}: {fmt(summary.thisMonthWithheld)}</div>
                   )}
                 </div>
-              ) : fee?.thisMonth ? (
-                <div>
-                  <div class="progress-line">{fmt(Number(fee.thisMonth.fee_amount))} <span class="muted">({Math.round(Number(fee.thisMonth.fee_rate) * 100 * 100) / 100}% {t.admin.billing.ofTurnover})</span></div>
-                  <span class={`badge ${fee.thisMonth.status === "paid" ? "badge-active" : "badge-pending"}`}>
-                    {fee.thisMonth.status === "paid" ? t.admin.billing.statusPaid : t.admin.billing.statusUnpaid}
-                  </span>
-                </div>
               ) : (
-                <span class="muted">{t.admin.billing.noActivityYet}</span>
+                <div class="progress-line">{fmt(summary.thisMonthGross)} <span class="muted">({fmt(summary.thisMonthCommission)} {t.admin.billing.ofTurnover})</span></div>
               )}
             </td>
             <td>
-              {isCommission ? (
-                (ledger?.eligibleCount ?? 0) > 0 ? (
-                  <span class="outstanding">{fmt(ledger!.eligibleTotal)} <span class="muted">({ledger!.eligibleCount} {t.admin.billing.readyToPay})</span></span>
-                ) : (
-                  <span class="muted">{t.admin.billing.nothingDue}</span>
-                )
-              ) : (fee?.unpaidCount ?? 0) > 0 ? (
-                <span class="outstanding">{fmt(fee!.unpaidTotal)} <span class="muted">({fee!.unpaidCount} {t.admin.billing.unpaidMonths})</span></span>
+              {(summary?.eligibleCount ?? 0) > 0 ? (
+                <span class="outstanding">{fmt(summary!.eligibleTotal)} <span class="muted">({summary!.eligibleCount} {t.admin.billing.readyToPay})</span></span>
+              ) : (summary?.heldFutureCount ?? 0) > 0 ? (
+                <span class="muted">{summary!.heldFutureCount} {t.admin.billing.inHoldPeriod}</span>
               ) : (
                 <span class="muted">{t.admin.billing.nothingDue}</span>
               )}

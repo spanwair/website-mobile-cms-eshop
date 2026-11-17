@@ -1,13 +1,14 @@
 ---
 import CmsLayout from "@/components/cms/CmsLayout.astro";
-import PlatformFeeHistory from "@/components/admin/PlatformFeeHistory.astro";
-import { createSupabase, createAdminClient } from "@/lib/supabase";
+import PayoutsTabs from "@/components/cms/PayoutsTabs.astro";
+import OrderLedgerModal from "@/components/admin/OrderLedgerModal.astro";
+import type { LedgerOrderRow } from "@/lib/payoutsTypes";
+import { createSupabase } from "@/lib/supabase";
 import { requireAdminCtx } from "@/lib/admin";
 import { PERMISSIONS, hasPermission } from "@shared/constants/permissions";
 import { useT, getLang } from "@/lib/i18n";
 import { SELLER_MODE, NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK } from "@shared/constants/sellerMode";
-import { listBillingPeriods, markBillingPeriodFeePaid } from "@shared/services/billingPeriodService";
-import { createCheckoutSession, retrieveCheckoutSession } from "@/lib/integrations/stripe";
+import { listBillingPeriodsForParties } from "@shared/services/billingPeriodService";
 
 const supabase = createSupabase(Astro);
 const { data: { session } } = await supabase.auth.getSession();
@@ -17,10 +18,16 @@ const activePartyId = Astro.cookies.get("activePartyId")?.value ?? null;
 const ctx = await requireAdminCtx(supabase, session.user.id, activePartyId);
 if (!ctx) return Astro.redirect("/dashboard");
 if (!ctx.partyId) return Astro.redirect(ctx.isOwner ? "/admin/parties/new" : "/admin/setup");
-const { permissions, partyId } = ctx;
+const { permissions } = ctx;
 if (!hasPermission(permissions, PERMISSIONS.MANAGE_AUDIT)) return Astro.redirect("/admin");
 const t = useT(Astro);
 const lang = getLang(Astro);
+const pt = t.admin.payouts;
+
+// Lists EVERY store this admin can see (owner: all parties, admin: assigned parties) — not
+// just whichever one the party switcher currently has active. Paying out one store never
+// requires switching into it first.
+const partyIds = ctx.parties.map((p) => p.id);
 
 let error = "";
 let success = "";
@@ -29,216 +36,213 @@ if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const action = form.get("action");
 
-  if (action === "mark_paid") {
-    const ledgerId = form.get("ledger_id") as string;
+  if (action === "mark_paid_batch") {
+    const formPartyId = (form.get("party_id") as string) ?? "";
+    const ledgerIds = form.getAll("ledger_id").map(String).filter(Boolean);
     const payoutReference = (form.get("payout_reference") as string)?.trim() || null;
-    const { error: updateErr } = await supabase
-      .from("order_commission_ledger")
-      .update({ status: "paid", paid_at: new Date().toISOString(), paid_by: session.user.id, payout_reference: payoutReference })
-      .eq("id", ledgerId)
-      .eq("party_id", partyId)
-      .eq("status", "held");
-    if (updateErr) error = updateErr.message;
-    else success = t.admin.payouts.markPaidBtn;
-  }
-
-  // Confirming an offline payment as received is the platform's call, never the organization's
-  // own - only the global owner may mark a fee paid without an actual online payment.
-  if (action === "mark_fee_paid_manual" && ctx.isOwner) {
-    const periodStart = form.get("period_start") as string;
-    const { error: updateErr } = await markBillingPeriodFeePaid(createAdminClient(), partyId, periodStart, true);
-    if (updateErr) error = updateErr.message;
-    else success = t.admin.payouts.markFeePaidBtn;
-  }
-
-  if (action === "pay_fee_online") {
-    const periodStart = form.get("period_start") as string;
-    const { data: row } = await supabase
-      .from("eshop_billing_periods")
-      .select("fee_amount")
-      .eq("party_id", partyId)
-      .eq("period_start", periodStart)
-      .maybeSingle();
-    if (row && Number(row.fee_amount) > 0) {
-      const origin = Astro.url.origin;
-      const { url, error: payErr } = await createCheckoutSession({
-        lineItems: [{ name: `${t.admin.payouts.colFee} ${periodStart}`, amount: Number(row.fee_amount), quantity: 1 }],
-        orderId: `fee-${partyId}-${periodStart}`,
-        successUrl: `${origin}/admin/payouts?paid_period=${periodStart}&sid={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${origin}/admin/payouts?pay_cancelled=1`,
-        currency: "czk",
-      });
-      if (url) return Astro.redirect(url);
-      error = payErr ?? "Payment could not be started.";
+    // Guard against a crafted request paying out a party this admin can't see — mirrors the
+    // RLS policy on order_commission_ledger (is_owner() OR MANAGE_AUDIT on that party), kept
+    // here too so a disallowed party fails loudly instead of silently no-op'ing via RLS.
+    const partyAllowed = ctx.parties.some((p) => p.id === formPartyId);
+    if (partyAllowed && ledgerIds.length > 0) {
+      const { error: updateErr } = await supabase
+        .from("order_commission_ledger")
+        .update({ status: "paid", paid_at: new Date().toISOString(), paid_by: session.user.id, payout_reference: payoutReference })
+        .eq("party_id", formPartyId)
+        .eq("status", "held")
+        .lte("hold_until", new Date().toISOString())
+        .in("id", ledgerIds);
+      if (updateErr) error = updateErr.message;
+      else success = `${pt.batchMarkPaidBtn} (${ledgerIds.length})`;
     }
   }
 }
 
-// Stripe return: verify the checkout session actually paid, then record it against the period.
-const paidPeriod = Astro.url.searchParams.get("paid_period");
-const sid = Astro.url.searchParams.get("sid");
-if (paidPeriod && sid) {
-  try {
-    const checkout = await retrieveCheckoutSession(sid);
-    if (checkout.payment_status === "paid") {
-      await markBillingPeriodFeePaid(createAdminClient(), partyId, paidPeriod, true);
-      success = t.admin.payouts.paySuccess;
-    }
-  } catch (e) {
-    error = (e as Error).message;
-  }
-}
-if (Astro.url.searchParams.get("pay_cancelled")) success = t.admin.payouts.payCancelled;
-
-const { data: party } = await supabase.from("parties").select("seller_mode").eq("id", partyId).single();
-const isCommissionMode = party?.seller_mode === SELLER_MODE.SMALLJOBS_COMMISSION;
+const status = Astro.url.searchParams.get("status") === "paid" ? "paid" : "unpaid";
 
 function fmt(n: number) {
   return n.toLocaleString(lang === "en" ? "en-US" : "cs-CZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " Kč";
 }
 
-let payoutThisMonth = 0;
-let entries: any[] = [];
-let totals = { held: 0, eligible: 0, paid: 0, withheld: 0 };
 const now = Date.now();
-function statusOf(e: any): "held" | "eligible" | "paid" | "reversed" {
-  if (e.status !== "held") return e.status;
-  return new Date(e.hold_until).getTime() <= now ? "eligible" : "held";
+const monthStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString();
+
+const { data: partyRows } = partyIds.length > 0
+  ? await supabase.from("parties").select("id, seller_mode").in("id", partyIds)
+  : { data: [] };
+const sellerModeByParty = new Map((partyRows ?? []).map((p) => [p.id, p.seller_mode]));
+
+const { data: ledgerRows } = partyIds.length > 0
+  ? await supabase
+      .from("order_commission_ledger")
+      .select("*, order:orders(order_number)")
+      .in("party_id", partyIds)
+      .eq("status", status === "paid" ? "paid" : "held")
+      .order(status === "paid" ? "paid_at" : "created_at", { ascending: false })
+      .limit(2000)
+  : { data: [] };
+
+const { data: reversedRows } = partyIds.length > 0
+  ? await supabase.from("order_commission_ledger").select("party_id").in("party_id", partyIds).eq("status", "reversed")
+  : { data: [] };
+
+const { data: monthRows } = partyIds.length > 0
+  ? await supabase
+      .from("order_commission_ledger")
+      .select("party_id, net_payable")
+      .in("party_id", partyIds)
+      .neq("status", "reversed")
+      .gte("created_at", monthStart)
+  : { data: [] };
+
+const statementsByParty = await listBillingPeriodsForParties(supabase, partyIds, 12);
+
+interface StoreGroup {
+  partyId: string;
+  partyName: string;
+  isCommission: boolean;
+  orders: LedgerOrderRow[];
+  eligibleIds: string[];
+  unpaidTotal: number;
+  eligibleTotal: number;
+  withheldTotal: number;
+  paidTotal: number;
+  payoutThisMonth: number;
+  reversedCount: number;
 }
-const statusLabel: Record<string, string> = {
-  held: t.admin.payouts.statusHeld,
-  eligible: t.admin.payouts.statusEligible,
-  paid: t.admin.payouts.statusPaid,
-  reversed: t.admin.payouts.statusReversed,
-};
-const statusBadgeClass: Record<string, string> = {
-  held: "badge-pending",
-  eligible: "badge-active",
-  paid: "badge-active",
-  reversed: "badge-error",
-};
 
-let billingPeriods: import("@shared/services/billingPeriodService").BillingPeriodRow[] = [];
+const stores: StoreGroup[] = ctx.parties.map((party) => {
+  const rowsForParty = (ledgerRows ?? []).filter((e: any) => e.party_id === party.id);
+  const orders: LedgerOrderRow[] = rowsForParty.map((e: any) => ({
+    id: e.id,
+    orderNumber: e.order?.order_number ?? e.order_id.slice(0, 8),
+    date: status === "paid" ? (e.paid_at ?? e.created_at) : e.created_at,
+    gross: Number(e.gross_amount),
+    tax: Number(e.tax_amount),
+    commission: Number(e.commission_amount),
+    net: Number(e.net_payable),
+    withheld: Number(e.withheld_amount ?? 0),
+    holdUntil: e.hold_until,
+    computedStatus: status === "paid" ? "paid" : new Date(e.hold_until).getTime() <= now ? "eligible" : "held",
+    paidAt: e.paid_at,
+    payoutReference: e.payout_reference,
+  }));
+  const eligibleIds = orders.filter((o) => o.computedStatus === "eligible").map((o) => o.id);
 
-if (isCommissionMode) {
-  const { data: entriesRaw } = await supabase
-    .from("order_commission_ledger")
-    .select("*, order:orders(order_number)")
-    .eq("party_id", partyId)
-    .order("created_at", { ascending: false })
-    .limit(200);
-  entries = entriesRaw ?? [];
-
-  totals = entries.reduce(
-    (acc, e) => {
-      const st = statusOf(e);
-      if (st === "held") acc.held += Number(e.net_payable);
-      if (st === "eligible") acc.eligible += Number(e.net_payable);
-      if (st === "paid") acc.paid += Number(e.net_payable);
-      acc.withheld += Number(e.withheld_amount ?? 0);
-      return acc;
-    },
-    { held: 0, eligible: 0, paid: 0, withheld: 0 }
-  );
-
-  const monthStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString();
-  const { data: monthRows } = await supabase
-    .from("order_commission_ledger")
-    .select("net_payable")
-    .eq("party_id", partyId)
-    .neq("status", "reversed")
-    .gte("created_at", monthStart);
-  payoutThisMonth = (monthRows ?? []).reduce((sum, r) => sum + Number(r.net_payable), 0);
-} else {
-  billingPeriods = await listBillingPeriods(supabase, partyId, 24);
-}
+  return {
+    partyId: party.id,
+    partyName: party.name,
+    isCommission: sellerModeByParty.get(party.id) === SELLER_MODE.SMALLJOBS_COMMISSION,
+    orders,
+    eligibleIds,
+    unpaidTotal: orders.reduce((sum, o) => sum + o.net, 0),
+    eligibleTotal: orders.filter((o) => o.computedStatus === "eligible").reduce((sum, o) => sum + o.net, 0),
+    withheldTotal: orders.reduce((sum, o) => sum + o.withheld, 0),
+    paidTotal: orders.reduce((sum, o) => sum + o.net, 0),
+    payoutThisMonth: (monthRows ?? []).filter((r: any) => r.party_id === party.id).reduce((sum, r: any) => sum + Number(r.net_payable), 0),
+    reversedCount: (reversedRows ?? []).filter((r: any) => r.party_id === party.id).length,
+  };
+});
 ---
 
-<CmsLayout title={t.admin.payouts.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
-  <p class="content-hint">{isCommissionMode ? t.admin.payouts.hint : t.admin.payouts.monthlyFeesHint}</p>
+<CmsLayout title={pt.title} userPermissions={permissions} currentPath={Astro.url.pathname} parties={ctx.parties} partyId={ctx.partyId} isOwner={ctx.isOwner}>
+  <p class="content-hint">{pt.hint}</p>
   {error && <div class="alert-error">{error}</div>}
   {success && <div class="alert-success">{success}</div>}
 
-  {isCommissionMode ? (
-    <>
-      <div class="summary-row">
-        <div class="summary-tile summary-tile--wide">
-          <span>{t.admin.payouts.payoutProgressLabel}</span>
-          <strong>{fmt(payoutThisMonth)} <span class="cap-of">{t.admin.payouts.capProgressOf} {fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK)}</span></strong>
-          <div class="cap-bar"><div class="cap-bar-fill" style={`width:${Math.min((payoutThisMonth / NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK) * 100, 100)}%`}></div></div>
-        </div>
-        <div class="summary-tile"><span>{t.admin.payouts.summaryHeld}</span><strong>{fmt(totals.held)}</strong></div>
-        <div class="summary-tile"><span>{t.admin.payouts.summaryEligible}</span><strong>{fmt(totals.eligible)}</strong></div>
-        <div class="summary-tile"><span>{t.admin.payouts.summaryPaid}</span><strong>{fmt(totals.paid)}</strong></div>
-        <div class="summary-tile"><span>{t.admin.payouts.summaryWithheld}</span><strong>{fmt(totals.withheld)}</strong></div>
-      </div>
+  <PayoutsTabs active={status} />
 
-      <div class="card" style="padding:0;overflow:hidden">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>{t.admin.payouts.colOrder}</th><th>{t.admin.payouts.colGross}</th><th>{t.admin.payouts.colTax}</th><th>{t.admin.payouts.colCommission}</th>
-              <th>{t.admin.payouts.colNet}</th><th>{t.admin.payouts.colWithheld}</th><th>{t.admin.payouts.colHoldUntil}</th><th>{t.admin.payouts.colStatus}</th><th>{t.admin.payouts.colActions}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((e) => {
-              const st = statusOf(e);
-              return (
-                <tr>
-                  <td style="font-family:monospace;font-size:13px">{e.order?.order_number ?? e.order_id.slice(0, 8)}</td>
-                  <td>{fmt(Number(e.gross_amount))}</td>
-                  <td>{fmt(Number(e.tax_amount))}</td>
-                  <td>{fmt(Number(e.commission_amount))}</td>
-                  <td style="font-weight:600">{fmt(Number(e.net_payable))}</td>
-                  <td>
-                    {Number(e.withheld_amount) > 0 ? (
-                      <span style="color:var(--error)">{fmt(Number(e.withheld_amount))}</span>
-                    ) : (
-                      <span style="color:var(--text-muted)">—</span>
-                    )}
-                  </td>
-                  <td style="font-size:12px;color:var(--text-muted)">{new Date(e.hold_until).toLocaleDateString(lang)}</td>
-                  <td><span class={`badge ${statusBadgeClass[st]}`}>{statusLabel[st]}</span></td>
-                  <td>
-                    {st === "eligible" && (
-                      <form method="POST" onsubmit={`return confirm('${t.admin.payouts.markPaidConfirm}')`} style="display:flex;gap:6px;align-items:center">
-                        <input type="hidden" name="action" value="mark_paid" />
-                        <input type="hidden" name="ledger_id" value={e.id} />
-                        <input class="form-input" name="payout_reference" placeholder={t.admin.payouts.fieldPayoutReference} style="width:140px;padding:4px 8px;font-size:12px" />
-                        <button type="submit" class="btn btn-primary" style="padding:4px 10px;font-size:12px">{t.admin.payouts.markPaidBtn}</button>
-                      </form>
-                    )}
-                    {st === "paid" && e.paid_at && (
-                      <span style="font-size:11px;color:var(--text-muted)">{t.admin.payouts.paidByLabel}: {new Date(e.paid_at).toLocaleDateString(lang)}</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-            {entries.length === 0 && (
-              <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.payouts.noEntries}</td></tr>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>{t.admin.billing.colParty}</th>
+          {status === "unpaid" ? (
+            <>
+              <th>{pt.summaryUnpaidTotal}</th>
+              <th>{pt.summaryReadyTotal}</th>
+            </>
+          ) : (
+            <th>{pt.summaryPaidTotal}</th>
+          )}
+          <th>{t.admin.billing.colActions}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {stores.map((store) => (
+          <tr>
+            <td style="font-weight:600">
+              {store.partyName}
+              {store.reversedCount > 0 && <div class="muted">{store.reversedCount} {pt.reversedFootnote}</div>}
+            </td>
+            {status === "unpaid" ? (
+              <>
+                <td>
+                  <div class="progress-line">{fmt(store.unpaidTotal)}</div>
+                  {store.isCommission && (
+                    <>
+                      <div class="cap-bar"><div class="cap-bar-fill" style={`width:${Math.min((store.payoutThisMonth / NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK) * 100, 100)}%`}></div></div>
+                      <div class="muted">{pt.payoutProgressLabel}: {fmt(store.payoutThisMonth)} {pt.capProgressOf} {fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK)}</div>
+                      {store.withheldTotal > 0 && <div class="withheld-note">{pt.summaryWithheld}: {fmt(store.withheldTotal)}</div>}
+                    </>
+                  )}
+                </td>
+                <td>
+                  {store.eligibleIds.length > 0 ? (
+                    <span class="outstanding">{fmt(store.eligibleTotal)} <span class="muted">({store.eligibleIds.length} {pt.countOrdersSuffix})</span></span>
+                  ) : (
+                    <span class="muted">{pt.noneEligibleYet}</span>
+                  )}
+                </td>
+              </>
+            ) : (
+              <td><span class="outstanding">{fmt(store.paidTotal)}</span></td>
             )}
-          </tbody>
-        </table>
-      </div>
-    </>
-  ) : (
-    <PlatformFeeHistory periods={billingPeriods} canManual={ctx.isOwner} />
-  )}
+            <td>
+              <div class="actions-cell">
+                <button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:12px" data-ol-open={store.partyId}>{pt.viewOrdersBtn} ({store.orders.length} {pt.countOrdersSuffix})</button>
+                {status === "unpaid" && store.eligibleIds.length > 0 && (
+                  <form method="POST" class="pay-form" onsubmit={`return confirm('${pt.batchMarkPaidConfirm}')`}>
+                    <input type="hidden" name="action" value="mark_paid_batch" />
+                    <input type="hidden" name="party_id" value={store.partyId} />
+                    {store.eligibleIds.map((id) => <input type="hidden" name="ledger_id" value={id} />)}
+                    <input class="form-input" name="payout_reference" placeholder={pt.fieldPayoutReference} style="padding:4px 8px;font-size:12px;width:140px" />
+                    <button type="submit" class="btn btn-primary" style="padding:4px 10px;font-size:12px">{pt.batchMarkPaidBtn} ({fmt(store.eligibleTotal)})</button>
+                  </form>
+                )}
+              </div>
+            </td>
+          </tr>
+        ))}
+        {stores.length === 0 && (
+          <tr><td colspan={4} style="text-align:center;padding:32px;color:var(--text-muted)">{t.admin.billing.noParties}</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+
+  {stores.map((store) => (
+    <OrderLedgerModal
+      partyId={store.partyId}
+      partyName={store.partyName}
+      status={status}
+      orders={store.orders}
+      eligibleIds={store.eligibleIds}
+      statements={statementsByParty.get(store.partyId) ?? []}
+    />
+  ))}
 </CmsLayout>
 
 <style>
   .content-hint { font-size:13px; color:var(--text-muted); margin-bottom:16px; }
   .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
   .alert-success { background:rgba(34,197,94,0.08); border:1px solid #22c55e; border-radius:8px; padding:12px 16px; color:#16a34a; margin-bottom:16px; font-size:14px; }
-  .summary-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:16px; }
-  .summary-tile { background:var(--bg-subtle); border-radius:var(--radius-md); padding:16px; display:flex; flex-direction:column; gap:6px; }
-  .summary-tile span { font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
-  .summary-tile strong { font-size:20px; }
-  .summary-tile--wide { grid-column: span 1; }
-  .cap-of { font-size:13px; font-weight:500; color:var(--text-muted); }
-  .cap-bar { height:6px; border-radius:999px; background:var(--border-default); overflow:hidden; margin-top:4px; }
+  .progress-line { font-size:13px; font-weight:600; margin-bottom:4px; }
+  .cap-bar { height:6px; border-radius:999px; background:var(--border-default); overflow:hidden; max-width:180px; margin-top:4px; }
   .cap-bar-fill { height:100%; background:var(--accent-primary); border-radius:999px; }
-  @media(max-width:768px) { .summary-row { grid-template-columns:1fr; } }
+  .withheld-note { font-size:12px; color:var(--error); margin-top:4px; }
+  .muted { color:var(--text-muted); font-size:12px; }
+  .outstanding { font-weight:600; }
+  .actions-cell { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .pay-form { display:flex; gap:6px; align-items:center; }
 </style>

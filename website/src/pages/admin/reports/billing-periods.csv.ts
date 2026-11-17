@@ -26,7 +26,7 @@ export const GET: APIRoute = async (context) => {
     [
       "period_start", "period_end", "seller_mode",
       "gross_revenue", "real_costs", "net_revenue",
-      "fee_mode", "fee_rate", "fee_amount", "net_payout",
+      "fee_rate", "fee_amount", "net_payout", "paid_amount", "outstanding_amount",
       "currency", "status",
     ],
     ...periods.map((p) => [
@@ -36,10 +36,11 @@ export const GET: APIRoute = async (context) => {
       p.grossRevenue.toFixed(2),
       p.realCosts.toFixed(2),
       p.netRevenue.toFixed(2),
-      p.feeMode,
       p.feeRate === null ? "" : p.feeRate.toFixed(4),
       p.feeAmount.toFixed(2),
       p.netPayout.toFixed(2),
+      p.paidAmount.toFixed(2),
+      p.outstandingAmount.toFixed(2),
       p.currency,
       p.status,
     ]),

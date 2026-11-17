@@ -1,0 +1,23 @@
+---
+interface Props { active: "unpaid" | "paid" }
+const { active } = Astro.props;
+import { useT } from "../../lib/i18n";
+const t = useT(Astro);
+const tabs = [
+  { key: "unpaid", href: "/admin/payouts?status=unpaid", label: t.admin.payouts.tabUnpaid },
+  { key: "paid", href: "/admin/payouts?status=paid", label: t.admin.payouts.tabPaid },
+] as const;
+---
+
+<div class="payouts-tabs">
+  {tabs.map((tab) => (
+    <a href={tab.href} class={`payouts-tab${tab.key === active ? " payouts-tab--active" : ""}`}>{tab.label}</a>
+  ))}
+</div>
+
+<style>
+  .payouts-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border-default); }
+  .payouts-tab { padding: 10px 16px; font-size: 14px; font-weight: 600; color: var(--text-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .payouts-tab:hover { color: var(--text-primary); text-decoration: none; }
+  .payouts-tab--active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+</style>

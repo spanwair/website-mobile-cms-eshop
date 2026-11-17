@@ -1,11 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCalendarMonthPeriod, isPeriodElapsed } from "../utils/billingPeriod";
-import {
-  computeBillingPeriodTotals,
-  autoFeeMode,
-  resolveFeeSchedule,
-  type BillingFeeMode,
-} from "../utils/billingFeeCalc";
+import { computeBillingPeriodTotals, resolveFeeSchedule } from "../utils/billingFeeCalc";
 
 export interface BillingPeriodRow {
   id: string;
@@ -16,14 +11,14 @@ export interface BillingPeriodRow {
   grossRevenue: number;
   realCosts: number;
   netRevenue: number;
-  feeMode: BillingFeeMode;
   feeRate: number | null;
   feeAmount: number;
   netPayout: number;
+  paidAmount: number;
+  outstandingAmount: number;
   currency: string;
   status: "draft" | "finalized";
   computedAt: string | null;
-  feePaidAt: string | null;
 }
 
 function mapRow(row: any): BillingPeriodRow {
@@ -36,17 +31,21 @@ function mapRow(row: any): BillingPeriodRow {
     grossRevenue: Number(row.gross_revenue),
     realCosts: Number(row.real_costs),
     netRevenue: Number(row.net_revenue),
-    feeMode: row.fee_mode,
     feeRate: row.fee_rate === null ? null : Number(row.fee_rate),
     feeAmount: Number(row.fee_amount),
     netPayout: Number(row.net_payout),
+    paidAmount: Number(row.paid_amount ?? 0),
+    outstandingAmount: Number(row.outstanding_amount ?? 0),
     currency: row.currency,
     status: row.status,
     computedAt: row.computed_at,
-    feePaidAt: row.fee_paid_at ?? null,
   };
 }
 
+// Read-only monthly STATEMENT history for a party — this is informational (what was earned,
+// deducted, and paid out for that month), not an action point. Actually paying a seller
+// happens any time via order_commission_ledger (website/src/pages/admin/payouts), never
+// against this table.
 export async function listBillingPeriods(
   client: SupabaseClient,
   partyId: string,
@@ -62,12 +61,40 @@ export async function listBillingPeriods(
   return (data ?? []).map(mapRow);
 }
 
-// Recomputes (or creates) one party's billing period for the given calendar month from live
-// order/return/stock data, then upserts it. A 'finalized' period (its month has fully
-// elapsed) is left untouched unless forceRecompute is set -- a past month's tax-export
-// numbers must not silently change under a party that already downloaded them. The fee mode
-// is derived automatically from the period's gross revenue (see autoFeeMode) -- never a
-// manual per-period choice.
+// Same as listBillingPeriods but for every party at once (the cross-store Payouts page) -
+// one query instead of N, capped per party client-side since Supabase has no built-in
+// "top N per group" filter.
+export async function listBillingPeriodsForParties(
+  client: SupabaseClient,
+  partyIds: string[],
+  limitPerParty = 12
+): Promise<Map<string, BillingPeriodRow[]>> {
+  const map = new Map<string, BillingPeriodRow[]>();
+  if (partyIds.length === 0) return map;
+
+  const { data, error } = await client
+    .from("eshop_billing_periods")
+    .select("*")
+    .in("party_id", partyIds)
+    .order("period_start", { ascending: false })
+    .limit(limitPerParty * partyIds.length);
+  if (error) throw new Error(error.message);
+
+  for (const row of (data ?? []).map(mapRow)) {
+    const rows = map.get(row.partyId) ?? [];
+    if (rows.length < limitPerParty) rows.push(row);
+    map.set(row.partyId, rows);
+  }
+  return map;
+}
+
+// Recomputes (or creates) one party's monthly statement for the given calendar month, sourced
+// entirely from order_commission_ledger (both seller modes pay per-order now — see
+// shared/services/commissionLedgerService.ts) via the get_billing_period_totals RPC. A
+// 'finalized' period (its month has fully elapsed) is left untouched unless forceRecompute is
+// set -- a past month's figures must not silently change under a party that already saw them.
+// The live "what's still owed right now" view is the ledger's Unpaid tab, not this row — this
+// is a frozen point-in-time snapshot, like any invoice.
 export async function recomputeBillingPeriod(
   client: SupabaseClient,
   partyId: string,
@@ -111,14 +138,13 @@ export async function recomputeBillingPeriod(
   if (totalsErr) return { error: new Error(totalsErr.message), row: null };
 
   const schedule = resolveFeeSchedule(party);
-  const feeMode: BillingFeeMode = autoFeeMode(Number(totals.gross_revenue), party.seller_mode, schedule);
-
-  const computation = computeBillingPeriodTotals(
-    { grossRevenueKc: Number(totals.gross_revenue), realCostsKc: Number(totals.real_costs) },
-    feeMode,
-    Number(totals.ledger_fee_amount ?? 0),
-    schedule
-  );
+  const computation = computeBillingPeriodTotals({
+    grossRevenueKc: Number(totals.gross_revenue),
+    realCostsKc: Number(totals.real_costs),
+    ledgerFeeKc: Number(totals.ledger_fee_amount ?? 0),
+    netPayableTotalKc: Number(totals.net_payable_total ?? 0),
+    netPaidKc: Number(totals.net_paid_amount ?? 0),
+  });
 
   const status = isPeriodElapsed(period.periodEnd) ? "finalized" : "draft";
 
@@ -133,10 +159,12 @@ export async function recomputeBillingPeriod(
         gross_revenue: computation.grossRevenueKc,
         real_costs: computation.realCostsKc,
         net_revenue: computation.netRevenueKc,
-        fee_mode: computation.feeMode,
-        fee_rate: computation.feeRate,
+        fee_mode: "ledger",
+        fee_rate: schedule.standardRate,
         fee_amount: computation.feeAmountKc,
         net_payout: computation.netPayoutKc,
+        paid_amount: computation.paidAmountKc,
+        outstanding_amount: computation.outstandingAmountKc,
         currency: totals.currency ?? "CZK",
         status,
         computed_at: new Date().toISOString(),
@@ -148,18 +176,4 @@ export async function recomputeBillingPeriod(
   if (upsertErr) return { error: new Error(upsertErr.message), row: null };
 
   return { error: null, row: mapRow(upserted) };
-}
-
-export async function markBillingPeriodFeePaid(
-  client: SupabaseClient,
-  partyId: string,
-  periodStart: string,
-  paid: boolean
-): Promise<{ error: Error | null }> {
-  const { error } = await client
-    .from("eshop_billing_periods")
-    .update({ fee_paid_at: paid ? new Date().toISOString() : null })
-    .eq("party_id", partyId)
-    .eq("period_start", periodStart);
-  return { error: error ? new Error(error.message) : null };
 }

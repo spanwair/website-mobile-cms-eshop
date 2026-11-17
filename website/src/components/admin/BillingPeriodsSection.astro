@@ -23,12 +23,6 @@ function periodLabel(periodStart: string) {
     timeZone: "UTC",
   });
 }
-
-const feeModeLabel: Record<string, string> = {
-  percentage: bt.feeModePercentage,
-  reduced: bt.feeModeReduced,
-  ledger: bt.feeModeLedger,
-};
 ---
 
 <div class="card" data-section="billing-periods" style="grid-column: 1 / -1; margin-top:24px">
@@ -44,8 +38,8 @@ const feeModeLabel: Record<string, string> = {
     <thead>
       <tr>
         <th>{bt.colPeriod}</th><th>{bt.colGross}</th><th>{bt.colRealCosts}</th><th>{bt.colNetRevenue}</th>
-        <th>{bt.colFeeMode}</th><th>{bt.colFeeAmount}</th><th>{bt.colNetPayout}</th><th>{bt.colStatus}</th>
-        <th>{bt.colPaid}</th>
+        <th>{bt.colFeeAmount}</th><th>{bt.colNetPayout}</th><th>{bt.colPaidAmount}</th><th>{bt.colOutstanding}</th>
+        <th>{bt.colStatus}</th>
         {canWrite && <th>{bt.colActions}</th>}
       </tr>
     </thead>
@@ -56,19 +50,11 @@ const feeModeLabel: Record<string, string> = {
           <td>{fmt(p.grossRevenue)}</td>
           <td>{fmt(p.realCosts)}</td>
           <td>{fmt(p.netRevenue)}</td>
-          <td>
-            <span>{feeModeLabel[p.feeMode] ?? p.feeMode}</span>
-            {p.feeMode === "ledger" && <div class="bp-note">{bt.ledgerNote}</div>}
-          </td>
           <td style="font-weight:600">{fmt(p.feeAmount)}</td>
           <td style="font-weight:600">{fmt(p.netPayout)}</td>
+          <td>{fmt(p.paidAmount)}</td>
+          <td>{p.outstandingAmount > 0 ? <strong>{fmt(p.outstandingAmount)}</strong> : fmt(0)}</td>
           <td><span class={`badge ${p.status === "finalized" ? "badge-active" : "badge-pending"}`}>{p.status === "finalized" ? bt.statusFinalized : bt.statusDraft}</span></td>
-          <td>
-            <span class={`badge ${p.feePaidAt ? "badge-active" : "badge-danger"}`}>{p.feePaidAt ? bt.paidYes : bt.paidNo}</span>
-            {!p.feePaidAt && p.feeAmount > 0 && (
-              <a class="btn btn-secondary" href="/admin/payouts" style="display:inline-block;margin-top:4px;padding:2px 8px;font-size:11px">{bt.payLink}</a>
-            )}
-          </td>
           {canWrite && (
             <td>
               <form method="POST" onsubmit={`return confirm('${bt.recomputeConfirm}')`}>
@@ -81,7 +67,7 @@ const feeModeLabel: Record<string, string> = {
         </tr>
       ))}
       {periods.length === 0 && (
-        <tr><td colspan={canWrite ? 10 : 9} style="text-align:center;padding:32px;color:var(--text-muted)">{bt.noPeriods}</td></tr>
+        <tr><td colspan={canWrite ? 9 : 8} style="text-align:center;padding:32px;color:var(--text-muted)">{bt.noPeriods}</td></tr>
       )}
     </tbody>
   </table>
@@ -90,5 +76,4 @@ const feeModeLabel: Record<string, string> = {
 <style>
   .bp-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:16px; flex-wrap:wrap; }
   .bp-hint { font-size:13px; color:var(--text-muted); max-width:640px; line-height:1.5; }
-  .bp-note { font-size:11px; color:var(--text-muted); margin-top:2px; max-width:220px; }
 </style>

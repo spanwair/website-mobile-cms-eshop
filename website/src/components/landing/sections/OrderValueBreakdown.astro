@@ -18,13 +18,12 @@
 // padding the commission base, the commission has less room to cover Stripe's cut on small
 // orders.
 import { useT } from "@/lib/i18n";
-import { COMMISSION_RATE, REDUCED_COMMISSION_RATE } from "@shared/constants/sellerMode";
+import { COMMISSION_RATE } from "@shared/constants/sellerMode";
 import { STRIPE_FEE_PERCENT_EU, STRIPE_FEE_FIXED_CZK } from "@shared/constants/payment";
 
 const t = useT(Astro);
 
 const commissionPct = Math.round(COMMISSION_RATE * 100);
-const reducedPct = Math.round(REDUCED_COMMISSION_RATE * 100);
 const stripePct = STRIPE_FEE_PERCENT_EU * 100;
 
 const rowStripe = t.landing.orderBreakdown.rowStripe
@@ -42,11 +41,9 @@ const rowCommission = t.landing.orderBreakdown.rowCommission.replace("{rate}", S
     <div
       class="ob-card"
       data-standard-rate={COMMISSION_RATE}
-      data-reduced-rate={REDUCED_COMMISSION_RATE}
       data-stripe-pct={STRIPE_FEE_PERCENT_EU}
       data-stripe-fixed={STRIPE_FEE_FIXED_CZK}
       data-row-commission-standard={rowCommission}
-      data-row-commission-reduced={t.landing.orderBreakdown.rowCommission.replace("{rate}", String(reducedPct))}
       data-row-stripe-note-template={t.landing.orderBreakdown.rowStripeNote}
       data-margin-note-template={t.landing.orderBreakdown.marginNote}
       data-break-even-template={t.landing.orderBreakdown.breakEvenNote}
@@ -61,14 +58,6 @@ const rowCommission = t.landing.orderBreakdown.rowCommission.replace("{rate}", S
           <button type="button" class="ob-segmented-btn" data-delivery="119">{t.landing.orderBreakdown.deliveryHome}</button>
         </div>
       </div>
-
-      <label class="ob-toggle">
-        <span class="ob-toggle-label">{t.landing.orderBreakdown.rateToggleLabel}</span>
-        <span class="ob-switch">
-          <input type="checkbox" id="ob-rate-toggle" class="ob-switch-input" />
-          <span class="ob-switch-track"><span class="ob-switch-thumb"></span></span>
-        </span>
-      </label>
 
       <div class="ob-waterfall">
         <div class="ob-row"><span>{t.landing.orderBreakdown.rowItem}</span><span id="ob-row-item">500 Kč</span></div>
@@ -99,7 +88,6 @@ const rowCommission = t.landing.orderBreakdown.rowCommission.replace("{rate}", S
 <script>
   const card = document.querySelector<HTMLElement>(".ob-card");
   const itemInput = document.getElementById("ob-item-price") as HTMLInputElement | null;
-  const rateToggle = document.getElementById("ob-rate-toggle") as HTMLInputElement | null;
   const deliveryBtns = Array.from(document.querySelectorAll<HTMLButtonElement>(".ob-segmented-btn"));
 
   let deliveryPrice = 69;
@@ -114,12 +102,9 @@ const rowCommission = t.landing.orderBreakdown.rowCommission.replace("{rate}", S
 
   function update() {
     if (!card || !itemInput) return;
-    const standardRate = Number(card.dataset.standardRate);
-    const reducedRate = Number(card.dataset.reducedRate);
+    const rate = Number(card.dataset.standardRate);
     const stripePct = Number(card.dataset.stripePct);
     const stripeFixed = Number(card.dataset.stripeFixed);
-    const usingReduced = rateToggle?.checked ?? false;
-    const rate = usingReduced ? reducedRate : standardRate;
 
     const itemPrice = Number(itemInput.value);
     const totalPayment = itemPrice + deliveryPrice;
@@ -140,11 +125,7 @@ const rowCommission = t.landing.orderBreakdown.rowCommission.replace("{rate}", S
     }
 
     const commissionLabel = document.getElementById("ob-row-commission-label");
-    if (commissionLabel) {
-      commissionLabel.textContent = usingReduced
-        ? card.dataset.rowCommissionReduced ?? ""
-        : card.dataset.rowCommissionStandard ?? "";
-    }
+    if (commissionLabel) commissionLabel.textContent = card.dataset.rowCommissionStandard ?? "";
     document.getElementById("ob-row-commission")!.textContent = formatSignedKc(-commission);
 
     const marginNote = document.getElementById("ob-margin-note");
@@ -166,7 +147,6 @@ const rowCommission = t.landing.orderBreakdown.rowCommission.replace("{rate}", S
   }
 
   itemInput?.addEventListener("input", update);
-  rateToggle?.addEventListener("change", update);
   deliveryBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       deliveryBtns.forEach((b) => b.classList.remove("ob-segmented-btn--active"));
@@ -196,14 +176,6 @@ const rowCommission = t.landing.orderBreakdown.rowCommission.replace("{rate}", S
     cursor: pointer; transition: background .15s ease, border-color .15s ease;
   }
   .ob-segmented-btn--active { background: var(--landing-mint); border-color: var(--landing-mint); color: #06281d; font-weight: 700; }
-
-  .ob-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--landing-dark-text-muted); margin-bottom: 24px; cursor: pointer; }
-  .ob-switch { position: relative; display: inline-flex; flex: none; }
-  .ob-switch-input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-  .ob-switch-track { display: inline-flex; align-items: center; padding: 2px; box-sizing: border-box; width: 38px; height: 22px; border-radius: 999px; background: var(--landing-dark-text-muted); opacity: 0.5; transition: background .2s ease, opacity .2s ease; }
-  .ob-switch-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s ease; }
-  .ob-switch-input:checked + .ob-switch-track { background: var(--landing-mint); opacity: 1; }
-  .ob-switch-input:checked + .ob-switch-track .ob-switch-thumb { transform: translateX(16px); }
 
   .ob-waterfall { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; display: flex; flex-direction: column; gap: 10px; }
   .ob-waterfall--muted { margin-top: 20px; }

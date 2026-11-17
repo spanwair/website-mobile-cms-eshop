@@ -1,15 +1,11 @@
 ---
 // Public pricing calculator — Phase 1 (display only). Every number comes from
 // shared/constants/sellerMode.ts, the single source of truth; nothing here is
-// independently hardcoded. The tiered rate and no-IČO enforcement itself is not yet
-// wired into the ledger (see shared/services/commissionLedgerService.ts) — that is a
-// separate, reviewed Phase 2 change. This calculator is an accurate estimate, not a
-// live account balance.
+// independently hardcoded. own_company's rate is flat (COMMISSION_RATE) with no turnover
+// threshold as of 2026-11 — the no-IČO (employment-mode) toggle keeps its own payout cap.
 import { useT } from "@/lib/i18n";
 import {
   COMMISSION_RATE,
-  REDUCED_COMMISSION_RATE,
-  COMMISSION_REDUCED_THRESHOLD_CZK,
   NO_ICO_DEDUCTION_RATE,
   NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK,
   NO_ICO_WITHHOLDING_EXPIRY_YEARS,
@@ -18,14 +14,10 @@ import {
 const t = useT(Astro);
 
 const commissionPct = Math.round(COMMISSION_RATE * 100);
-const reducedPct = Math.round(REDUCED_COMMISSION_RATE * 100);
 const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 const fmt = (n: number) => Math.round(n).toLocaleString("cs-CZ");
 
-const exampleNote = t.landing.commissionCalculator.exampleNote
-  .replace("{threshold}", fmt(COMMISSION_REDUCED_THRESHOLD_CZK))
-  .replace("{rate}", String(commissionPct))
-  .replace("{reducedRate}", String(reducedPct));
+const exampleNote = t.landing.commissionCalculator.exampleNote.replace("{rate}", String(commissionPct));
 const employmentNote = t.landing.commissionCalculator.employmentNote
   .replace("{limit}", fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK))
   .replace("{years}", String(NO_ICO_WITHHOLDING_EXPIRY_YEARS));
@@ -41,14 +33,10 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
     <div
       class="calc-card"
       data-commission-rate={COMMISSION_RATE}
-      data-reduced-rate={REDUCED_COMMISSION_RATE}
-      data-threshold={COMMISSION_REDUCED_THRESHOLD_CZK}
       data-employment-rate={NO_ICO_DEDUCTION_RATE}
       data-payout-limit={NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK}
       data-badge-percentage={t.landing.commissionCalculator.badgePercentage.replace("{rate}", String(commissionPct))}
-      data-badge-reduced={t.landing.commissionCalculator.badgeReduced.replace("{reducedRate}", String(reducedPct))}
-        data-badge-ico={t.landing.commissionCalculator.badgeIcoRequired}
-      data-savings-template={t.landing.commissionCalculator.savingsNote}
+      data-badge-ico={t.landing.commissionCalculator.badgeIcoRequired}
     >
       <label class="calc-label" for="calc-input">{t.landing.commissionCalculator.sliderLabel}</label>
       <input id="calc-input" type="range" min="0" max="50000" step="500" value="10000" class="calc-slider" />
@@ -91,7 +79,6 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
         </div>
       </div>
 
-      <p class="calc-note calc-note--savings calc-note--hidden" id="calc-savings"></p>
       <p class="calc-note" id="calc-note-commission">{exampleNote}</p>
       <p class="calc-note calc-note--hidden" id="calc-note-employment">{employmentNote}</p>
       <p class="calc-disclaimer">{t.landing.commissionCalculator.estimateDisclaimer}</p>
@@ -116,7 +103,6 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
   const splitEmployment = document.getElementById("calc-split-employment");
   const noteCommission = document.getElementById("calc-note-commission");
   const noteEmployment = document.getElementById("calc-note-employment");
-  const savingsEl = document.getElementById("calc-savings");
   const deductionEl = document.getElementById("calc-employment-deduction");
   const payableEl = document.getElementById("calc-employment-payable");
   const withheldEl = document.getElementById("calc-employment-withheld");
@@ -132,8 +118,6 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
   function update() {
     if (!input || !card) return;
     const rate = Number(card.dataset.commissionRate);
-    const reducedRate = Number(card.dataset.reducedRate);
-    const threshold = Number(card.dataset.threshold);
     const employmentRate = Number(card.dataset.employmentRate);
     const payoutLimit = Number(card.dataset.payoutLimit);
     const turnover = Number(input.value);
@@ -156,7 +140,6 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
       if (payableEl) payableEl.textContent = formatKc(payable);
       if (withheldEl) withheldEl.textContent = formatKc(withheld);
       if (withheldRow) withheldRow.style.display = withheld > 0 ? "" : "none";
-      savingsEl?.classList.add("calc-note--hidden");
       if (badge) {
         badge.textContent = withheld > 0 ? (card.dataset.badgeIco ?? "") : (card.dataset.badgePercentage ?? "");
         badge.classList.toggle("badge-error", withheld > 0);
@@ -168,27 +151,15 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
       noteCommission?.classList.remove("calc-note--hidden");
       noteEmployment?.classList.add("calc-note--hidden");
 
-      const usingReduced = turnover > threshold;
-      const appliedRate = usingReduced ? reducedRate : rate;
-      const fee = turnover * appliedRate;
+      const fee = turnover * rate;
       const keep = turnover - fee;
 
       if (keepEl) keepEl.textContent = formatKc(keep);
       if (feeEl) feeEl.textContent = formatKc(fee);
       if (badge) {
-        badge.textContent = usingReduced ? (card.dataset.badgeReduced ?? "") : (card.dataset.badgePercentage ?? "");
+        badge.textContent = card.dataset.badgePercentage ?? "";
         badge.classList.remove("badge-error");
         badge.classList.add("badge-active");
-      }
-      if (savingsEl) {
-        if (usingReduced) {
-          // What the reduced rate saves versus paying the standard rate on the same turnover.
-          const savings = turnover * (rate - reducedRate);
-          savingsEl.textContent = (card.dataset.savingsTemplate ?? "").replace("{amount}", formatNum(savings));
-          savingsEl.classList.remove("calc-note--hidden");
-        } else {
-          savingsEl.classList.add("calc-note--hidden");
-        }
       }
     }
   }

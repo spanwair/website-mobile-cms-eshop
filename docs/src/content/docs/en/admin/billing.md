@@ -4,7 +4,7 @@ description: Cross-organization overview of every party's pricing mode, current-
 ---
 
 Billing is a platform-level, cross-party overview.
-It puts every organization you can see - its pricing mode, this month's charge, and its outstanding balance - on one screen, so you never have to switch the active party and hunt through each org's [Payouts](/docs/en/admin/payouts) individually.
+It puts every organization you can see - its pricing mode, this month's ledger activity, and its outstanding balance - on one screen, so you never have to switch the active party and hunt through each org's [Payouts](/docs/en/admin/payouts) individually.
 It is always scoped to `ctx.parties`: an owner sees every party, an admin sees only the ones assigned to them.
 
 ## Permission required
@@ -18,12 +18,12 @@ This is the same bit that gates the [Audit Log](/docs/en/admin/audit) and party-
 
 ## The two pricing modes
 
-Each organization has a `seller_mode` (set on the Seller Mode card in [Organizations](/docs/en/admin/parties)), and Billing shows different numbers per mode:
+Each organization has a `seller_mode` (set on the Seller Mode card in [Organizations](/docs/en/admin/parties)). Both modes are now sourced from the same per-order ledger (`order_commission_ledger`) — only the rate and hold rules differ:
 
 | Mode | Badge | How it is charged |
 |---|---|---|
-| Own company (`own_company`) | green "Own company" | `COMMISSION_RATE` (10%) of monthly turnover, dropping to `REDUCED_COMMISSION_RATE` (5%) on the whole month once turnover passes `COMMISSION_REDUCED_THRESHOLD_CZK` (29 900 Kč), billed as a monthly platform fee. Any of these three can be overridden per organization (see [Organizations](/docs/en/admin/parties)). Kytka z Beskyd starts in this mode. |
-| Commission (`smalljobs_commission`) | amber "Commission" | Per-order commission held in a ledger, with a `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` (12 000 Kč) monthly payout limit. |
+| Own company (`own_company`) | green "Own company" | `COMMISSION_RATE` (a flat 5%, no turnover limit) per order, held for `OWN_COMPANY_PAYOUT_HOLD_DAYS` (14 days). Overridable per organization via `resolveFeeSchedule()` (see [Organizations](/docs/en/admin/parties)). Kytka z Beskyd starts in this mode. |
+| Commission (`smalljobs_commission`) | amber "Commission" | A flat `NO_ICO_DEDUCTION_RATE` (30%) per order, held for `PAYOUT_HOLD_DAYS` (60 days), with a `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` (12 000 Kč) monthly payout limit. |
 
 ## The overview table (`/admin/billing`)
 
@@ -31,23 +31,23 @@ Each organization has a `seller_mode` (set on the Seller Mode card in [Organizat
 |---|---|---|
 | Organization | Party name. | Party name. |
 | Mode | Pricing-mode badge. | Pricing-mode badge. |
-| This month | Current month's fee with the applied rate (10% or the reduced 5%), plus a paid/unpaid badge; "no activity yet" when there is no fee row. | Payout so far this month vs the 12 000 Kč limit, drawn as a progress bar, plus a red "withheld" note when any amount was withheld. |
-| Outstanding | Total unpaid fee amount and how many unpaid months, or "nothing due". | Total eligible-to-pay amount and how many ledger entries are ready, or "nothing due". |
+| This month | This month's gross turnover and commission deducted; "no activity yet" when there are no ledger rows this month. | Payout so far this month vs the 12 000 Kč limit, drawn as a progress bar, plus a red "withheld" note when any amount was withheld. |
+| Outstanding | Total eligible-to-pay amount and how many orders are ready, or how many are still in their hold period, or "nothing due". | Same. |
 | Actions | **Resolve** button. | **Resolve** button. |
 
 ### The Resolve action
 
-**Resolve** posts to `/api/switch-party`, switching your active party to that organization and redirecting you to its [Payouts](/docs/en/admin/payouts) page, where you actually mark a fee paid or release a payout.
+**Resolve** posts to `/api/switch-party`, switching your active party to that organization and redirecting you to its [Payouts](/docs/en/admin/payouts) page, where you actually release a payout.
 Billing itself is read-only; it never changes a balance.
 
 ## Data & storage (cloud)
 
-- **Tables:** `parties` (`seller_mode`), `monthly_platform_fees` (own-company fees: `period_month`, `fee_amount`, `status`), `order_commission_ledger` (commission entries: `net_payable`, `withheld_amount`, `status`, `hold_until`).
-- **Constants:** `SELLER_MODE`, `COMMISSION_RATE`, `REDUCED_COMMISSION_RATE`, `COMMISSION_REDUCED_THRESHOLD_CZK`, `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` from `shared/constants/sellerMode.ts`. Per-organization overrides live on `parties` (`commission_rate_override`, `reduced_commission_rate_override`, `commission_threshold_override`) and are resolved by `resolveFeeSchedule()` in `shared/utils/billingFeeCalc.ts`.
+- **Tables:** `parties` (`seller_mode`), `order_commission_ledger` (`gross_amount`, `commission_amount`, `net_payable`, `withheld_amount`, `status`, `hold_until`, `created_at`) — the single source for both seller modes now.
+- **Constants:** `SELLER_MODE`, `COMMISSION_RATE`, `REDUCED_COMMISSION_RATE`, `COMMISSION_REDUCED_THRESHOLD_CZK`, `OWN_COMPANY_PAYOUT_HOLD_DAYS`, `NO_ICO_DEDUCTION_RATE`, `PAYOUT_HOLD_DAYS`, `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` from `shared/constants/sellerMode.ts`. Per-organization overrides live on `parties` (`commission_rate_override`, `reduced_commission_rate_override`, `commission_threshold_override`) and are resolved by `resolveFeeSchedule()` in `shared/utils/billingFeeCalc.ts`.
 - Reads only; scoped to `ctx.parties`.
 
 ## Related pages
 
-- [Payouts](/docs/en/admin/payouts) - the per-organization page where fees are paid and commission payouts released
+- [Payouts](/docs/en/admin/payouts) - the per-organization page where payouts are actually released
 - [Organizations](/docs/en/admin/parties) - the Seller Mode card that decides which pricing model an org is on
-- [Reports](/docs/en/admin/reports) - monthly billing periods and the income-tax CSV export
+- [Reports](/docs/en/admin/reports) - monthly statements and the income-tax CSV export

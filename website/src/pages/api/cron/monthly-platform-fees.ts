@@ -1,11 +1,15 @@
 import type { APIRoute } from "astro";
 import { createAdminClient } from "@/lib/supabase";
-import { computeMonthlyFeesForPeriod } from "@shared/services/monthlyFeeService";
-import { sendMonthlyFeeNotice } from "@/lib/integrations/email";
+import { recomputeBillingPeriod } from "@shared/services/billingPeriodService";
+import { sendMonthlyStatementNotice } from "@/lib/integrations/email";
 
 // Called monthly by Supabase pg_cron (see supabase/migrations/20260103000073_monthly_fee_cron.sql)
-// on the 1st of each month to bill own_company parties for the previous month's platform fee.
-// Protected by a shared secret rather than a user session — this has no logged-in caller.
+// on the 1st of each month to generate every active party's previous-month statement — gross
+// earned, commission deducted, net payable, and how much of that is already paid vs still
+// outstanding as of generation time (shared/services/billingPeriodService.ts). This used to
+// only bill own_company parties for a fee they owed the platform; now every seller_mode pays
+// per-order via order_commission_ledger, so this is a read-only earnings statement for
+// everyone, not a remittance request. Protected by a shared secret — no logged-in caller here.
 export const POST: APIRoute = async ({ request }) => {
   const secret = import.meta.env.CRON_SECRET;
   if (!secret || request.headers.get("x-cron-secret") !== secret) {
@@ -13,12 +17,17 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const now = new Date();
-  const previousMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  const year = now.getUTCFullYear();
+  const monthIndex0 = now.getUTCMonth() - 1 < 0 ? 11 : now.getUTCMonth() - 1;
+  const prevYear = now.getUTCMonth() - 1 < 0 ? year - 1 : year;
 
   const adminClient = createAdminClient();
-  const { error, created } = await computeMonthlyFeesForPeriod(adminClient, previousMonth);
-  if (error) {
-    return new Response(JSON.stringify({ ok: false, error: error.message }), {
+  const { data: parties, error: partiesErr } = await adminClient
+    .from("parties")
+    .select("id, name, billing_email, lang")
+    .eq("status", "active");
+  if (partiesErr) {
+    return new Response(JSON.stringify({ ok: false, error: partiesErr.message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
@@ -26,32 +35,45 @@ export const POST: APIRoute = async ({ request }) => {
 
   const notified: string[] = [];
   const skipped: string[] = [];
-  for (const fee of created) {
-    if (!fee.billingEmail) {
-      skipped.push(fee.partyId);
-      continue;
-    }
+  const failed: string[] = [];
+
+  for (const party of parties ?? []) {
     try {
-      await sendMonthlyFeeNotice({
-        to: fee.billingEmail,
-        partyName: fee.partyName,
-        periodMonth: fee.periodMonth,
-        turnoverAmount: fee.turnoverAmount,
-        feeAmount: fee.feeAmount,
-        currency: fee.currency,
-        lang: fee.lang,
+      const { error, row } = await recomputeBillingPeriod(adminClient, party.id, prevYear, monthIndex0, { forceRecompute: true });
+      if (error || !row || row.grossRevenue <= 0) {
+        skipped.push(party.id);
+        continue;
+      }
+      if (!party.billing_email) {
+        skipped.push(party.id);
+        continue;
+      }
+      await sendMonthlyStatementNotice({
+        to: party.billing_email,
+        partyName: party.name,
+        periodMonth: row.periodStart,
+        grossRevenue: row.grossRevenue,
+        feeAmount: row.feeAmount,
+        netPayout: row.netPayout,
+        paidAmount: row.paidAmount,
+        outstandingAmount: row.outstandingAmount,
+        currency: row.currency,
+        lang: party.lang === "en" ? "en" : "cs",
       });
-      await adminClient.from("monthly_platform_fees").update({ notified_at: new Date().toISOString() }).eq("id", fee.id);
-      notified.push(fee.partyId);
+      notified.push(party.id);
     } catch {
-      // A failed email send shouldn't roll back the fee row or block the rest of the batch —
-      // the admin panel still shows the unpaid fee even if the notice never arrived.
-      skipped.push(fee.partyId);
+      failed.push(party.id);
     }
   }
 
   return new Response(
-    JSON.stringify({ ok: true, period: previousMonth.toISOString().slice(0, 10), created: created.length, notified: notified.length, skipped: skipped.length }),
+    JSON.stringify({
+      ok: true,
+      period: `${prevYear}-${String(monthIndex0 + 1).padStart(2, "0")}-01`,
+      notified: notified.length,
+      skipped: skipped.length,
+      failed: failed.length,
+    }),
     { headers: { "Content-Type": "application/json" } }
   );
 };

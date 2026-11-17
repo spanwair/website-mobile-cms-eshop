@@ -8,11 +8,14 @@ export const SELLER_MODE = {
 
 export type SellerModeValue = (typeof SELLER_MODE)[keyof typeof SELLER_MODE];
 
-// Standard platform commission taken from gross sale price. Currently applied to BOTH seller
-// modes by recordCommissionForOrder (shared/services/commissionLedgerService.ts) — that is
-// the live, enforced rate today. NO_ICO_DEDUCTION_RATE below is the real target rate for
-// smalljobs_commission once Phase 2 lands; until then this stays the enforced value for both.
-export const COMMISSION_RATE = 0.1;
+// Standard own_company platform commission rate, taken from gross sale price, per order
+// (shared/services/commissionLedgerService.ts). Flat 5% for everyone as of 2026-11, no
+// turnover limit — previously 10% up to COMMISSION_REDUCED_THRESHOLD_CZK. Changing this one
+// constant (or a party's commission_rate_override) is the only thing needed to revert or
+// adjust it; REDUCED_COMMISSION_RATE/COMMISSION_REDUCED_THRESHOLD_CZK below stay independent
+// so a future differentiated tier (global or per-party) remains fully supported.
+// smalljobs_commission (no-IČO) sellers are unaffected — they pay NO_ICO_DEDUCTION_RATE, not this.
+export const COMMISSION_RATE = 0.05;
 
 // Smalljobs s.r.o.'s VAT-payer status is not yet confirmed (see shared/constants/company.ts).
 // Flip this on only once that is confirmed — until then tax is computed as 0 and documents
@@ -26,6 +29,12 @@ export const DEFAULT_VAT_RATE = 21;
 // Covers the 14-day statutory withdrawal window plus a buffer for reklamace/chargebacks
 // before Smalljobs releases funds it may still need to refund a consumer.
 export const PAYOUT_HOLD_DAYS = 60;
+
+// How long an own_company seller's net payout is held after payment, in days. Shorter than
+// PAYOUT_HOLD_DAYS above — own_company sellers carry their own statutory seller obligations
+// directly (unlike the commissionaire arrangement), so this only needs to cover the 14-day
+// consumer withdrawal window itself, not an extra buffer for Smalljobs acting as seller of record.
+export const OWN_COMPANY_PAYOUT_HOLD_DAYS = 14;
 
 // --- Tiered own_company commission (public pricing + monthly billing) ---
 // These three numbers are the SINGLE SOURCE OF TRUTH for the own_company platform fee and for

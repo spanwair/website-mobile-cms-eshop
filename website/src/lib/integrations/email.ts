@@ -270,15 +270,19 @@ export async function sendReviewRequest(opts: {
   });
 }
 
-// Sent monthly to own_company parties by /api/cron/monthly-platform-fees when their platform
-// fee for the previous month is computed — they have no per-order deduction (unlike
-// smalljobs_commission), so this is the only notice they get before paying by bank transfer.
-export async function sendMonthlyFeeNotice(opts: {
+// Sent monthly to every active party by /api/cron/monthly-platform-fees once their previous
+// month's statement is computed (shared/services/billingPeriodService.ts, aggregated from
+// order_commission_ledger for every seller_mode) — informational only: paying out happens any
+// time via the ledger (website/src/pages/admin/payouts), never gated on this email.
+export async function sendMonthlyStatementNotice(opts: {
   to: string;
   partyName: string;
-  periodMonth: string; // "YYYY-MM-DD", first day of the billed month
-  turnoverAmount: number;
+  periodMonth: string; // "YYYY-MM-DD", first day of the statement month
+  grossRevenue: number;
   feeAmount: number;
+  netPayout: number;
+  paidAmount: number;
+  outstandingAmount: number;
   currency?: string;
   lang?: AppLanguage;
 }): Promise<void> {
@@ -286,66 +290,28 @@ export async function sendMonthlyFeeNotice(opts: {
   const t = getT(lang);
   // timeZone: 'UTC' is required here -- periodMonth is a UTC date-only string ("YYYY-MM-DD",
   // midnight UTC on the 1st). Without it, toLocaleDateString renders in the server's local
-  // timezone, which can roll a UTC month boundary back into the PREVIOUS month (e.g. any
-  // timezone behind UTC on the 1st at 00:00) -- a bod 6 audit finding, fixed for both monthly-
-  // fee and fee-tier-change emails (see sendFeeTierChangeNotice below).
+  // timezone, which can roll a UTC month boundary back into the PREVIOUS month.
   const monthLabel = new Date(opts.periodMonth).toLocaleDateString(lang === 'en' ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long', timeZone: 'UTC' });
+  const ms = t.email.monthlyStatement;
 
   const html = `
-    <h1>${t.email.monthlyFeeNotice.headingPrefix}${opts.partyName}</h1>
-    <p>${t.email.monthlyFeeNotice.intro}${monthLabel}:</p>
+    <h1>${ms.headingPrefix}${opts.partyName}</h1>
+    <p>${ms.intro}${monthLabel}:</p>
     <table cellpadding="8" cellspacing="0" style="width:100%;max-width:420px">
-      <tr><td>${t.email.monthlyFeeNotice.turnoverLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.turnoverAmount, lang, opts.currency)}</strong></td></tr>
-      <tr><td>${t.email.monthlyFeeNotice.feeLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.feeAmount, lang, opts.currency)}</strong></td></tr>
+      <tr><td>${ms.turnoverLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.grossRevenue, lang, opts.currency)}</strong></td></tr>
+      <tr><td>${ms.feeLabel}</td><td style="text-align:right">${formatPrice(opts.feeAmount, lang, opts.currency)}</td></tr>
+      <tr><td>${ms.netLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.netPayout, lang, opts.currency)}</strong></td></tr>
+      <tr><td>${ms.paidLabel}</td><td style="text-align:right">${formatPrice(opts.paidAmount, lang, opts.currency)}</td></tr>
+      <tr><td>${ms.outstandingLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.outstandingAmount, lang, opts.currency)}</strong></td></tr>
     </table>
-    <p>${t.email.monthlyFeeNotice.paymentInstructions}</p>
+    <p>${ms.outstandingNote}</p>
   `;
 
   if (!ociConfigured()) {
-    console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${t.email.monthlyFeeNotice.subjectPrefix}${monthLabel} | FEE: ${opts.feeAmount}\n`);
+    console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${ms.subjectPrefix}${monthLabel} | NET: ${opts.netPayout} | OUTSTANDING: ${opts.outstandingAmount}\n`);
     return;
   }
-  await sendEmail({ to: opts.to, subject: `${t.email.monthlyFeeNotice.subjectPrefix}${monthLabel}`, html });
-}
-
-// Sent by /api/cron/auto-fee-tier the moment an own_company party's fee_mode actually changes
-// (never on a month where it stays the same) -- previousFeeMode/newFeeMode are always
-// 'percentage' or 'reduced', decided by shared/utils/billingFeeCalc.ts autoFeeMode.
-export async function sendFeeTierChangeNotice(opts: {
-  to: string;
-  partyName: string;
-  periodStart: string; // "YYYY-MM-DD", first day of the evaluated (just-closed) month
-  previousFeeMode: "percentage" | "reduced";
-  newFeeMode: "percentage" | "reduced";
-  grossRevenueAmount: number;
-  thresholdAmount: number;
-  currency?: string;
-  lang?: AppLanguage;
-}): Promise<void> {
-  const lang = opts.lang ?? 'cs';
-  const t = getT(lang);
-  const monthLabel = new Date(opts.periodStart).toLocaleDateString(lang === 'en' ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long', timeZone: 'UTC' });
-  const ft = t.email.feeTierChange;
-  const toReduced = opts.newFeeMode === 'reduced';
-  const modeLabel = (mode: "percentage" | "reduced") => (mode === 'reduced' ? ft.modeReduced : ft.modePercentage);
-
-  const html = `
-    <h1>${toReduced ? ft.headingToReduced : ft.headingToPercentage}${opts.partyName}</h1>
-    <p>${ft.intro}${monthLabel}:</p>
-    <table cellpadding="8" cellspacing="0" style="width:100%;max-width:460px">
-      <tr><td>${ft.revenueLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.grossRevenueAmount, lang, opts.currency)}</strong></td></tr>
-      <tr><td>${ft.thresholdLabel}</td><td style="text-align:right"><strong>${formatPrice(opts.thresholdAmount, lang, opts.currency)}</strong></td></tr>
-      <tr><td>${ft.previousModeLabel}</td><td style="text-align:right">${modeLabel(opts.previousFeeMode)}</td></tr>
-      <tr><td>${ft.newModeLabel}</td><td style="text-align:right"><strong>${modeLabel(opts.newFeeMode)}</strong></td></tr>
-    </table>
-    <p>${toReduced ? ft.explanationToReduced : ft.explanationToPercentage}</p>
-  `;
-
-  if (!ociConfigured()) {
-    console.log(`\n[email:dev] TO: ${opts.to} | SUBJECT: ${ft.subjectPrefix}${monthLabel} | MODE: ${opts.previousFeeMode} -> ${opts.newFeeMode}\n`);
-    return;
-  }
-  await sendEmail({ to: opts.to, subject: `${ft.subjectPrefix}${monthLabel}`, html });
+  await sendEmail({ to: opts.to, subject: `${ms.subjectPrefix}${monthLabel}`, html });
 }
 
 // Sent to a smalljobs_commission (no-IČO) party's billing_email the moment an order's payout

@@ -5,15 +5,10 @@ import CommissionCalculator from "../components/landing/sections/CommissionCalcu
 import OrderValueBreakdown from "../components/landing/sections/OrderValueBreakdown.astro";
 import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
-import {
-  COMMISSION_RATE,
-  REDUCED_COMMISSION_RATE,
-  NO_ICO_DEDUCTION_RATE,
-} from "@shared/constants/sellerMode";
+import { COMMISSION_RATE, NO_ICO_DEDUCTION_RATE } from "@shared/constants/sellerMode";
 
 const t = useT(Astro);
 const commissionPct = Math.round(COMMISSION_RATE * 100);
-const reducedPct = Math.round(REDUCED_COMMISSION_RATE * 100);
 const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 ---
 
@@ -23,10 +18,6 @@ const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
       <div class="pricing-summary-card" data-reveal>
         <span class="pricing-summary-num font-display">{commissionPct} %</span>
         <span class="pricing-summary-label">{t.landing.pricingPage.summaryCommissionLabel}</span>
-      </div>
-      <div class="pricing-summary-card" data-reveal>
-        <span class="pricing-summary-num font-display">{reducedPct} %</span>
-        <span class="pricing-summary-label">{t.landing.pricingPage.summaryReducedLabel}</span>
       </div>
       <div class="pricing-summary-card" data-reveal>
         <span class="pricing-summary-num font-display">{employmentPct} %</span>
@@ -56,7 +47,7 @@ const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
      an abrupt, undesigned cut — restore breathing room before that color change. */
   :global(.page-hero) { padding-bottom: var(--landing-section-y); }
 
-  .pricing-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 32px 0; max-width: 480px; }
+  .pricing-summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 32px 0; max-width: 340px; }
   .pricing-summary-card {
     background: var(--bg-page); border: 1px solid var(--border-default); border-radius: var(--radius-lg);
     padding: 16px; display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow-sm);

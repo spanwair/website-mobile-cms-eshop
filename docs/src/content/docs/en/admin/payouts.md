@@ -1,10 +1,10 @@
 ---
 title: Payouts
-description: Per-organization payout ledger for commission sellers and platform-fee history for own-company sellers
+description: Per-organization order-level commission ledger with Unpaid/Paid tabs and monthly statements
 ---
 
 Payouts is the per-organization money page.
-What it shows depends entirely on the active org's `seller_mode`: a commission seller sees an order-by-order payout ledger, while an own-company seller sees their monthly platform-fee history (with the option to pay a fee online through Stripe).
+Both seller modes now read from the same per-order ledger (`order_commission_ledger`) — a commission seller and an own-company seller both see their real orders, split across an **Unpaid** and a **Paid** tab, instead of two different UIs.
 The cross-org summary lives in [Billing](/docs/en/admin/billing); this page is where you act on a single organization.
 
 ## Permission required
@@ -16,57 +16,40 @@ The cross-org summary lives in [Billing](/docs/en/admin/billing); this page is w
 Without `MANAGE_AUDIT` you are redirected to `/admin`.
 An org with no active party sends you to `/admin/setup` (owner: `/admin/parties/new`).
 
-## Commission sellers (`smalljobs_commission`)
+## Tabs: Unpaid / Paid
 
-### Summary tiles
+Switched via `?status=unpaid|paid` on the same page.
 
-- **Payout progress** - this month's payout total vs the 12 000 Kč monthly limit (`NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK`), drawn as a progress bar.
-- **Held**, **Eligible**, **Paid**, **Withheld** - running totals across the ledger.
+- **Unpaid** - every ledger row still `status = 'held'`. Each row's computed state is either **Held** (inside its hold window, `hold_until` in the future) or **Eligible** (hold expired, ready to pay). own_company orders hold for `OWN_COMPANY_PAYOUT_HOLD_DAYS` (14 days); `smalljobs_commission` orders hold for `PAYOUT_HOLD_DAYS` (60 days, covering the statutory withdrawal window plus a chargeback buffer).
+- **Paid** - every row `status = 'paid'`, with `paid_at` and the `payout_reference` that was entered.
 
-### The ledger table
+Reversed (refunded) rows are excluded from both tabs; a small footnote shows how many were excluded.
 
-Each row is one order's commission entry (up to 200 most recent), with columns:
-Order number, Gross, Tax, Commission, Net payable, Withheld, Hold until, Status, Actions.
+Commission-mode parties also see a **payout progress** bar against the 12 000 Kč/month limit (`NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK`) and a **withheld** tile when any order's net exceeded that month's remaining room.
 
-| Status | Meaning |
-|---|---|
-| Held | Inside its hold window (`hold_until` in the future). A 60-day hold protects against refunds/chargebacks. |
-| Eligible | `held` in the database but the hold has expired - ready to pay out. |
-| Paid | Already paid out. |
-| Reversed | Cancelled (e.g. the order was refunded); excluded from totals. |
+## Viewing and paying orders
 
-### Releasing a payout
+A **View orders** button opens a modal (`OrderLedgerModal`) with the full list for the active tab: order number, paid date, gross, VAT, commission, net payable, withheld, and either the release date (Unpaid) or paid date/reference (Paid).
 
-On an **Eligible** row, enter an optional **payout reference** (your bank transfer id) and click **Mark paid** (a `confirm()` guards it).
-This posts `action=mark_paid`, which sets the ledger row to `paid` with `paid_at`, `paid_by`, and the reference - but only if the row is still `held` and belongs to your party (a guard against double-paying).
+On the **Unpaid** tab, the modal has one batch action: enter an optional **payout reference** and click **Pay all (N)** to mark every *eligible* row (hold already expired) as paid at once — `action=mark_paid_batch`, scoped to `party_id` + `status = 'held'` + `hold_until <= now()`, so a still-held row can never be paid early and a stale request can never touch another party's rows.
 
-## Own-company sellers (`own_company`)
+The modal has a second sub-tab, **Monthly statements**, showing the read-only history described below.
 
-Instead of a ledger, this mode renders the `PlatformFeeHistory` of up to 24 monthly billing periods.
-The fee is 10% of each month's turnover, dropping to a reduced 5% on the whole month once turnover passes 29 900 Kč (both rates and the threshold can be overridden per organization).
-Kytka z Beskyd, which starts in own-company mode, would see its monthly platform fees here.
+## Monthly statements
 
-### Paying a monthly fee online (Stripe)
-
-The **Pay fee** action posts `action=pay_fee_online`, reads the period's `fee_amount` from `eshop_billing_periods`, and starts a Stripe Checkout session in CZK.
-You are redirected to Stripe; on return the page verifies the checkout session actually reached `payment_status = "paid"` before recording it against the period.
-Cancelling returns you with a "payment cancelled" notice.
-
-### Marking a fee paid manually (owner only)
-
-Confirming an offline payment as received is the platform's call, never the organization's own.
-Only the global **owner** sees **Mark fee paid** (`action=mark_fee_paid_manual`), which marks the period's fee paid through the service-role client without an online payment.
+A statement is a frozen, point-in-time snapshot of one calendar month, generated by a monthly cron job (`/api/cron/monthly-platform-fees`) for every active party and emailed to its billing address: gross revenue, commission deducted, net earned, how much of that was already paid as of generation time, and how much was still outstanding at that moment.
+It is informational only — paying a seller never happens against a statement, only against the live ledger above, and can happen any time, not just at month end.
 
 ## Data & storage (cloud)
 
-- **Tables:** `order_commission_ledger` (`gross_amount`, `tax_amount`, `commission_amount`, `net_payable`, `withheld_amount`, `status`, `hold_until`, `paid_at`, `paid_by`, `payout_reference`), `eshop_billing_periods` (`period_start`, `fee_amount`), `parties` (`seller_mode`).
-- **Services:** `listBillingPeriods`, `markBillingPeriodFeePaid` (`billingPeriodService`); `createCheckoutSession`, `retrieveCheckoutSession` (Stripe integration).
-- **Client:** manual fee-paid and Stripe-confirmed writes use `createAdminClient()` (service role); the ledger mark-paid uses the session client with party/status guards.
-- **Component:** `PlatformFeeHistory`.
+- **Tables:** `order_commission_ledger` (`gross_amount`, `tax_amount`, `commission_amount`, `net_payable`, `withheld_amount`, `status`, `hold_until`, `paid_at`, `paid_by`, `payout_reference`) — written for every seller_mode now; `eshop_billing_periods` (`gross_revenue`, `fee_amount`, `net_payout`, `paid_amount`, `outstanding_amount`) — the monthly statement snapshot, aggregated from the ledger via the `get_billing_period_totals` RPC.
+- **Services:** `recordCommissionForOrder`, `reverseCommissionForOrder` (`commissionLedgerService`); `listBillingPeriods`, `recomputeBillingPeriod` (`billingPeriodService`).
+- **Client:** the batch mark-paid write uses the session client with party/status/hold guards; the cron uses `createAdminClient()` (service role).
+- **Components:** `PayoutsTabs`, `OrderLedgerModal`.
 
 ## Related pages
 
 - [Billing](/docs/en/admin/billing) - the cross-organization overview and the Resolve button that lands here
-- [Organizations](/docs/en/admin/parties) - the Seller Mode card that determines which view this page shows
-- [Reports](/docs/en/admin/reports) - billing periods and the income-tax CSV that summarizes the same figures
-- [Orders](/docs/en/admin/orders) - each commission ledger entry corresponds to one order
+- [Organizations](/docs/en/admin/parties) - the Seller Mode card and the per-party commission rate override
+- [Reports](/docs/en/admin/reports) - the same monthly statements, as a CSV export for income tax
+- [Orders](/docs/en/admin/orders) - each ledger entry corresponds to one order

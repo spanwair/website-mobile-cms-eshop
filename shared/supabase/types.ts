@@ -1,10 +1,4 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   graphql_public: {
@@ -16,12 +10,7 @@ export type Database = {
     };
     Functions: {
       graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
+        Args: { extensions?: Json; operationName?: string; query?: string; variables?: Json };
         Returns: Json;
       };
     };
@@ -886,6 +875,8 @@ export type Database = {
           id: string;
           net_payout: number;
           net_revenue: number;
+          outstanding_amount: number;
+          paid_amount: number;
           party_id: string;
           period_end: string;
           period_start: string;
@@ -907,6 +898,8 @@ export type Database = {
           id?: string;
           net_payout?: number;
           net_revenue?: number;
+          outstanding_amount?: number;
+          paid_amount?: number;
           party_id: string;
           period_end: string;
           period_start: string;
@@ -927,6 +920,8 @@ export type Database = {
           id?: string;
           net_payout?: number;
           net_revenue?: number;
+          outstanding_amount?: number;
+          paid_amount?: number;
           party_id?: string;
           period_end?: string;
           period_start?: string;
@@ -3629,26 +3624,14 @@ export type Database = {
         Returns: undefined;
       };
       can_access_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
-      ensure_variant_inventory_item: {
-        Args: { p_variant_id: string };
-        Returns: undefined;
-      };
+      ensure_variant_inventory_item: { Args: { p_variant_id: string }; Returns: undefined };
       get_billing_period_totals: {
-        Args: {
-          p_party_id: string;
-          p_range_end: string;
-          p_range_start: string;
-        };
+        Args: { p_party_id: string; p_range_end: string; p_range_start: string };
         Returns: Json;
       };
       get_my_role: { Args: Record<PropertyKey, never>; Returns: number };
       get_product_activity_log: {
-        Args: {
-          p_from?: string;
-          p_limit?: number;
-          p_offset?: number;
-          p_party_id: string;
-        };
+        Args: { p_from?: string; p_limit?: number; p_offset?: number; p_party_id: string };
         Returns: {
           actor_id: string;
           actor_name: string;
@@ -3669,17 +3652,9 @@ export type Database = {
           total_count: number;
         }[];
       };
-      get_product_overview_stats: {
-        Args: { p_days?: number; p_party_id: string };
-        Returns: Json;
-      };
+      get_product_overview_stats: { Args: { p_days?: number; p_party_id: string }; Returns: Json };
       get_top_products_paged: {
-        Args: {
-          p_from?: string;
-          p_limit?: number;
-          p_offset?: number;
-          p_party_id: string;
-        };
+        Args: { p_from?: string; p_limit?: number; p_offset?: number; p_party_id: string };
         Returns: {
           id: string;
           profit: number;
@@ -3689,10 +3664,7 @@ export type Database = {
           total_count: number;
         }[];
       };
-      get_user_permissions: {
-        Args: { p_party_id: string; p_user_id: string };
-        Returns: number;
-      };
+      get_user_permissions: { Args: { p_party_id: string; p_user_id: string }; Returns: number };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_admin_of: { Args: { p_party_id: string }; Returns: boolean };
       is_owner: { Args: Record<PropertyKey, never>; Returns: boolean };
@@ -3719,10 +3691,7 @@ export type Database = {
         }[];
       };
       party_is_active: { Args: { p_party_id: string }; Returns: boolean };
-      report_customer_stats: {
-        Args: { p_months?: number; p_party_id: string };
-        Returns: Json;
-      };
+      report_customer_stats: { Args: { p_months?: number; p_party_id: string }; Returns: Json };
       report_monthly_series: {
         Args: { p_months?: number; p_party_id: string };
         Returns: {
@@ -3747,10 +3716,7 @@ export type Database = {
           status: string;
         }[];
       };
-      seed_integrated_footer_badges: {
-        Args: { target_party: string };
-        Returns: undefined;
-      };
+      seed_integrated_footer_badges: { Args: { target_party: string }; Returns: undefined };
       subscribe_to_newsletter: {
         Args: { p_email: string; p_party_id: string };
         Returns: undefined;
@@ -3792,10 +3758,7 @@ export type Database = {
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<
-  keyof Database,
-  "public"
->];
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
@@ -3807,19 +3770,15 @@ export type Tables<
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R;
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R;
       }
       ? R
@@ -3828,15 +3787,14 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I;
     }
@@ -3852,15 +3810,14 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U;
     }
@@ -3876,15 +3833,14 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never) = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
@@ -3899,9 +3855,7 @@ export type CompositeTypes<
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never) = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]

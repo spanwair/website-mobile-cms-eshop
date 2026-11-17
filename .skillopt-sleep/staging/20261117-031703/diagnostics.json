@@ -1,0 +1,141 @@
+{
+  "night": 6,
+  "backend": "claude",
+  "gate_mode": "on",
+  "n_tasks": 29,
+  "baseline_score": 0.0,
+  "candidate_score": 0.0,
+  "accepted": false,
+  "n_applied_edits": 0,
+  "n_rejected_edits": 0,
+  "call_error": "Claude CLI spawn failed: [Errno 2] No such file or directory: 'claude'",
+  "reflect_raw_head": "",
+  "holdout_detail": [
+    {
+      "id": "task_5f5cd7930b7d",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_c89070a817eb",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_610ab794b3ca",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_39f3d3a738e9",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_53dfc2283f9e",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_dab3cc76dc08",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_95df966bd2cf",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_07a623228c24",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_42426f0da31f",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_8722d22cf631",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_e0fed1cbb3f4",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_c9e269a81e7b",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_7ef8b6fc5d81",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    },
+    {
+      "id": "task_dbdd6911d73d",
+      "reference_kind": "none",
+      "hard": 0.0,
+      "soft": 0.0,
+      "response_len": 0,
+      "response_head": "",
+      "why": "judge-parse-failed"
+    }
+  ]
+}

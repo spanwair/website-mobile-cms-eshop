@@ -1,5 +1,5 @@
 import { SMALLJOBS_COMPANY } from "../constants/company";
-import { COMMISSION_RATE, VAT_ENABLED } from "../constants/sellerMode";
+import { NO_ICO_DEDUCTION_RATE, VAT_ENABLED } from "../constants/sellerMode";
 
 // Auto-generates the public consumer notice for a party that sells via Smalljobs s.r.o.
 // (commission mode). Generated from live config rather than hand-authored per store, so it
@@ -15,7 +15,11 @@ export function buildSmalljobsSaleNoticeMarkdown(lang: "cs" | "en", storeName: s
   const vatLine = VAT_ENABLED && SMALLJOBS_COMPANY.vatPayer
     ? (lang === "cs" ? `Plátce DPH${SMALLJOBS_COMPANY.dic ? `, DIČ ${SMALLJOBS_COMPANY.dic}` : ""}.` : `VAT payer${SMALLJOBS_COMPANY.dic ? `, VAT ID ${SMALLJOBS_COMPANY.dic}` : ""}.`)
     : (lang === "cs" ? "Neplátce DPH podle § 6 zákona o dani z přidané hodnoty." : "Not registered as a VAT payer.");
-  const commissionPct = Math.round(COMMISSION_RATE * 100);
+  // This notice is only ever generated for smalljobs_commission (no-IČO) parties, so the
+  // deduction it must disclose is NO_ICO_DEDUCTION_RATE — NOT the unrelated own_company
+  // COMMISSION_RATE (a prior bug: this used to read COMMISSION_RATE here, understating the
+  // real 30% deduction to consumers).
+  const commissionPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 
   if (lang === "en") {
     return `## Sale via Smalljobs s.r.o.

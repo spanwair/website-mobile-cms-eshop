@@ -1,0 +1,191 @@
+---
+import type { BillingPeriodRow } from "@shared/services/billingPeriodService";
+import type { LedgerOrderRow } from "../../lib/payoutsTypes";
+import { useT, getLang } from "../../lib/i18n";
+
+interface Props {
+  partyId: string;
+  partyName: string;
+  status: "unpaid" | "paid";
+  orders: LedgerOrderRow[];
+  eligibleIds: string[];
+  statements: BillingPeriodRow[];
+}
+
+const { partyId, partyName, status, orders, eligibleIds, statements } = Astro.props;
+const t = useT(Astro);
+const lang = getLang(Astro);
+const pt = t.admin.payouts;
+const bt = t.admin.reports.billingPeriods;
+
+function fmt(n: number) {
+  return n.toLocaleString(lang === "en" ? "en-US" : "cs-CZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " Kč";
+}
+function fmtDate(d: string) {
+  return new Date(d).toLocaleDateString(lang === "en" ? "en-US" : "cs-CZ");
+}
+function periodLabel(periodStart: string) {
+  return new Date(`${periodStart}T00:00:00Z`).toLocaleDateString(lang === "en" ? "en-US" : "cs-CZ", { year: "numeric", month: "long", timeZone: "UTC" });
+}
+
+const statusLabel: Record<string, string> = {
+  held: pt.statusHeld,
+  eligible: pt.statusEligible,
+  paid: pt.statusPaid,
+};
+const statusBadgeClass: Record<string, string> = {
+  held: "badge-pending",
+  eligible: "badge-active",
+  paid: "badge-active",
+};
+---
+
+<div class="ol-overlay" data-ol-overlay={partyId} hidden>
+  <div class="ol-modal" role="dialog" aria-modal="true" aria-label={`${pt.modalTitlePrefix}${partyName}`}>
+    <div class="ol-header">
+      <h2>{pt.modalTitlePrefix}{partyName}</h2>
+      <button type="button" class="ol-close" data-ol-close aria-label={t.common.close}>&times;</button>
+    </div>
+
+    <div class="settings-tabs">
+      <div class="settings-tabs-list">
+        <button type="button" class="settings-tab settings-tab--active" data-ol-subtab="orders">{pt.modalOrdersTab}</button>
+        <button type="button" class="settings-tab" data-ol-subtab="statements">{pt.modalStatementsTab}</button>
+      </div>
+    </div>
+
+    <div class="ol-panel" data-ol-panel="orders">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{pt.colOrder}</th><th>{pt.colDate}</th><th>{pt.colGross}</th><th>{pt.colTax}</th>
+            <th>{pt.colCommission}</th><th>{pt.colNet}</th><th>{pt.colWithheld}</th>
+            {status === "unpaid" ? <th>{pt.colHoldUntil}</th> : <th>{pt.paidAtLabel}</th>}
+            <th>{pt.colStatus}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((o) => (
+            <tr>
+              <td style="font-family:monospace;font-size:13px">{o.orderNumber}</td>
+              <td style="font-size:12px;color:var(--text-muted)">{fmtDate(o.date)}</td>
+              <td>{fmt(o.gross)}</td>
+              <td>{fmt(o.tax)}</td>
+              <td>{fmt(o.commission)}</td>
+              <td style="font-weight:600">{fmt(o.net)}</td>
+              <td>{o.withheld > 0 ? <span style="color:var(--error)">{fmt(o.withheld)}</span> : <span style="color:var(--text-muted)">—</span>}</td>
+              {status === "unpaid" ? (
+                <td style="font-size:12px;color:var(--text-muted)">{fmtDate(o.holdUntil)}</td>
+              ) : (
+                <td style="font-size:12px;color:var(--text-muted)">
+                  {o.paidAt && fmtDate(o.paidAt)}
+                  {o.payoutReference && <div>{pt.referenceLabel}: {o.payoutReference}</div>}
+                </td>
+              )}
+              <td><span class={`badge ${statusBadgeClass[o.computedStatus]}`}>{statusLabel[o.computedStatus]}</span></td>
+            </tr>
+          ))}
+          {orders.length === 0 && (
+            <tr><td colspan={9} style="text-align:center;padding:24px;color:var(--text-muted)">{pt.noOrders}</td></tr>
+          )}
+        </tbody>
+      </table>
+
+      {status === "unpaid" && eligibleIds.length === 0 && orders.length > 0 && (
+        <p class="ol-note">{pt.noneEligibleYet}</p>
+      )}
+    </div>
+
+    <div class="ol-panel" data-ol-panel="statements" hidden>
+      <p class="ol-note" style="margin-bottom:12px">{bt.hint}</p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{bt.colPeriod}</th><th>{bt.colGross}</th><th>{bt.colFeeAmount}</th>
+            <th>{bt.colNetPayout}</th><th>{bt.colPaidAmount}</th><th>{bt.colOutstanding}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {statements.map((p) => (
+            <tr>
+              <td style="text-transform:capitalize">{periodLabel(p.periodStart)}</td>
+              <td>{fmt(p.grossRevenue)}</td>
+              <td>{fmt(p.feeAmount)}</td>
+              <td style="font-weight:600">{fmt(p.netPayout)}</td>
+              <td>{fmt(p.paidAmount)}</td>
+              <td>{p.outstandingAmount > 0 ? <strong>{fmt(p.outstandingAmount)}</strong> : fmt(0)}</td>
+            </tr>
+          ))}
+          {statements.length === 0 && (
+            <tr><td colspan={6} style="text-align:center;padding:24px;color:var(--text-muted)">{bt.noPeriods}</td></tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Multiple stores -> multiple modal instances on one page, each keyed by its party id
+  // (data-ol-overlay="<partyId>"). Astro dedupes this script to run once per page already;
+  // the wired-flag guard is just defensive in case that ever changes.
+  document.querySelectorAll<HTMLElement>("[data-ol-overlay]").forEach((overlay) => {
+    if (overlay.dataset.olWired) return;
+    overlay.dataset.olWired = "1";
+
+    const closeBtn = overlay.querySelector<HTMLElement>("[data-ol-close]");
+    const subtabs = overlay.querySelectorAll<HTMLButtonElement>("[data-ol-subtab]");
+    const panels = overlay.querySelectorAll<HTMLElement>("[data-ol-panel]");
+
+    closeBtn?.addEventListener("click", () => overlay.setAttribute("hidden", ""));
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.setAttribute("hidden", "");
+    });
+
+    subtabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        subtabs.forEach((t2) => t2.classList.remove("settings-tab--active"));
+        tab.classList.add("settings-tab--active");
+        const target = tab.dataset.olSubtab;
+        panels.forEach((p) => {
+          if (p.dataset.olPanel === target) p.removeAttribute("hidden");
+          else p.setAttribute("hidden", "");
+        });
+      });
+    });
+  });
+
+  document.querySelectorAll<HTMLElement>("[data-ol-open]").forEach((btn) => {
+    if (btn.dataset.olOpenWired) return;
+    btn.dataset.olOpenWired = "1";
+    btn.addEventListener("click", () => {
+      const overlay = document.querySelector<HTMLElement>(`[data-ol-overlay="${btn.dataset.olOpen}"]`);
+      overlay?.removeAttribute("hidden");
+    });
+  });
+</script>
+
+<style>
+  .ol-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex;
+    align-items: center; justify-content: center; z-index: 1000; padding: 20px;
+  }
+  .ol-overlay[hidden] { display: none; }
+  .ol-modal {
+    background: var(--bg-page); border-radius: var(--radius-lg); max-width: 920px; width: 100%;
+    max-height: 85vh; overflow-y: auto; padding: 24px; box-shadow: var(--shadow-lg);
+  }
+  .ol-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .ol-header h2 { font-size: 18px; margin: 0; }
+  .ol-close { background: none; border: none; font-size: 24px; line-height: 1; cursor: pointer; color: var(--text-muted); }
+  .settings-tabs { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--border-default); }
+  .settings-tabs-list { display: flex; gap: 4px; flex-wrap: wrap; }
+  .settings-tab {
+    background: none; padding: 10px 16px; font-size: 14px; font-weight: 600; color: var(--text-muted);
+    text-decoration: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer;
+  }
+  .settings-tab:hover { color: var(--text-primary); }
+  .settings-tab--active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+  .ol-panel[hidden] { display: none; }
+  .ol-note { font-size: 12px; color: var(--text-muted); margin-top: 12px; }
+</style>

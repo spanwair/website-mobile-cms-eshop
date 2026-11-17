@@ -4,8 +4,8 @@ import { NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK, NO_ICO_WITHHOLDING_EXPIRY_YEARS } from
 
 // Shared by both "order became paid" call sites (stripe webhook + checkoutFlow) so the
 // payout-limit-reached email composition (party lookup, currency) isn't duplicated between
-// them. Only relevant to smalljobs_commission (no-IČO) parties — own_company parties never
-// have a payout withheld, they're billed monthly instead (see monthlyFeeService.ts).
+// them. Only relevant to smalljobs_commission (no-IČO) parties — own_company parties have no
+// monthly payout cap at all (see commissionLedgerService.ts).
 // The recipient is the party's own billing_email, so the email must go out in the party's
 // own language — never the language of whichever customer's order triggered the limit.
 export async function notifyPayoutLimitReachedIfNeeded(

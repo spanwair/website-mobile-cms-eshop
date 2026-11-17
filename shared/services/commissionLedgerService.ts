@@ -5,17 +5,17 @@ import {
   NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK,
   NO_ICO_WITHHOLDING_EXPIRY_YEARS,
   PAYOUT_HOLD_DAYS,
+  OWN_COMPANY_PAYOUT_HOLD_DAYS,
 } from "../constants/sellerMode";
+import { resolveFeeSchedule } from "../utils/billingFeeCalc";
 
 // Called once from the "order became paid" path (both website/src/pages/api/stripe/webhook.ts
 // and website/src/lib/checkoutFlow.ts confirmStripeSession call this instead of duplicating
-// the split logic). Ledger-based collection is smalljobs_commission-only — is idempotent, safe
-// to call from both paths for the same order. own_company parties have a completely separate
-// pricing track (10% of monthly turnover, dropping to a reduced 5% above the threshold, billed
-// monthly rather than deducted per order) — see shared/services/monthlyFeeService.ts. The two
-// tracks do not stack: a smalljobs_commission party is never subject to the tiered commission, and an
-// own_company party never has a payout withheld — pick one constant set per seller_mode, never
-// mix them (this function previously, incorrectly, applied the own_company cap here).
+// the split logic) — for EVERY seller_mode now. Idempotent, safe to call from both paths for
+// the same order. The two seller modes still use independent rate/hold rules (own_company:
+// resolveFeeSchedule's progressive rate, short hold, no monthly cap; smalljobs_commission:
+// flat NO_ICO_DEDUCTION_RATE, 60-day hold, 12 000 Kč/month payout cap) — pick one set per
+// seller_mode, never mix them.
 export async function recordCommissionForOrder(
   client: SupabaseClient,
   orderId: string
@@ -27,16 +27,20 @@ export async function recordCommissionForOrder(
     .single();
   if (orderErr || !order) return { error: orderErr ? new Error(orderErr.message) : new Error("Order not found") };
 
-  // Backfilled here regardless of seller_mode — monthlyFeeService's turnover aggregation for
-  // own_company parties needs paid_at populated too, and this is the only "order became paid"
-  // write path in the codebase (grepped: no other `.update({ paid_at` call site exists).
+  // Backfilled here regardless of seller_mode — the monthly statement's turnover aggregation
+  // (shared/services/billingPeriodService.ts) needs paid_at populated too, and this is the only
+  // "order became paid" write path in the codebase (grepped: no other `.update({ paid_at` call site).
   const paidAt = order.paid_at ?? new Date().toISOString();
   if (!order.paid_at) {
     await client.from("orders").update({ paid_at: paidAt }).eq("id", orderId);
   }
 
-  const { data: party } = await client.from("parties").select("seller_mode").eq("id", order.party_id).single();
-  if (party?.seller_mode !== SELLER_MODE.SMALLJOBS_COMMISSION) return { error: null };
+  const { data: party } = await client
+    .from("parties")
+    .select("seller_mode, commission_rate_override, reduced_commission_rate_override, commission_threshold_override")
+    .eq("id", order.party_id)
+    .single();
+  if (!party) return { error: null };
 
   const { data: existing } = await client
     .from("order_commission_ledger")
@@ -48,9 +52,54 @@ export async function recordCommissionForOrder(
   const grossAmount = Number(order.total_amount);
   const taxAmount = Number(order.tax_amount ?? 0);
   const taxRate = grossAmount > 0 ? Math.round(((taxAmount / (grossAmount - taxAmount)) * 100) * 100) / 100 : 0;
-  // Flat 30% deduction, not capped at the order level — this replaces the platform's normal
-  // 10% commission entirely for this seller mode (it bundles the platform's cut with the
-  // social/health contributions Smalljobs withholds on the creator's behalf), see
+
+  const monthStart = new Date(Date.UTC(new Date(paidAt).getUTCFullYear(), new Date(paidAt).getUTCMonth(), 1)).toISOString();
+  const monthEnd = new Date(Date.UTC(new Date(paidAt).getUTCFullYear(), new Date(paidAt).getUTCMonth() + 1, 1)).toISOString();
+
+  if (party.seller_mode === SELLER_MODE.OWN_COMPANY) {
+    const schedule = resolveFeeSchedule(party);
+
+    // Progressive, not retroactive: this order's rate is decided by cumulative turnover
+    // INCLUDING it, not a whole-month rewrite of earlier orders once the threshold is crossed
+    // (that retroactive behavior only applied to the old monthly-aggregate invoice, which this
+    // per-order ledger replaces). Irrelevant while standardRate === reducedRate (the current
+    // default), only matters for a party with a differentiated custom override.
+    const { data: monthRows } = await client
+      .from("order_commission_ledger")
+      .select("gross_amount")
+      .eq("party_id", order.party_id)
+      .neq("status", "reversed")
+      .gte("created_at", monthStart)
+      .lt("created_at", monthEnd);
+    const turnoverSoFar = (monthRows ?? []).reduce((sum, r) => sum + Number(r.gross_amount), 0);
+    const commissionRate = turnoverSoFar + grossAmount > schedule.thresholdKc ? schedule.reducedRate : schedule.standardRate;
+
+    const commissionAmount = Math.round(grossAmount * commissionRate * 100) / 100;
+    const netPayable = Math.round((grossAmount - taxAmount - commissionAmount) * 100) / 100;
+    const holdUntil = new Date(new Date(paidAt).getTime() + OWN_COMPANY_PAYOUT_HOLD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+    const { error } = await client.from("order_commission_ledger").insert({
+      order_id: orderId,
+      party_id: order.party_id,
+      gross_amount: grossAmount,
+      tax_rate: taxRate,
+      tax_amount: taxAmount,
+      commission_rate: commissionRate,
+      commission_amount: commissionAmount,
+      net_payable: netPayable,
+      withheld_amount: 0,
+      withheld_expires_at: null,
+      currency: order.currency,
+      hold_until: holdUntil,
+      status: "held",
+    });
+    return { error: error ? new Error(error.message) : null, partyId: order.party_id };
+  }
+
+  if (party.seller_mode !== SELLER_MODE.SMALLJOBS_COMMISSION) return { error: null };
+
+  // Flat 30% deduction, not capped at the order level — this bundles the platform's cut with
+  // the social/health contributions Smalljobs withholds on the creator's behalf, see
   // NO_ICO_DEDUCTION_RATE.
   const commissionAmount = Math.round(grossAmount * NO_ICO_DEDUCTION_RATE * 100) / 100;
   const rawNet = Math.round((grossAmount - taxAmount - commissionAmount) * 100) / 100;
@@ -59,8 +108,6 @@ export async function recordCommissionForOrder(
   // receive at most NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK net per calendar month. Look up how much
   // has already been made payable this month (held/eligible/paid, i.e. not reversed) and only
   // release up to the remaining room; anything past that is withheld rather than paid.
-  const monthStart = new Date(Date.UTC(new Date(paidAt).getUTCFullYear(), new Date(paidAt).getUTCMonth(), 1)).toISOString();
-  const monthEnd = new Date(Date.UTC(new Date(paidAt).getUTCFullYear(), new Date(paidAt).getUTCMonth() + 1, 1)).toISOString();
   const { data: monthRows } = await client
     .from("order_commission_ledger")
     .select("net_payable")
