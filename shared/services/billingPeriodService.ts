@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCalendarMonthPeriod, isPeriodElapsed } from "../utils/billingPeriod";
-import { computeBillingPeriodTotals, resolveFeeSchedule } from "../utils/billingFeeCalc";
+import { computeBillingPeriodTotals } from "../utils/billingFeeCalc";
 
 export interface BillingPeriodRow {
   id: string;
@@ -123,9 +123,7 @@ export async function recomputeBillingPeriod(
 
   const { data: party, error: partyErr } = await client
     .from("parties")
-    .select(
-      "seller_mode, commission_rate_override, reduced_commission_rate_override, commission_threshold_override"
-    )
+    .select("seller_mode")
     .eq("id", partyId)
     .single();
   if (partyErr || !party) return { error: new Error(partyErr?.message ?? "Party not found"), row: null };
@@ -137,7 +135,6 @@ export async function recomputeBillingPeriod(
   });
   if (totalsErr) return { error: new Error(totalsErr.message), row: null };
 
-  const schedule = resolveFeeSchedule(party);
   const computation = computeBillingPeriodTotals({
     grossRevenueKc: Number(totals.gross_revenue),
     realCostsKc: Number(totals.real_costs),
@@ -160,7 +157,10 @@ export async function recomputeBillingPeriod(
         real_costs: computation.realCostsKc,
         net_revenue: computation.netRevenueKc,
         fee_mode: "ledger",
-        fee_rate: schedule.standardRate,
+        // Blended effective rate for the WHOLE period (fee / gross), not a single tier's rate —
+        // each order in the period may itself have been a blend across bands, see
+        // computeTieredCommission in shared/utils/billingFeeCalc.ts. Informational snapshot only.
+        fee_rate: computation.grossRevenueKc > 0 ? Math.round((computation.feeAmountKc / computation.grossRevenueKc) * 10000) / 10000 : 0,
         fee_amount: computation.feeAmountKc,
         net_payout: computation.netPayoutKc,
         paid_amount: computation.paidAmountKc,

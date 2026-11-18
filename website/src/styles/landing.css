@@ -198,7 +198,7 @@
   text-wrap: pretty;
 }
 /* Centered section header: the ::before tick would break centering, so hide it there. */
-.landing .section-eyebrow--center { justify-content: center; }
+.landing .section-eyebrow--center { display: flex; width: fit-content; justify-content: center; margin-inline: auto; }
 .landing .section-eyebrow--center::before { display: none; }
 .landing .section-eyebrow--center,
 .landing .section-title--center,
@@ -305,6 +305,15 @@
 .landing--ambient main > .landing--dark:last-child {
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 clamp(2.5rem, 6vw, 4.5rem), #000 100%);
           mask-image: linear-gradient(180deg, transparent 0, #000 clamp(2.5rem, 6vw, 4.5rem), #000 100%);
+}
+/* The commission calculator's slider/price readout and the final CTA both sit flush
+   against their own edges — the ambient fade reads as a blurry border around them instead
+   of a dissolve. Keep their edges flat like the (non-ambient) pricing page. */
+.landing--ambient main > .landing--dark#pricing,
+.landing--ambient main > .landing--dark#final-cta,
+.landing--ambient main > .landing--dark:last-child#final-cta {
+  -webkit-mask-image: none;
+          mask-image: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

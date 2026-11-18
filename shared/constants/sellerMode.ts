@@ -8,15 +8,6 @@ export const SELLER_MODE = {
 
 export type SellerModeValue = (typeof SELLER_MODE)[keyof typeof SELLER_MODE];
 
-// Standard own_company platform commission rate, taken from gross sale price, per order
-// (shared/services/commissionLedgerService.ts). Flat 5% for everyone as of 2026-11, no
-// turnover limit — previously 10% up to COMMISSION_REDUCED_THRESHOLD_CZK. Changing this one
-// constant (or a party's commission_rate_override) is the only thing needed to revert or
-// adjust it; REDUCED_COMMISSION_RATE/COMMISSION_REDUCED_THRESHOLD_CZK below stay independent
-// so a future differentiated tier (global or per-party) remains fully supported.
-// smalljobs_commission (no-IČO) sellers are unaffected — they pay NO_ICO_DEDUCTION_RATE, not this.
-export const COMMISSION_RATE = 0.05;
-
 // Smalljobs s.r.o.'s VAT-payer status is not yet confirmed (see shared/constants/company.ts).
 // Flip this on only once that is confirmed — until then tax is computed as 0 and documents
 // show "neplátce DPH", same as any non-VAT-payer seller.
@@ -36,33 +27,56 @@ export const PAYOUT_HOLD_DAYS = 60;
 // consumer withdrawal window itself, not an extra buffer for Smalljobs acting as seller of record.
 export const OWN_COMPANY_PAYOUT_HOLD_DAYS = 14;
 
-// --- Tiered own_company commission (public pricing + monthly billing) ---
-// These three numbers are the SINGLE SOURCE OF TRUTH for the own_company platform fee and for
-// what the public pricing/employment pages display. They are the GLOBAL DEFAULTS: every party
-// may override each of them individually (parties.commission_rate_override /
-// reduced_commission_rate_override / commission_threshold_override), resolved in one place via
-// resolveFeeSchedule() in shared/utils/billingFeeCalc.ts. Never redefine these inline — always
-// import from here, and always read a party's effective schedule through resolveFeeSchedule().
+// --- Tiered own_company commission (public pricing + per-order billing) ---
+// SINGLE SOURCE OF TRUTH for the own_company platform fee and for what the public pricing/
+// calculator pages display. COMMISSION_TIERS is the GLOBAL DEFAULT schedule: every party may
+// override it entirely (parties.commission_tiers_override, same shape), resolved in one place
+// via resolveFeeSchedule() in shared/utils/billingFeeCalc.ts. Never redefine this inline —
+// always import from here, and always read a party's effective schedule through
+// resolveFeeSchedule(). smalljobs_commission sellers are unaffected — they pay flat
+// NO_ICO_DEDUCTION_RATE per order, not this schedule.
 //
-// The model: an own_company party pays COMMISSION_RATE of its monthly turnover, UNTIL turnover
-// exceeds COMMISSION_REDUCED_THRESHOLD_CZK — from that point the whole month's turnover is
-// charged at the lower REDUCED_COMMISSION_RATE instead. The reduced rate is a floor that always
-// exceeds the platform's own fixed card-processor percentage, so the platform never loses money
-// on high-volume stores (the old flat 2 990 Kč cap did not guarantee that). smalljobs_commission
-// sellers are unaffected — they pay per-order via order_commission_ledger, not this tier.
+// The model is MARGINAL/BRACKET, like income tax: a party's first COMMISSION_TIERS[0].uptoKc of
+// turnover in a calendar month is charged at COMMISSION_TIERS[0].rate, the next slice (up to
+// COMMISSION_TIERS[1].uptoKc) at COMMISSION_TIERS[1].rate, and so on — never a whole-month
+// cliff re-rate. Each order is charged a blend across every band its slice of the month's
+// cumulative turnover touches (see computeTieredCommission in shared/utils/billingFeeCalc.ts).
+// The last entry's uptoKc MUST be null ("and above") so every turnover amount resolves to a
+// rate. Above COMMISSION_ENTERPRISE_THRESHOLD_CZK the public ladder stops getting cheaper by
+// itself — that is deliberate: a party trading above that line is meant to be offered a
+// negotiated "own eshop" schedule (parties.commission_tiers_override) through a direct sales
+// conversation, not a further automatic discount. See shared/services/commissionLedgerService.ts
+// for the fee_tier_change in-app notification that flags when a party on the public default
+// schedule first crosses that line.
+export interface CommissionTier {
+  uptoKc: number | null;
+  rate: number;
+}
 
-// Reduced commission rate charged on the ENTIRE monthly turnover once turnover exceeds the
-// threshold below. Replaces the old flat 2 990 Kč monthly cap.
-export const REDUCED_COMMISSION_RATE = 0.05;
+export const COMMISSION_TIERS: CommissionTier[] = [
+  { uptoKc: 10000, rate: 0.05 },
+  { uptoKc: 30000, rate: 0.04 },
+  { uptoKc: 60000, rate: 0.03 },
+  { uptoKc: 90000, rate: 0.02 },
+  { uptoKc: null, rate: 0.02 },
+];
 
-// Monthly turnover (Kč, strict >) above which a party switches from COMMISSION_RATE to
-// REDUCED_COMMISSION_RATE for that whole month. First-class configurable value (per-party
-// overridable), not derived from any cap.
-export const COMMISSION_REDUCED_THRESHOLD_CZK = 29900;
+// Monthly turnover (Kč) above which a party on the public default schedule should be offered a
+// negotiated "own eshop" enterprise schedule instead of relying on the public ladder. Equal to
+// the public ladder's last finite threshold by definition — kept as its own named constant so
+// the sales-trigger logic in commissionLedgerService.ts reads intention, not a magic re-lookup
+// of the tier array.
+export const COMMISSION_ENTERPRISE_THRESHOLD_CZK = COMMISSION_TIERS[COMMISSION_TIERS.length - 2].uptoKc as number;
+
+// The rate charged on the first Kč of turnover each month — convenience constant for headline
+// marketing copy ("already from 5%"). Always equal to COMMISSION_TIERS[0].rate; never redefine
+// independently.
+export const COMMISSION_ENTRY_RATE = COMMISSION_TIERS[0].rate;
 
 // Total deduction (platform commission + statutory contributions withheld on the creator's
-// behalf) for smalljobs_commission (no-IČO) sellers. Replaces COMMISSION_RATE for that mode
-// once Phase 2 enforces it — own_company sellers are unaffected and stay on COMMISSION_RATE.
+// behalf) for smalljobs_commission (no-IČO) sellers. Replaces the own_company COMMISSION_TIERS
+// schedule for that mode once Phase 2 enforces it — own_company sellers are unaffected and
+// stay on COMMISSION_TIERS.
 export const NO_ICO_DEDUCTION_RATE = 0.3;
 
 // Maximum net payout per month a no-IČO seller may legally receive through the

@@ -144,19 +144,19 @@ Below the info form, a **Seller Mode** card (component `PartySellerModeCard`) sh
 
 Both seller-mode actions require MANAGE_AUDIT.
 
-### Left column - Commission schedule (requires MANAGE_AUDIT)
+### Left column - Commission schedule (Owner only)
 
-For own-company organizations, a **Commission schedule** card lets you override the platform fee for this one organization.
-It has three fields, each blank by default (blank = use the platform default shown as the placeholder):
+For own-company organizations, a **Commission schedule** card lets you override the platform's tiered commission for this one organization.
+The platform default (`COMMISSION_TIERS` in `shared/constants/sellerMode.ts`) is a marginal/bracket schedule — like income tax — where each band of monthly turnover is charged at that band's own rate: 5% on the first 10 000 Kč, 4% on the next 20 000 Kč, 3% on the next 30 000 Kč, 2% on the next 30 000 Kč, and 2% on everything above 90 000 Kč.
+The card shows one editable row per band (rate % and "up to" Kč threshold), pre-filled with the platform default when the organization has no override yet; the last row is always open-ended ("and above").
+Use **+ Add band** to insert another row, or the per-row remove button to delete one.
 
-- **Standard rate** - the percentage charged up to the threshold (platform default 10%).
-- **Reduced rate** - the percentage charged on the whole month once turnover passes the threshold (platform default 5%).
-- **Reduced-rate threshold** - the monthly turnover (Kč) above which the reduced rate applies (platform default 29 900 Kč).
+This is also how you set up a negotiated "own eshop" enterprise schedule once an organization's turnover regularly passes the public ladder's top band (90 000 Kč) — replace the rows with whatever custom schedule was agreed (even a single flat open-ended rate), rather than leaving it on the public default. The platform surfaces a `fee_tier_change` in-app notification the first time a party still on the default schedule crosses that line, as a prompt to start that conversation.
 
-Rates are entered as percentages and stored as fractions on the `parties` table (`commission_rate_override`, `reduced_commission_rate_override`, `commission_threshold_override`).
-Clearing a field removes the override and falls back to the global default.
-All fee math reads the effective values through `resolveFeeSchedule()` in `shared/utils/billingFeeCalc.ts`, so a custom rate takes effect on the next billing-period computation with no code change.
-Editing the schedule requires MANAGE_AUDIT.
+Rates are entered as percentages and the whole schedule is stored as one ordered JSONB array on the `parties` table (`commission_tiers_override`).
+Use **Reset to platform default** to remove the override entirely and fall back to the global schedule.
+All fee math reads the effective schedule through `resolveFeeSchedule()` in `shared/utils/billingFeeCalc.ts`, and the per-order blended rate through `computeTieredCommission()` in the same file — a custom schedule takes effect on the very next order, since commission is charged per order, not as a monthly invoice.
+Editing the schedule is restricted to the platform **Owner** role — deliberately narrower than MANAGE_AUDIT, since this is a platform-revenue lever, not an ordinary party setting. An Admin with MANAGE_AUDIT on their own assigned parties still cannot see or change this card.
 
 ### Left column - Invite member (requires MANAGE_USERS)
 
@@ -206,7 +206,7 @@ See [Users](/docs/en/admin/users) for the assignment rules and [Roles](/docs/en/
 
 ## Data & storage (cloud)
 
-- `parties` table: `name`, `slug`, `company_name`, `company_ico`, `vat_number`, `billing_email`, `seller_mode`, `status`, `lang`, `created_at`, `terms_accepted_at`, `terms_version`, `commission_rate_override`, `reduced_commission_rate_override`, `commission_threshold_override`.
+- `parties` table: `name`, `slug`, `company_name`, `company_ico`, `vat_number`, `billing_email`, `seller_mode`, `status`, `lang`, `created_at`, `terms_accepted_at`, `terms_version`, `commission_tiers_override`.
   The `enforce_party_approval_transition` trigger restricts `pending_approval -> active` to owners.
 - `user_party_roles` table: membership rows (`user_id`, `party_id`, `role_id`) for the members list, invites, and removals.
 - `roles` table: custom (non-system) roles shown in the invite dropdown.

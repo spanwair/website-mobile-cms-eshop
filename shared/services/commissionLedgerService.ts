@@ -6,8 +6,10 @@ import {
   NO_ICO_WITHHOLDING_EXPIRY_YEARS,
   PAYOUT_HOLD_DAYS,
   OWN_COMPANY_PAYOUT_HOLD_DAYS,
+  COMMISSION_ENTERPRISE_THRESHOLD_CZK,
 } from "../constants/sellerMode";
-import { resolveFeeSchedule } from "../utils/billingFeeCalc";
+import { resolveFeeSchedule, computeTieredCommission } from "../utils/billingFeeCalc";
+import { createNotification, resolvePartyNotificationRecipients } from "./notificationService";
 
 // Called once from the "order became paid" path (both website/src/pages/api/stripe/webhook.ts
 // and website/src/lib/checkoutFlow.ts confirmStripeSession call this instead of duplicating
@@ -37,7 +39,7 @@ export async function recordCommissionForOrder(
 
   const { data: party } = await client
     .from("parties")
-    .select("seller_mode, commission_rate_override, reduced_commission_rate_override, commission_threshold_override")
+    .select("seller_mode, commission_tiers_override")
     .eq("id", order.party_id)
     .single();
   if (!party) return { error: null };
@@ -57,13 +59,12 @@ export async function recordCommissionForOrder(
   const monthEnd = new Date(Date.UTC(new Date(paidAt).getUTCFullYear(), new Date(paidAt).getUTCMonth() + 1, 1)).toISOString();
 
   if (party.seller_mode === SELLER_MODE.OWN_COMPANY) {
-    const schedule = resolveFeeSchedule(party);
+    const tiers = resolveFeeSchedule(party);
 
-    // Progressive, not retroactive: this order's rate is decided by cumulative turnover
-    // INCLUDING it, not a whole-month rewrite of earlier orders once the threshold is crossed
-    // (that retroactive behavior only applied to the old monthly-aggregate invoice, which this
-    // per-order ledger replaces). Irrelevant while standardRate === reducedRate (the current
-    // default), only matters for a party with a differentiated custom override.
+    // Progressive, not retroactive: this order's rate is a blend across whichever bands its
+    // own slice of the month's cumulative turnover touches (marginal/bracket, like income tax)
+    // — earlier orders this month are never rewritten, only this order's position in the
+    // running total decides its own blended rate (computeTieredCommission in billingFeeCalc.ts).
     const { data: monthRows } = await client
       .from("order_commission_ledger")
       .select("gross_amount")
@@ -72,9 +73,12 @@ export async function recordCommissionForOrder(
       .gte("created_at", monthStart)
       .lt("created_at", monthEnd);
     const turnoverSoFar = (monthRows ?? []).reduce((sum, r) => sum + Number(r.gross_amount), 0);
-    const commissionRate = turnoverSoFar + grossAmount > schedule.thresholdKc ? schedule.reducedRate : schedule.standardRate;
+    const { commissionAmountKc: commissionAmount, effectiveRate: commissionRate } = computeTieredCommission(
+      grossAmount,
+      turnoverSoFar,
+      tiers
+    );
 
-    const commissionAmount = Math.round(grossAmount * commissionRate * 100) / 100;
     const netPayable = Math.round((grossAmount - taxAmount - commissionAmount) * 100) / 100;
     const holdUntil = new Date(new Date(paidAt).getTime() + OWN_COMPANY_PAYOUT_HOLD_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
@@ -93,7 +97,39 @@ export async function recordCommissionForOrder(
       hold_until: holdUntil,
       status: "held",
     });
-    return { error: error ? new Error(error.message) : null, partyId: order.party_id };
+    if (error) return { error: new Error(error.message), partyId: order.party_id };
+
+    // Sales signal, not a billing action: a party still on the public default schedule (no
+    // custom commission_tiers_override) that just crossed the enterprise threshold should be
+    // offered a negotiated "own eshop" schedule by a human, not an automatic rate change. Fire
+    // at most once per calendar month per party — re-checking every order this month would
+    // otherwise spam the inbox once the party is already above the line.
+    if (party.commission_tiers_override === null && turnoverSoFar < COMMISSION_ENTERPRISE_THRESHOLD_CZK && turnoverSoFar + grossAmount >= COMMISSION_ENTERPRISE_THRESHOLD_CZK) {
+      const { data: existingNotice } = await client
+        .from("notifications")
+        .select("id")
+        .eq("party_id", order.party_id)
+        .eq("type", "fee_tier_change")
+        .gte("created_at", monthStart)
+        .lt("created_at", monthEnd)
+        .maybeSingle();
+      if (!existingNotice) {
+        const recipients = await resolvePartyNotificationRecipients(client, order.party_id);
+        await createNotification(
+          client,
+          {
+            party_id: order.party_id,
+            type: "fee_tier_change",
+            title: "Party crossed the enterprise commission threshold",
+            body: `This party's turnover passed ${COMMISSION_ENTERPRISE_THRESHOLD_CZK.toLocaleString("cs-CZ")} Kč this month on the public default commission schedule. Consider reaching out about a negotiated "own eshop" schedule.`,
+            metadata: { monthlyTurnoverKc: turnoverSoFar + grossAmount, thresholdKc: COMMISSION_ENTERPRISE_THRESHOLD_CZK },
+          },
+          recipients
+        );
+      }
+    }
+
+    return { error: null, partyId: order.party_id };
   }
 
   if (party.seller_mode !== SELLER_MODE.SMALLJOBS_COMMISSION) return { error: null };

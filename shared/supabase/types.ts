@@ -2038,8 +2038,7 @@ export type Database = {
       parties: {
         Row: {
           billing_email: string | null;
-          commission_rate_override: number | null;
-          commission_threshold_override: number | null;
+          commission_tiers_override: Json | null;
           company_ico: string | null;
           company_name: string | null;
           created_at: string;
@@ -2047,7 +2046,6 @@ export type Database = {
           lang: string;
           logo_url: string | null;
           name: string;
-          reduced_commission_rate_override: number | null;
           seller_mode: string;
           settings: NonNullable<Json>;
           slug: string;
@@ -2060,8 +2058,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           billing_email?: string | null;
-          commission_rate_override?: number | null;
-          commission_threshold_override?: number | null;
+          commission_tiers_override?: Json | null;
           company_ico?: string | null;
           company_name?: string | null;
           created_at?: string;
@@ -2069,7 +2066,6 @@ export type Database = {
           lang?: string;
           logo_url?: string | null;
           name: string;
-          reduced_commission_rate_override?: number | null;
           seller_mode?: string;
           settings?: NonNullable<Json>;
           slug: string;
@@ -2081,8 +2077,7 @@ export type Database = {
         };
         Update: {
           billing_email?: string | null;
-          commission_rate_override?: number | null;
-          commission_threshold_override?: number | null;
+          commission_tiers_override?: Json | null;
           company_ico?: string | null;
           company_name?: string | null;
           created_at?: string;
@@ -2090,7 +2085,6 @@ export type Database = {
           lang?: string;
           logo_url?: string | null;
           name?: string;
-          reduced_commission_rate_override?: number | null;
           seller_mode?: string;
           settings?: NonNullable<Json>;
           slug?: string;

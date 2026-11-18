@@ -1,9 +1,10 @@
 ---
 import { useT } from "@/lib/i18n";
+import { COMMISSION_ENTRY_RATE } from "@shared/constants/sellerMode";
 const t = useT(Astro);
-// Launch/founding headline rate shown in the hero stat card. The standard tiered model
-// (10% dropping to 5%) lives in the commission calculator; the index leads with 5%.
-const commissionPct = 5;
+// Headline entry rate shown in the hero stat card — the first, highest band of the public
+// tiered ladder (down to a lower rate at higher volume; full ladder on the pricing page).
+const commissionPct = Math.round(COMMISSION_ENTRY_RATE * 100);
 ---
 
 <section class="landing hero" id="hero">

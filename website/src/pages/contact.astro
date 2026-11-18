@@ -6,10 +6,16 @@ import { SMALLJOBS_COMPANY } from "@shared/constants/company";
 
 const t = useT(Astro);
 const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.registeredSeat.postalCode} ${SMALLJOBS_COMPANY.registeredSeat.city}`;
+const isEnterpriseInquiry = Astro.url.searchParams.get("subject") === "enterprise";
 ---
 
 <LandingLayout title={`${t.landing.contact.title} — Mamtodoma`} description={t.landing.contact.sub}>
   <PageHero eyebrow={t.landing.contact.eyebrow} title={t.landing.contact.title} lead={t.landing.contact.sub} image="/img/support-team.jpg" imageAlt="" />
+  {isEnterpriseInquiry && (
+    <div class="container-lg">
+      <p class="enterprise-inquiry-badge">{t.landing.contact.enterpriseBadge}</p>
+    </div>
+  )}
   <section class="landing" style="padding-top:0">
     <div class="container-lg contact-grid">
       <div class="contact-info">
@@ -38,7 +44,7 @@ const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.
         </div>
         <div class="form-group">
           <label class="form-label" for="contact-message">{t.landing.contact.formMessage}</label>
-          <textarea id="contact-message" name="message" class="form-input" rows="5" required></textarea>
+          <textarea id="contact-message" name="message" class="form-input" rows="5" required>{isEnterpriseInquiry ? t.landing.contact.enterprisePrefill : ""}</textarea>
         </div>
         <button type="submit" class="btn btn-primary btn-lg">{t.landing.contact.formSubmit}</button>
         <p id="contact-msg" class="contact-msg"></p>
@@ -66,6 +72,10 @@ const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.
 </script>
 
 <style>
+  .enterprise-inquiry-badge {
+    display: inline-block; margin: 0 0 24px; padding: 6px 14px; border-radius: var(--radius-full);
+    background: var(--accent-soft); color: var(--accent-primary); font-size: 13px; font-weight: 700;
+  }
   .contact-grid { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 48px; max-width: 800px; margin-inline: auto; }
   .contact-info { display: flex; flex-direction: column; gap: 20px; padding-top: 4px; }
   .contact-info-row { display: flex; flex-direction: column; gap: 2px; }

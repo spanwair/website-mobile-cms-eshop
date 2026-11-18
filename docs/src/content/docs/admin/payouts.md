@@ -4,7 +4,7 @@ description: Účetní kniha výplat pro organizaci pro prodejce na provizi a hi
 ---
 
 Výplaty je stránka s finančními údaji pro každou organizaci.
-To, co zobrazuje, závisí výhradně na aktivním `seller_mode` organizace: prodejce na provizi vidí účetní knihu výplat objednávka po objednávce, zatímco prodejce vlastní firmy vidí svou historii měsíčních poplatků platformy (s možností zaplatit poplatek online přes Stripe).
+Oba režimy prodejce nyní zobrazují stejnou účetní knihu výplat objednávka po objednávce (`order_commission_ledger`) - liší se jen sazba a lhůta zádržné, ne stránka samotná.
 Souhrn napříč organizacemi se nachází v [Fakturace](/docs/admin/billing); tato stránka je místo, kde jednáte s jednou organizací.
 
 ## Požadované oprávnění
@@ -42,27 +42,18 @@ Tím se odešle `action=mark_paid`, což nastaví řádek účetní knihy na `pa
 
 ## Prodejci vlastní firmy (`own_company`)
 
-Místo účetní knihy tento režim vykresluje `PlatformFeeHistory` pro až 24 měsíčních období fakturace.
-Poplatek činí 10 % z měsíčního obratu, který klesá na zlevněné 5 % z celého měsíce, jakmile obrat překročí 29 900 Kč (obě sazby i práh lze přepsat pro každou organizaci).
-Kytka z Beskyd, která začíná v režimu vlastní firmy, by zde viděla své měsíční poplatky platformy.
+Tento režim používá stejnou účetní knihu a stejnou akci **Označit jako zaplacené** jako prodejci na provizi výše - jediný rozdíl je sazba a lhůta zádržné.
+Sazba je pásmová (marginální), ne pevná: 5 % z prvních 10 000 Kč měsíčního obratu, 4 % z dalších 20 000 Kč, 3 % z dalších 30 000 Kč, 2 % z dalších 30 000 Kč a 2 % ze všeho nad 90 000 Kč - viz `COMMISSION_TIERS` v `shared/constants/sellerMode.ts` a karta Plán provize v [Organizacích](/docs/admin/parties), kde lze celý plán přepsat pro jednotlivou organizaci (včetně individuálně dohodnuté sazby "vlastní e-shop" nad veřejným žebříčkem).
+Zádržná lhůta je `OWN_COMPANY_PAYOUT_HOLD_DAYS` (14 dní), kratší než u prodejců na provizi, protože vlastní firma je sama zákonným prodejcem.
+Kytka z Beskyd, která začíná v tomto režimu, by zde viděla svou účetní knihu výplat.
 
-### Platba měsíčního poplatku online (Stripe)
-
-Akce **Zaplatit poplatek** odešle `action=pay_fee_online`, přečte `fee_amount` pro dané období z `eshop_billing_periods` a spustí se sesízení Stripe Checkout v CZK.
-Bydete přesměrováni na Stripe; po návratu stránka ověří, že se sesízení pokladny skutečně dostalo do stavu `payment_status = "paid"` před jeho zaznamenáním k danému období.
-Zrušení vás vrátí s upozorněním "platba zrušena".
-
-### Označení zaplaceného poplatku manuálně (pouze vlastník)
-
-Potvrzení offline platby jako přijaté je rozhodnutí platformy, nikdy neorganizace.
-Pouze globální **vlastník** vidí **Označit poplatek jako zaplacený** (`action=mark_fee_paid_manual`), což označí poplatek za dané období jako zaplacený prostřednictvím klientu service-role bez online platby.
+Starší architektura (samostatná komponenta `PlatformFeeHistory`, měsíční poplatek placený přes Stripe Checkout akcí `pay_fee_online`, manuální potvrzení `mark_fee_paid_manual`) byla nahrazena jednotnou účetní knihou pro oba režimy prodejce a v kódu už neexistuje.
 
 ## Data a úložiště (cloud)
 
-- **Tabulky:** `order_commission_ledger` (`gross_amount`, `tax_amount`, `commission_amount`, `net_payable`, `withheld_amount`, `status`, `hold_until`, `paid_at`, `paid_by`, `payout_reference`), `eshop_billing_periods` (`period_start`, `fee_amount`), `parties` (`seller_mode`).
-- **Služby:** `listBillingPeriods`, `markBillingPeriodFeePaid` (`billingPeriodService`); `createCheckoutSession`, `retrieveCheckoutSession` (integrace Stripe).
-- **Klient:** Manuální zápisy zaplaceného poplatku a potvrzené Stripe používají `createAdminClient()` (service role); označení zaplacené výplaty používá sesízení klienta s ochranou stran/stavu.
-- **Komponenta:** `PlatformFeeHistory`.
+- **Tabulky:** `order_commission_ledger` (`gross_amount`, `tax_amount`, `commission_amount`, `net_payable`, `withheld_amount`, `status`, `hold_until`, `paid_at`, `paid_by`, `payout_reference`) - jediný zdroj pravdy pro oba režimy prodejce.
+- **Konstanty:** `COMMISSION_TIERS`, `OWN_COMPANY_PAYOUT_HOLD_DAYS`, `NO_ICO_DEDUCTION_RATE`, `PAYOUT_HOLD_DAYS`, `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` z `shared/constants/sellerMode.ts`.
+- **Klient:** Označení zaplacené výplaty používá sesízení klienta s ochranou stran/stavu (RLS: `is_owner()` nebo `MANAGE_AUDIT` na dané organizaci).
 
 ## Související stránky
 

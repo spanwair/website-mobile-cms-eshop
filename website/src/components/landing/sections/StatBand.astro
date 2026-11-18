@@ -1,5 +1,6 @@
 ---
 import { useT } from "@/lib/i18n";
+import CommissionRateBars from "./CommissionRateBars.astro";
 const t = useT(Astro);
 const band = t.landing.statBand;
 ---
@@ -9,12 +10,22 @@ const band = t.landing.statBand;
     <div class="statband-head" data-reveal>
       <h2 class="statband-title">{band.title}</h2>
       <p class="statband-sub">{band.sub}</p>
+      <a href="/pricing#enterprise" class="statband-enterprise-link">{band.enterpriseLink} →</a>
     </div>
     <dl class="statband-stats">
-      {band.stats.map((s) => (
+      {band.stats.map((s, i) => (
         <div class="statband-stat" data-reveal>
-          <dt class="statband-value font-display tnum"><span class="statband-dot" aria-hidden="true"></span>{s.value}</dt>
-          <dd class="statband-label">{s.label}</dd>
+          {i === 1 ? (
+            <Fragment>
+              <dt class="statband-value statband-value--chart"><CommissionRateBars ariaLabel={band.chartAriaLabel} /></dt>
+              <dd class="statband-label">{s.label}</dd>
+            </Fragment>
+          ) : (
+            <Fragment>
+              <dt class="statband-value font-display tnum"><span class="statband-dot" aria-hidden="true"></span>{s.value}</dt>
+              <dd class="statband-label">{s.label}</dd>
+            </Fragment>
+          )}
         </div>
       ))}
     </dl>
@@ -29,6 +40,8 @@ const band = t.landing.statBand;
   }
   .statband-title { font-size: var(--fs-h2); margin: 0 0 0.5rem; max-width: 16ch; }
   .statband-sub { font-size: var(--fs-body); color: var(--text-muted); line-height: 1.55; margin: 0; max-width: 42ch; }
+  .statband-enterprise-link { display: inline-block; margin-top: 0.9rem; font-size: var(--fs-sm); font-weight: 700; color: var(--accent); }
+  .statband-enterprise-link:hover { color: var(--accent-primary-hover); }
 
   .statband-stats {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1rem, 3vw, 2rem);
@@ -40,6 +53,7 @@ const band = t.landing.statBand;
     font-size: clamp(1.75rem, 1.2rem + 1.8vw, 2.5rem); font-weight: 800;
     line-height: 1; color: var(--text-primary); margin: 0;
   }
+  .statband-value--chart { display: block; }
   .statband-dot {
     width: 9px; height: 9px; border-radius: 3px; background: var(--accent);
     transform: translateY(-0.15em); flex: none;
@@ -53,5 +67,6 @@ const band = t.landing.statBand;
     .statband-stats { grid-template-columns: 1fr; gap: 1.1rem; }
     .statband-stat { flex-direction: row; align-items: baseline; gap: 0.75rem; }
     .statband-label { align-self: center; }
+    .statband-value--chart { flex: none; }
   }
 </style>

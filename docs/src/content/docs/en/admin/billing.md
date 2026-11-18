@@ -22,7 +22,7 @@ Each organization has a `seller_mode` (set on the Seller Mode card in [Organizat
 
 | Mode | Badge | How it is charged |
 |---|---|---|
-| Own company (`own_company`) | green "Own company" | `COMMISSION_RATE` (a flat 5%, no turnover limit) per order, held for `OWN_COMPANY_PAYOUT_HOLD_DAYS` (14 days). Overridable per organization via `resolveFeeSchedule()` (see [Organizations](/docs/en/admin/parties)). Kytka z Beskyd starts in this mode. |
+| Own company (`own_company`) | green "Own company" | A tiered, marginal-bracket rate from `COMMISSION_TIERS` (5% down to 2%, by monthly-turnover band, see [Pricing](/docs/en)) per order — each order is a blend across every band its slice of the month's turnover touches, held for `OWN_COMPANY_PAYOUT_HOLD_DAYS` (14 days). Overridable per organization via `resolveFeeSchedule()` (see [Organizations](/docs/en/admin/parties)) — this is how a negotiated "own eshop" enterprise schedule above the public ladder's top band is set. Kytka z Beskyd starts in this mode. |
 | Commission (`smalljobs_commission`) | amber "Commission" | A flat `NO_ICO_DEDUCTION_RATE` (30%) per order, held for `PAYOUT_HOLD_DAYS` (60 days), with a `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` (12 000 Kč) monthly payout limit. |
 
 ## The overview table (`/admin/billing`)
@@ -43,7 +43,7 @@ Billing itself is read-only; it never changes a balance.
 ## Data & storage (cloud)
 
 - **Tables:** `parties` (`seller_mode`), `order_commission_ledger` (`gross_amount`, `commission_amount`, `net_payable`, `withheld_amount`, `status`, `hold_until`, `created_at`) — the single source for both seller modes now.
-- **Constants:** `SELLER_MODE`, `COMMISSION_RATE`, `REDUCED_COMMISSION_RATE`, `COMMISSION_REDUCED_THRESHOLD_CZK`, `OWN_COMPANY_PAYOUT_HOLD_DAYS`, `NO_ICO_DEDUCTION_RATE`, `PAYOUT_HOLD_DAYS`, `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` from `shared/constants/sellerMode.ts`. Per-organization overrides live on `parties` (`commission_rate_override`, `reduced_commission_rate_override`, `commission_threshold_override`) and are resolved by `resolveFeeSchedule()` in `shared/utils/billingFeeCalc.ts`.
+- **Constants:** `SELLER_MODE`, `COMMISSION_TIERS`, `COMMISSION_ENTRY_RATE`, `COMMISSION_ENTERPRISE_THRESHOLD_CZK`, `OWN_COMPANY_PAYOUT_HOLD_DAYS`, `NO_ICO_DEDUCTION_RATE`, `PAYOUT_HOLD_DAYS`, `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` from `shared/constants/sellerMode.ts`. The per-organization override lives on `parties` (`commission_tiers_override`, a JSONB tier array) and is resolved by `resolveFeeSchedule()` in `shared/utils/billingFeeCalc.ts`; the per-order blend is computed by `computeTieredCommission()` in the same file.
 - Reads only; scoped to `ctx.parties`.
 
 ## Related pages

@@ -1,0 +1,42 @@
+---
+// Small descending bar chart for the public stat band: shows the commission rate stepping down
+// across the first 4 bands of COMMISSION_TIERS (shared/constants/sellerMode.ts), replacing a
+// plain "5 → 2 %" text stat with something that actually reads as "it goes down" at a glance.
+import { COMMISSION_TIERS } from "@shared/constants/sellerMode";
+
+interface Props {
+  ariaLabel: string;
+}
+const { ariaLabel } = Astro.props;
+
+const bars = COMMISSION_TIERS.slice(0, -1); // the 4 finite bands; the open-ended last tier has no bar of its own
+const maxRate = bars[0].rate;
+---
+
+<div class="rate-bars" role="img" aria-label={ariaLabel}>
+  {bars.map((tier, i) => (
+    <div class="rate-bar-col" style={`--bar-fill:${1 - i * 0.22}`}>
+      <span class="rate-bar-pct tnum">{Math.round(tier.rate * 100)}%</span>
+      <span class="rate-bar" style={`height:${Math.round((tier.rate / maxRate) * 100)}%`}></span>
+    </div>
+  ))}
+</div>
+
+<style>
+  .rate-bars {
+    display: flex; align-items: flex-end; gap: 7px;
+    height: 56px; margin-top: 0.3rem;
+  }
+  .rate-bar-col {
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    gap: 4px; height: 100%; width: 20px;
+  }
+  .rate-bar-pct { font-size: 0.6875rem; font-weight: 700; color: var(--text-muted); line-height: 1; }
+  .rate-bar {
+    display: block; width: 100%; border-radius: 4px 4px 2px 2px;
+    background: color-mix(in srgb, var(--accent) calc(var(--bar-fill) * 100%), var(--accent-soft));
+    transition: height 0.5s var(--ease-out, ease);
+  }
+
+  .landing [data-reveal]:not(.is-visible) .rate-bar { height: 0 !important; }
+</style>

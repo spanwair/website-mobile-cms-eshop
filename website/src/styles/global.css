@@ -126,6 +126,21 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
 input[type="color"]::-moz-color-swatch { border: none; border-radius: 6px; }
 .form-error { font-size: 12px; color: var(--error); }
 
+.form-row { margin-bottom: 12px; }
+.fee-input-wrap { position: relative; display: flex; align-items: center; }
+.fee-input-wrap .form-input { padding-right: 44px; }
+.fee-suffix { position: absolute; right: 12px; font-size: 13px; color: var(--text-muted); pointer-events: none; }
+
+.invite-note { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px; padding: 10px 12px; background: var(--bg-subtle); border-radius: 8px; border-left: 3px solid var(--primary); }
+.invite-note a { color: var(--primary); font-weight: 600; }
+
+/* Repeatable tier-row editor (commission schedule, discount ladders, anything band-shaped) */
+.tier-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.tier-row { display: flex; align-items: center; gap: 8px; }
+.tier-row-field { flex: 1; }
+.tier-row-remove { flex: none; }
+.tier-row-openEnded { flex: 1; font-size: 13px; color: var(--text-muted); padding: 12px 16px; }
+
 input, textarea, select {
   background: var(--bg-surface); border: 1.5px solid var(--border-default);
   border-radius: var(--radius-sm); padding: 12px 16px; font-size: 14px;

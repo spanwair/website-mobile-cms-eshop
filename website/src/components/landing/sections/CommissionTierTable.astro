@@ -1,0 +1,92 @@
+---
+// Shared public-facing tier ladder, reused by the pricing page hero and the interactive
+// calculator section below it — one visual source of truth for "what are the bands", kept in
+// sync with COMMISSION_TIERS (shared/constants/sellerMode.ts) automatically. Ends in a
+// standalone Enterprise callout (id="enterprise", linkable from nav/footer/homepage) instead of
+// burying the above-the-ladder offer inside one more table row — that was easy to miss entirely.
+import { COMMISSION_TIERS, COMMISSION_ENTERPRISE_THRESHOLD_CZK } from "@shared/constants/sellerMode";
+
+interface Props {
+  t: any;
+  part?: "all" | "table" | "enterprise";
+}
+const { t, part = "all" } = Astro.props;
+
+const fmt = (n: number) => n.toLocaleString("cs-CZ");
+const finiteTiers = COMMISSION_TIERS.slice(0, -1);
+const rows = finiteTiers.map((tier, i) => {
+  const lowerKc = i === 0 ? 0 : (finiteTiers[i - 1].uptoKc as number);
+  return {
+    rangeLabel: i === 0 ? `0 – ${fmt(tier.uptoKc as number)} Kč` : `${fmt(lowerKc)} – ${fmt(tier.uptoKc as number)} Kč`,
+    pct: Math.round(tier.rate * 10000) / 100,
+  };
+});
+const topTier = COMMISSION_TIERS[COMMISSION_TIERS.length - 1];
+const topRow = topTier.uptoKc === null
+  ? {
+      rangeLabel: t.landing.commissionCalculator.ladderAbove.replace(
+        "{amount}",
+        fmt(finiteTiers[finiteTiers.length - 1].uptoKc as number)
+      ),
+      value: t.landing.commissionCalculator.ladderCustom,
+    }
+  : null;
+const ec = t.landing.enterprise;
+---
+
+{part !== "enterprise" && (
+<div class="tier-table" data-reveal>
+  {rows.map((row) => (
+    <div class="tier-table-row">
+      <span class="tier-table-range">{row.rangeLabel}</span>
+      <span class="tier-table-rate">{row.pct} %</span>
+    </div>
+  ))}
+  {topRow && (
+    <div class="tier-table-row">
+      <span class="tier-table-range">{topRow.rangeLabel}</span>
+      <span class="tier-table-rate tier-table-rate--custom">{topRow.value}</span>
+    </div>
+  )}
+</div>
+)}
+
+{part !== "table" && (
+<div class="enterprise-card" id="enterprise" data-reveal>
+  <p class="enterprise-eyebrow">{ec.eyebrow}</p>
+  <h3 class="enterprise-title">{ec.title}</h3>
+  <p class="enterprise-desc">{ec.desc.replace("{threshold}", `${fmt(COMMISSION_ENTERPRISE_THRESHOLD_CZK)} Kč`)}</p>
+  <a href="/contact?subject=enterprise" class="btn btn-primary enterprise-cta">{ec.cta}</a>
+</div>
+)}
+
+<style>
+  .tier-table { max-width: 560px; margin-inline: auto; }
+  .tier-table-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 14px 4px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 15px;
+  }
+  .tier-table-row:first-child { padding-top: 0; }
+  .tier-table-row:last-child { border-bottom: none; }
+  .tier-table-range { color: var(--landing-dark-text-muted); }
+  .tier-table-rate { font-weight: 700; color: var(--landing-mint); font-size: 17px; }
+  .tier-table-rate--custom { font-size: 15px; white-space: nowrap; }
+
+  .enterprise-card {
+    max-width: 560px; margin: 24px auto 0; padding: 28px 32px;
+    background: linear-gradient(135deg, rgba(22,165,113,0.16), rgba(255,255,255,0.04));
+    border: 1px solid rgba(91,212,168,0.35); border-radius: var(--radius-lg, 1.125rem);
+    text-align: center;
+  }
+  .enterprise-eyebrow {
+    margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--landing-mint);
+  }
+  .enterprise-title { margin: 0 0 8px; font-size: 20px; font-weight: 800; color: var(--landing-dark-text); }
+  .enterprise-desc { margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: var(--landing-dark-text-muted); }
+  .enterprise-cta { display: inline-flex; }
+
+  @media (max-width: 640px) {
+    .enterprise-card { padding: 24px 20px; }
+  }
+</style>

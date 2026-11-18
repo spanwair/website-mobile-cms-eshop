@@ -2,6 +2,7 @@
 import LandingLayout from "../components/landing/LandingLayout.astro";
 import Hero from "../components/landing/sections/Hero.astro";
 import StatBand from "../components/landing/sections/StatBand.astro";
+import IncludedForFree from "../components/landing/sections/IncludedForFree.astro";
 import FoundingSellers from "../components/landing/sections/FoundingSellers.astro";
 import LogoMarquee from "../components/landing/LogoMarquee.astro";
 import Features from "../components/landing/sections/Features.astro";
@@ -39,6 +40,7 @@ const toJsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, "\\u003c"
   <script type="application/ld+json" set:html={toJsonLd(websiteSchema)} />
   <Hero />
   <StatBand />
+  <IncludedForFree />
   <FoundingSellers />
   <LogoMarquee logos={LANDING_PROVIDER_LOGOS} label={t.landing.logoMarquee.label} />
   <Features />
