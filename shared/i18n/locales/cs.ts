@@ -2047,7 +2047,7 @@ export const cs: Translations = {
       rowNet: "Vy dostanete",
       paymentSectionLabel: "Platba zákazníka",
       rowDeliveryCharged: "Doprava",
-      rowStripe: "z provize platí Stripe ({pct} % + {fixed} Kč)",
+      rowStripe: "z naší provize platí platební brána ({pct} % + {fixed} Kč)",
       customerPaysLabel: "Zákazník zaplatí celkem",
       explainerDeliveryTitle: "Doprava jde dopravci",
       explainerDeliveryText: "Zákazník ji platí zvlášť a jde rovnou platformě, která z ní zaplatí dopravce. Do vaší výplaty nevstupuje a provizi z ní neúčtujeme.",
