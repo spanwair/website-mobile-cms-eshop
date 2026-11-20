@@ -5,6 +5,7 @@ import { fetchBlogPostBySlug, fetchPublishedBlogPosts } from "@shared/services/b
 import { fetchStoreMedia } from "@shared/services/storeMediaService";
 import { renderContent, resolveMediaUrl } from "@/lib/contentRenderer";
 import { useT } from "@/lib/i18n";
+import { truncateDescription } from "@/lib/seoMeta";
 
 const storeParty = Astro.locals.storeParty;
 if (!storeParty) return Astro.redirect("/shop");
@@ -26,9 +27,15 @@ function formatDate(iso: string | null) {
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
 }
+
+const metaDescription = post.seo_description
+  ?? (post.excerpt ? truncateDescription(post.excerpt) : undefined);
 ---
 
-<Layout title={post.seo_title ?? post.title}>
+<Layout
+  title={post.seo_title ?? `${post.title} | ${storeParty.config?.brand_name ?? "Shop"}`}
+  description={metaDescription}
+>
   <article class="blog-article container">
     <a href="/shop/blog" class="back-link">{t.blog.backToBlog}</a>
     <h1 class="article-title">{post.title}</h1>

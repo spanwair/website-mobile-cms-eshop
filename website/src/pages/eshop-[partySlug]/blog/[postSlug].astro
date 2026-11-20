@@ -47,7 +47,11 @@ const blogSchema = {
 const toJsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, "\\u003c");
 ---
 
-<Layout title={post.seo_title ?? post.title} description={metaDescription} ogImage={featuredImage ?? undefined}>
+<Layout
+  title={post.seo_title ?? `${post.title} | ${storeParty.config?.brand_name ?? "Shop"}`}
+  description={metaDescription}
+  ogImage={featuredImage ?? undefined}
+>
   <script type="application/ld+json" set:html={toJsonLd(blogSchema)} />
   <article class="blog-article container">
     <a href={`${linkBase}/blog`} class="back-link">{t.blog.backToBlog}</a>
