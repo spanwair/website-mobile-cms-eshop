@@ -1140,7 +1140,7 @@ export const en = {
     },
     billing: {
       title: "Billing overview",
-      hint: "Current payment status for all your organisations in one place — commission from 5% down to 2% of turnover by band for own-company stores, 30% deduction with a 12,000 Kč/month payout limit for no-IČO sellers.",
+      hint: "Current payment status for all your organisations in one place — commission from 5% down to 3% of turnover by band for own-company stores, 30% deduction with a 12,000 Kč/month payout limit for no-IČO sellers.",
       colParty: "Organisation",
       colMode: "Model",
       colThisMonth: "This month",
@@ -1860,7 +1860,7 @@ export const en = {
       lang: "en",
       defaultTitle: "Mamtodoma — Launch your online store for free",
       defaultDescription:
-        "Launch your online store for free. No setup cost, just a commission from 5% down to 2% per sale, based on turnover.",
+        "Launch your online store for free. No setup cost, just a commission from 5% down to 3% per sale, based on turnover.",
     },
     logoMarquee: {
       label: "Connected with",
@@ -1886,19 +1886,9 @@ export const en = {
       formPlaceholder: "you@example.com",
       formCta: "Start selling free",
       formNote: "No credit card. No fixed subscription. Cancel anytime — there's nothing to cancel.",
-      trustLine: "5% down to 2% only when you sell · nothing upfront · live in minutes",
+      trustLine: "5% down to 3% only when you sell · nothing upfront · live in minutes",
       floatLabel: "only on completed sales",
-    },
-    statBand: {
-      title: "No subscription. No signup fee.",
-      sub: "You pay only a share of what you actually sell — and the more you sell, the smaller that share gets.",
-      chartAriaLabel: "Commission steps down from 5% to 2% as your monthly turnover grows",
-      enterpriseLink: "Selling above 90,000 Kč a month? We have an Enterprise plan",
-      stats: [
-        { value: "0 Kč", label: "upfront and every month" },
-        { value: "5 → 2 %", label: "commission drops as you grow" },
-        { value: "minutes", label: "until your store is live" },
-      ],
+      chartLabel: "Commission by monthly turnover",
     },
     included: {
       eyebrow: "Included, not extra",
@@ -1931,7 +1921,7 @@ export const en = {
         },
         {
           title: "Keep up to 95% of every sale",
-          desc: "We only make money when you do — commission from 5% down to 2% based on turnover, nothing else, nothing hidden.",
+          desc: "We only make money when you do — commission from 5% down to 3% based on turnover, nothing else, nothing hidden.",
         },
         {
           title: "Live in minutes, not months",
@@ -1944,9 +1934,9 @@ export const en = {
       badge: "Founding sellers",
       title: "We're looking for our first merchants to shape the platform with us",
       body:
-        "We're launching, and we want a handful of founding stores to shape the platform with us down to the last detail. One condition — you sell as a registered business (IČO). Commission runs from 5% down to 2% based on turnover for every new store; as a founding seller you also get priority support straight from the founders and a direct say in what we build next.",
+        "We're launching, and we want a handful of founding stores to shape the platform with us down to the last detail. One condition — you sell as a registered business (IČO). Commission runs from 5% down to 3% based on turnover for every new store; as a founding seller you also get priority support straight from the founders and a direct say in what we build next.",
       points: [
-        "Commission from 5% down to 2%, based on turnover. See pricing",
+        "Commission from 5% down to 3%, based on turnover. See pricing",
         "Priority support straight from the founders",
         "Live today — no agency, no developer",
       ],
@@ -1970,7 +1960,7 @@ export const en = {
     howItWorks: {
       eyebrow: "Getting started",
       title: "Three steps. No plan to pick — we switch you automatically.",
-      sub: "No comparing six pricing tiers. You pay commission from 5% down to 2% based on turnover — nothing to pick or configure, the band switches itself.",
+      sub: "No comparing six pricing tiers. You pay commission from 5% down to 3% based on turnover — nothing to pick or configure, the band switches itself.",
       steps: [
         { step: "1", title: "Create your store", desc: "Enter your email, name your store, and you're in the admin panel." },
         { step: "2", title: "Add your products", desc: "Photos, prices, stock — add one product or your whole catalog." },
@@ -2019,7 +2009,7 @@ export const en = {
     },
     commissionCalculator: {
       eyebrow: "Pricing, the short version",
-      title: "From 5% down to 2%, based on turnover",
+      title: "From 5% down to 3%, based on turnover",
       sub: "Set your store's monthly turnover. See exactly what you pay and what you keep.",
       sliderLabel: "Monthly turnover",
       youKeepLabel: "Net profit",
@@ -2084,7 +2074,7 @@ export const en = {
       ownCompanyTitle: "You have your own company",
       ownCompanyBullets: [
         "Invoice and sell in your own name",
-        "Platform commission from 5% down to 2%, depending on monthly turnover",
+        "Platform commission from 5% down to 3%, depending on monthly turnover",
         "Bank transfer payout 14 days after the order is paid",
       ],
       noCompanyTitle: "No company — sell through us",
@@ -2107,7 +2097,7 @@ export const en = {
       scenarios: [
         { persona: "Example: a candle maker", monthly: "20,000 Kč / month in sales", keep: "19,100 Kč kept", desc: "The first 10,000 Kč is charged at 5%, the rest up to 20,000 Kč at 4% — 900 Kč commission in total, nothing else." },
         { persona: "Example: a leather-goods maker", monthly: "60,000 Kč / month in sales", keep: "57,800 Kč kept", desc: "The banded rate drops with turnover: 5% on the first 10,000 Kč, 4% on the next 20,000 Kč, 3% on the rest up to 60,000 Kč — 2,200 Kč commission in total." },
-        { persona: "Example: a supplements reseller", monthly: "90,000 Kč / month in sales (top public band)", keep: "87,200 Kč kept", desc: "Even at the top of the public ladder, total commission is only 2,800 Kč — an effective rate under 3.1%. Past this point we don't offer another automatic discount, but a custom \"own eshop\" arrangement instead." },
+        { persona: "Example: a supplements reseller", monthly: "90,000 Kč / month in sales (top public band)", keep: "86,900 Kč kept", desc: "Even at the top of the public ladder, total commission is only 3,100 Kč — an effective rate under 3.5%. Past this point we don't offer another automatic discount, but a custom \"own eshop\" arrangement instead." },
       ],
     },
     finalCta: {
@@ -2116,7 +2106,7 @@ export const en = {
       sub: "Create your store, add a product, and see your first order come in. If it doesn't sell, you've paid nothing.",
       primaryCta: "Create your free store",
       secondaryCta: "See pricing details",
-      badges: ["5% down to 2% only on sales", "Nothing upfront", "Live in minutes"],
+      badges: ["5% down to 3% only on sales", "Nothing upfront", "Live in minutes"],
     },
     documentation: {
       eyebrow: "Documentation",
@@ -2169,7 +2159,7 @@ export const en = {
     pricingPage: {
       eyebrow: "Pricing",
       title: "Pricing",
-      sub: "No fixed subscription, no hidden costs. Commission from 5% down to 2%, based on how much you sell each month.",
+      sub: "No fixed subscription, no hidden costs. Commission from 5% down to 3%, based on how much you sell each month.",
       summaryCommissionLabel: "of completed sales, by turnover band",
       summaryEmploymentLabel: "without a company (IČO)",
       faqTitle: "Frequently asked questions",
@@ -2208,7 +2198,7 @@ export const en = {
       sub: "The reasoning behind the model.",
       paragraphs: [
         "Most e-commerce platforms charge you before you've made a single sale. That's a real barrier for anyone just testing an idea.",
-        "mamtodoma.cz flips that: we built a full store platform and only get paid a commission (from 5% down to 2%, based on turnover) when you do. If your store doesn't sell anything, it costs you nothing to have tried.",
+        "mamtodoma.cz flips that: we built a full store platform and only get paid a commission (from 5% down to 3%, based on turnover) when you do. If your store doesn't sell anything, it costs you nothing to have tried.",
         "We're a new platform, launched in 2026. We'd rather be upfront about being early than invent a track record we don't have yet.",
       ],
     },

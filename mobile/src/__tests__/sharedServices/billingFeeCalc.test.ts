@@ -39,9 +39,8 @@ describe("computeTieredCommission", () => {
   const tiers = [
     { uptoKc: 10000, rate: 0.05 },
     { uptoKc: 30000, rate: 0.04 },
-    { uptoKc: 60000, rate: 0.03 },
-    { uptoKc: 90000, rate: 0.02 },
-    { uptoKc: null, rate: 0.02 },
+    { uptoKc: 90000, rate: 0.03 },
+    { uptoKc: null, rate: 0.03 },
   ];
 
   it("charges the first band's rate for an order fully inside it", () => {
@@ -68,8 +67,8 @@ describe("computeTieredCommission", () => {
 
   it("falls into the open-ended last band once turnover passes every finite threshold", () => {
     const result = computeTieredCommission(20000, 100000, tiers);
-    expect(result.commissionAmountKc).toBe(400); // 20 000 * 2%
-    expect(result.effectiveRate).toBe(0.02);
+    expect(result.commissionAmountKc).toBe(600); // 20 000 * 3%
+    expect(result.effectiveRate).toBe(0.03);
   });
 
   it("respects a custom (e.g. negotiated enterprise) tier schedule", () => {

@@ -100,14 +100,14 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
                   <svg class="social-ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.44-1.7 4.2-5.5 4.2-3.3 0-6-2.74-6-6.1s2.7-6.1 6-6.1c1.88 0 3.14.8 3.86 1.49l2.63-2.53C16.9 3.52 14.68 2.5 12 2.5 6.98 2.5 2.9 6.58 2.9 11.6S6.98 20.7 12 20.7c5.76 0 9.56-4.05 9.56-9.75 0-.66-.07-1.16-.16-1.66H12z"/></svg>
                   <span>{t.auth.continueWithGoogle}</span>
                 </button>
-                <button id="facebook-btn" class="social-btn" type="button">
+                {/* TODO <button id="facebook-btn" class="social-btn" type="button">
                   <svg class="social-ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#1877F2" d="M24 12c0-6.63-5.37-12-12-12S0 5.37 0 12c0 5.99 4.39 10.95 10.13 11.85v-8.38H7.08V12h3.05V9.36c0-3 1.79-4.67 4.53-4.67 1.31 0 2.68.24 2.68.24v2.95h-1.51c-1.49 0-1.95.93-1.95 1.87V12h3.32l-.53 3.47h-2.79v8.38C19.61 22.95 24 17.99 24 12z"/></svg>
                   <span>{t.auth.continueWithFacebook}</span>
                 </button>
                 <button id="linkedin-btn" class="social-btn" type="button">
                   <svg class="social-ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#0A66C2" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.8 0 0 .78 0 1.74v20.52C0 23.22.8 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.74V1.74C24 .78 23.2 0 22.22 0z"/></svg>
                   <span>{t.auth.continueWithLinkedin}</span>
-                </button>
+                </button> */}
               </div>
               <div class="auth-divider"><span>{t.common.or}</span></div>
             </>
@@ -375,8 +375,8 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
         box-shadow: var(--shadow-md); white-space: nowrap;
       }
       .auth-hero-badge--a { left: 7%; top: 52%; }
-      .auth-hero-badge--b { right: 6%; top: 38%; }
-      .auth-hero-badge--c { left: 22%; bottom: 16%; }
+      .auth-hero-badge--b { right: 6%; top: 18%; }
+      .auth-hero-badge--c { right: 22%; bottom: 16%; }
       .auth-hero-caption {
         position: absolute; left: 20px; bottom: 16px; z-index: 2;
         color: rgba(255,255,255,0.9); font-size: 12px; text-shadow: 0 1px 4px rgba(0,0,0,0.5);

@@ -25,12 +25,12 @@ const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 const fmt = (n: number) => Math.round(n).toLocaleString(locale);
 
 const exampleNote = t.landing.commissionCalculator.exampleNote
-  .replace("{entryRate}", String(entryPct))
-  .replace("{floorRate}", String(floorPct))
-  .replace("{threshold}", fmt(enterpriseThreshold));
+  .replaceAll("{entryRate}", String(entryPct))
+  .replaceAll("{floorRate}", String(floorPct))
+  .replaceAll("{threshold}", fmt(enterpriseThreshold));
 const employmentNote = t.landing.commissionCalculator.employmentNote
-  .replace("{limit}", fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK))
-  .replace("{years}", String(NO_ICO_WITHHOLDING_EXPIRY_YEARS));
+  .replaceAll("{limit}", fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK))
+  .replaceAll("{years}", String(NO_ICO_WITHHOLDING_EXPIRY_YEARS));
 const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeductionLabel.replace("{rate}", String(employmentPct));
 ---
 

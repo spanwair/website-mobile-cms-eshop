@@ -56,9 +56,8 @@ export interface CommissionTier {
 export const COMMISSION_TIERS: CommissionTier[] = [
   { uptoKc: 10000, rate: 0.05 },
   { uptoKc: 30000, rate: 0.04 },
-  { uptoKc: 60000, rate: 0.03 },
-  { uptoKc: 90000, rate: 0.02 },
-  { uptoKc: null, rate: 0.02 },
+  { uptoKc: 90000, rate: 0.03 },
+  { uptoKc: null, rate: 0.03 },
 ];
 
 // Monthly turnover (Kč) above which a party on the public default schedule should be offered a

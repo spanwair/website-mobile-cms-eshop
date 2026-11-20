@@ -147,7 +147,7 @@ Obě akce režimu prodejce vyžadují MANAGE_AUDIT.
 ### Levý sloupec - Plán provize (pouze vlastník systému)
 
 Pro organizace v režimu vlastní společnosti karta **Plán provize** vám umožňuje přepsat pásmovou provizi platformy pro tuto jednu organizaci.
-Výchozí plán platformy (`COMMISSION_TIERS` v `shared/constants/sellerMode.ts`) je pásmová (marginální) sazba, podobně jako daňová progrese — každé pásmo měsíčního obratu se zpoplatní vlastní sazbou: 5 % z prvních 10 000 Kč, 4 % z dalších 20 000 Kč, 3 % z dalších 30 000 Kč, 2 % z dalších 30 000 Kč a 2 % ze všeho nad 90 000 Kč.
+Výchozí plán platformy (`COMMISSION_TIERS` v `shared/constants/sellerMode.ts`) je pásmová (marginální) sazba, podobně jako daňová progrese — každé pásmo měsíčního obratu se zpoplatní vlastní sazbou: 5 % z prvních 10 000 Kč, 4 % z dalších 20 000 Kč, 3 % z dalších 60 000 Kč a 3 % ze všeho nad 90 000 Kč.
 Karta zobrazuje jeden editovatelný řádek za každé pásmo (sazba v % a práh "do výše" v Kč), předvyplněný výchozí hodnotou platformy, pokud organizace ještě nemá vlastní přepsání; poslední řádek je vždy otevřený ("a výše").
 Tlačítkem **+ Přidat pásmo** vložíte další řádek, tlačítkem u řádku ho odstraníte.
 

@@ -147,7 +147,7 @@ Both seller-mode actions require MANAGE_AUDIT.
 ### Left column - Commission schedule (Owner only)
 
 For own-company organizations, a **Commission schedule** card lets you override the platform's tiered commission for this one organization.
-The platform default (`COMMISSION_TIERS` in `shared/constants/sellerMode.ts`) is a marginal/bracket schedule — like income tax — where each band of monthly turnover is charged at that band's own rate: 5% on the first 10 000 Kč, 4% on the next 20 000 Kč, 3% on the next 30 000 Kč, 2% on the next 30 000 Kč, and 2% on everything above 90 000 Kč.
+The platform default (`COMMISSION_TIERS` in `shared/constants/sellerMode.ts`) is a marginal/bracket schedule — like income tax — where each band of monthly turnover is charged at that band's own rate: 5% on the first 10 000 Kč, 4% on the next 20 000 Kč, 3% on the next 60 000 Kč, and 3% on everything above 90 000 Kč.
 The card shows one editable row per band (rate % and "up to" Kč threshold), pre-filled with the platform default when the organization has no override yet; the last row is always open-ended ("and above").
 Use **+ Add band** to insert another row, or the per-row remove button to delete one.
 

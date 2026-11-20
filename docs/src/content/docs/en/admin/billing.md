@@ -22,7 +22,7 @@ Each organization has a `seller_mode` (set on the Seller Mode card in [Organizat
 
 | Mode | Badge | How it is charged |
 |---|---|---|
-| Own company (`own_company`) | green "Own company" | A tiered, marginal-bracket rate from `COMMISSION_TIERS` (5% down to 2%, by monthly-turnover band, see [Pricing](/docs/en)) per order — each order is a blend across every band its slice of the month's turnover touches, held for `OWN_COMPANY_PAYOUT_HOLD_DAYS` (14 days). Overridable per organization via `resolveFeeSchedule()` (see [Organizations](/docs/en/admin/parties)) — this is how a negotiated "own eshop" enterprise schedule above the public ladder's top band is set. Kytka z Beskyd starts in this mode. |
+| Own company (`own_company`) | green "Own company" | A tiered, marginal-bracket rate from `COMMISSION_TIERS` (5% down to 3%, by monthly-turnover band, see [Pricing](/docs/en)) per order — each order is a blend across every band its slice of the month's turnover touches, held for `OWN_COMPANY_PAYOUT_HOLD_DAYS` (14 days). Overridable per organization via `resolveFeeSchedule()` (see [Organizations](/docs/en/admin/parties)) — this is how a negotiated "own eshop" enterprise schedule above the public ladder's top band is set. Kytka z Beskyd starts in this mode. |
 | Commission (`smalljobs_commission`) | amber "Commission" | A flat `NO_ICO_DEDUCTION_RATE` (30%) per order, held for `PAYOUT_HOLD_DAYS` (60 days), with a `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` (12 000 Kč) monthly payout limit. |
 
 ## The overview table (`/admin/billing`)

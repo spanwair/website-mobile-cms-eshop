@@ -1142,7 +1142,7 @@ export const cs: Translations = {
     },
     billing: {
       title: "Přehled plateb",
-      hint: "Aktuální stav plateb za všechny vaše organizace na jednom místě — provize od 5 % do 2 % z obratu podle pásma pro vlastní firmy, 30 % odvod s limitem výplaty 12 000 Kč měsíčně bez IČO.",
+      hint: "Aktuální stav plateb za všechny vaše organizace na jednom místě — provize od 5 % do 3 % z obratu podle pásma pro vlastní firmy, 30 % odvod s limitem výplaty 12 000 Kč měsíčně bez IČO.",
       colParty: "Organizace",
       colMode: "Model",
       colThisMonth: "Tento měsíc",
@@ -1861,7 +1861,7 @@ export const cs: Translations = {
       lang: "cs",
       defaultTitle: "Mamtodoma — Spusťte si e-shop zdarma",
       defaultDescription:
-        "Založte si e-shop zdarma. Bez vstupních nákladů, provize jen od 5 % do 2 % z prodeje podle obratu.",
+        "Založte si e-shop zdarma. Bez vstupních nákladů, provize jen od 5 % do 3 % z prodeje podle obratu.",
     },
     logoMarquee: {
       label: "Napojeno na",
@@ -1883,23 +1883,13 @@ export const cs: Translations = {
       titleHighlight: "bez vstupních nákladů",
       titleLine2: "vyděláváme, jen když vyděláte vy",
       sub:
-        "Spusťte si plnohodnotný e-shop bez vstupních nákladů ještě dnes. Žádný poplatek za založení, žádné pevné měsíční předplatné. Vyděláváme jen tehdy, když vyděláte vy — a čím víc prodáte, tím nižší provizi platíte.",
+        "Spusťte si plnohodnotný e-shop bez vstupních nákladů ještě dnes. Žádný poplatek za založení, žádné pevné měsíční předplatné. Vyděláváme jen tehdy, když vyděláte vy, čím víc prodáte, tím nižší provizi platíte.",
       formPlaceholder: "vas@email.cz",
       formCta: "Začít prodávat zdarma",
       formNote: "Bez platební karty. Bez pevného předplatného. Není co rušit.",
-      trustLine: "od 5 % do 2 % jen z prodeje · nic předem · spuštěno za pár minut",
+      trustLine: "od 5 % do 3 % jen z prodeje · nic předem · spuštěno za pár minut",
       floatLabel: "jen z uskutečněného prodeje",
-    },
-    statBand: {
-      title: "Žádné předplatné. Žádný poplatek za založení.",
-      sub: "Platíte jen podíl z toho, co opravdu prodáte — a čím víc prodáte, tím je ten podíl menší.",
-      chartAriaLabel: "Provize postupně klesá z 5 % na 2 %, jak roste váš měsíční obrat",
-      enterpriseLink: "Prodáváte nad 90 000 Kč měsíčně? Máme Enterprise řešení",
-      stats: [
-        { value: "0 Kč", label: "předem i každý měsíc" },
-        { value: "5 → 2 %", label: "provize klesá, jak rostete" },
-        { value: "pár minut", label: "než je e-shop online" },
-      ],
+      chartLabel: "Provize podle měsíčního obratu",
     },
     included: {
       eyebrow: "V ceně bez příplatků",
@@ -1932,7 +1922,7 @@ export const cs: Translations = {
         },
         {
           title: "Až 95 % z každého prodeje zůstává vám",
-          desc: "Vyděláváme jen tehdy, když vyděláte vy — provize od 5 % do 2 % podle obratu, nic víc, nic skrytě.",
+          desc: "Vyděláváme jen tehdy, když vyděláte vy — provize od 5 % do 3 % podle obratu, nic víc, nic skrytě.",
         },
         {
           title: "Spuštěno za pár minut, ne měsíců",
@@ -1945,9 +1935,9 @@ export const cs: Translations = {
       badge: "Zakládající prodejci",
       title: "Hledáme první obchodníky, se kterými platformu vyladíme",
       body:
-        "Spouštíme a chceme pár zakládajících e-shopů, se kterými platformu vyladíme do posledního detailu. Podmínka je jediná — prodáváte na IČO. Provize je od 5 % do 2 % podle obratu pro každý nový e-shop; jako zakládající prodejce navíc získáte přednostní podporu napřímo od zakladatelů a přímý vliv na to, co postavíme příště.",
+        "Spouštíme a chceme pár zakládajících e-shopů, se kterými platformu vyladíme do posledního detailu. Podmínka je jediná — prodáváte na IČO. Provize je od 5 % do 3 % podle obratu pro každý nový e-shop; jako zakládající prodejce navíc získáte přednostní podporu napřímo od zakladatelů a přímý vliv na to, co postavíme příště.",
       points: [
-        "Provize od 5 % do 2 %, podle obratu. Podívejte se na ceník",
+        "Provize od 5 % do 3 %, podle obratu. Podívejte se na ceník",
         "Přednostní podpora napřímo od zakladatelů",
         "Spuštěno ještě dnes — bez agentury i programátora",
       ],
@@ -1971,7 +1961,7 @@ export const cs: Translations = {
     howItWorks: {
       eyebrow: "Jak začít",
       title: "Tři kroky. Žádný tarif nevybíráte — přepínáme vás automaticky.",
-      sub: "Žádné srovnávání šesti tarifů. Platíte provizi od 5 % do 2 % podle obratu — nic nevybíráte ani nenastavujete, pásmo se přepíná samo.",
+      sub: "Žádné srovnávání šesti tarifů. Platíte provizi od 5 % do 3 % podle obratu — nic nevybíráte ani nenastavujete, pásmo se přepíná samo.",
       steps: [
         { step: "1", title: "Založte si e-shop", desc: "Zadejte e-mail, pojmenujte e-shop a jste v administraci." },
         { step: "2", title: "Nahrajte produkty", desc: "Fotky, ceny, sklad — přidejte jeden produkt nebo celý katalog." },
@@ -2020,7 +2010,7 @@ export const cs: Translations = {
     },
     commissionCalculator: {
       eyebrow: "Ceník ve zkratce",
-      title: "Od 5 % do 2 %, podle obratu",
+      title: "Od 5 % do 3 %, podle obratu",
       sub: "Nastavte měsíční obrat vašeho e-shopu. Uvidíte přesně, kolik zaplatíte a kolik vám zůstane.",
       sliderLabel: "Měsíční obrat",
       youKeepLabel: "Čistý zisk",
@@ -2085,7 +2075,7 @@ export const cs: Translations = {
       ownCompanyTitle: "Máte vlastní firmu",
       ownCompanyBullets: [
         "Fakturujete a prodáváte vlastním jménem",
-        "Provize platformy od 5 % do 2 %, podle měsíčního obratu",
+        "Provize platformy od 5 % do 3 %, podle měsíčního obratu",
         "Výplata bankovním převodem 14 dní po zaplacení objednávky",
       ],
       noCompanyTitle: "Nemáte firmu — prodáváte přes nás",
@@ -2108,7 +2098,7 @@ export const cs: Translations = {
       scenarios: [
         { persona: "Příklad: výrobkyně svíček", monthly: "20 000 Kč měsíčního obratu", keep: "19 100 Kč zůstane", desc: "Prvních 10 000 Kč se počítá sazbou 5 %, zbytek do 20 000 Kč sazbou 4 % — celkem 900 Kč provize, zbytek je váš." },
         { persona: "Příklad: výrobce kožených doplňků", monthly: "60 000 Kč měsíčního obratu", keep: "57 800 Kč zůstane", desc: "Pásmová sazba klesá s obratem: 5 % z prvních 10 000 Kč, 4 % z dalších 20 000 Kč, 3 % ze zbytku do 60 000 Kč — celkem 2 200 Kč provize." },
-        { persona: "Příklad: prodejce doplňků stravy", monthly: "90 000 Kč měsíčního obratu (horní pásmo)", keep: "87 200 Kč zůstane", desc: "I na vrcholu veřejného žebříčku je provize celkem jen 2 800 Kč — efektivně necelá 3,1 % z obratu. Nad touto hranicí už nenabízíme další automatickou slevu, ale individuální řešení \"vlastní e-shop\"." },
+        { persona: "Příklad: prodejce doplňků stravy", monthly: "90 000 Kč měsíčního obratu (horní pásmo)", keep: "86 900 Kč zůstane", desc: "I na vrcholu veřejného žebříčku je provize celkem jen 3 100 Kč — efektivně necelá 3,5 % z obratu. Nad touto hranicí už nenabízíme další automatickou slevu, ale individuální řešení \"vlastní e-shop\"." },
       ],
     },
     finalCta: {
@@ -2117,7 +2107,7 @@ export const cs: Translations = {
       sub: "Založte e-shop, přidejte produkt a sledujte první objednávku. Pokud se nic neprodá, nezaplatíte nic.",
       primaryCta: "Založit e-shop zdarma",
       secondaryCta: "Zobrazit ceník",
-      badges: ["Od 5 % do 2 % jen z prodeje", "Nic předem", "Spuštěno za pár minut"],
+      badges: ["Od 5 % do 3 % jen z prodeje", "Nic předem", "Spuštěno za pár minut"],
     },
     documentation: {
       eyebrow: "Dokumentace",
@@ -2170,7 +2160,7 @@ export const cs: Translations = {
     pricingPage: {
       eyebrow: "Ceník",
       title: "Ceník",
-      sub: "Žádné pevné předplatné, žádné skryté náklady. Provize od 5 % do 2 %, podle toho, kolik měsíčně prodáte.",
+      sub: "Žádné pevné předplatné, žádné skryté náklady. Provize od 5 % do 3 %, podle toho, kolik měsíčně prodáte.",
       summaryCommissionLabel: "z uskutečněného prodeje, podle obratu",
       summaryEmploymentLabel: "bez firmy (IČO)",
       faqTitle: "Časté otázky",
@@ -2209,7 +2199,7 @@ export const cs: Translations = {
       sub: "Zdůvodnění tohoto modelu.",
       paragraphs: [
         "Většina e-commerce platforem si účtuje peníze dřív, než uskutečníte jediný prodej. To je reálná bariéra pro každého, kdo si teprve ověřuje nápad.",
-        "mamtodoma.cz to obrací: postavili jsme plnohodnotnou platformu a bereme si provizi (od 5 % do 2 %, podle obratu) jen tehdy, když vy prodáte. Pokud se v e-shopu nic neprodá, nestálo vás to nic.",
+        "mamtodoma.cz to obrací: postavili jsme plnohodnotnou platformu a bereme si provizi (od 5 % do 3 %, podle obratu) jen tehdy, když vy prodáte. Pokud se v e-shopu nic neprodá, nestálo vás to nic.",
         "Jsme nová platforma, spuštěná v roce 2026. Raději jsme upřímní ohledně toho, že jsme na začátku, než abychom si vymýšleli historii, kterou zatím nemáme.",
       ],
     },

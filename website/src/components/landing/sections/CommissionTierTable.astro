@@ -31,7 +31,6 @@ const topRow = topTier.uptoKc === null
       value: t.landing.commissionCalculator.ladderCustom,
     }
   : null;
-const ec = t.landing.enterprise;
 ---
 
 {part !== "enterprise" && (
@@ -53,10 +52,10 @@ const ec = t.landing.enterprise;
 
 {part !== "table" && (
 <div class="enterprise-card" id="enterprise" data-reveal>
-  <p class="enterprise-eyebrow">{ec.eyebrow}</p>
-  <h3 class="enterprise-title">{ec.title}</h3>
-  <p class="enterprise-desc">{ec.desc.replace("{threshold}", `${fmt(COMMISSION_ENTERPRISE_THRESHOLD_CZK)} Kč`)}</p>
-  <a href="/contact?subject=enterprise" class="btn btn-primary enterprise-cta">{ec.cta}</a>
+  <p class="enterprise-eyebrow">{t.landing.enterprise.eyebrow}</p>
+  <h3 class="enterprise-title">{t.landing.enterprise.title}</h3>
+  <p class="enterprise-desc">{t.landing.enterprise.desc.replaceAll("{threshold}", fmt(COMMISSION_ENTERPRISE_THRESHOLD_CZK))}</p>
+  <a href="/contact?subject=enterprise" class="btn btn-primary enterprise-cta">{t.landing.enterprise.cta}</a>
 </div>
 )}
 
