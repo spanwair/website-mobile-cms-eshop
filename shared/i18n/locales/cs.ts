@@ -1859,9 +1859,9 @@ export const cs: Translations = {
   landing: {
     meta: {
       lang: "cs",
-      defaultTitle: "Mamtodoma — Spusťte si e-shop zdarma",
+      defaultTitle: "Mamtodoma.cz - E-shop bez vstupních nákladů, založte zdarma",
       defaultDescription:
-        "Založte si e-shop zdarma. Bez vstupních nákladů, provize jen od 5 % do 3 % z prodeje podle obratu.",
+        "Založte si e-shop zdarma na Mamtodoma.cz. Bez vstupních nákladů - provizi platíte jen od 5 % do 3 % podle měsíčního obratu. Spuštěno za pár minut.",
     },
     logoMarquee: {
       label: "Napojeno na",

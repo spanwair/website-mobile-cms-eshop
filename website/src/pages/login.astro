@@ -49,7 +49,13 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
   </head>
   <body class="auth-body">
     <header class="auth-topbar">
-      <a href="/" class="auth-brand">mamtodoma.cz</a>
+      <a href="/" class="auth-brand">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path d="M6 14 L16 6 L26 14 L26 26 L6 26 Z" fill="#5BD4A8" />
+          <rect x="13" y="18" width="6" height="8" fill="#FAFBF9" />
+        </svg>
+        mamtodoma<span class="auth-brand-accent">.cz</span>
+      </a>
       <div class="lang-select">
         <select id="lang-select" aria-label="Language">
           <option value="cs" selected={lang === "cs"}>Čeština</option>
@@ -345,7 +351,11 @@ const signupPartyId = Astro.url.searchParams.get("sp") ?? "";
         display: flex; align-items: center; justify-content: space-between;
         padding: var(--space-5) var(--space-6); max-width: 1200px; width: 100%; margin: 0 auto;
       }
-      .auth-brand { color: var(--accent-primary); font-weight: 800; font-size: 22px; letter-spacing: -0.02em; }
+      .auth-brand {
+        display: inline-flex; align-items: center; gap: 8px;
+        color: var(--text-primary); font-weight: 700; font-size: 20px; letter-spacing: -0.02em;
+      }
+      .auth-brand-accent { font-style: italic; color: var(--landing-mint); }
       .lang-select { position: relative; display: inline-flex; align-items: center; }
       .lang-select select {
         appearance: none; -webkit-appearance: none;

@@ -10,7 +10,7 @@ const t = useT(Astro);
     <p class="section-sub section-sub--center">{t.landing.exampleScenarios.sub}</p>
     <p class="scenarios-disclaimer">{t.landing.exampleScenarios.disclaimer}</p>
 
-    <div class="grid-auto" style="margin-top:40px" data-reveal-group>
+    <div class="grid-auto scenarios-grid" data-reveal-group>
       {t.landing.exampleScenarios.scenarios.map((scenario, i) => (
         <div class={`card scenario-card ${i % 2 ? '' : 'scenario-card-float'}`} data-reveal>
           <span class="badge badge-pending scenario-badge">{t.landing.exampleScenarios.badgeLabel}</span>
@@ -27,6 +27,7 @@ const t = useT(Astro);
 </section>
 
 <style>
+  .scenarios-grid { margin-top: 40px; }
   .scenarios-disclaimer {
     text-align: center; font-size: 13px; color: var(--text-placeholder);
     font-style: italic; max-width: 560px; margin: 8px auto 0;

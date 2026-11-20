@@ -1,0 +1,19 @@
+# Mamtodoma.cz
+
+> Mamtodoma.cz is a Czech e-commerce platform that lets anyone launch a full online store for free, with no setup cost and no fixed monthly fee. Instead of a subscription, sellers pay a commission that scales down from 5% to 3% per sale as their monthly turnover grows. The platform includes a storefront, CMS, order/inventory management, team roles and permissions, custom domains, and Stripe-based payments. It also supports selling without a registered business (živnostenský list) via a commission-based reseller arrangement.
+
+## Key pages
+
+- [Homepage](https://mamtodoma.cz/): overview of the platform, commission tiers, and how it works
+- [Pricing](https://mamtodoma.cz/pricing): commission bands and fee structure
+- [Features](https://mamtodoma.cz/features): full feature list (storefront, CMS, orders, inventory, team roles)
+- [About](https://mamtodoma.cz/about): why commission-based pricing instead of a monthly subscription
+- [Selling without a company](https://mamtodoma.cz/commissionaire): how to sell without a registered business
+- [Real stores on the platform](https://mamtodoma.cz/eshopy): live storefronts built with Mamtodoma.cz
+- [Contact](https://mamtodoma.cz/contact): contact details
+
+## Notes
+
+- Language: primarily Czech (cs), with an English (en) translation available.
+- Commission tiers are based on monthly turnover in CZK and decrease as turnover increases (5% -> 4% -> 3% -> 2%, with a negotiated enterprise rate above the top threshold).
+- Pages under /admin, /api, /dashboard, /settings, and /profile are authenticated application views, not public marketing content.

@@ -2,6 +2,7 @@
 import "../../styles/global.css";
 import "../../styles/landing.css";
 import { useT } from "../../lib/i18n";
+import { SMALLJOBS_COMPANY } from "@shared/constants/company";
 import LandingNav from "./LandingNav.astro";
 import LandingFooter from "./LandingFooter.astro";
 
@@ -10,17 +11,32 @@ interface Props {
   description: string;
   ambient?: boolean;
   noindex?: boolean;
+  /* Responsive background image to preload as this page's LCP element (homepage hero photo
+     only -- other landing pages have no such image, so this defaults to unset). */
+  preloadImage?: { mobile: string; desktop: string };
 }
-const { title, description, ambient = false, noindex = false } = Astro.props;
+const { title, description, ambient = false, noindex = false, preloadImage } = Astro.props;
 const t = useT(Astro);
 const canonical = new URL(Astro.url.pathname, Astro.site ?? "https://mamtodoma.cz");
 
+// Organization (not LocalBusiness) — Mamtodoma is a SaaS platform with no walk-in physical
+// location, so LocalBusiness would misrepresent it to search engines. This is the legal entity
+// (Smalljobs s.r.o.) behind the platform, same identity already used on invoices/legal pages.
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "Mamtodoma",
+  legalName: SMALLJOBS_COMPANY.name,
   url: new URL("/", Astro.site ?? "https://mamtodoma.cz").toString(),
   logo: new URL("/apple-touch-icon.png", Astro.site ?? "https://mamtodoma.cz").toString(),
+  foundingDate: SMALLJOBS_COMPANY.incorporatedOn,
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: SMALLJOBS_COMPANY.registeredSeat.line1,
+    postalCode: SMALLJOBS_COMPANY.registeredSeat.postalCode,
+    addressLocality: SMALLJOBS_COMPANY.registeredSeat.city,
+    addressCountry: SMALLJOBS_COMPANY.registeredSeat.countryCode,
+  },
 };
 const toJsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, "\\u003c");
 ---
@@ -46,6 +62,16 @@ const toJsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, "\\u003c"
         in from its own self-hosted files with a system-ui fallback, so it needs no preload. */}
     <link rel="preload" href="/fonts/jakarta-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/jakarta-latin-ext.woff2" as="font" type="font/woff2" crossorigin />
+    {preloadImage && (
+      <link
+        rel="preload"
+        as="image"
+        type="image/webp"
+        imagesrcset={`${preloadImage.mobile} 800w, ${preloadImage.desktop} 1400w`}
+        imagesizes="100vw"
+        fetchpriority="high"
+      />
+    )}
     <script type="application/ld+json" set:html={toJsonLd(organizationSchema)} />
   </head>
   <body class:list={["landing", { "landing--ambient": ambient }]}>

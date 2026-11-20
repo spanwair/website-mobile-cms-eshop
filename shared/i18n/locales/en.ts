@@ -1858,9 +1858,9 @@ export const en = {
   landing: {
     meta: {
       lang: "en",
-      defaultTitle: "Mamtodoma — Launch your online store for free",
+      defaultTitle: "Mamtodoma.cz - Launch Your Online Store for Free, No Costs",
       defaultDescription:
-        "Launch your online store for free. No setup cost, just a commission from 5% down to 3% per sale, based on turnover.",
+        "Launch your online store for free on Mamtodoma.cz. No setup costs - pay a commission from 5% down to 3% per sale, based on monthly turnover. Live in minutes.",
     },
     logoMarquee: {
       label: "Connected with",

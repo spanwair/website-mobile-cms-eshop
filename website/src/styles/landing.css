@@ -244,7 +244,10 @@
 .landing .card-desc { color: var(--text-muted); font-size: var(--fs-sm); line-height: 1.6; margin: 0; }
 
 @media (max-width: 640px) {
-  .landing .container-lg { padding-inline: 16px; }
+  /* .container-lg's width is already inset by --gutter on every side (via margin-inline:auto),
+     so adding padding-inline here on top of that used to double the side margin to ~36px.
+     Shrinking --gutter itself keeps a single, consistent inset (~10px) at this width. */
+  .landing { --gutter: 10px; }
 }
 
 .landing [data-reveal] {

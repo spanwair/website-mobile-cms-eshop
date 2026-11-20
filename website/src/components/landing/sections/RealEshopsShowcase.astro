@@ -15,7 +15,7 @@ const t = useT(Astro);
     <div class="container-lg">
       <p class="section-eyebrow">{t.landing.realEshops.eyebrow}</p>
       <h2 class="section-title">{t.landing.realEshops.title}</h2>
-      <p class="section-sub" style="margin-bottom:40px">{t.landing.realEshops.sub}</p>
+      <p class="section-sub real-eshops-sub">{t.landing.realEshops.sub}</p>
 
       <div class="eshops-grid" data-reveal-group>
         {stores.map((store) => {
@@ -70,6 +70,8 @@ const t = useT(Astro);
 )}
 
 <style>
+  .real-eshops-sub { margin-bottom: 40px; }
+
   /* Flexbox with a fixed flex-basis (not the shared .grid-auto, which is CSS grid with
      auto-fit + 1fr) - grid's auto-fill still reserves empty implicit tracks up to the
      container width, which defeats justify-content:center and stretches a lone card's

@@ -6,8 +6,8 @@ const t = useT(Astro);
 <section class="landing landing--dark" id="final-cta">
   <div class="container-lg final-cta-inner">
     <p class="section-eyebrow section-eyebrow--center">{t.landing.finalCta.eyebrow}</p>
-    <h2 class="section-title section-title--center" style="max-width:640px">{t.landing.finalCta.title}</h2>
-    <p class="section-sub section-sub--center" style="margin-bottom:32px">{t.landing.finalCta.sub}</p>
+    <h2 class="section-title section-title--center final-cta-title">{t.landing.finalCta.title}</h2>
+    <p class="section-sub section-sub--center final-cta-sub">{t.landing.finalCta.sub}</p>
 
     <div class="final-cta-buttons">
       <a href="/login?mode=signup" rel="nofollow" class="btn btn-primary btn-lg">{t.landing.finalCta.primaryCta}</a>
@@ -22,6 +22,8 @@ const t = useT(Astro);
 
 <style>
   .final-cta-inner { text-align: center; }
+  .final-cta-title { max-width: 640px; }
+  .final-cta-sub { margin-bottom: 32px; }
   .final-cta-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px; }
   .final-cta-badges { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; font-size: 13px; color: var(--landing-dark-text-muted); }
 </style>

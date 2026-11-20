@@ -36,7 +36,12 @@ const websiteSchema = {
 const toJsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, "\\u003c");
 ---
 
-<LandingLayout title={t.landing.meta.defaultTitle} description={t.landing.meta.defaultDescription} ambient>
+<LandingLayout
+  title={t.landing.meta.defaultTitle}
+  description={t.landing.meta.defaultDescription}
+  preloadImage={{ mobile: "/img/hero-seller-mobile.webp", desktop: "/img/hero-seller.webp" }}
+  ambient
+>
   <script type="application/ld+json" set:html={toJsonLd(websiteSchema)} />
   <Hero />
   <IncludedForFree />

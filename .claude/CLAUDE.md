@@ -151,6 +151,17 @@ Do NOT skip because a change looks small. Load the skill first, then proceed.
 
 ---
 
+## Skill: oci-prod-migration — AUTO-TRIGGER
+
+TRIGGER — invoke the `oci-prod-migration` skill BEFORE:
+- Running `scripts/db-push.sh production` or `npx supabase db push --remote=...`
+- Touching `scripts/oci-tunnel.sh`, `scripts/_prod-db-url.sh`, `scripts/repair-prod-history.sh`, or `scripts/oci-prod-db.md`
+- Any task phrased as "push to prod", "migrate to Oracle Cloud", "deploy migrations to production"
+
+Covers two recurring failure modes: SSH blocked by a stale OCI Security List rule (home IP drift), and the Supabase CLI's false-positive "must be owner of table" error on this self-hosted Supavisor stack (confirmed client-side, never reaches real Postgres — fix is a direct `psql` apply + manual `schema_migrations` insert, not more CLI debugging).
+
+---
+
 ## Roles & Permissions System
 
 Single source of truth: `shared/constants/permissions.ts`. Never define role numbers, permission bit values, or label strings anywhere else — import from there.

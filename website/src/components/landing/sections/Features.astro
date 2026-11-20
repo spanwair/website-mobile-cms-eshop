@@ -16,7 +16,7 @@ const images = [
   <div class="container-lg">
     <p class="section-eyebrow section-eyebrow--center">{t.landing.features.eyebrow}</p>
     <h2 class="section-title section-title--center">{t.landing.features.title}</h2>
-    <p class="section-sub section-sub--center" style="margin-bottom:56px">{t.landing.features.sub}</p>
+    <p class="section-sub section-sub--center features-sub">{t.landing.features.sub}</p>
 
     <div class="feature-grid" data-reveal-group>
       {t.landing.features.items.map((item, i) => (
@@ -35,6 +35,8 @@ const images = [
 </section>
 
 <style>
+  .features-sub { margin-bottom: 56px; }
+
   /* Fixed 3-up grid so the 6 feature cards land as a clean 3×2 block (auto-fit was
      giving an unbalanced 4 + 2). Collapses to 2-up, then 1-up on small screens. */
   .feature-grid { display: grid; gap: var(--space-m); grid-template-columns: repeat(3, 1fr); }

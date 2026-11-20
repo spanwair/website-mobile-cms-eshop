@@ -22,7 +22,19 @@ const enterpriseRangeLabel = `${fmtK(COMMISSION_ENTERPRISE_THRESHOLD_CZK)}+ Kč`
 ---
 
 <section class="landing hero" id="hero">
-  <img class="hero-photo-bg" src="/img/hero-seller.jpg" alt="" aria-hidden="true" />
+  <picture>
+    <source media="(max-width: 760px)" type="image/webp" srcset="/img/hero-seller-mobile.webp" />
+    <source type="image/webp" srcset="/img/hero-seller.webp" />
+    <img
+      class="hero-photo-bg"
+      src="/img/hero-seller.jpg"
+      alt=""
+      aria-hidden="true"
+      width="1400"
+      height="2100"
+      fetchpriority="high"
+    />
+  </picture>
   <div class="container-lg hero-grid">
     <div class="hero-copy" data-hero-reveal>
       <span class="hero-eyebrow"><span class="hero-dot" aria-hidden="true"></span>{t.landing.hero.eyebrow}</span>
@@ -75,6 +87,10 @@ const enterpriseRangeLabel = `${fmtK(COMMISSION_ENTERPRISE_THRESHOLD_CZK)}+ Kč`
   /* Same photo the hero used to frame, now washed out behind the whole section as texture --
      opaque elements (card, accent blocks, text) sit above it via z-index, so it only really
      shows through the page margins and the gaps around them. */
+  /* The <picture> wrapper is purely structural (format/size negotiation for the browser) --
+     display:contents drops its own box from the layout so the absolutely-positioned <img>
+     still sizes against .hero (the nearest positioned ancestor) exactly as before. */
+  .hero picture { display: contents; }
   .hero-photo-bg {
     position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%;
     opacity: 0.2; z-index: 0;

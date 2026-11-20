@@ -12,90 +12,101 @@ const t = useT(Astro);
 ---
 
 <div class="write-review">
-  <h3 class="section-title">{t.shop.writeReview}</h3>
+  <button type="button" class="btn btn-primary" data-rf-open={productId}>{t.shop.writeReview}</button>
+</div>
 
-  {!isLoggedIn ? (
-    <div class="login-gate">
-      <p>{t.shop.loginToReview}</p>
-      <a href={`/login?redirect=${Astro.url.pathname}`} class="btn btn-primary">{t.auth.signIn}</a>
+<div class="rf-overlay" data-rf-overlay={productId} hidden>
+  <div class="rf-modal" role="dialog" aria-modal="true" aria-label={t.shop.writeReview}>
+    <div class="rf-header">
+      <h3 class="section-title">{t.shop.writeReview}</h3>
+      <button type="button" class="rf-close" data-rf-close aria-label={t.common.close}>&times;</button>
     </div>
-  ) : (
-  <div class="review-form-layout">
-    <form method="POST" class="review-form" id="review-form">
-      <input type="hidden" name="_action" value="review" />
-      <input type="hidden" name="product_id" value={productId} />
 
-      <div class="form-row">
-        <div class="field">
-          <label>{t.shop.yourName}</label>
-          <input type="text" name="author_name" required class="input" value={reviewerName} />
+    <div class="rf-body">
+      {!isLoggedIn ? (
+        <div class="login-gate">
+          <p>{t.shop.loginToReview}</p>
+          <a href={`/login?redirect=${Astro.url.pathname}`} class="btn btn-primary">{t.auth.signIn}</a>
         </div>
-        <div class="field">
-          <label>{t.shop.emailLabel}</label>
-          <input type="email" name="author_email" required class="input" value={reviewerEmail} />
-        </div>
-      </div>
+      ) : (
+      <div class="review-form-layout">
+        <form method="POST" class="review-form" id="review-form">
+          <input type="hidden" name="_action" value="review" />
+          <input type="hidden" name="product_id" value={productId} />
 
-      <div class="field">
-        <label>{t.shop.ratingLabel}</label>
-        <div class="star-rating">
-          {[5, 4, 3, 2, 1].map((n) => (
-            <>
-              <input type="radio" name="rating" id={`star${n}`} value={n} required />
-              <label for={`star${n}`} class="star-label" title={`${n} ★`}>★</label>
-            </>
-          ))}
-        </div>
-      </div>
-
-      <div class="field field-pros">
-        <label>{t.shop.pros}</label>
-        <div class="point-list point-list--pros" id="rf-pros" data-name="pros" data-placeholder={t.shop.positivePlaceholder}>
-          <div class="point-row">
-            <input type="text" name="pros" class="input point-input" placeholder={t.shop.positivePlaceholder} />
-            <button type="button" class="btn-remove" aria-label="Remove">×</button>
+          <div class="form-row">
+            <div class="field">
+              <label>{t.shop.yourName}</label>
+              <input type="text" name="author_name" required class="input" value={reviewerName} />
+            </div>
+            <div class="field">
+              <label>{t.shop.emailLabel}</label>
+              <input type="email" name="author_email" required class="input" value={reviewerEmail} />
+            </div>
           </div>
-        </div>
-        <button type="button" class="btn-add" data-add="rf-pros">{t.shop.addPositive}</button>
-      </div>
 
-      <div class="field field-cons">
-        <label>{t.shop.cons}</label>
-        <div class="point-list point-list--cons" id="rf-cons" data-name="cons" data-placeholder={t.shop.negativePlaceholder}>
-          <div class="point-row">
-            <input type="text" name="cons" class="input point-input" placeholder={t.shop.negativePlaceholder} />
-            <button type="button" class="btn-remove" aria-label="Remove">×</button>
+          <div class="field">
+            <label>{t.shop.ratingLabel}</label>
+            <div class="star-rating">
+              {[5, 4, 3, 2, 1].map((n) => (
+                <>
+                  <input type="radio" name="rating" id={`star${n}`} value={n} required />
+                  <label for={`star${n}`} class="star-label" title={`${n} ★`}>★</label>
+                </>
+              ))}
+            </div>
           </div>
-        </div>
-        <button type="button" class="btn-add" data-add="rf-cons">{t.shop.addNegative}</button>
-      </div>
 
-      <div class="field">
-        <label>{t.shop.yourReview}</label>
-        <textarea name="body" class="input textarea" rows="4" placeholder={t.shop.reviewBodyPlaceholder}></textarea>
-      </div>
-
-      <button type="submit" class="btn btn-primary">{t.shop.submitReview}</button>
-    </form>
-
-    <aside class="review-preview">
-      <span class="preview-label">{t.shop.reviewPreview}</span>
-      <div class="preview-card">
-        <div class="preview-avatar">👤</div>
-        <div class="preview-body">
-          <strong id="pv-name">{reviewerName || "—"}</strong>
-          <div class="preview-recommend">
-            <span id="pv-stars" class="pv-stars"></span>
-            <span id="pv-pct" class="pv-pct"></span>
+          <div class="field field-pros">
+            <label>{t.shop.pros}</label>
+            <div class="point-list point-list--pros" id="rf-pros" data-name="pros" data-placeholder={t.shop.positivePlaceholder}>
+              <div class="point-row">
+                <input type="text" name="pros" class="input point-input" placeholder={t.shop.positivePlaceholder} />
+                <button type="button" class="btn-remove" aria-label="Remove">×</button>
+              </div>
+            </div>
+            <button type="button" class="btn-add" data-add="rf-pros">{t.shop.addPositive}</button>
           </div>
-          <ul class="pv-list" id="pv-pros"></ul>
-          <ul class="pv-list" id="pv-cons"></ul>
-          <p class="pv-desc" id="pv-desc"></p>
-        </div>
+
+          <div class="field field-cons">
+            <label>{t.shop.cons}</label>
+            <div class="point-list point-list--cons" id="rf-cons" data-name="cons" data-placeholder={t.shop.negativePlaceholder}>
+              <div class="point-row">
+                <input type="text" name="cons" class="input point-input" placeholder={t.shop.negativePlaceholder} />
+                <button type="button" class="btn-remove" aria-label="Remove">×</button>
+              </div>
+            </div>
+            <button type="button" class="btn-add" data-add="rf-cons">{t.shop.addNegative}</button>
+          </div>
+
+          <div class="field">
+            <label>{t.shop.yourReview}</label>
+            <textarea name="body" class="input textarea" rows="4" placeholder={t.shop.reviewBodyPlaceholder}></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary">{t.shop.submitReview}</button>
+        </form>
+
+        <aside class="review-preview">
+          <span class="preview-label">{t.shop.reviewPreview}</span>
+          <div class="preview-card">
+            <div class="preview-avatar">👤</div>
+            <div class="preview-body">
+              <strong id="pv-name">{reviewerName || "—"}</strong>
+              <div class="preview-recommend">
+                <span id="pv-stars" class="pv-stars"></span>
+                <span id="pv-pct" class="pv-pct"></span>
+              </div>
+              <ul class="pv-list" id="pv-pros"></ul>
+              <ul class="pv-list" id="pv-cons"></ul>
+              <p class="pv-desc" id="pv-desc"></p>
+            </div>
+          </div>
+        </aside>
       </div>
-    </aside>
+      )}
+    </div>
   </div>
-  )}
 </div>
 
 <script define:vars={{ noProsText: t.shop.noPros, noConsText: t.shop.noCons }}>
@@ -166,9 +177,44 @@ const t = useT(Astro);
   }
 </script>
 
+<script>
+  document.querySelectorAll<HTMLElement>("[data-rf-overlay]").forEach((overlay) => {
+    if (overlay.dataset.rfWired) return;
+    overlay.dataset.rfWired = "1";
+
+    const closeBtn = overlay.querySelector<HTMLElement>("[data-rf-close]");
+    closeBtn?.addEventListener("click", () => overlay.setAttribute("hidden", ""));
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.setAttribute("hidden", "");
+    });
+  });
+
+  document.querySelectorAll<HTMLElement>("[data-rf-open]").forEach((btn) => {
+    if (btn.dataset.rfOpenWired) return;
+    btn.dataset.rfOpenWired = "1";
+    btn.addEventListener("click", () => {
+      const overlay = document.querySelector<HTMLElement>(`[data-rf-overlay="${btn.dataset.rfOpen}"]`);
+      overlay?.removeAttribute("hidden");
+    });
+  });
+</script>
+
 <style>
   .write-review { border-top:1px solid var(--border); padding-top:32px; margin-top:32px; }
-  .section-title { font-size:20px; font-weight:700; margin-bottom:16px; }
+  .section-title { font-size:20px; font-weight:700; margin-bottom:0; }
+
+  .rf-overlay {
+    position:fixed; inset:0; background:var(--bg-page); z-index:1000; overflow-y:auto;
+  }
+  .rf-overlay[hidden] { display:none; }
+  .rf-modal { max-width:900px; margin:0 auto; padding:0 24px 64px; }
+  .rf-header {
+    position:sticky; top:0; background:var(--bg-page); z-index:1;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:20px 0; border-bottom:1px solid var(--border); margin-bottom:24px;
+  }
+  .rf-close { background:none; border:none; font-size:28px; line-height:1; cursor:pointer; color:var(--text-muted); }
+  .rf-close:hover { color:var(--text-primary); }
   .review-form-layout { display:grid; grid-template-columns:1fr 340px; gap:32px; align-items:start; }
   @media(max-width:860px) { .review-form-layout { grid-template-columns:1fr; } }
 

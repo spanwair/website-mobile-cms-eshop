@@ -19,7 +19,7 @@ const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.
       <p class="footer-tagline">{t.landing.footer.tagline}</p>
 
       <div class="footer-newsletter">
-        <h4>{t.landing.footer.newsletterTitle}</h4>
+        <h3>{t.landing.footer.newsletterTitle}</h3>
         <p class="footer-newsletter-sub">{t.landing.footer.newsletterSub}</p>
         <form id="footer-newsletter-form" class="footer-newsletter-form">
           <input type="email" name="email" required placeholder={t.landing.footer.newsletterPlaceholder} aria-label={t.landing.footer.newsletterPlaceholder} class="form-input" />
@@ -30,7 +30,7 @@ const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.
 
     {Object.values(t.landing.footer.columns).map((col) => (
       <div class="footer-col">
-        <h4>{col.title}</h4>
+        <h3>{col.title}</h3>
         <ul>
           {col.links.map((link) => (
             <li><a href={link.href}>{link.label}</a></li>
@@ -40,7 +40,7 @@ const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.
     ))}
 
     <div class="footer-col">
-      <h4>{t.landing.footer.contactTitle}</h4>
+      <h3>{t.landing.footer.contactTitle}</h3>
       <ul class="footer-contact">
         <li>{SMALLJOBS_COMPANY.name}</li>
         <li>IČO {SMALLJOBS_COMPANY.ico}</li>
@@ -73,7 +73,7 @@ const address = `${SMALLJOBS_COMPANY.registeredSeat.line1}, ${SMALLJOBS_COMPANY.
   .footer-grid { display: grid; gap: 32px; grid-template-columns: 1.4fr repeat(4, 1fr); margin-bottom: 40px; }
   .footer-brand-link { color: #fff; }
   .footer-tagline { font-size: 13px; margin-top: 8px; max-width: 240px; line-height: 1.6; }
-  .footer-col h4, .footer-newsletter h4 { color: #fff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+  .footer-col h3, .footer-newsletter h3 { color: #fff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; font-weight: 700; }
   .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
   .footer-col a { color: #9CA3AF; font-size: 14px; }
   .footer-col a:hover { color: var(--landing-mint, #5BD4A8); text-decoration: none; }
