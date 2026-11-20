@@ -2,7 +2,7 @@
 import LandingLayout from "../components/landing/LandingLayout.astro";
 import PageHero from "../components/landing/PageHero.astro";
 import Features from "../components/landing/sections/Features.astro";
-import AICapabilities from "../components/landing/sections/AICapabilities.astro";
+// import AICapabilities from "../components/landing/sections/AICapabilities.astro";
 import FinalCta from "../components/landing/sections/FinalCta.astro";
 import { useT } from "../lib/i18n";
 
@@ -12,6 +12,6 @@ const t = useT(Astro);
 <LandingLayout title={`${t.landing.featuresPage.title} — Mamtodoma`} description={t.landing.featuresPage.sub}>
   <PageHero eyebrow={t.landing.featuresPage.eyebrow} title={t.landing.featuresPage.title} lead={t.landing.featuresPage.sub} image="/img/team-work.jpg" imageAlt="" />
   <Features />
-  <AICapabilities />
+  <!-- <AICapabilities /> -->
   <FinalCta />
 </LandingLayout>

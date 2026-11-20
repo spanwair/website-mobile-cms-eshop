@@ -17,87 +17,187 @@
 // payment.ts) — which is exactly why the break-even note below matters: with delivery no longer
 // padding the commission base, the commission has less room to cover Stripe's cut on small
 // orders.
-import { useT } from "@/lib/i18n";
-import { COMMISSION_RATE } from "@shared/constants/sellerMode";
+import { getLang, useT } from "@/lib/i18n";
+import { COMMISSION_ENTRY_RATE, COMMISSION_TIERS } from "@shared/constants/sellerMode";
 import { STRIPE_FEE_PERCENT_EU, STRIPE_FEE_FIXED_CZK } from "@shared/constants/payment";
 
 const t = useT(Astro);
+const ob = t.landing.orderBreakdown;
+const lang = getLang(Astro);
+const locale = lang === "en" ? "en-US" : "cs-CZ";
 
-const commissionPct = Math.round(COMMISSION_RATE * 100);
+// A single order, in isolation, has no month-to-date turnover to blend against — it is always
+// charged at the entry rate (the first, highest band) unless this is not the party's first
+// order of the month, in which case the real per-order ledger may land on a lower blended rate.
+// See the interactive calculator above for the month-level picture.
+const commissionPct = Math.round(COMMISSION_ENTRY_RATE * 100);
+const floorPct = Math.round(COMMISSION_TIERS[COMMISSION_TIERS.length - 2].rate * 100);
 const stripePct = STRIPE_FEE_PERCENT_EU * 100;
+const stripePctLabel = stripePct.toLocaleString(locale);
 
-const rowStripe = t.landing.orderBreakdown.rowStripe
-  .replace("{pct}", String(stripePct))
+const rowStripe = ob.rowStripe
+  .replace("{pct}", stripePctLabel)
   .replace("{fixed}", String(STRIPE_FEE_FIXED_CZK));
-const rowCommission = t.landing.orderBreakdown.rowCommission.replace("{rate}", String(commissionPct));
+const rowCommission = ob.rowCommission.replace("{rate}", String(commissionPct));
+const explainerRateTitle = ob.explainerRateTitle.replace("{rate}", String(commissionPct));
+const explainerRateText = ob.explainerRateText.replace("{floorRate}", String(floorPct));
+
+// Server-rendered defaults so the receipt is complete (and correct) before the slider script
+// runs. Must match the input's default value and the pickup delivery option below.
+const fmtKc = (n: number) => `${Math.round(n).toLocaleString(locale)} Kč`;
+const fmtNegativeKc = (n: number) => `−${Math.round(Math.abs(n)).toLocaleString(locale)} Kč`;
+const DEFAULT_ITEM = 500;
+const DEFAULT_DELIVERY = 69;
+const defaultCommission = DEFAULT_ITEM * COMMISSION_ENTRY_RATE;
+const defaultTotal = DEFAULT_ITEM + DEFAULT_DELIVERY;
+const defaultStripeFee = defaultTotal * STRIPE_FEE_PERCENT_EU + STRIPE_FEE_FIXED_CZK;
+const defaultMargin = defaultCommission - defaultStripeFee;
+const defaultBreakEven = (DEFAULT_DELIVERY * STRIPE_FEE_PERCENT_EU + STRIPE_FEE_FIXED_CZK) / (COMMISSION_ENTRY_RATE - STRIPE_FEE_PERCENT_EU);
+
+const defaultStripeNote = ob.rowStripeNote.replace("{total}", fmtKc(defaultTotal));
+const defaultMarginNote = ob.marginNote
+  .replace("{amount}", fmtKc(Math.max(defaultMargin, 0)))
+  .replace("{commission}", fmtKc(defaultCommission));
+const defaultBreakEvenNote = ob.breakEvenNote
+  .replace("{rate}", String(commissionPct))
+  .replace("{amount}", fmtKc(defaultBreakEven));
 ---
 
-<section class="landing landing--dark" id="order-breakdown">
+<section class="landing ob-section" id="order-breakdown">
   <div class="container-lg">
-    <p class="section-eyebrow section-eyebrow--center">{t.landing.orderBreakdown.eyebrow}</p>
-    <h2 class="section-title section-title--center">{t.landing.orderBreakdown.title}</h2>
-    <p class="section-sub section-sub--center" style="margin-bottom:48px">{t.landing.orderBreakdown.sub}</p>
+    <div class="ob-head">
+      <p class="section-eyebrow section-eyebrow--center">{ob.eyebrow}</p>
+      <h2 class="section-title section-title--center">{ob.title}</h2>
+      <p class="section-sub section-sub--center">{ob.sub}</p>
+    </div>
 
-    <div
-      class="ob-card"
-      data-standard-rate={COMMISSION_RATE}
-      data-stripe-pct={STRIPE_FEE_PERCENT_EU}
-      data-stripe-fixed={STRIPE_FEE_FIXED_CZK}
-      data-row-commission-standard={rowCommission}
-      data-row-stripe-note-template={t.landing.orderBreakdown.rowStripeNote}
-      data-margin-note-template={t.landing.orderBreakdown.marginNote}
-      data-break-even-template={t.landing.orderBreakdown.breakEvenNote}
-    >
-      <label class="ob-label" for="ob-item-price">{t.landing.orderBreakdown.itemPriceLabel}</label>
-      <input id="ob-item-price" type="range" min="100" max="3000" step="50" value="500" class="ob-slider" />
+    <div class="ob-layout" data-reveal-group>
+      <div
+        class="ob-receipt"
+        data-reveal
+        data-standard-rate={COMMISSION_ENTRY_RATE}
+        data-stripe-pct={STRIPE_FEE_PERCENT_EU}
+        data-stripe-fixed={STRIPE_FEE_FIXED_CZK}
+        data-row-stripe-note-template={ob.rowStripeNote}
+        data-margin-note-template={ob.marginNote}
+        data-break-even-template={ob.breakEvenNote}
+        data-locale={locale}
+      >
+        <span class="ob-badge">{ob.exampleBadge}</span>
 
-      <div class="ob-field-row">
-        <span class="ob-field-label">{t.landing.orderBreakdown.deliveryLabel}</span>
-        <div class="ob-segmented" role="group">
-          <button type="button" class="ob-segmented-btn ob-segmented-btn--active" data-delivery="69">{t.landing.orderBreakdown.deliveryPickup}</button>
-          <button type="button" class="ob-segmented-btn" data-delivery="119">{t.landing.orderBreakdown.deliveryHome}</button>
+        <div class="ob-field">
+          <div class="ob-field-head">
+            <label class="ob-label" for="ob-item-price">{ob.itemPriceLabel}</label>
+            <output class="ob-amount tnum" for="ob-item-price" id="ob-item-price-value">{fmtKc(DEFAULT_ITEM)}</output>
+          </div>
+          <input id="ob-item-price" type="range" min="100" max="3000" step="50" value={DEFAULT_ITEM} class="ob-slider" />
+        </div>
+
+        <div class="ob-field">
+          <span class="ob-label" id="ob-delivery-label">{ob.deliveryLabel}</span>
+          <div class="ob-segmented" role="group" aria-labelledby="ob-delivery-label">
+            <button type="button" class="ob-segmented-btn ob-segmented-btn--active" data-delivery="69">{ob.deliveryPickup}</button>
+            <button type="button" class="ob-segmented-btn" data-delivery="119">{ob.deliveryHome}</button>
+          </div>
+        </div>
+
+        <div class="ob-lines">
+          <div class="ob-line"><span>{ob.rowItem}</span><span class="tnum" id="ob-row-item">{fmtKc(DEFAULT_ITEM)}</span></div>
+          <div class="ob-line ob-line--sub">
+            <span>{rowCommission}</span>
+            <span class="tnum" id="ob-row-commission">{fmtNegativeKc(defaultCommission)}</span>
+          </div>
+          <div class="ob-line ob-line--note">
+            <span>{rowStripe}</span><span class="tnum" id="ob-row-stripe">{fmtNegativeKc(defaultStripeFee)}</span>
+          </div>
+          <div class="ob-line ob-line--net">
+            <span>{ob.rowNet}</span>
+            <span class="tnum" id="ob-row-net">{fmtKc(DEFAULT_ITEM - defaultCommission)}</span>
+          </div>
+        </div>
+
+        <div class="ob-sub">
+          <p class="ob-sub-label">{ob.paymentSectionLabel}</p>
+          <div class="ob-line ob-line--muted">
+            <span>{ob.rowDeliveryCharged}</span><span class="tnum" id="ob-row-delivery">{fmtKc(DEFAULT_DELIVERY)}</span>
+          </div>
+          <p class="ob-sub-total">
+            <span>{ob.customerPaysLabel}</span>
+            <strong class="tnum" id="ob-row-total">{fmtKc(defaultTotal)}</strong>
+          </p>
         </div>
       </div>
 
-      <div class="ob-waterfall">
-        <div class="ob-row"><span>{t.landing.orderBreakdown.rowItem}</span><span id="ob-row-item">500 Kč</span></div>
-        <div class="ob-row ob-row--sub">
-          <span id="ob-row-commission-label">{rowCommission}</span><span id="ob-row-commission">−50 Kč</span>
+      <aside class="ob-explain" data-reveal>
+        <div class="ob-explain-item">
+          <span class="ob-explain-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7h10v9H3z"></path>
+              <path d="M13 10h4l3 3v3h-7z"></path>
+              <circle cx="7" cy="18.5" r="1.5"></circle>
+              <circle cx="17" cy="18.5" r="1.5"></circle>
+            </svg>
+          </span>
+          <div>
+            <h3 class="ob-explain-title">{ob.explainerDeliveryTitle}</h3>
+            <p class="ob-explain-text">{ob.explainerDeliveryText}</p>
+          </div>
         </div>
-        <div class="ob-row ob-row--net"><span>{t.landing.orderBreakdown.rowNet}</span><span id="ob-row-net">450 Kč</span></div>
-      </div>
 
-      <div class="ob-waterfall ob-waterfall--muted">
-        <p class="ob-section-label">{t.landing.orderBreakdown.deliverySectionLabel}</p>
-        <div class="ob-row"><span>{t.landing.orderBreakdown.rowDeliveryCharged}</span><span id="ob-row-delivery">69 Kč</span></div>
-        <p class="ob-note">{t.landing.orderBreakdown.deliveryPassthroughNote}</p>
-        <div class="ob-row ob-row--sub">
-          <span id="ob-row-stripe-label">{rowStripe}</span><span id="ob-row-stripe">−12 Kč</span>
+        <div class="ob-explain-item">
+          <span class="ob-explain-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="6" width="18" height="12" rx="2"></rect>
+              <path d="M3 10h18"></path>
+            </svg>
+          </span>
+          <div>
+            <h3 class="ob-explain-title">{ob.explainerStripeTitle}</h3>
+            <p class="ob-explain-text">{ob.explainerStripeText}</p>
+          </div>
         </div>
-        <p class="ob-note" id="ob-row-stripe-note"></p>
-      </div>
 
-      <p class="ob-note ob-note--margin" id="ob-margin-note"></p>
-      <p class="ob-note ob-note--warn ob-note--hidden" id="ob-margin-warning">{t.landing.orderBreakdown.marginWarning}</p>
-      <p class="ob-note" id="ob-break-even"></p>
-      <p class="ob-disclaimer">{t.landing.orderBreakdown.disclaimer}</p>
+        <div class="ob-explain-item">
+          <span class="ob-explain-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 18 18 6"></path>
+              <circle cx="7.5" cy="7.5" r="2"></circle>
+              <circle cx="16.5" cy="16.5" r="2"></circle>
+            </svg>
+          </span>
+          <div>
+            <h3 class="ob-explain-title">{explainerRateTitle}</h3>
+            <p class="ob-explain-text">{explainerRateText}</p>
+          </div>
+        </div>
+
+        <details class="ob-details">
+          <summary>{ob.platformDetailsTitle}</summary>
+          <p id="ob-row-stripe-note">{defaultStripeNote}</p>
+          <p id="ob-margin-note">{defaultMarginNote}</p>
+          <p class:list={["ob-note--warn", defaultMargin >= 0 && "ob-note--hidden"]} id="ob-margin-warning">{ob.marginWarning}</p>
+          <p id="ob-break-even">{defaultBreakEvenNote}</p>
+        </details>
+
+        <p class="ob-disclaimer">{ob.disclaimer}</p>
+      </aside>
     </div>
   </div>
 </section>
 
 <script>
-  const card = document.querySelector<HTMLElement>(".ob-card");
+  const card = document.querySelector<HTMLElement>(".ob-receipt");
   const itemInput = document.getElementById("ob-item-price") as HTMLInputElement | null;
   const deliveryBtns = Array.from(document.querySelectorAll<HTMLButtonElement>(".ob-segmented-btn"));
 
   let deliveryPrice = 69;
+  const locale = card?.dataset.locale ?? "cs-CZ";
 
   function formatKc(n: number) {
-    return `${Math.round(n).toLocaleString("cs-CZ")} Kč`;
+    return `${Math.round(n).toLocaleString(locale)} Kč`;
   }
-  function formatSignedKc(n: number) {
-    const rounded = Math.round(n);
-    return `${rounded < 0 ? "−" : ""}${Math.abs(rounded).toLocaleString("cs-CZ")} Kč`;
+  function formatNegativeKc(n: number) {
+    return `−${Math.round(Math.abs(n)).toLocaleString(locale)} Kč`;
   }
 
   function update() {
@@ -114,19 +214,20 @@ const rowCommission = t.landing.orderBreakdown.rowCommission.replace("{rate}", S
     const platformMargin = commission - stripeFee;
     const breakEven = (deliveryPrice * stripePct + stripeFixed) / (rate - stripePct);
 
+    const amountOut = document.getElementById("ob-item-price-value");
+    if (amountOut) amountOut.textContent = formatKc(itemPrice);
     document.getElementById("ob-row-item")!.textContent = formatKc(itemPrice);
     document.getElementById("ob-row-net")!.textContent = formatKc(netItem);
     document.getElementById("ob-row-delivery")!.textContent = formatKc(deliveryPrice);
-    document.getElementById("ob-row-stripe")!.textContent = formatSignedKc(-stripeFee);
+    document.getElementById("ob-row-stripe")!.textContent = formatNegativeKc(stripeFee);
+    document.getElementById("ob-row-total")!.textContent = formatKc(totalPayment);
 
     const stripeNote = document.getElementById("ob-row-stripe-note");
     if (stripeNote) {
       stripeNote.textContent = (card.dataset.rowStripeNoteTemplate ?? "").replace("{total}", formatKc(totalPayment));
     }
 
-    const commissionLabel = document.getElementById("ob-row-commission-label");
-    if (commissionLabel) commissionLabel.textContent = card.dataset.rowCommissionStandard ?? "";
-    document.getElementById("ob-row-commission")!.textContent = formatSignedKc(-commission);
+    document.getElementById("ob-row-commission")!.textContent = formatNegativeKc(commission);
 
     const marginNote = document.getElementById("ob-margin-note");
     if (marginNote) {
@@ -160,39 +261,130 @@ const rowCommission = t.landing.orderBreakdown.rowCommission.replace("{rate}", S
 </script>
 
 <style>
-  .ob-card {
-    max-width: 560px; margin-inline: auto; padding: 40px;
-    background: var(--landing-dark-elevated); border-radius: var(--radius-xl);
-  }
-  .ob-label { display: block; font-size: 13px; color: var(--landing-dark-text-muted); margin-bottom: 12px; }
-  .ob-slider { width: 100%; margin-bottom: 20px; accent-color: var(--landing-mint); }
+  .ob-section { background: var(--bg-subtle); }
 
-  .ob-field-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-  .ob-field-label { font-size: 13px; color: var(--landing-dark-text-muted); }
-  .ob-segmented { display: flex; gap: 8px; }
+  .ob-head { max-width: 640px; margin: 0 auto clamp(2rem, 4vw, 3rem); text-align: center; }
+  .ob-head .section-sub { margin-inline: auto; }
+
+  .ob-layout {
+    display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: clamp(1.5rem, 3vw, 3rem); align-items: start;
+    max-width: 1040px; margin-inline: auto;
+  }
+
+  .ob-receipt {
+    background: var(--bg-surface); border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl); padding: clamp(1.5rem, 3vw, 2.5rem);
+    box-shadow: var(--shadow-sm);
+  }
+  .ob-badge {
+    display: inline-block; margin-bottom: 22px; padding: 4px 10px;
+    background: var(--accent-soft); color: var(--accent-primary-hover);
+    border-radius: var(--radius-full); font-size: var(--fs-label); font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+
+  .ob-field + .ob-field { margin-top: 22px; }
+  .ob-field-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+  .ob-label { display: block; font-size: 13px; color: var(--text-muted); }
+  .ob-amount { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
+  .ob-slider { width: 100%; margin: 0; accent-color: var(--accent-primary); cursor: pointer; }
+  .ob-slider:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 4px; border-radius: var(--radius-full); }
+
+  .ob-segmented {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px;
+    background: var(--bg-subtle); border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+  }
   .ob-segmented-btn {
-    flex: 1; padding: 10px 12px; font-size: 13px; border-radius: var(--radius-md);
-    border: 1px solid rgba(255,255,255,0.15); background: transparent; color: var(--landing-dark-text);
-    cursor: pointer; transition: background .15s ease, border-color .15s ease;
+    padding: 9px 10px; border: 0; border-radius: calc(var(--radius-md) - 4px);
+    background: transparent; color: var(--text-muted); font-size: 13px; line-height: 1.35;
+    cursor: pointer; transition: background var(--dur-fast) ease, color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
   }
-  .ob-segmented-btn--active { background: var(--landing-mint); border-color: var(--landing-mint); color: #06281d; font-weight: 700; }
+  .ob-segmented-btn:hover { color: var(--text-primary); }
+  .ob-segmented-btn:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
+  .ob-segmented-btn--active {
+    background: var(--bg-surface); color: var(--text-primary); font-weight: 600;
+    box-shadow: var(--shadow-sm);
+  }
 
-  .ob-waterfall { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; display: flex; flex-direction: column; gap: 10px; }
-  .ob-waterfall--muted { margin-top: 20px; }
-  .ob-section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--landing-dark-text-muted); opacity: 0.7; margin: 0 0 2px; }
-  .ob-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--landing-dark-text); }
-  .ob-row--sub { color: var(--landing-dark-text-muted); font-size: 13px; }
-  .ob-row--sub span:last-child { color: var(--landing-coral); font-weight: 600; }
-  .ob-row--net { font-weight: 700; font-size: 18px; color: var(--landing-mint); border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px; }
-  .ob-waterfall--muted .ob-row > span:first-child { color: var(--landing-dark-text-muted); }
+  .ob-lines { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--border-default); }
+  .ob-line { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 6px 0; font-size: 15px; }
+  .ob-line > span:last-child { white-space: nowrap; }
+  .ob-line--sub { color: var(--text-muted); font-size: 14px; }
+  .ob-line--sub span:last-child { color: var(--text-primary); font-weight: 600; }
+  .ob-line--note {
+    margin: 0 0 0 2px; padding: 3px 0 3px 12px;
+    border-left: 2px solid var(--border-default);
+    font-size: 12.5px; color: var(--text-muted);
+  }
+  .ob-line--note span:last-child { color: var(--text-muted); }
+  .ob-line--net {
+    margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--border-default);
+    font-family: var(--font-display); font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+  }
+  .ob-line--net span:last-child { font-size: 30px; line-height: 1.1; color: var(--accent-primary); }
 
-  .ob-note { margin-top: 4px; font-size: 12px; color: var(--landing-dark-text-muted); line-height: 1.5; }
-  .ob-note--margin { margin-top: 20px; font-size: 13px; color: var(--landing-dark-text); }
-  .ob-note--warn { color: var(--landing-coral); font-weight: 600; }
+  .ob-sub { margin-top: 20px; padding: 16px; background: var(--bg-subtle); border-radius: var(--radius-md); }
+  .ob-sub-label {
+    margin: 0 0 4px; font-size: var(--fs-label); font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted);
+  }
+  .ob-line--muted { font-size: 13.5px; color: var(--text-muted); padding: 3px 0; }
+  .ob-line--muted span:last-child { color: var(--text-primary); }
+  .ob-sub-total {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--border-default);
+    font-size: 13.5px; color: var(--text-muted);
+  }
+  .ob-sub-total strong { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+
+  .ob-explain { display: flex; flex-direction: column; gap: 22px; padding-top: 6px; }
+  .ob-explain-item { display: grid; grid-template-columns: 40px 1fr; gap: 14px; align-items: start; }
+  .ob-explain-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: var(--radius-md);
+    background: var(--accent-soft); color: var(--accent-primary);
+  }
+  .ob-explain-icon svg { width: 20px; height: 20px; }
+  .ob-explain-title {
+    margin: 0 0 4px; font-family: var(--font-display); font-size: 15px;
+    font-weight: 700; line-height: 1.35; letter-spacing: -0.01em; color: var(--text-primary);
+  }
+  .ob-explain-text { margin: 0; max-width: 46ch; font-size: 14px; line-height: 1.65; color: var(--text-muted); }
+
+  .ob-details { margin-top: 4px; padding-top: 18px; border-top: 1px solid var(--border-default); }
+  .ob-details summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    cursor: pointer; list-style: none; font-size: 13px; font-weight: 600; color: var(--text-primary);
+  }
+  .ob-details summary::-webkit-details-marker { display: none; }
+  .ob-details summary::after { content: "+"; font-size: 18px; line-height: 1; color: var(--text-muted); }
+  .ob-details[open] summary::after { content: "−"; }
+  .ob-details summary:hover { color: var(--accent-primary-hover); }
+  .ob-details summary:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 4px; border-radius: var(--radius-sm); }
+  .ob-details p { margin: 10px 0 0; font-size: 13px; line-height: 1.6; color: var(--text-muted); }
+  .ob-details .ob-note--warn {
+    padding: 8px 10px; background: rgba(224, 137, 79, 0.12);
+    border-radius: var(--radius-sm); color: var(--text-primary); font-weight: 500;
+  }
   .ob-note--hidden { display: none; }
-  .ob-disclaimer { margin-top: 16px; font-size: 11px; color: var(--landing-dark-text-muted); opacity: 0.7; font-style: italic; }
+  .ob-disclaimer { margin: 12px 0 0; font-size: 11.5px; line-height: 1.55; color: var(--text-placeholder); font-style: italic; }
+
+  @media (max-width: 900px) {
+    .ob-layout { grid-template-columns: 1fr; }
+    .ob-explain { padding-top: 0; }
+  }
 
   @media (max-width: 640px) {
-    .ob-card { padding: 28px 20px; }
+    .ob-receipt { padding: 24px 20px; }
+    .ob-segmented { grid-template-columns: 1fr; }
+    .ob-segmented-btn { color: var(--text-primary); }
+    .ob-segmented-btn--active { font-weight: 700; }
+    .ob-line { font-size: 14px; }
+    .ob-line--net { font-size: 16px; }
+    .ob-line--net span:last-child { font-size: 26px; }
+    .ob-explain-item { grid-template-columns: 36px 1fr; gap: 12px; }
+    .ob-explain-icon { width: 36px; height: 36px; }
   }
 </style>

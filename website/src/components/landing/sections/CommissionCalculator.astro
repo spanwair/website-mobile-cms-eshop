@@ -1,26 +1,36 @@
 ---
 // Public pricing calculator — Phase 1 (display only). Every number comes from
-// shared/constants/sellerMode.ts, the single source of truth; nothing here is
-// independently hardcoded. own_company's rate is flat (COMMISSION_RATE) with no turnover
-// threshold as of 2026-11 — the no-IČO (employment-mode) toggle keeps its own payout cap.
-import { useT } from "@/lib/i18n";
+// shared/constants/sellerMode.ts, the single source of truth. The slider shows the rate of the
+// band the entered monthly turnover falls into — the commission is charged on the whole turnover
+// at that band's rate, and the top band (90 000 Kč and above) is a negotiated custom proposal
+// rather than an automatic rate.
+import { getLang, useT } from "@/lib/i18n";
 import {
-  COMMISSION_RATE,
+  COMMISSION_TIERS,
+  COMMISSION_ENTRY_RATE,
   NO_ICO_DEDUCTION_RATE,
   NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK,
   NO_ICO_WITHHOLDING_EXPIRY_YEARS,
 } from "@shared/constants/sellerMode";
+import CommissionTierTable from "./CommissionTierTable.astro";
 
 const t = useT(Astro);
+const lang = getLang(Astro);
+const locale = lang === "en" ? "en-US" : "cs-CZ";
 
-const commissionPct = Math.round(COMMISSION_RATE * 100);
+const entryPct = Math.round(COMMISSION_ENTRY_RATE * 100);
+const floorPct = Math.round(COMMISSION_TIERS[COMMISSION_TIERS.length - 2].rate * 100);
+const enterpriseThreshold = COMMISSION_TIERS[COMMISSION_TIERS.length - 2].uptoKc as number;
 const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
-const fmt = (n: number) => Math.round(n).toLocaleString("cs-CZ");
+const fmt = (n: number) => Math.round(n).toLocaleString(locale);
 
-const exampleNote = t.landing.commissionCalculator.exampleNote.replace("{rate}", String(commissionPct));
+const exampleNote = t.landing.commissionCalculator.exampleNote
+  .replaceAll("{entryRate}", String(entryPct))
+  .replaceAll("{floorRate}", String(floorPct))
+  .replaceAll("{threshold}", fmt(enterpriseThreshold));
 const employmentNote = t.landing.commissionCalculator.employmentNote
-  .replace("{limit}", fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK))
-  .replace("{years}", String(NO_ICO_WITHHOLDING_EXPIRY_YEARS));
+  .replaceAll("{limit}", fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK))
+  .replaceAll("{years}", String(NO_ICO_WITHHOLDING_EXPIRY_YEARS));
 const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeductionLabel.replace("{rate}", String(employmentPct));
 ---
 
@@ -28,70 +38,86 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
   <div class="container-lg">
     <p class="section-eyebrow section-eyebrow--center">{t.landing.commissionCalculator.eyebrow}</p>
     <h2 class="section-title section-title--center">{t.landing.commissionCalculator.title}</h2>
-    <p class="section-sub section-sub--center" style="margin-bottom:48px">{t.landing.commissionCalculator.sub}</p>
+    <p class="section-sub section-sub--center calc-head-sub">{t.landing.commissionCalculator.sub}</p>
 
-    <div
-      class="calc-card"
-      data-commission-rate={COMMISSION_RATE}
-      data-employment-rate={NO_ICO_DEDUCTION_RATE}
-      data-payout-limit={NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK}
-      data-badge-percentage={t.landing.commissionCalculator.badgePercentage.replace("{rate}", String(commissionPct))}
-      data-badge-ico={t.landing.commissionCalculator.badgeIcoRequired}
-    >
-      <label class="calc-label" for="calc-input">{t.landing.commissionCalculator.sliderLabel}</label>
-      <input id="calc-input" type="range" min="0" max="50000" step="500" value="10000" class="calc-slider" />
-      <div class="calc-price-row">
-        <div class="calc-price" id="calc-price-display">60 000 Kč</div>
-        <span class="badge badge-active" id="calc-badge">{t.landing.commissionCalculator.badgePercentage.replace("{rate}", String(commissionPct))}</span>
+    <div class="calc-layout">
+      <div
+        class="calc-card"
+        data-tiers={JSON.stringify(COMMISSION_TIERS)}
+        data-employment-rate={NO_ICO_DEDUCTION_RATE}
+        data-payout-limit={NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK}
+        data-badge-ico={t.landing.commissionCalculator.badgeIcoRequired}
+        data-effective-rate-template={t.landing.commissionCalculator.badgeEffectiveRate}
+        data-locale={locale}
+      >
+        <label class="calc-label" for="calc-input">{t.landing.commissionCalculator.sliderLabel}</label>
+        <input id="calc-input" type="range" min="0" max="90000" step="500" value="15000" class="calc-slider" />
+        <div class="calc-price-row">
+          <div class="calc-price" id="calc-price-display">15 000 Kč</div>
+          <span class="badge badge-active" id="calc-badge"></span>
+        </div>
+
+        <label class="calc-toggle">
+          <span class="calc-toggle-label">{t.landing.commissionCalculator.employmentToggleLabel}</span>
+          <span class="calc-switch">
+            <input type="checkbox" id="calc-employment-toggle" class="calc-switch-input">
+            <span class="calc-switch-track"><span class="calc-switch-thumb"></span></span>
+          </span>
+        </label>
+
+        <div class="calc-split" id="calc-split-commission">
+          <div class="calc-split-item calc-split-item--keep">
+            <span class="calc-split-label">{t.landing.commissionCalculator.youKeepLabel}</span>
+            <span class="calc-split-value" id="calc-keep">0 Kč</span>
+          </div>
+          <div class="calc-split-item">
+            <span class="calc-split-label">{t.landing.commissionCalculator.weTakeLabel}</span>
+            <span class="calc-split-value" id="calc-fee">0 Kč</span>
+          </div>
+        </div>
+
+        <div class="calc-split calc-split--hidden" id="calc-split-employment">
+          <div class="calc-split-item">
+            <span class="calc-split-label">{employmentDeductionLabel}</span>
+            <span class="calc-split-value" id="calc-employment-deduction">0 Kč</span>
+          </div>
+          <div class="calc-split-item calc-split-item--keep">
+            <span class="calc-split-label">{t.landing.commissionCalculator.employmentPayableLabel}</span>
+            <span class="calc-split-value" id="calc-employment-payable">0 Kč</span>
+          </div>
+          <div class="calc-split-item" id="calc-withheld-row">
+            <span class="calc-split-label">{t.landing.commissionCalculator.employmentWithheldLabel}</span>
+            <span class="calc-split-value calc-split-value--warn" id="calc-employment-withheld">0 Kč</span>
+          </div>
+        </div>
+
+        <p class="calc-note" id="calc-note-commission">{exampleNote}</p>
+        <p class="calc-note calc-note--hidden" id="calc-note-employment">{employmentNote}</p>
+        <p class="calc-disclaimer">{t.landing.commissionCalculator.estimateDisclaimer}</p>
       </div>
 
-      <label class="calc-toggle">
-        <span class="calc-toggle-label">{t.landing.commissionCalculator.employmentToggleLabel}</span>
-        <span class="calc-switch">
-          <input type="checkbox" id="calc-employment-toggle" class="calc-switch-input">
-          <span class="calc-switch-track"><span class="calc-switch-thumb"></span></span>
-        </span>
-      </label>
-
-      <div class="calc-split" id="calc-split-commission">
-        <div class="calc-split-item calc-split-item--keep">
-          <span class="calc-split-label">{t.landing.commissionCalculator.youKeepLabel}</span>
-          <span class="calc-split-value" id="calc-keep">54 000 Kč</span>
+      <div class="calc-side">
+        <div class="calc-panel">
+          <h3 class="calc-panel-title">{t.landing.commissionCalculator.ladderTitle}</h3>
+          <CommissionTierTable t={t} part="table" />
         </div>
-        <div class="calc-split-item">
-          <span class="calc-split-label">{t.landing.commissionCalculator.weTakeLabel}</span>
-          <span class="calc-split-value" id="calc-fee">6 000 Kč</span>
+
+        <div class="calc-panel calc-panel--muted">
+          <h3 class="calc-panel-title">{t.landing.commissionCalculator.comparisonTitle}</h3>
+          <p class="calc-panel-text">{t.landing.commissionCalculator.comparisonNote}</p>
         </div>
       </div>
-
-      <div class="calc-split calc-split--hidden" id="calc-split-employment">
-        <div class="calc-split-item">
-          <span class="calc-split-label">{employmentDeductionLabel}</span>
-          <span class="calc-split-value" id="calc-employment-deduction">18 000 Kč</span>
-        </div>
-        <div class="calc-split-item calc-split-item--keep">
-          <span class="calc-split-label">{t.landing.commissionCalculator.employmentPayableLabel}</span>
-          <span class="calc-split-value" id="calc-employment-payable">12 000 Kč</span>
-        </div>
-        <div class="calc-split-item" id="calc-withheld-row">
-          <span class="calc-split-label">{t.landing.commissionCalculator.employmentWithheldLabel}</span>
-          <span class="calc-split-value calc-split-value--warn" id="calc-employment-withheld">30 000 Kč</span>
-        </div>
-      </div>
-
-      <p class="calc-note" id="calc-note-commission">{exampleNote}</p>
-      <p class="calc-note calc-note--hidden" id="calc-note-employment">{employmentNote}</p>
-      <p class="calc-disclaimer">{t.landing.commissionCalculator.estimateDisclaimer}</p>
     </div>
 
-    <div class="calc-comparison">
-      <h3 class="calc-comparison-title">{t.landing.commissionCalculator.comparisonTitle}</h3>
-      <p class="calc-comparison-note">{t.landing.commissionCalculator.comparisonNote}</p>
+    <div class="calc-enterprise">
+      <CommissionTierTable t={t} part="enterprise" />
     </div>
   </div>
 </section>
 
 <script>
+  import type { CommissionTier } from "@shared/utils/billingFeeCalc";
+
   const card = document.querySelector<HTMLElement>(".calc-card");
   const input = document.getElementById("calc-input") as HTMLInputElement | null;
   const employmentToggle = document.getElementById("calc-employment-toggle") as HTMLInputElement | null;
@@ -108,16 +134,33 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
   const withheldEl = document.getElementById("calc-employment-withheld");
   const withheldRow = document.getElementById("calc-withheld-row");
 
+  const tiers: CommissionTier[] = JSON.parse(card?.dataset.tiers ?? "[]");
+  const locale = card?.dataset.locale ?? "cs-CZ";
+
   function formatNum(n: number) {
-    return Math.round(n).toLocaleString("cs-CZ");
+    return Math.round(n).toLocaleString(locale);
   }
   function formatKc(n: number) {
     return `${formatNum(n)} Kč`;
   }
+  function formatPct(rate: number) {
+    return (Math.round(rate * 1000) / 10).toLocaleString(locale);
+  }
+
+  // Flat rate of the band the whole monthly turnover falls into: 5 / 4 / 3 / 2 %. Turnover at or
+  // above the last finite band (90 000 Kč) resolves to that band's rate; anything above it is a
+  // negotiated custom proposal, handled by the enterprise card rather than this slider.
+  function bandRateFor(turnover: number) {
+    let rate = 0;
+    for (const tier of tiers) {
+      rate = tier.rate;
+      if (tier.uptoKc === null || turnover <= tier.uptoKc) break;
+    }
+    return rate;
+  }
 
   function update() {
     if (!input || !card) return;
-    const rate = Number(card.dataset.commissionRate);
     const employmentRate = Number(card.dataset.employmentRate);
     const payoutLimit = Number(card.dataset.payoutLimit);
     const turnover = Number(input.value);
@@ -141,7 +184,7 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
       if (withheldEl) withheldEl.textContent = formatKc(withheld);
       if (withheldRow) withheldRow.style.display = withheld > 0 ? "" : "none";
       if (badge) {
-        badge.textContent = withheld > 0 ? (card.dataset.badgeIco ?? "") : (card.dataset.badgePercentage ?? "");
+        badge.textContent = withheld > 0 ? (card.dataset.badgeIco ?? "") : "";
         badge.classList.toggle("badge-error", withheld > 0);
         badge.classList.toggle("badge-active", withheld <= 0);
       }
@@ -151,13 +194,14 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
       noteCommission?.classList.remove("calc-note--hidden");
       noteEmployment?.classList.add("calc-note--hidden");
 
+      const rate = turnover > 0 ? bandRateFor(turnover) : 0;
       const fee = turnover * rate;
       const keep = turnover - fee;
 
       if (keepEl) keepEl.textContent = formatKc(keep);
       if (feeEl) feeEl.textContent = formatKc(fee);
       if (badge) {
-        badge.textContent = card.dataset.badgePercentage ?? "";
+        badge.textContent = (card.dataset.effectiveRateTemplate ?? "").replace("{rate}", formatPct(rate));
         badge.classList.remove("badge-error");
         badge.classList.add("badge-active");
       }
@@ -170,47 +214,81 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
 </script>
 
 <style>
+  #pricing {
+    background: #0C1512;
+  }
+
+  .calc-head-sub { margin-inline: auto; margin-bottom: clamp(2rem, 4vw, 3rem); }
+
+  .calc-layout {
+    display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: clamp(1.5rem, 3vw, 3rem); align-items: start;
+    max-width: 1040px; margin-inline: auto;
+  }
+
   .calc-card {
-    max-width: 560px; margin-inline: auto; padding: 40px;
+    width: 100%; padding: clamp(1.5rem, 3vw, 2.5rem);
     background: var(--landing-dark-elevated); border-radius: var(--radius-xl);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 60px -36px rgba(0, 0, 0, 0.7);
     text-align: center;
   }
   .calc-label { display: block; font-size: 13px; color: var(--landing-dark-text-muted); margin-bottom: 12px; }
-  .calc-slider { width: 100%; margin-bottom: 16px; accent-color: var(--landing-mint); }
+  .calc-slider { width: 100%; margin-bottom: 16px; accent-color: var(--landing-mint); cursor: pointer; }
+  .calc-slider:focus-visible { outline: 2px solid var(--landing-mint); outline-offset: 4px; border-radius: var(--radius-full); }
   .calc-price-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px; }
-  .calc-price { font-family: var(--font-display); font-size: 40px; }
-    .calc-toggle {
-      display: inline-flex; align-items: center; justify-content: center; gap: 12px;
-      font-size: 13px; color: var(--landing-dark-text-muted); margin-bottom: 20px; cursor: pointer;
-    }
-    .calc-switch { position: relative; display: inline-flex; flex: none; }
-    .calc-switch-input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-    .calc-switch-track {
-      display: inline-flex; align-items: center; padding: 2px; box-sizing: border-box;
-      width: 38px; height: 22px; border-radius: 999px;
-      background: var(--landing-dark-text-muted); opacity: 0.5; transition: background .2s ease, opacity .2s ease;
-    }
-    .calc-switch-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s ease; }
-    .calc-switch-input:checked + .calc-switch-track { background: var(--landing-mint); opacity: 1; }
-    .calc-switch-input:checked + .calc-switch-track .calc-switch-thumb { transform: translateX(16px); }
-    .calc-switch-input:focus-visible + .calc-switch-track { outline: 2px solid var(--landing-mint); outline-offset: 2px; }
+  .calc-price { font-family: var(--font-display); font-size: 40px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .calc-toggle {
+    display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+    font-size: 13px; color: var(--landing-dark-text-muted); margin-bottom: 20px; cursor: pointer;
+  }
+  .calc-switch { position: relative; display: inline-flex; flex: none; }
+  .calc-switch-input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+  .calc-switch-track {
+    display: inline-flex; align-items: center; padding: 2px; box-sizing: border-box;
+    width: 38px; height: 22px; border-radius: 999px;
+    background: var(--landing-dark-text-muted); opacity: 0.5; transition: background .2s ease, opacity .2s ease;
+  }
+  .calc-switch-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s ease; }
+  .calc-switch-input:checked + .calc-switch-track { background: var(--landing-mint); opacity: 1; }
+  .calc-switch-input:checked + .calc-switch-track .calc-switch-thumb { transform: translateX(16px); }
+  .calc-switch-input:focus-visible + .calc-switch-track { outline: 2px solid var(--landing-mint); outline-offset: 2px; }
   .calc-split { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); }
   #calc-split-commission { grid-template-columns: repeat(2, 1fr); }
   .calc-split--hidden { display: none; }
   .calc-split-item { display: flex; flex-direction: column; gap: 4px; }
   .calc-split-label { font-size: 12px; color: var(--landing-dark-text-muted); }
-  .calc-split-value { font-size: 20px; font-weight: 700; }
+  .calc-split-value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .calc-split-value--warn { color: var(--landing-coral); }
   .calc-split-item--keep .calc-split-value { color: var(--landing-mint); }
-  .calc-note { margin-top: 20px; font-size: 13px; color: var(--landing-dark-text-muted); }
+  .calc-note { margin: 20px auto 0; max-width: 46ch; font-size: 13px; line-height: 1.6; color: var(--landing-dark-text-muted); }
   .calc-note--hidden { display: none; }
-  .calc-disclaimer { margin-top: 12px; font-size: 11px; color: var(--landing-dark-text-muted); opacity: 0.7; font-style: italic; }
-  .calc-comparison { max-width: 640px; margin: 56px auto 0; text-align: center; }
-  .calc-comparison-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; color: var(--landing-dark-text); }
-  .calc-comparison-note { color: var(--landing-dark-text-muted); line-height: 1.6; }
+  .calc-disclaimer { margin-top: 12px; font-size: 11px; color: var(--landing-dark-text-muted); opacity: 0.75; font-style: italic; }
+
+  .calc-side { display: flex; flex-direction: column; gap: 24px; }
+  .calc-panel {
+    padding: 24px; border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg); background: rgba(255, 255, 255, 0.025);
+  }
+  .calc-panel--muted { background: rgba(22, 165, 113, 0.07); border-color: rgba(91, 212, 168, 0.22); }
+  .calc-panel-title {
+    margin: 0 0 14px; font-family: var(--font-display); font-size: 16px;
+    font-weight: 700; letter-spacing: -0.01em; line-height: 1.35; color: var(--landing-dark-text);
+  }
+  .calc-panel-text { margin: 0; font-size: 14px; line-height: 1.65; color: var(--landing-dark-text-muted); }
+
+  .calc-enterprise { max-width: 720px; margin: 32px auto 0; }
+
+  @media (max-width: 900px) {
+    .calc-layout { grid-template-columns: 1fr; }
+    .calc-side { gap: 16px; }
+  }
 
   @media (max-width: 640px) {
     .calc-split { grid-template-columns: 1fr; }
     .calc-card { padding: 28px 20px; }
+    .calc-panel { padding: 20px; }
+    .calc-price-row { flex-direction: column; gap: 8px; }
+    .calc-price { font-size: 34px; }
   }
 </style>

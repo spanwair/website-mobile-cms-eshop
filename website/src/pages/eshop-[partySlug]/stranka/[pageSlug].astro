@@ -25,10 +25,13 @@ const team = page.template === "about" ? await fetchActiveTeamMembers(supabase, 
 const faqItems = page.template === "faq" ? await fetchVisibleFaqItems(supabase, storeParty.id) : [];
 const config = storeParty.config;
 const metaDescription = page.seo_description
-  ?? (page.body ? truncateDescription(page.body.replace(/<[^>]+>/g, " ")) : undefined);
+  ?? (bodyHtml ? truncateDescription(bodyHtml.replace(/<[^>]+>/g, " ")) : undefined);
 ---
 
-<Layout title={page.seo_title ?? page.title} description={metaDescription}>
+<Layout
+  title={page.seo_title ?? `${page.title} | ${config?.brand_name ?? "Shop"}`}
+  description={metaDescription}
+>
   <div class="content-page container">
     <h1 class="page-title">{page.title}</h1>
     {bodyHtml && <div class="page-body" set:html={bodyHtml} />}

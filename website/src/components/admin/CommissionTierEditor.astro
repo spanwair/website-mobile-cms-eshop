@@ -1,0 +1,111 @@
+---
+import type { Party } from "@shared/types";
+import { COMMISSION_TIERS } from "@shared/constants/sellerMode";
+
+interface Props {
+  party: Party;
+  t: any;
+}
+const { party, t } = Astro.props;
+
+const hasOverride = party.commission_tiers_override !== null;
+const effectiveTiers = party.commission_tiers_override ?? COMMISSION_TIERS;
+const rows = effectiveTiers.map((tier) => ({
+  ratePct: String(Math.round(tier.rate * 10000) / 100),
+  uptoKc: tier.uptoKc === null ? null : String(tier.uptoKc),
+}));
+---
+
+<div class="card" style="margin-top:16px">
+  <h2 class="section-title">{t.admin.parties.feeSchedule.title}</h2>
+  <p class="invite-note">{t.admin.parties.feeSchedule.hint}</p>
+  {hasOverride && <p class="tier-source-badge tier-source-badge--custom">{t.admin.parties.feeSchedule.customBadge}</p>}
+  {!hasOverride && <p class="tier-source-badge">{t.admin.parties.feeSchedule.defaultBadge}</p>}
+
+  <form method="POST" class="party-form" data-tier-form>
+    <input type="hidden" name="action" value="update_fee_schedule" />
+
+    <div class="tier-row tier-row-header">
+      <span class="tier-row-field">{t.admin.parties.feeSchedule.rateColumnLabel}</span>
+      <span class="tier-row-field">{t.admin.parties.feeSchedule.uptoColumnLabel}</span>
+      <span class="tier-row-remove"></span>
+    </div>
+
+    <div class="tier-rows" data-tier-rows>
+      {rows.slice(0, -1).map((row) => (
+        <div class="tier-row" data-tier-row>
+          <div class="tier-row-field fee-input-wrap">
+            <input class="form-input" type="number" step="0.01" min="0" max="100" name="tier_rate" value={row.ratePct} required />
+            <span class="fee-suffix">%</span>
+          </div>
+          <div class="tier-row-field fee-input-wrap">
+            <input class="form-input" type="number" step="0.01" min="0" name="tier_upto" value={row.uptoKc ?? ""} required />
+            <span class="fee-suffix">Kč</span>
+          </div>
+          <button type="button" class="btn btn-ghost tier-row-remove" data-tier-remove aria-label={t.admin.parties.feeSchedule.removeBandLabel}>&times;</button>
+        </div>
+      ))}
+    </div>
+
+    <div class="tier-row" data-tier-last-row>
+      <div class="tier-row-field fee-input-wrap">
+        <input class="form-input" type="number" step="0.01" min="0" max="100" name="tier_rate" value={rows[rows.length - 1].ratePct} required />
+        <span class="fee-suffix">%</span>
+      </div>
+      <span class="tier-row-openEnded">{t.admin.parties.feeSchedule.openEndedLabel}</span>
+      <span class="tier-row-remove"></span>
+    </div>
+
+    <template data-tier-template>
+      <div class="tier-row" data-tier-row>
+        <div class="tier-row-field fee-input-wrap">
+          <input class="form-input" type="number" step="0.01" min="0" max="100" name="tier_rate" required />
+          <span class="fee-suffix">%</span>
+        </div>
+        <div class="tier-row-field fee-input-wrap">
+          <input class="form-input" type="number" step="0.01" min="0" name="tier_upto" required />
+          <span class="fee-suffix">Kč</span>
+        </div>
+        <button type="button" class="btn btn-ghost tier-row-remove" data-tier-remove>&times;</button>
+      </div>
+    </template>
+
+    <button type="button" class="btn btn-secondary" data-tier-add style="margin-top:4px">{t.admin.parties.feeSchedule.addBandBtn}</button>
+    <p class="invite-note" style="margin-top:12px">{t.admin.parties.feeSchedule.clearNote}</p>
+    <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.common.saveChanges}</button>
+  </form>
+
+  {hasOverride && (
+    <form method="POST" style="margin-top:8px">
+      <input type="hidden" name="action" value="reset_fee_schedule" />
+      <button type="submit" class="btn btn-ghost">{t.admin.parties.feeSchedule.resetBtn}</button>
+    </form>
+  )}
+</div>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>("[data-tier-form]").forEach((form) => {
+    const rowsContainer = form.querySelector<HTMLElement>("[data-tier-rows]");
+    const template = form.querySelector<HTMLTemplateElement>("[data-tier-template]");
+    const addBtn = form.querySelector<HTMLButtonElement>("[data-tier-add]");
+
+    function wireRemove(row: HTMLElement) {
+      row.querySelector("[data-tier-remove]")?.addEventListener("click", () => row.remove());
+    }
+    rowsContainer?.querySelectorAll<HTMLElement>("[data-tier-row]").forEach(wireRemove);
+
+    addBtn?.addEventListener("click", () => {
+      if (!template || !rowsContainer) return;
+      const clone = template.content.firstElementChild!.cloneNode(true) as HTMLElement;
+      wireRemove(clone);
+      rowsContainer.appendChild(clone);
+    });
+  });
+</script>
+
+<style>
+  .tier-source-badge { display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; background:var(--bg-subtle); color:var(--text-muted); margin-bottom:12px; }
+  .tier-source-badge--custom { background:rgba(124,179,66,0.12); color:#558b2f; }
+  .tier-row-header { font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
+  .tier-row-header .tier-row-field { padding-left:4px; }
+</style>

@@ -68,13 +68,19 @@ test.describe("33 — landing page real eshops showcase", () => {
 
   test("33-02 the CTA card navigates into the live storefront", async ({ page }) => {
     await page.goto(`${BASE}/`);
-    await page.locator("#real-eshops a", { hasText: FEATURED_NAME }).click();
-    await expect(page).toHaveURL(new RegExp(`/eshop-${FEATURED_SLUG}`));
+    // Storefront cards open in a new tab so visitors keep the landing page open.
+    const [storefront] = await Promise.all([
+      page.context().waitForEvent("page"),
+      page.locator("#real-eshops a", { hasText: FEATURED_NAME }).click(),
+    ]);
+    await expect(storefront).toHaveURL(new RegExp(`/eshop-${FEATURED_SLUG}`));
   });
 
-  test("33-03 create-your-own-eshop CTA block renders below the real-eshops list", async ({ page }) => {
+  test("33-03 create-your-own-eshop card renders in the real-eshops grid", async ({ page }) => {
     await page.goto(`${BASE}/`);
-    await expect(page.locator("#create-own-eshop")).toBeVisible();
+    const createCard = page.locator("#real-eshops .eshop-card--create");
+    await expect(createCard).toBeVisible();
+    await expect(createCard).toHaveAttribute("href", "/login?mode=signup");
   });
 
   test("33-04 the old templates mockup section is no longer on the landing page", async ({ page }) => {

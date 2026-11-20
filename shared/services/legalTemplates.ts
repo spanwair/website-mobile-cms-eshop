@@ -17,8 +17,8 @@ export function buildSmalljobsSaleNoticeMarkdown(lang: "cs" | "en", storeName: s
     : (lang === "cs" ? "Neplátce DPH podle § 6 zákona o dani z přidané hodnoty." : "Not registered as a VAT payer.");
   // This notice is only ever generated for smalljobs_commission (no-IČO) parties, so the
   // deduction it must disclose is NO_ICO_DEDUCTION_RATE — NOT the unrelated own_company
-  // COMMISSION_RATE (a prior bug: this used to read COMMISSION_RATE here, understating the
-  // real 30% deduction to consumers).
+  // commission schedule (a prior bug: this used to read the own_company rate here,
+  // understating the real 30% deduction to consumers).
   const commissionPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 
   if (lang === "en") {

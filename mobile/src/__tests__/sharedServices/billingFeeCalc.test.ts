@@ -1,36 +1,81 @@
-import {
-  COMMISSION_RATE,
-  REDUCED_COMMISSION_RATE,
-  COMMISSION_REDUCED_THRESHOLD_CZK,
-} from "@shared/constants/sellerMode";
-import { computeBillingPeriodTotals, resolveFeeSchedule } from "@shared/utils/billingFeeCalc";
+import { COMMISSION_TIERS } from "@shared/constants/sellerMode";
+import { computeBillingPeriodTotals, computeTieredCommission, resolveFeeSchedule } from "@shared/utils/billingFeeCalc";
 
 describe("resolveFeeSchedule", () => {
-  it("falls back to the global defaults when no overrides are set", () => {
-    expect(resolveFeeSchedule(null)).toEqual({
-      standardRate: COMMISSION_RATE,
-      reducedRate: REDUCED_COMMISSION_RATE,
-      thresholdKc: COMMISSION_REDUCED_THRESHOLD_CZK,
-    });
-    expect(resolveFeeSchedule({})).toEqual({
-      standardRate: COMMISSION_RATE,
-      reducedRate: REDUCED_COMMISSION_RATE,
-      thresholdKc: COMMISSION_REDUCED_THRESHOLD_CZK,
-    });
+  it("falls back to the global COMMISSION_TIERS default when no override is set", () => {
+    expect(resolveFeeSchedule(null)).toEqual(COMMISSION_TIERS);
+    expect(resolveFeeSchedule({})).toEqual(COMMISSION_TIERS);
   });
 
-  it("applies each per-party override independently, accepting numeric strings from the DB", () => {
-    const schedule = resolveFeeSchedule({
-      commission_rate_override: 0.08,
-      reduced_commission_rate_override: "0.04",
-      commission_threshold_override: "50000",
-    });
-    expect(schedule).toEqual({ standardRate: 0.08, reducedRate: 0.04, thresholdKc: 50000 });
+  it("returns a valid per-party override tier array as-is", () => {
+    const override = [
+      { uptoKc: 50000, rate: 0.08 },
+      { uptoKc: null, rate: 0.04 },
+    ];
+    expect(resolveFeeSchedule({ commission_tiers_override: override })).toEqual(override);
   });
 
-  it("ignores non-finite override values and keeps the default", () => {
-    const schedule = resolveFeeSchedule({ commission_rate_override: "not-a-number" });
-    expect(schedule.standardRate).toBe(COMMISSION_RATE);
+  it("falls back to the default when the override is malformed", () => {
+    expect(resolveFeeSchedule({ commission_tiers_override: "not-an-array" })).toEqual(COMMISSION_TIERS);
+    expect(resolveFeeSchedule({ commission_tiers_override: [] })).toEqual(COMMISSION_TIERS);
+    // Last entry's uptoKc must be null (open-ended) -- a schedule missing that is invalid.
+    expect(resolveFeeSchedule({ commission_tiers_override: [{ uptoKc: 1000, rate: 0.05 }] })).toEqual(COMMISSION_TIERS);
+    // Non-increasing thresholds are invalid.
+    expect(
+      resolveFeeSchedule({
+        commission_tiers_override: [
+          { uptoKc: 1000, rate: 0.05 },
+          { uptoKc: 1000, rate: 0.03 },
+          { uptoKc: null, rate: 0.02 },
+        ],
+      })
+    ).toEqual(COMMISSION_TIERS);
+  });
+});
+
+// Marginal/bracket math: each order's commission is a blend across every band its own slice of
+// the month's cumulative turnover touches -- never a whole-month cliff re-rate.
+describe("computeTieredCommission", () => {
+  const tiers = [
+    { uptoKc: 10000, rate: 0.05 },
+    { uptoKc: 30000, rate: 0.04 },
+    { uptoKc: 90000, rate: 0.03 },
+    { uptoKc: null, rate: 0.03 },
+  ];
+
+  it("charges the first band's rate for an order fully inside it", () => {
+    const result = computeTieredCommission(5000, 0, tiers);
+    expect(result.commissionAmountKc).toBe(250);
+    expect(result.effectiveRate).toBe(0.05);
+  });
+
+  it("blends across two bands when an order straddles the boundary", () => {
+    // Party has sold 9 000 Kč so far this month; this 5 000 Kč order spans 9 000-10 000
+    // (band 1, 5%) and 10 000-14 000 (band 2, 4%).
+    const result = computeTieredCommission(5000, 9000, tiers);
+    const expectedFee = 1000 * 0.05 + 4000 * 0.04; // 50 + 160 = 210
+    expect(result.commissionAmountKc).toBeCloseTo(expectedFee, 2);
+    expect(result.effectiveRate).toBeCloseTo(expectedFee / 5000, 4);
+  });
+
+  it("never rewrites earlier turnover -- only this order's own slice matters", () => {
+    const first = computeTieredCommission(10000, 0, tiers);
+    const second = computeTieredCommission(5000, 10000, tiers);
+    expect(first.commissionAmountKc).toBe(500); // 10 000 * 5%
+    expect(second.commissionAmountKc).toBe(200); // 5 000 * 4%, band 2 only
+  });
+
+  it("falls into the open-ended last band once turnover passes every finite threshold", () => {
+    const result = computeTieredCommission(20000, 100000, tiers);
+    expect(result.commissionAmountKc).toBe(600); // 20 000 * 3%
+    expect(result.effectiveRate).toBe(0.03);
+  });
+
+  it("respects a custom (e.g. negotiated enterprise) tier schedule", () => {
+    const enterpriseTiers = [{ uptoKc: null, rate: 0.01 }];
+    const result = computeTieredCommission(200000, 0, enterpriseTiers);
+    expect(result.commissionAmountKc).toBe(2000);
+    expect(result.effectiveRate).toBe(0.01);
   });
 });
 

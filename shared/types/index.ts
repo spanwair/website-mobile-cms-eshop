@@ -1,3 +1,6 @@
+import type { CommissionTier } from "../constants/sellerMode";
+export type { CommissionTier };
+
 export interface User {
   id: string;
   email: string;
@@ -50,9 +53,7 @@ export interface Party {
   status: PartyStatus;
   seller_mode: SellerMode;
   lang: "cs" | "en";
-  commission_rate_override: number | null;
-  reduced_commission_rate_override: number | null;
-  commission_threshold_override: number | null;
+  commission_tiers_override: CommissionTier[] | null;
   terms_accepted_at: string | null;
   terms_version: string | null;
   created_at: string;

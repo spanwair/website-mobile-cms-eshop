@@ -144,19 +144,19 @@ Pod formulářem informací se zobrazí kartička **Režim prodejce** (komponent
 
 Obě akce režimu prodejce vyžadují MANAGE_AUDIT.
 
-### Levý sloupec - Plán provize (vyžaduje MANAGE_AUDIT)
+### Levý sloupec - Plán provize (pouze vlastník systému)
 
-Pro organizace ve režimu vlastní společnosti karta **Plán provize** vám umožňuje přepsat poplatek platformy pro tuto jednu organizaci.
-Obsahuje tři pole, která jsou výchozí prázdná (prázdné = použijte výchozí hodnotu platformy zobrazenou jako placeholder):
+Pro organizace v režimu vlastní společnosti karta **Plán provize** vám umožňuje přepsat pásmovou provizi platformy pro tuto jednu organizaci.
+Výchozí plán platformy (`COMMISSION_TIERS` v `shared/constants/sellerMode.ts`) je pásmová (marginální) sazba, podobně jako daňová progrese — každé pásmo měsíčního obratu se zpoplatní vlastní sazbou: 5 % z prvních 10 000 Kč, 4 % z dalších 20 000 Kč, 3 % z dalších 60 000 Kč a 3 % ze všeho nad 90 000 Kč.
+Karta zobrazuje jeden editovatelný řádek za každé pásmo (sazba v % a práh "do výše" v Kč), předvyplněný výchozí hodnotou platformy, pokud organizace ještě nemá vlastní přepsání; poslední řádek je vždy otevřený ("a výše").
+Tlačítkem **+ Přidat pásmo** vložíte další řádek, tlačítkem u řádku ho odstraníte.
 
-- **Standardní sazba** - procento účtované až do prahové hodnoty (výchozí hodnota platformy 10 %).
-- **Snížená sazba** - procento účtované za celý měsíc, jakmile obrat překročí prahovou hodnotu (výchozí hodnota platformy 5 %).
-- **Prahová hodnota snížené sazby** - měsíční obrat (Kč), nad kterým platí snížená sazba (výchozí hodnota platformy 29 900 Kč).
+Tímto způsobem se také nastavuje individuálně dohodnutá sazba "vlastní e-shop" pro organizaci, jejíž obrat pravidelně přesahuje nejvyšší veřejné pásmo (90 000 Kč) — nahraďte řádky dohodnutým vlastním plánem (klidně jen jednou otevřenou sazbou), místo aby organizace zůstala na veřejném výchozím plánu. Platforma při prvním překročení této hranice u organizace na výchozím plánu zobrazí interní notifikaci typu `fee_tier_change` jako impuls k zahájení takové dohody.
 
-Sazby se zadávají jako procenta a ukládají jako zlomky v tabulce `parties` (`commission_rate_override`, `reduced_commission_rate_override`, `commission_threshold_override`).
-Vymazání pole odstraní přepsání a vrátí se k globálnímu výchozí hodnotě.
-Všechny výpočty poplatků čtou účinné hodnoty pomocí `resolveFeeSchedule()` v `shared/utils/billingFeeCalc.ts`, takže vlastní sazba platí při přípulumi výpočtu fakturačního období bez jakéhokoli změn kódu.
-Upravování plánu vyžaduje MANAGE_AUDIT.
+Sazby se zadávají jako procenta a celý plán se ukládá jako jedno uspořádané pole JSONB v tabulce `parties` (`commission_tiers_override`).
+Tlačítkem **Vrátit výchozí sazbu platformy** přepsání zcela odstraníte a vrátíte se k globálnímu výchozímu plánu.
+Všechny výpočty poplatků čtou účinný plán pomocí `resolveFeeSchedule()` v `shared/utils/billingFeeCalc.ts` a kombinovanou sazbu pro jednu objednávku pomocí `computeTieredCommission()` ve stejném souboru — vlastní plán platí už pro nejbližší další objednávku, protože provize se účtuje za jednotlivé objednávky, ne jako měsíční faktura.
+Úpravu plánu může provést pouze role **vlastník systému** — záměrně přísněji než MANAGE_AUDIT, protože jde o nástroj ovlivňující příjem platformy, ne běžné nastavení organizace. Administrátor s MANAGE_AUDIT na svých přidělených organizacích tuto kartu nevidí ani nemůže měnit.
 
 ### Levý sloupec - Zveřejnit člena (vyžaduje MANAGE_USERS)
 
@@ -206,7 +206,7 @@ Podívejte se na [Uživatelé](/docs/admin/users) pro pravidla přidělování a
 
 ## Data a úložiště (cloud)
 
-- Tabulka `parties`: `name`, `slug`, `company_name`, `company_ico`, `vat_number`, `billing_email`, `seller_mode`, `status`, `lang`, `created_at`, `terms_accepted_at`, `terms_version`, `commission_rate_override`, `reduced_commission_rate_override`, `commission_threshold_override`.
+- Tabulka `parties`: `name`, `slug`, `company_name`, `company_ico`, `vat_number`, `billing_email`, `seller_mode`, `status`, `lang`, `created_at`, `terms_accepted_at`, `terms_version`, `commission_tiers_override`.
   Spouštěč `enforce_party_approval_transition` omezuje přechod `pending_approval -> active` pouze na vlastníky.
 - Tabulka `user_party_roles`: řádky členství (`user_id`, `party_id`, `role_id`) pro seznam členů, zveřejňování a odstranění.
 - Tabulka `roles`: vlastní (ne-systémové) role zobrazené v rozbalovacím menu zveřejňování.

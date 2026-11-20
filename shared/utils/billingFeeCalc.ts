@@ -1,34 +1,73 @@
 import { kcToHaleru, haleruToKc } from "./money";
-import { COMMISSION_RATE, REDUCED_COMMISSION_RATE, COMMISSION_REDUCED_THRESHOLD_CZK } from "../constants/sellerMode";
+import { COMMISSION_TIERS, type CommissionTier } from "../constants/sellerMode";
 
-// A party's effective own_company commission schedule: the global defaults from
-// shared/constants/sellerMode.ts, each replaced by a per-party override when one is set.
-// resolveFeeSchedule is the ONLY place overrides are applied, so every commission computation
-// (per-order in shared/services/commissionLedgerService.ts) reads the same effective numbers.
+// A party's effective own_company commission schedule: the global COMMISSION_TIERS default,
+// replaced wholesale by a per-party override when one is set. resolveFeeSchedule is the ONLY
+// place overrides are applied, so every commission computation (per-order in
+// shared/services/commissionLedgerService.ts) reads the same effective tier array.
 export interface FeeScheduleOverrides {
-  commission_rate_override?: number | string | null;
-  reduced_commission_rate_override?: number | string | null;
-  commission_threshold_override?: number | string | null;
+  commission_tiers_override?: unknown;
 }
 
-export interface FeeSchedule {
-  standardRate: number;
-  reducedRate: number;
-  thresholdKc: number;
+function isValidTierArray(value: unknown): value is CommissionTier[] {
+  if (!Array.isArray(value) || value.length === 0) return false;
+  let prevUpto = -Infinity;
+  for (let i = 0; i < value.length; i++) {
+    const entry = value[i];
+    if (typeof entry !== "object" || entry === null) return false;
+    const { uptoKc, rate } = entry as { uptoKc?: unknown; rate?: unknown };
+    if (typeof rate !== "number" || !Number.isFinite(rate) || rate < 0 || rate > 1) return false;
+    const isLast = i === value.length - 1;
+    if (isLast) {
+      if (uptoKc !== null) return false;
+    } else {
+      if (typeof uptoKc !== "number" || !Number.isFinite(uptoKc) || uptoKc <= prevUpto) return false;
+      prevUpto = uptoKc;
+    }
+  }
+  return true;
 }
 
-function coerce(value: number | string | null | undefined, fallback: number): number {
-  if (value === null || value === undefined) return fallback;
-  const n = typeof value === "string" ? Number(value) : value;
-  return Number.isFinite(n) ? n : fallback;
+// Ordered ascending by uptoKc, last entry's uptoKc is always null ("and above"). Falls back to
+// the global COMMISSION_TIERS default whenever the override is absent or fails validation
+// (malformed JSON should never silently charge Kč 0 or crash an order).
+export function resolveFeeSchedule(overrides?: FeeScheduleOverrides | null): CommissionTier[] {
+  const candidate = overrides?.commission_tiers_override;
+  return isValidTierArray(candidate) ? candidate : COMMISSION_TIERS;
 }
 
-export function resolveFeeSchedule(overrides?: FeeScheduleOverrides | null): FeeSchedule {
-  return {
-    standardRate: coerce(overrides?.commission_rate_override, COMMISSION_RATE),
-    reducedRate: coerce(overrides?.reduced_commission_rate_override, REDUCED_COMMISSION_RATE),
-    thresholdKc: coerce(overrides?.commission_threshold_override, COMMISSION_REDUCED_THRESHOLD_CZK),
-  };
+export interface TieredCommissionResult {
+  commissionAmountKc: number;
+  effectiveRate: number;
+}
+
+// Marginal/bracket commission for ONE order: the slice of the month's cumulative turnover that
+// this order occupies (turnoverBeforeKc -> turnoverBeforeKc + grossAmountKc) is split across
+// every tier band it overlaps, each portion charged at that band's own rate — never a
+// whole-month re-rate. Progressive, not retroactive: earlier orders this month are never
+// recomputed, only this order's own position in the running total decides its blended rate.
+export function computeTieredCommission(
+  grossAmountKc: number,
+  turnoverBeforeKc: number,
+  tiers: CommissionTier[]
+): TieredCommissionResult {
+  const beforeH = kcToHaleru(turnoverBeforeKc);
+  const afterH = kcToHaleru(turnoverBeforeKc + grossAmountKc);
+
+  let commissionH = 0;
+  let lowerBoundH = 0;
+  for (const tier of tiers) {
+    const upperBoundH = tier.uptoKc === null ? Infinity : kcToHaleru(tier.uptoKc);
+    const overlapStartH = Math.max(beforeH, lowerBoundH);
+    const overlapEndH = Math.min(afterH, upperBoundH);
+    const overlapH = Math.max(overlapEndH - overlapStartH, 0);
+    commissionH += overlapH * tier.rate;
+    lowerBoundH = upperBoundH;
+  }
+
+  const commissionAmountKc = haleruToKc(Math.round(commissionH));
+  const effectiveRate = grossAmountKc > 0 ? Math.round((commissionAmountKc / grossAmountKc) * 1_000_000) / 1_000_000 : 0;
+  return { commissionAmountKc, effectiveRate };
 }
 
 // Inputs for a monthly STATEMENT (shared/services/billingPeriodService.ts): both seller modes

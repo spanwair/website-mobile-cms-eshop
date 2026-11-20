@@ -1,12 +1,28 @@
 ---
 import { useT } from "@/lib/i18n";
+import { COMMISSION_TIERS, COMMISSION_ENTERPRISE_THRESHOLD_CZK } from "@shared/constants/sellerMode";
 const t = useT(Astro);
-// Launch/founding headline rate shown in the hero stat card. The standard tiered model
-// (10% dropping to 5%) lives in the commission calculator; the index leads with 5%.
-const commissionPct = 5;
+
+// Short "10k"-style label -- every threshold is a multiple of 1000, so this always divides
+// evenly. Keeps the range labels on one line at this card's width (the full "10 000 Kč" form
+// wrapped awkwardly and didn't line up column to column).
+const fmtK = (n: number) => `${n / 1000}k`;
+// Finite bands only -- the open-ended last tier gets the "Enterprise" flag instead of a bar.
+const finiteTiers = COMMISSION_TIERS.slice(0, -1);
+const bars = finiteTiers.map((tier, i) => ({
+  pct: Math.round(tier.rate * 100),
+  // Index-based step, not proportional to the rate itself -- a literal 5/4/3 ratio barely reads
+  // as "going down" at a glance. A fixed step per band makes the decline unmistakable while the
+  // printed "%" labels stay the real numbers.
+  heightPct: Math.max(100 - i * 60, 20),
+  fill: Math.round((1 - i * 0.22) * 100),
+  rangeLabel: i === 0 ? `0–${fmtK(tier.uptoKc as number)} Kč` : `${fmtK(finiteTiers[i - 1].uptoKc as number)}–${fmtK(tier.uptoKc as number)} Kč`,
+}));
+const enterpriseRangeLabel = `${fmtK(COMMISSION_ENTERPRISE_THRESHOLD_CZK)}+ Kč`;
 ---
 
 <section class="landing hero" id="hero">
+  <img class="hero-photo-bg" src="/img/hero-seller.jpg" alt="" aria-hidden="true" />
   <div class="container-lg hero-grid">
     <div class="hero-copy" data-hero-reveal>
       <span class="hero-eyebrow"><span class="hero-dot" aria-hidden="true"></span>{t.landing.hero.eyebrow}</span>
@@ -16,44 +32,55 @@ const commissionPct = 5;
         <span class="hero-line hero-line--sm">{t.landing.hero.titleLine2}</span>
       </h1>
 
-      <p class="hero-sub measure">{t.landing.hero.sub}</p>
+      <div class="hero-sub-card">
+        <p class="hero-sub measure">{t.landing.hero.sub}</p>
+      </div>
 
-      <form id="hero-lead-form" class="hero-form" novalidate>
-        <input type="email" name="email" required placeholder={t.landing.hero.formPlaceholder} class="hero-input" aria-label={t.landing.hero.formPlaceholder} />
-        <button type="submit" class="btn btn-primary btn-lg">{t.landing.hero.formCta}</button>
-      </form>
+      <button type="button" id="hero-cta" class="btn btn-primary btn-lg">{t.landing.hero.formCta}</button>
       <p class="hero-trust tnum">{t.landing.hero.trustLine}</p>
     </div>
 
-    <figure class="hero-visual" data-hero-reveal>
+    <div class="hero-visual" data-hero-reveal>
       <span class="hero-block hero-block--accent" aria-hidden="true"></span>
       <span class="hero-block hero-block--soft" aria-hidden="true"></span>
-      <div class="hero-frame">
-        <img src="/img/hero-seller.jpg" alt="Prodejkyně balí objednávku pro svůj e-shop na mamtodoma.cz" width="1400" height="2100" class="hero-image" loading="eager" fetchpriority="high" />
+      <div class="hero-card">
+        <p class="hero-card-label">{t.landing.hero.chartLabel}</p>
+        <div class="hero-bars">
+          {bars.map((bar) => (
+            <div class="hero-bar-col">
+              <span class="hero-bar-pct tnum">{bar.pct} %</span>
+              <span class="hero-bar" style={`height:${bar.heightPct}%; --fill:${bar.fill}%`}></span>
+              <span class="hero-bar-range">{bar.rangeLabel}</span>
+            </div>
+          ))}
+          <div class="hero-bar-col hero-bar-col--ent">
+            <span class="hero-ent-flag">{t.landing.enterprise.eyebrow}<br />{t.landing.commissionCalculator.ladderCustom}</span>
+            <span class="hero-bar-range">{enterpriseRangeLabel}</span>
+          </div>
+        </div>
       </div>
-      <figcaption class="hero-float float">
-        <span class="hero-float-num font-display tnum">{commissionPct}<span class="hero-float-pct"> %</span></span>
-        <span class="hero-float-label">{t.landing.hero.floatLabel}</span>
-      </figcaption>
-    </figure>
+    </div>
   </div>
 </section>
 
 <script>
-  const form = document.getElementById("hero-lead-form") as HTMLFormElement | null;
-  form?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const emailInput = form.elements.namedItem("email") as HTMLInputElement | null;
-    const email = emailInput ? emailInput.value.trim() : "";
-    const params = new URLSearchParams({ mode: "signup" });
-    if (email) params.set("email", email);
-    window.location.href = `/login?${params.toString()}`;
+  const cta = document.getElementById("hero-cta");
+  cta?.addEventListener("click", () => {
+    window.location.href = "/login?mode=signup";
   });
 </script>
 
 <style>
   .hero { position: relative; padding-block: clamp(2.5rem, 4vw + 1.5rem, 5rem) clamp(2rem, 4vw, 4rem); overflow: clip; }
+  /* Same photo the hero used to frame, now washed out behind the whole section as texture --
+     opaque elements (card, accent blocks, text) sit above it via z-index, so it only really
+     shows through the page margins and the gaps around them. */
+  .hero-photo-bg {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%;
+    opacity: 0.2; z-index: 0;
+  }
   .hero-grid {
+    position: relative; z-index: 1;
     display: grid; grid-template-columns: 1.05fr 0.95fr;
     gap: clamp(2rem, 5vw, 4.5rem); align-items: center;
   }
@@ -71,66 +98,70 @@ const commissionPct = 5;
   .hero-line--sm { font-size: 0.4em; line-height: 1.2; font-weight: 600; color: var(--text-muted); margin-top: 0.55em; }
   .hero-accent { color: var(--accent); }
 
-  .hero-sub { font-size: var(--fs-body-lg); line-height: 1.6; color: var(--text-muted); margin-bottom: clamp(1.5rem, 3vw, 2rem); }
-
-  .hero-form { display: flex; gap: 0.6rem; width: 100%; max-width: 30rem; margin-bottom: 0.9rem; }
-  .hero-input {
-    flex: 1; padding: 0.9rem 1rem; border-radius: var(--radius-full);
-    border: 1.5px solid var(--border-strong); background: var(--bg-surface);
-    font: inherit; font-size: var(--fs-sm); color: var(--text-primary);
-    transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  /* White card around the sub copy -- same treatment as the rate-ladder card opposite it, so the
+     text stays legible sitting on the photo wash instead of reading as plain text on an image. */
+  .hero-sub-card {
+    position: relative; z-index: 1; background: var(--bg-surface); border-radius: var(--radius-lg);
+    padding: 1.1rem 1.4rem; margin-bottom: clamp(1.5rem, 3vw, 2rem);
+    box-shadow: 0 24px 48px -30px rgba(15, 26, 22, 0.4);
   }
-  .hero-input:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
-  .hero-trust { font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); letter-spacing: -0.005em; }
+  .hero-sub { font-size: var(--fs-body-lg); line-height: 1.6; color: var(--text-muted); margin: 0; }
 
-  /* Visual: portrait photo in a rounded frame, with two offset brand blocks behind it
-     (evergreen + soft mint) echoing Shoptet's geometric hero, kept in our palette. */
+  .hero-trust { font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); letter-spacing: -0.005em; margin-top: 0.9rem; }
+
+  /* Visual: the rate-ladder card, with the two offset brand blocks (evergreen + soft mint)
+     behind it that used to sit behind the hero photo -- same brand gesture, new content. */
   .hero-visual { position: relative; justify-self: center; width: 100%; max-width: 26rem; }
-  .hero-frame {
-    position: relative; z-index: 1; aspect-ratio: 4 / 5;
-    border-radius: var(--radius-xl); overflow: hidden;
-    box-shadow: 0 40px 70px -34px rgba(15, 26, 22, 0.45);
-  }
-  .hero-image { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
   .hero-block { position: absolute; border-radius: var(--radius-lg); z-index: 0; }
   .hero-block--accent { width: 46%; height: 55%; top: -1.1rem; right: -1.1rem; background: var(--accent); }
   .hero-block--soft { width: 40%; height: 42%; bottom: -1.1rem; left: -1.1rem; background: var(--accent-soft); }
 
-  .hero-float {
-    position: absolute; z-index: 2; left: -0.9rem; bottom: clamp(1.25rem, 4vw, 2.5rem);
-    background: var(--bg-surface); border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
-    padding: 0.85rem 1.15rem; display: flex; flex-direction: column; gap: 0.15rem; text-align: left;
+  .hero-card {
+    position: relative; z-index: 1; background: var(--bg-surface); border-radius: var(--radius-xl);
+    padding: 1.75rem 1.75rem 1.5rem; box-shadow: 0 40px 70px -34px rgba(15, 26, 22, 0.45);
   }
-  .hero-float-num { font-size: 2rem; line-height: 1; color: var(--accent); font-weight: 800; }
-  .hero-float-pct { font-size: 0.55em; font-weight: 700; }
-  .hero-float-label { font-size: var(--fs-sm); color: var(--text-muted); max-width: 14ch; }
+  .hero-card-label {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--text-muted); margin: 0 0 1.1rem;
+  }
+  .hero-bars { display: flex; align-items: flex-end; gap: 0.9rem; height: 150px; }
+  .hero-bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0.5rem; height: 100%; flex: 1; }
+  .hero-bar-pct { font-size: 1.05rem; font-weight: 800; color: var(--text-primary); }
+  .hero-bar {
+    width: 100%; border-radius: 0.5rem 0.5rem 0.2rem 0.2rem;
+    background: color-mix(in srgb, var(--accent) var(--fill), var(--accent-soft));
+    transition: height 0.5s var(--ease-out, ease);
+  }
+  .hero-bar-range { font-size: 0.7rem; color: var(--text-muted); text-align: center; line-height: 1.3; white-space: nowrap; }
+  .hero-bar-col--ent { justify-content: flex-end; }
+  .hero-ent-flag {
+    width: 100%; border: 1.5px dashed var(--accent-secondary); border-radius: 0.5rem;
+    color: var(--accent-secondary); font-size: 0.68rem; font-weight: 800; text-align: center;
+    padding: 0.5rem 0.2rem; line-height: 1.25; height: 44px; display: flex; align-items: center; justify-content: center;
+  }
 
-  /* Load-time entrance — above-fold, so it animates on load (not scroll) and never blocks LCP.
+  .landing [data-reveal]:not(.is-visible) .hero-bar { height: 0 !important; }
+
+  /* Load-time entrance -- above-fold, so it animates on load (not scroll) and never blocks LCP.
      Deliberately a plain CSS animation, not the scroll-triggered [data-reveal]/IntersectionObserver
      system every other section uses: that system defaults to opacity:0 until client JS runs and
-     observes the element, so on a slow connection/device the hero (headline + photo, the only thing
-     visible above the fold) stayed blank for up to a second or more — looking like a broken/unstyled
-     page. A self-contained animation needs nothing but the already-render-blocking CSS to resolve.
-     The hero-visual figure uses the same mechanism (below) so photo and headline enter together. */
+     observes the element, so on a slow connection/device the hero (headline + card, the only thing
+     visible above the fold) stayed blank for up to a second or more -- looking like a broken/unstyled
+     page. A self-contained animation needs nothing but the already-render-blocking CSS to resolve. */
   [data-hero-reveal] .hero-line { opacity: 0; transform: translateY(0.4em); animation: hero-rise 0.9s var(--ease-out) forwards; }
   [data-hero-reveal] .hero-line:nth-child(1) { animation-delay: 0.05s; }
   [data-hero-reveal] .hero-line:nth-child(2) { animation-delay: 0.15s; }
-  figure[data-hero-reveal] { opacity: 0; transform: translateY(0.4em); animation: hero-rise 0.9s var(--ease-out) forwards; animation-delay: 0.1s; }
+  .hero-visual[data-hero-reveal] { opacity: 0; transform: translateY(0.4em); animation: hero-rise 0.9s var(--ease-out) forwards; animation-delay: 0.1s; }
   @keyframes hero-rise { to { opacity: 1; transform: none; } }
 
   @media (max-width: 860px) {
     .hero-grid { grid-template-columns: 1fr; gap: clamp(2.5rem, 8vw, 3.5rem); }
     .hero-copy { align-items: center; text-align: center; }
     .hero-title { margin-inline: auto; }
-    .hero-sub { margin-inline: auto; }
-    .hero-form { margin-inline: auto; }
+    .hero-sub-card { margin-inline: auto; }
     .hero-visual { max-width: 24rem; }
   }
-  @media (max-width: 640px) {
-    .hero-form { flex-direction: column; }
-  }
   @media (prefers-reduced-motion: reduce) {
-    [data-hero-reveal] .hero-line, figure[data-hero-reveal] { opacity: 1; transform: none; animation: none; }
+    [data-hero-reveal] .hero-line, .hero-visual[data-hero-reveal] { opacity: 1; transform: none; animation: none; }
   }
 </style>

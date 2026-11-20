@@ -50,6 +50,6 @@ It is informational only — paying a seller never happens against a statement, 
 ## Related pages
 
 - [Billing](/docs/en/admin/billing) - the cross-organization overview and the Resolve button that lands here
-- [Organizations](/docs/en/admin/parties) - the Seller Mode card and the per-party commission rate override
+- [Organizations](/docs/en/admin/parties) - the Seller Mode card and the per-party commission tier schedule override
 - [Reports](/docs/en/admin/reports) - the same monthly statements, as a CSV export for income tax
 - [Orders](/docs/en/admin/orders) - each ledger entry corresponds to one order

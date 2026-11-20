@@ -249,7 +249,7 @@ const toJsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, "\\u003c"
 ---
 
 <Layout
-  title={product.seo_title ?? product.title}
+  title={product.seo_title ?? `${product.title} | ${storeParty.config?.brand_name ?? "Shop"}`}
   description={metaDescription}
   ogImage={primaryImageUrl}
   ogType="product"

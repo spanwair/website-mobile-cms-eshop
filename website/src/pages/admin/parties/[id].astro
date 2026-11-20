@@ -2,6 +2,7 @@
 import CmsLayout from "@/components/cms/CmsLayout.astro";
 import InviteUserForm from "@/components/cms/InviteUserForm.astro";
 import PartySellerModeCard from "@/components/admin/PartySellerModeCard.astro";
+import CommissionTierEditor from "@/components/admin/CommissionTierEditor.astro";
 import SlugInput from "@/components/cms/SlugInput.astro";
 import { createSupabase, createAdminClient } from "@/lib/supabase";
 import { resolveSlug } from "@shared/utils/slug";
@@ -15,7 +16,7 @@ import { useT, getLang } from "@/lib/i18n";
 import { PERMISSIONS, hasPermission, ROLE, assignableRoles, canAssignRole } from "@shared/constants/permissions";
 import { sendPartyInvitation, buildDevInviteMetadata } from "@/lib/integrations/email";
 import { ociConfigured } from "@/lib/integrations/oci-email";
-import { SELLER_MODE, COMMISSION_RATE, REDUCED_COMMISSION_RATE, COMMISSION_REDUCED_THRESHOLD_CZK } from "@shared/constants/sellerMode";
+import { SELLER_MODE } from "@shared/constants/sellerMode";
 import { formatPrice } from "@shared/utils/format";
 
 const supabase = createSupabase(Astro);
@@ -77,40 +78,49 @@ if (Astro.request.method === "POST") {
       }
     }
   } else if (action === "update_fee_schedule") {
-    if (!canManageSettings) {
+    // Owner-only, deliberately narrower than MANAGE_AUDIT: the commission schedule is a
+    // platform-revenue lever, not a party-settings field -- an Admin (who can hold MANAGE_AUDIT
+    // on their own assigned parties) must never be able to adjust their own organization's rate.
+    if (!isOwner) {
       error = t.admin.parties.errorInsufficientPermissions;
     } else {
-      // Blank input = clear the override and fall back to the platform default. Rates are entered
-      // as percentages in the UI and stored as fractions (10 -> 0.10). resolveFeeSchedule reads
-      // NULL as "use global", so an empty field must become NULL, not 0.
-      const parsePct = (raw: string): number | null | undefined => {
-        const v = raw.trim();
-        if (v === "") return null;
-        const n = Number(v.replace(",", "."));
-        if (!Number.isFinite(n) || n < 0 || n > 100) return undefined; // invalid
-        return Math.round((n / 100) * 10000) / 10000;
+      // Rates are entered as percentages in the UI, stored as fractions (10 -> 0.10). The last
+      // "tier_rate" has no matching "tier_upto" (that input is open-ended, excluded from the
+      // form on purpose) -- so N rates pair with N-1 thresholds, the final band always "and above".
+      const rawRates = form.getAll("tier_rate").map((v) => String(v).trim());
+      const rawUptos = form.getAll("tier_upto").map((v) => String(v).trim());
+      const toRate = (raw: string): number | null => {
+        const n = Number(raw.replace(",", "."));
+        return Number.isFinite(n) && n >= 0 && n <= 100 ? Math.round((n / 100) * 10000) / 10000 : null;
       };
-      const parseKc = (raw: string): number | null | undefined => {
-        const v = raw.trim();
-        if (v === "") return null;
-        const n = Number(v.replace(/\s/g, "").replace(",", "."));
-        if (!Number.isFinite(n) || n < 0) return undefined;
-        return Math.round(n * 100) / 100;
+      const toKc = (raw: string): number | null => {
+        const n = Number(raw.replace(/\s/g, "").replace(",", "."));
+        return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
       };
-      const rate = parsePct(form.get("commission_rate_pct") as string);
-      const reduced = parsePct(form.get("reduced_commission_rate_pct") as string);
-      const threshold = parseKc(form.get("commission_threshold_kc") as string);
-      if (rate === undefined || reduced === undefined || threshold === undefined) {
+      const rates = rawRates.map(toRate);
+      const uptos = rawUptos.map(toKc);
+      const isWellFormed =
+        rates.length >= 1 &&
+        uptos.length === rates.length - 1 &&
+        rates.every((r) => r !== null) &&
+        uptos.every((u, i) => u !== null && (i === 0 || (uptos[i - 1] as number) < u));
+      if (!isWellFormed) {
         error = t.admin.parties.feeSchedule.errorInvalid;
       } else {
-        const result = await updateParty(supabase, id!, {
-          commission_rate_override: rate,
-          reduced_commission_rate_override: reduced,
-          commission_threshold_override: threshold,
-        });
+        const tiers = rates.map((rate, i) => ({ uptoKc: i < uptos.length ? uptos[i] : null, rate }));
+        const result = await updateParty(supabase, id!, { commission_tiers_override: tiers });
         if (result.error) { error = result.error.message; }
         else { success = t.admin.parties.feeSchedule.savedSuccess; }
       }
+    }
+  } else if (action === "reset_fee_schedule") {
+    // Owner-only, same reasoning as update_fee_schedule above.
+    if (!isOwner) {
+      error = t.admin.parties.errorInsufficientPermissions;
+    } else {
+      const result = await updateParty(supabase, id!, { commission_tiers_override: null });
+      if (result.error) { error = result.error.message; }
+      else { success = t.admin.parties.feeSchedule.savedSuccess; }
     }
   } else if (action === "invite") {
     if (!canManageUsers) {
@@ -302,19 +312,7 @@ function partyStockDisplay(stock: number | null): { variant: PartyStockVariant; 
   return { variant: "success", label: `${stock} ${t.admin.products.inStock}` };
 }
 
-// Fee-schedule editor: inputs show the party's override when set, otherwise blank with the
-// global default as placeholder. Rates are percentages in the UI, fractions in the DB.
 const isOwnCompany = party.seller_mode === SELLER_MODE.OWN_COMPANY;
-const pctValue = (v: number | null) => (v === null || v === undefined ? "" : String(Math.round(Number(v) * 1000000) / 10000));
-const feeSchedule = {
-  ratePct: pctValue(party.commission_rate_override),
-  reducedPct: pctValue(party.reduced_commission_rate_override),
-  thresholdKc: party.commission_threshold_override === null || party.commission_threshold_override === undefined
-    ? "" : String(Number(party.commission_threshold_override)),
-  defRatePct: String(COMMISSION_RATE * 100),
-  defReducedPct: String(REDUCED_COMMISSION_RATE * 100),
-  defThresholdKc: COMMISSION_REDUCED_THRESHOLD_CZK.toLocaleString("cs-CZ"),
-};
 
 function roleName(roleId: string) {
   return allRoles.find((r) => r.id === roleId)?.name ?? roleId.slice(0, 8);
@@ -418,44 +416,7 @@ function roleName(roleId: string) {
           </form>
         </div>
         <PartySellerModeCard party={party} agreement={commissionAgreement} lang={lang} t={t} />
-        {isOwnCompany && (
-          <div class="card" style="margin-top:16px">
-            <h2 class="section-title">{t.admin.parties.feeSchedule.title}</h2>
-            <p class="invite-note">{t.admin.parties.feeSchedule.hint}</p>
-            <form method="POST" class="party-form">
-              <input type="hidden" name="action" value="update_fee_schedule" />
-              <div class="form-row">
-                <label class="form-label" for="commission_rate_pct">{t.admin.parties.feeSchedule.standardRateLabel}</label>
-                <div class="fee-input-wrap">
-                  <input class="form-input" type="number" step="0.01" min="0" max="100" name="commission_rate_pct"
-                    id="commission_rate_pct" value={feeSchedule.ratePct}
-                    placeholder={`${feeSchedule.defRatePct} (${t.admin.parties.feeSchedule.defaultTag})`} />
-                  <span class="fee-suffix">%</span>
-                </div>
-              </div>
-              <div class="form-row">
-                <label class="form-label" for="reduced_commission_rate_pct">{t.admin.parties.feeSchedule.reducedRateLabel}</label>
-                <div class="fee-input-wrap">
-                  <input class="form-input" type="number" step="0.01" min="0" max="100" name="reduced_commission_rate_pct"
-                    id="reduced_commission_rate_pct" value={feeSchedule.reducedPct}
-                    placeholder={`${feeSchedule.defReducedPct} (${t.admin.parties.feeSchedule.defaultTag})`} />
-                  <span class="fee-suffix">%</span>
-                </div>
-              </div>
-              <div class="form-row">
-                <label class="form-label" for="commission_threshold_kc">{t.admin.parties.feeSchedule.thresholdLabel}</label>
-                <div class="fee-input-wrap">
-                  <input class="form-input" type="number" step="0.01" min="0" name="commission_threshold_kc"
-                    id="commission_threshold_kc" value={feeSchedule.thresholdKc}
-                    placeholder={`${feeSchedule.defThresholdKc} (${t.admin.parties.feeSchedule.defaultTag})`} />
-                  <span class="fee-suffix">Kč</span>
-                </div>
-              </div>
-              <p class="invite-note">{t.admin.parties.feeSchedule.clearNote}</p>
-              <button type="submit" class="btn btn-primary" style="margin-top:4px">{t.common.saveChanges}</button>
-            </form>
-          </div>
-        )}
+        {isOwnCompany && isOwner && <CommissionTierEditor party={party} t={t} />}
         </Fragment>
       )}
 
@@ -568,10 +529,6 @@ function roleName(roleId: string) {
 </CmsLayout>
 
 <style>
-  .form-row { margin-bottom:12px; }
-  .fee-input-wrap { position:relative; display:flex; align-items:center; }
-  .fee-input-wrap .form-input { padding-right:44px; }
-  .fee-suffix { position:absolute; right:12px; font-size:13px; color:var(--text-muted); pointer-events:none; }
   .back-link { font-size:13px; color:var(--text-muted); display:block; margin-bottom:20px; }
   .back-link:hover { color:var(--text-primary); }
   .alert-error { background:rgba(239,68,68,0.08); border:1px solid var(--error); border-radius:8px; padding:12px 16px; color:var(--error); margin-bottom:16px; font-size:14px; }
@@ -591,8 +548,6 @@ function roleName(roleId: string) {
   .form-meta { display:flex; justify-content:space-between; font-size:13px; color:var(--text-muted); }
   .meta-label { font-weight:600; }
   .invite-form { display:flex; flex-direction:column; gap:12px; }
-  .invite-note { font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:12px; padding:10px 12px; background:var(--bg-subtle); border-radius:8px; border-left:3px solid var(--primary); }
-  .invite-note a { color:var(--primary); font-weight:600; }
   .role-hint { font-weight:400; font-style:italic; color:var(--text-muted); }
   code { font-family:monospace; font-size:13px; background:var(--bg-subtle); padding:2px 6px; border-radius:4px; }
   .status-locked { font-size:13px; color:var(--text-muted); padding:8px 10px; background:var(--bg-subtle); border-radius:var(--radius-sm); border:1px solid var(--border-default); }
