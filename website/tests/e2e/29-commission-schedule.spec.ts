@@ -31,7 +31,7 @@ test.describe("29 commission schedule overrides", () => {
 
     const firstRateInput = page.locator("[data-tier-rows] [data-tier-row] input[name=tier_rate]").first();
     await expect(firstRateInput).toBeVisible();
-    await expect(firstRateInput).toHaveValue("5");
+    await expect(firstRateInput).toHaveValue("1.99");
 
     await firstRateInput.fill("8");
     await page.locator("[data-tier-form] button[type=submit]").click();

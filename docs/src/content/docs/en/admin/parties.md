@@ -147,11 +147,11 @@ Both seller-mode actions require MANAGE_AUDIT.
 ### Left column - Commission schedule (Owner only)
 
 For own-company organizations, a **Commission schedule** card lets you override the platform's tiered commission for this one organization.
-The platform default (`COMMISSION_TIERS` in `shared/constants/sellerMode.ts`) is a marginal/bracket schedule — like income tax — where each band of monthly turnover is charged at that band's own rate: 5% on the first 10 000 Kč, 4% on the next 20 000 Kč, 3% on the next 60 000 Kč, and 3% on everything above 90 000 Kč.
+The platform default (`COMMISSION_TIERS` in `shared/constants/sellerMode.ts`) is a flat 1.99% rate on every order, regardless of turnover, up to 30,000 Kč of monthly turnover — above that line the same 1.99% default still applies unless the organization has its own override.
 The card shows one editable row per band (rate % and "up to" Kč threshold), pre-filled with the platform default when the organization has no override yet; the last row is always open-ended ("and above").
 Use **+ Add band** to insert another row, or the per-row remove button to delete one.
 
-This is also how you set up a negotiated "own eshop" enterprise schedule once an organization's turnover regularly passes the public ladder's top band (90 000 Kč) — replace the rows with whatever custom schedule was agreed (even a single flat open-ended rate), rather than leaving it on the public default. The platform surfaces a `fee_tier_change` in-app notification the first time a party still on the default schedule crosses that line, as a prompt to start that conversation.
+This is also how you set up a negotiated "own eshop" enterprise schedule once an organization's turnover regularly passes the public threshold (30,000 Kč) — replace the rows with whatever custom schedule was agreed (even a single flat open-ended rate), rather than leaving it on the public default. The platform surfaces a `fee_tier_change` in-app notification the first time a party still on the default schedule crosses that line, as a prompt to start that conversation.
 
 Rates are entered as percentages and the whole schedule is stored as one ordered JSONB array on the `parties` table (`commission_tiers_override`).
 Use **Reset to platform default** to remove the override entirely and fall back to the global schedule.

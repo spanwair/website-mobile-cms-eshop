@@ -22,7 +22,7 @@ Každá organizace má `seller_mode` (nastavený na kartě Režim pro prodejce v
 
 | Režim | Odznak | Jak je účtováno |
 |---|---|---|
-| Vlastní společnost (`own_company`) | zelený "Vlastní společnost" | Pásmová (marginální) sazba z `COMMISSION_TIERS` (od 5 % do 3 %, podle pásma měsíčního obratu, viz [Ceník](/docs/)) za každou objednávku — každá objednávka se počítá jako kombinace všech pásem, kterých se dotýká podíl měsíčního obratu připadající na ni, se zádržnou lhůtou `OWN_COMPANY_PAYOUT_HOLD_DAYS` (14 dní). Lze přepsat pro jednotlivou organizaci přes `resolveFeeSchedule()` (viz [Organizace](/docs/admin/parties)) — tímto způsobem se nastavuje i individuálně dohodnutá sazba "vlastní e-shop" nad nejvyšším veřejným pásmem. Kytka z Beskyd začíná v tomto režimu. |
+| Vlastní společnost (`own_company`) | zelený "Vlastní společnost" | Pevná sazba 1,99 % z `COMMISSION_TIERS` (viz [Ceník](/docs/)) za každou objednávku, se zádržnou lhůtou `OWN_COMPANY_PAYOUT_HOLD_DAYS` (14 dní). Lze přepsat pro jednotlivou organizaci přes `resolveFeeSchedule()` (viz [Organizace](/docs/admin/parties)) — tímto způsobem se nastavuje i individuálně dohodnutá sazba "vlastní e-shop" nad 30 000 Kč měsíčního obratu. Kytka z Beskyd začíná v tomto režimu. |
 | Provize (`smalljobs_commission`) | hnědý "Provize" | Pevný odvod `NO_ICO_DEDUCTION_RATE` (30 %) za každou objednávku, se zádržnou lhůtou `PAYOUT_HOLD_DAYS` (60 dní) a měsíčním limitem výplaty `NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK` (12 000 Kč). |
 
 ## Přehledová tabulka (`/admin/billing`)

@@ -43,7 +43,7 @@ Tím se odešle `action=mark_paid`, což nastaví řádek účetní knihy na `pa
 ## Prodejci vlastní firmy (`own_company`)
 
 Tento režim používá stejnou účetní knihu a stejnou akci **Označit jako zaplacené** jako prodejci na provizi výše - jediný rozdíl je sazba a lhůta zádržné.
-Sazba je pásmová (marginální), ne pevná: 5 % z prvních 10 000 Kč měsíčního obratu, 4 % z dalších 20 000 Kč, 3 % z dalších 60 000 Kč a 3 % ze všeho nad 90 000 Kč - viz `COMMISSION_TIERS` v `shared/constants/sellerMode.ts` a karta Plán provize v [Organizacích](/docs/admin/parties), kde lze celý plán přepsat pro jednotlivou organizaci (včetně individuálně dohodnuté sazby "vlastní e-shop" nad veřejným žebříčkem).
+Sazba je pevná: 1,99 % z každé objednávky, bez ohledu na obrat - viz `COMMISSION_TIERS` v `shared/constants/sellerMode.ts` a karta Plán provize v [Organizacích](/docs/admin/parties), kde lze celý plán přepsat pro jednotlivou organizaci (včetně individuálně dohodnuté sazby "vlastní e-shop" nad 30 000 Kč měsíčního obratu).
 Zádržná lhůta je `OWN_COMPANY_PAYOUT_HOLD_DAYS` (14 dní), kratší než u prodejců na provizi, protože vlastní firma je sama zákonným prodejcem.
 Kytka z Beskyd, která začíná v tomto režimu, by zde viděla svou účetní knihu výplat.
 

@@ -1,6 +1,7 @@
 import { formatPrice } from "@shared/utils/format";
 import type { AppLanguage } from "@shared/i18n/getT";
 import { submitAjax } from "./ajaxForm";
+import { updateCartBadge } from "./cartBadge";
 
 // Switching the selected variant re-points the whole purchase panel at it — stock text, qty
 // cap, price (a variant's own price is always authoritative once the product has any), and
@@ -59,28 +60,6 @@ export function initPurchasePanel() {
   const genericError = section?.dataset.genericError ?? "Something went wrong";
   const successMsg = document.getElementById("cart-success-msg");
   const errorMsg = document.getElementById("cart-error-msg");
-
-  function updateCartBadge(count: number) {
-    const cartLink = document.querySelector<HTMLElement>(".icon-link--cart");
-    if (!cartLink) return;
-    let badge = cartLink.querySelector<HTMLElement>(".cart-badge");
-    if (count <= 0) {
-      badge?.remove();
-      return;
-    }
-    if (!badge) {
-      badge = document.createElement("span");
-      badge.className = "cart-badge";
-      // Astro's scoped CSS keys .cart-badge to a data-astro-cid-* attribute that only exists on
-      // elements the component actually rendered — copy it from the link so this JS-created
-      // badge picks up the same scoped style instead of rendering unstyled.
-      for (const attr of Array.from(cartLink.attributes)) {
-        if (attr.name.startsWith("data-astro-cid")) badge.setAttribute(attr.name, "");
-      }
-      cartLink.appendChild(badge);
-    }
-    badge.textContent = String(count);
-  }
 
   cartForm?.addEventListener("submit", async (e) => {
     e.preventDefault();

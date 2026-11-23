@@ -1142,7 +1142,7 @@ export const cs: Translations = {
     },
     billing: {
       title: "Přehled plateb",
-      hint: "Aktuální stav plateb za všechny vaše organizace na jednom místě — provize od 5 % do 3 % z obratu podle pásma pro vlastní firmy, 30 % odvod s limitem výplaty 12 000 Kč měsíčně bez IČO.",
+      hint: "Aktuální stav plateb za všechny vaše organizace na jednom místě — pevná provize 1,99 % z obratu pro vlastní firmy, 30 % odvod s limitem výplaty 12 000 Kč měsíčně bez IČO.",
       colParty: "Organizace",
       colMode: "Model",
       colThisMonth: "Tento měsíc",
@@ -1861,7 +1861,7 @@ export const cs: Translations = {
       lang: "cs",
       defaultTitle: "Mamtodoma.cz - E-shop bez vstupních nákladů, založte zdarma",
       defaultDescription:
-        "Založte si e-shop zdarma na Mamtodoma.cz. Bez vstupních nákladů - provizi platíte jen od 5 % do 3 % podle měsíčního obratu. Spuštěno za pár minut.",
+        "Založte si e-shop zdarma na Mamtodoma.cz. Bez vstupních nákladů - provizi platíte jen 1,99 % z každého prodeje. Spuštěno za pár minut.",
     },
     logoMarquee: {
       label: "Napojeno na",
@@ -1883,13 +1883,14 @@ export const cs: Translations = {
       titleHighlight: "bez vstupních nákladů",
       titleLine2: "vyděláváme, jen když vyděláte vy",
       sub:
-        "Spusťte si plnohodnotný e-shop bez vstupních nákladů ještě dnes. Žádný poplatek za založení, žádné pevné měsíční předplatné. Vyděláváme jen tehdy, když vyděláte vy, čím víc prodáte, tím nižší provizi platíte.",
+        "Spusťte si plnohodnotný e-shop bez vstupních nákladů ještě dnes. Žádný poplatek za založení, žádné pevné měsíční předplatné. Vyděláváme jen tehdy, když vyděláte vy — pevná provize 1,99 % z každého prodeje, nic víc.",
       formPlaceholder: "vas@email.cz",
       formCta: "Začít prodávat zdarma",
       formNote: "Bez platební karty. Bez pevného předplatného. Není co rušit.",
-      trustLine: "od 5 % do 3 % jen z prodeje · nic předem · spuštěno za pár minut",
+      trustLine: "1,99 % jen z prodeje · nic předem · spuštěno za pár minut",
       floatLabel: "jen z uskutečněného prodeje",
-      chartLabel: "Provize podle měsíčního obratu",
+      chartLabel: "Provize z každé objednávky",
+      flatRateCaption: "z každého uskutečněného prodeje",
     },
     included: {
       eyebrow: "V ceně bez příplatků",
@@ -1921,8 +1922,8 @@ export const cs: Translations = {
           desc: "Žádná zkušební verze s háčkem. Samotný e-shop je zdarma — platíte jen provizi z toho, co skutečně prodáte.",
         },
         {
-          title: "Až 95 % z každého prodeje zůstává vám",
-          desc: "Vyděláváme jen tehdy, když vyděláte vy — provize od 5 % do 3 % podle obratu, nic víc, nic skrytě.",
+          title: "Až 98 % z každého prodeje zůstává vám",
+          desc: "Vyděláváme jen tehdy, když vyděláte vy — pevná provize 1,99 % z každého prodeje, nic víc, nic skrytě.",
         },
         {
           title: "Spuštěno za pár minut, ne měsíců",
@@ -1935,9 +1936,9 @@ export const cs: Translations = {
       badge: "Zakládající prodejci",
       title: "Hledáme první obchodníky, se kterými platformu vyladíme",
       body:
-        "Spouštíme a chceme pár zakládajících e-shopů, se kterými platformu vyladíme do posledního detailu. Podmínka je jediná — prodáváte na IČO. Provize je od 5 % do 3 % podle obratu pro každý nový e-shop; jako zakládající prodejce navíc získáte přednostní podporu napřímo od zakladatelů a přímý vliv na to, co postavíme příště.",
+        "Spouštíme a chceme pár zakládajících e-shopů, se kterými platformu vyladíme do posledního detailu. Podmínka je jediná — prodáváte na IČO. Provize je 1,99 % z každého prodeje pro každý nový e-shop; jako zakládající prodejce navíc získáte přednostní podporu napřímo od zakladatelů a přímý vliv na to, co postavíme příště.",
       points: [
-        "Provize od 5 % do 3 %, podle obratu. Podívejte se na ceník",
+        "Provize 1,99 % z každého prodeje. Podívejte se na ceník",
         "Přednostní podpora napřímo od zakladatelů",
         "Spuštěno ještě dnes — bez agentury i programátora",
       ],
@@ -1961,7 +1962,7 @@ export const cs: Translations = {
     howItWorks: {
       eyebrow: "Jak začít",
       title: "Tři kroky. Žádný tarif nevybíráte — přepínáme vás automaticky.",
-      sub: "Žádné srovnávání šesti tarifů. Platíte provizi od 5 % do 3 % podle obratu — nic nevybíráte ani nenastavujete, pásmo se přepíná samo.",
+      sub: "Žádné srovnávání šesti tarifů. Platíte jednu pevnou provizi 1,99 % z každého prodeje — nic nevybíráte ani nenastavujete.",
       steps: [
         { step: "1", title: "Založte si e-shop", desc: "Zadejte e-mail, pojmenujte e-shop a jste v administraci." },
         { step: "2", title: "Nahrajte produkty", desc: "Fotky, ceny, sklad — přidejte jeden produkt nebo celý katalog." },
@@ -2010,17 +2011,17 @@ export const cs: Translations = {
     },
     commissionCalculator: {
       eyebrow: "Ceník ve zkratce",
-      title: "Od 5 % do 3 %, podle obratu",
+      title: "Jen 1,99 % z každého prodeje",
       sub: "Nastavte měsíční obrat vašeho e-shopu. Uvidíte přesně, kolik zaplatíte a kolik vám zůstane.",
       sliderLabel: "Měsíční obrat",
       youKeepLabel: "Čistý zisk",
       weTakeLabel: "Platíte MámToDoma",
-      exampleNote: "Pásmová sazba: čím vyšší měsíční obrat, tím nižší sazba - z obratu do {threshold} Kč platíte {entryRate} % až {floorRate} %. Nad {threshold} Kč vám připravíme vlastní návrh. Žádný pevný poplatek, platíte jen z uskutečněného prodeje.",
+      exampleNote: "Pevná sazba {entryRate} % z každého prodeje až do {threshold} Kč měsíčního obratu. Nad {threshold} Kč vám připravíme vlastní návrh. Žádný pevný poplatek, platíte jen z uskutečněného prodeje.",
       comparisonTitle: "Proč je to lepší než měsíční tarif",
       comparisonNote:
-        "Tarif za 500 Kč měsíčně vás stojí peníze dřív, než prodáte jediný kus. S provizí platíte 0 Kč, pokud nic neprodáte — a čím víc prodáváte, tím níž sazba klesá.",
+        "Tarif za 500 Kč měsíčně vás stojí peníze dřív, než prodáte jediný kus. S provizí platíte 0 Kč, pokud nic neprodáte — vždy stejná pevná sazba, žádné skryté navýšení.",
       badgeEffectiveRate: "efektivní sazba {rate} %",
-      ladderTitle: "Pásma provize",
+      ladderTitle: "Sazba provize",
       ladderAbove: "{amount} Kč a více",
       ladderCustom: "Vlastní návrh",
       employmentToggleLabel: "Nemám IČO ani firmu",
@@ -2054,7 +2055,7 @@ export const cs: Translations = {
       explainerStripeTitle: "Stripe platí platforma",
       explainerStripeText: "Poplatek za kartu se strhává z celé platby, zboží i dopravy. Dnes ho nese MámToDoma, z vaší výplaty se neodečítá.",
       explainerRateTitle: "Sazba {rate} %",
-      explainerRateText: "Vstupní sazba pro první objednávky v měsíci. S rostoucím obratem klesá až na {floorRate} %.",
+      explainerRateText: "Stejná pevná sazba pro každou objednávku, bez ohledu na to, kolik toho měsíc prodáte.",
       platformDetailsTitle: "Jak to vychází pro MámToDoma",
       rowStripeNote: "Stripe si poplatek strhává z celé platby {total} - ze zboží i dopravy dohromady.",
       marginNote: "Po odečtení poplatku Stripe zůstane platformě z {commission} provize {amount}.",
@@ -2065,7 +2066,7 @@ export const cs: Translations = {
     enterprise: {
       eyebrow: "Enterprise",
       title: "Prodáváte hodně? Postavíme vám vlastní e-shop.",
-      desc: "Nad {threshold} Kč měsíčního obratu vám místo další automatické slevy z ceníku nabídneme individuální řešení \"vlastní e-shop\" — sazbu i podmínky domluvíme osobně, s přímou podporou od nás, ne podle tabulky.",
+      desc: "Nad {threshold} Kč měsíčního obratu vám nabídneme individuální řešení \"vlastní e-shop\" místo pevné sazby z ceníku — podmínky domluvíme osobně, s přímou podporou od nás, ne podle tabulky.",
       cta: "Napsat nám o Enterprise řešení",
     },
     noCompanySelling: {
@@ -2075,7 +2076,7 @@ export const cs: Translations = {
       ownCompanyTitle: "Máte vlastní firmu",
       ownCompanyBullets: [
         "Fakturujete a prodáváte vlastním jménem",
-        "Provize platformy od 5 % do 3 %, podle měsíčního obratu",
+        "Provize platformy pevných 1,99 % z každého prodeje",
         "Výplata bankovním převodem 14 dní po zaplacení objednávky",
       ],
       noCompanyTitle: "Nemáte firmu — prodáváte přes nás",
@@ -2096,9 +2097,9 @@ export const cs: Translations = {
       disclaimer: "Jde o ilustrační modelové scénáře, ne o reálné zákazníky ani ověřené výsledky.",
       badgeLabel: "Příklad",
       scenarios: [
-        { persona: "Příklad: výrobkyně svíček", monthly: "20 000 Kč měsíčního obratu", keep: "19 100 Kč zůstane", desc: "Prvních 10 000 Kč se počítá sazbou 5 %, zbytek do 20 000 Kč sazbou 4 % — celkem 900 Kč provize, zbytek je váš." },
-        { persona: "Příklad: výrobce kožených doplňků", monthly: "60 000 Kč měsíčního obratu", keep: "57 800 Kč zůstane", desc: "Pásmová sazba klesá s obratem: 5 % z prvních 10 000 Kč, 4 % z dalších 20 000 Kč, 3 % ze zbytku do 60 000 Kč — celkem 2 200 Kč provize." },
-        { persona: "Příklad: prodejce doplňků stravy", monthly: "90 000 Kč měsíčního obratu (horní pásmo)", keep: "86 900 Kč zůstane", desc: "I na vrcholu veřejného žebříčku je provize celkem jen 3 100 Kč — efektivně necelá 3,5 % z obratu. Nad touto hranicí už nenabízíme další automatickou slevu, ale individuální řešení \"vlastní e-shop\"." },
+        { persona: "Příklad: výrobkyně svíček", monthly: "20 000 Kč měsíčního obratu", keep: "19 602 Kč zůstane", desc: "Provize je vždy pevných 1,99 % z obratu — celkem 398 Kč provize, zbytek je váš." },
+        { persona: "Příklad: výrobce kožených doplňků", monthly: "60 000 Kč měsíčního obratu", keep: "58 806 Kč zůstane", desc: "Stejná sazba bez ohledu na obrat: 1,99 % z 60 000 Kč je 1 194 Kč provize, zbytek je váš." },
+        { persona: "Příklad: prodejce doplňků stravy", monthly: "90 000 Kč měsíčního obratu", keep: "88 209 Kč zůstane", desc: "I při vysokém obratu platíte stejnou sazbu 1,99 % — celkem jen 1 791 Kč provize. Nad 30 000 Kč měsíčně se vám navíc ozveme s nabídkou individuálního plánu ušitého na míru vašemu objemu." },
       ],
     },
     finalCta: {
@@ -2107,7 +2108,7 @@ export const cs: Translations = {
       sub: "Založte e-shop, přidejte produkt a sledujte první objednávku. Pokud se nic neprodá, nezaplatíte nic.",
       primaryCta: "Založit e-shop zdarma",
       secondaryCta: "Zobrazit ceník",
-      badges: ["Od 5 % do 3 % jen z prodeje", "Nic předem", "Spuštěno za pár minut"],
+      badges: ["1,99 % jen z prodeje", "Nic předem", "Spuštěno za pár minut"],
     },
     documentation: {
       eyebrow: "Dokumentace",
@@ -2160,16 +2161,16 @@ export const cs: Translations = {
     pricingPage: {
       eyebrow: "Ceník",
       title: "Ceník",
-      sub: "Žádné pevné předplatné, žádné skryté náklady. Provize od 5 % do 3 %, podle toho, kolik měsíčně prodáte.",
-      summaryCommissionLabel: "z uskutečněného prodeje, podle obratu",
+      sub: "Žádné pevné předplatné, žádné skryté náklady. Jen 1,99 % z každého prodeje.",
+      summaryCommissionLabel: "pevná sazba z uskutečněného prodeje",
       summaryEmploymentLabel: "bez firmy (IČO)",
       faqTitle: "Časté otázky",
       faqSub: "To, na co se prodejci ptají nejčastěji.",
       faq: [
-        { q: "Opravdu neplatím pevné předplatné?", a: "Přesně tak — neplatíte poplatek za založení ani nic za neaktivní e-shop, kde se nic neprodalo. Platíte provizi jen z uskutečněného prodeje, podle pásma, do kterého spadá váš měsíční obrat." },
+        { q: "Opravdu neplatím pevné předplatné?", a: "Přesně tak — neplatíte poplatek za založení ani nic za neaktivní e-shop, kde se nic neprodalo. Platíte provizi jen z uskutečněného prodeje, pevnou sazbou 1,99 %." },
         { q: "Co přesně se počítá do provize?", a: "Provize se počítá pouze z dokončených prodejů zpracovaných přes pokladnu e-shopu." },
-        { q: "Jak se počítají pásma provize?", a: "Progresivně, podobně jako daň z příjmu. První pásmo měsíčního obratu se zpoplatní nejvyšší sazbou, každé další (vyšší) pásmo nižší sazbou. Jediná objednávka tak může spadat do více pásem najednou, podle toho, kde v měsíci přesně padne. Dřívější objednávky se nikdy dodatečně nepřepočítávají." },
-        { q: "Co když měsíčně prodávám hodně?", a: "Nad nejvyšším veřejným pásmem vám místo další automatické slevy nabídneme Enterprise řešení \"vlastní e-shop\" — osobní dohoda na míru vašemu obchodu, ne další procento z ceníku. Podrobnosti najdete níže v sekci Enterprise." },
+        { q: "Je sazba provize vždy stejná?", a: "Ano — platíte stejnou pevnou sazbu 1,99 % z každého prodeje, bez ohledu na to, kolik toho měsíc prodáte. Žádné pásmové přepočty ani postupné slevy." },
+        { q: "Co když měsíčně prodávám hodně?", a: "Nad 30 000 Kč měsíčního obratu vám místo pevné sazby nabídneme Enterprise řešení \"vlastní e-shop\" — osobní dohoda na míru vašemu obchodu, ne další procento z ceníku. Podrobnosti najdete níže v sekci Enterprise." },
         { q: "Existují ještě nějaké další poplatky?", a: "Platí standardní poplatky Stripe za zpracování platby kartou, stejně jako u jakékoli platformy využívající Stripe — mamtodoma.cz si navrch neúčtuje žádný vlastní transakční poplatek." },
         { q: "Můžu kdykoli odejít?", a: "Ano — není potřeba vypovídat žádnou smlouvu, protože žádné předplatné nikdy neexistovalo." },
         { q: "Jak a kdy dostanu peníze?", a: "Po zaplacení objednávky zákazníkem začíná běžet ochranná lhůta (14 dní u vlastní firmy, 60 dní bez IČO) — kryje zákonné právo zákazníka na odstoupení od smlouvy. Po jejím uplynutí vám čistý výnos pošleme bankovním převodem, kdykoli poté, nečeká se na konec měsíce. Veškeré platby se přijímají na jeden centrální Stripe účet platformy — žádný e-shop nemá vlastní samostatný Stripe účet." },
@@ -2199,7 +2200,7 @@ export const cs: Translations = {
       sub: "Zdůvodnění tohoto modelu.",
       paragraphs: [
         "Většina e-commerce platforem si účtuje peníze dřív, než uskutečníte jediný prodej. To je reálná bariéra pro každého, kdo si teprve ověřuje nápad.",
-        "mamtodoma.cz to obrací: postavili jsme plnohodnotnou platformu a bereme si provizi (od 5 % do 3 %, podle obratu) jen tehdy, když vy prodáte. Pokud se v e-shopu nic neprodá, nestálo vás to nic.",
+        "mamtodoma.cz to obrací: postavili jsme plnohodnotnou platformu a bereme si provizi (pevných 1,99 % z každého prodeje) jen tehdy, když vy prodáte. Pokud se v e-shopu nic neprodá, nestálo vás to nic.",
         "Jsme nová platforma, spuštěná v roce 2026. Raději jsme upřímní ohledně toho, že jsme na začátku, než abychom si vymýšleli historii, kterou zatím nemáme.",
       ],
     },
@@ -2261,7 +2262,7 @@ export const cs: Translations = {
       eyebrow: "Právní informace",
       title: "Obchodní podmínky",
       sub: "Platí pro používání platformy mamtodoma.cz.",
-      updated: "Účinné od 25. listopadu 2026 · verze 2.1",
+      updated: "Účinné od 23. listopadu 2026 · verze 2.2",
       disclaimer:
         "Tyto obchodní podmínky jsou nedílnou součástí smlouvy mezi provozovatelem platformy a jejím uživatelem a jsou pro obě strany závazné. Doporučujeme vám je uložit nebo vytisknout pro vlastní potřebu.",
       sections: [
@@ -2269,7 +2270,7 @@ export const cs: Translations = {
         { heading: "2. Předmět a povaha služby", body: "Provozovatel poskytuje Uživateli softwarové nástroje (SaaS) umožňující vytvořit a provozovat internetový obchod, spravovat katalog, objednávky a platby. Provozovatel je poskytovatelem služby informační společnosti podle zákona č. 480/2004 Sb. V režimu prodeje pod vlastní firmou (viz čl. 7) Provozovatel není smluvní stranou kupních smluv uzavíraných mezi Prodejcem a Zákazníkem a vystupuje pouze jako poskytovatel technického řešení a zprostředkovatel. Provozovatel Uživateli nezaručuje dosažení jakéhokoli objemu prodeje." },
         { heading: "3. Uživatelský účet a schválení organizace", body: "Uživatel je povinen při registraci uvádět pravdivé a aktuální údaje a udržovat je aktuální. Přístup k účtu je chráněn heslem, které je Uživatel povinen chránit před zneužitím; za veškerou činnost provedenou pod svým účtem odpovídá Uživatel. Nově založená organizace se stává viditelnou pro Zákazníky teprve po jejím schválení Provozovatelem, který ověřuje soulad s těmito Podmínkami a s právními předpisy." },
         { heading: "4. Postavení stran a odpovědnost za obsah", body: "Za obsah obchodu, správnost popisů, cen a dostupnosti zboží, za plnění informačních a dalších povinností vůči Zákazníkům a za soulad s právními předpisy odpovídá výlučně Prodejce. Prodejce s vlastní firmou (IČO) jedná vůči Zákazníkovi vlastním jménem a je prodávajícím se všemi zákonnými povinnostmi. Provozovatel jako poskytovatel hostingu neodpovídá za obsah ukládaný Uživatelem podle § 5 zákona č. 480/2004 Sb. a čl. 6 nařízení (EU) 2022/2065 (akt o digitálních službách); nemá obecnou povinnost dohledu, na základě oznámení protiprávního obsahu jej však bez zbytečného odkladu znepřístupní." },
-        { heading: "5. Provize a ceník platformy", body: "Poskytnutí softwaru je bezplatné. Za zprostředkování prodeje náleží Provozovateli provize z ceny každého skutečně prodaného produktu, stanovená pásmovou sazbou podle výše měsíčního obratu daného obchodu (aktuální pásma a sazby jsou uvedeny v ceníku na webu Provozovatele). Provize se strhává z každé jednotlivé objednávky podle pásma, do kterého obchod v daném měsíci spadá. Sazbu lze pro konkrétní obchod upravit individuální dohodou. Je-li Provozovatel plátcem DPH, připočítává se k provizi DPH v zákonné výši." },
+        { heading: "5. Provize a ceník platformy", body: "Poskytnutí softwaru je bezplatné. Za zprostředkování prodeje náleží Provozovateli provize z ceny každého skutečně prodaného produktu ve výši 1,99 %, strhávaná z každé jednotlivé objednávky. Při měsíčním obratu obchodu nad 30 000 Kč může Provozovatel Prodejci navrhnout individuálně sjednanou sazbu a podmínky (tzv. „vlastní e-shop\"); taková odlišná sazba platí výhradně na základě zvláštní dohody mezi Provozovatelem a Prodejcem, jinak se i nadále uplatní sazba 1,99 %. Je-li Provozovatel plátcem DPH, připočítává se k provizi DPH v zákonné výši." },
         { heading: "6. Platby a výplaty", body: "Platby Zákazníků zpracovává platební brána Stripe (Stripe Payments Europe, Ltd.) na základě samostatných podmínek tohoto poskytovatele. Veškeré platby se přijímají na jeden centrální účet Provozovatele u Stripe — žádný obchod nemá vlastní samostatný platební účet. Výplaty Prodejci se řídí ochrannou lhůtou podle zvoleného způsobu prodeje: u prodeje pod vlastní firmou 14 dní od zaplacení objednávky, u komisionářského režimu 60 dní podle čl. 7. Po uplynutí ochranné lhůty odešle Provozovatel čistý výnos Prodejci bankovním převodem — kdykoli poté, nečeká se na konec kalendářního měsíce." },
         { heading: "7. Prodej bez vlastní firmy (komisionářský režim)", body: "Prodejce bez IČO může prodávat prostřednictvím Provozovatele jako komisionáře podle § 2455 a násl. občanského zákoníku. Podrobná práva a povinnosti, odměna, ochranná lhůta, měsíční limit výplaty i daňové souvislosti jsou upraveny v samostatné komisionářské smlouvě, kterou Prodejce odsouhlasí při aktivaci tohoto režimu, a na stránce Prodej bez firmy. V tomto režimu je vůči Zákazníkovi prodávajícím Provozovatel." },
         { heading: "8. Povinnosti Uživatele a zakázaný obsah", body: "Uživatel nesmí prostřednictvím platformy nabízet zboží či služby, jejichž prodej je v rozporu s právními předpisy, padělky, zboží porušující práva duševního vlastnictví třetích osob ani zboží, k jehož prodeji nemá potřebné oprávnění. Prodejce s vlastní firmou je povinen vůči svým Zákazníkům dodržovat spotřebitelské právo, zejména zákon č. 634/1992 Sb., o ochraně spotřebitele, a informační povinnosti u smluv uzavíraných distančním způsobem podle § 1820 a násl. občanského zákoníku." },

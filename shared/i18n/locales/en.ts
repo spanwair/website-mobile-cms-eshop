@@ -1140,7 +1140,7 @@ export const en = {
     },
     billing: {
       title: "Billing overview",
-      hint: "Current payment status for all your organisations in one place — commission from 5% down to 3% of turnover by band for own-company stores, 30% deduction with a 12,000 Kč/month payout limit for no-IČO sellers.",
+      hint: "Current payment status for all your organisations in one place — a flat 1.99% commission on turnover for own-company stores, 30% deduction with a 12,000 Kč/month payout limit for no-IČO sellers.",
       colParty: "Organisation",
       colMode: "Model",
       colThisMonth: "This month",
@@ -1860,7 +1860,7 @@ export const en = {
       lang: "en",
       defaultTitle: "Mamtodoma.cz - Launch Your Online Store for Free, No Costs",
       defaultDescription:
-        "Launch your online store for free on Mamtodoma.cz. No setup costs - pay a commission from 5% down to 3% per sale, based on monthly turnover. Live in minutes.",
+        "Launch your online store for free on Mamtodoma.cz. No setup costs - pay a flat 1.99% commission per sale. Live in minutes.",
     },
     logoMarquee: {
       label: "Connected with",
@@ -1882,13 +1882,14 @@ export const en = {
       titleHighlight: "zero upfront cost",
       titleLine2: "we only earn when you do",
       sub:
-        "Open a full online store today at zero upfront cost. No signup fee, no fixed monthly subscription. We only earn when you do — and the more you sell, the lower your commission gets.",
+        "Open a full online store today at zero upfront cost. No signup fee, no fixed monthly subscription. We only earn when you do — a flat 1.99% commission on every sale, nothing more.",
       formPlaceholder: "you@example.com",
       formCta: "Start selling free",
       formNote: "No credit card. No fixed subscription. Cancel anytime — there's nothing to cancel.",
-      trustLine: "5% down to 3% only when you sell · nothing upfront · live in minutes",
+      trustLine: "1.99% only when you sell · nothing upfront · live in minutes",
       floatLabel: "only on completed sales",
-      chartLabel: "Commission by monthly turnover",
+      chartLabel: "Commission on every order",
+      flatRateCaption: "on every completed sale",
     },
     included: {
       eyebrow: "Included, not extra",
@@ -1920,8 +1921,8 @@ export const en = {
           desc: "Not a trial, not a freemium tier with a catch. The store itself is free — you only pay commission on what you actually sell.",
         },
         {
-          title: "Keep up to 95% of every sale",
-          desc: "We only make money when you do — commission from 5% down to 3% based on turnover, nothing else, nothing hidden.",
+          title: "Keep up to 98% of every sale",
+          desc: "We only make money when you do — a flat 1.99% commission on every sale, nothing else, nothing hidden.",
         },
         {
           title: "Live in minutes, not months",
@@ -1934,9 +1935,9 @@ export const en = {
       badge: "Founding sellers",
       title: "We're looking for our first merchants to shape the platform with us",
       body:
-        "We're launching, and we want a handful of founding stores to shape the platform with us down to the last detail. One condition — you sell as a registered business (IČO). Commission runs from 5% down to 3% based on turnover for every new store; as a founding seller you also get priority support straight from the founders and a direct say in what we build next.",
+        "We're launching, and we want a handful of founding stores to shape the platform with us down to the last detail. One condition — you sell as a registered business (IČO). Commission is a flat 1.99% on every sale for every new store; as a founding seller you also get priority support straight from the founders and a direct say in what we build next.",
       points: [
-        "Commission from 5% down to 3%, based on turnover. See pricing",
+        "Flat 1.99% commission on every sale. See pricing",
         "Priority support straight from the founders",
         "Live today — no agency, no developer",
       ],
@@ -1960,7 +1961,7 @@ export const en = {
     howItWorks: {
       eyebrow: "Getting started",
       title: "Three steps. No plan to pick — we switch you automatically.",
-      sub: "No comparing six pricing tiers. You pay commission from 5% down to 3% based on turnover — nothing to pick or configure, the band switches itself.",
+      sub: "No comparing six pricing tiers. You pay one flat 1.99% commission on every sale — nothing to pick or configure.",
       steps: [
         { step: "1", title: "Create your store", desc: "Enter your email, name your store, and you're in the admin panel." },
         { step: "2", title: "Add your products", desc: "Photos, prices, stock — add one product or your whole catalog." },
@@ -2009,17 +2010,17 @@ export const en = {
     },
     commissionCalculator: {
       eyebrow: "Pricing, the short version",
-      title: "From 5% down to 3%, based on turnover",
+      title: "Just 1.99% on every sale",
       sub: "Set your store's monthly turnover. See exactly what you pay and what you keep.",
       sliderLabel: "Monthly turnover",
       youKeepLabel: "Net profit",
       weTakeLabel: "You pay MámToDoma",
-      exampleNote: "Rate bands: the higher your monthly turnover, the lower the rate - turnover up to {threshold} Kč is charged from {entryRate}% down to {floorRate}%. Above {threshold} Kč we'll prepare a custom proposal. No flat fee — you only ever pay on sales that actually happen.",
+      exampleNote: "A flat {entryRate}% on every sale up to {threshold} Kč of monthly turnover. Above {threshold} Kč we'll prepare a custom proposal. No flat fee — you only ever pay on sales that actually happen.",
       comparisonTitle: "Why this beats a monthly plan",
       comparisonNote:
-        "A €20/month plan costs you money before you've sold a single item. With commission pricing, if you sell nothing, you pay nothing — and the more you sell, the lower your rate gets.",
+        "A €20/month plan costs you money before you've sold a single item. With commission pricing, if you sell nothing, you pay nothing — always the same flat rate, no hidden markup.",
       badgeEffectiveRate: "effective rate {rate}%",
-      ladderTitle: "Commission bands",
+      ladderTitle: "Commission rate",
       ladderAbove: "{amount} Kč and above",
       ladderCustom: "Custom proposal",
       employmentToggleLabel: "I don't have a company (no IČO)",
@@ -2053,7 +2054,7 @@ export const en = {
       explainerStripeTitle: "Stripe is on the platform",
       explainerStripeText: "The card fee is charged on the whole payment, item and delivery together. MámToDoma absorbs it today; it is never deducted from your payout.",
       explainerRateTitle: "The {rate}% rate",
-      explainerRateText: "The entry rate for your first orders in a month. It drops to {floorRate}% as monthly turnover grows.",
+      explainerRateText: "The same flat rate on every order, no matter how much you sell in a month.",
       platformDetailsTitle: "How this works out for MámToDoma",
       rowStripeNote: "Stripe charges its fee on the whole payment of {total} - item and delivery together.",
       marginNote: "After Stripe's fee, the platform keeps {amount} of the {commission} commission on this order.",
@@ -2064,7 +2065,7 @@ export const en = {
     enterprise: {
       eyebrow: "Enterprise",
       title: "Selling at scale? We'll build you a custom store.",
-      desc: "Above {threshold} Kč of monthly turnover, instead of another automatic discount off the price list, we offer a custom \"own eshop\" arrangement — rate and terms agreed directly with us, with hands-on support, not a table lookup.",
+      desc: "Above {threshold} Kč of monthly turnover, instead of the flat price-list rate, we offer a custom \"own eshop\" arrangement — rate and terms agreed directly with us, with hands-on support, not a table lookup.",
       cta: "Ask about Enterprise",
     },
     noCompanySelling: {
@@ -2074,7 +2075,7 @@ export const en = {
       ownCompanyTitle: "You have your own company",
       ownCompanyBullets: [
         "Invoice and sell in your own name",
-        "Platform commission from 5% down to 3%, depending on monthly turnover",
+        "Flat platform commission of 1.99% on every sale",
         "Bank transfer payout 14 days after the order is paid",
       ],
       noCompanyTitle: "No company — sell through us",
@@ -2095,9 +2096,9 @@ export const en = {
       disclaimer: "These are illustrative example scenarios, not real customers or verified results.",
       badgeLabel: "Example",
       scenarios: [
-        { persona: "Example: a candle maker", monthly: "20,000 Kč / month in sales", keep: "19,100 Kč kept", desc: "The first 10,000 Kč is charged at 5%, the rest up to 20,000 Kč at 4% — 900 Kč commission in total, nothing else." },
-        { persona: "Example: a leather-goods maker", monthly: "60,000 Kč / month in sales", keep: "57,800 Kč kept", desc: "The banded rate drops with turnover: 5% on the first 10,000 Kč, 4% on the next 20,000 Kč, 3% on the rest up to 60,000 Kč — 2,200 Kč commission in total." },
-        { persona: "Example: a supplements reseller", monthly: "90,000 Kč / month in sales (top public band)", keep: "86,900 Kč kept", desc: "Even at the top of the public ladder, total commission is only 3,100 Kč — an effective rate under 3.5%. Past this point we don't offer another automatic discount, but a custom \"own eshop\" arrangement instead." },
+        { persona: "Example: a candle maker", monthly: "20,000 Kč / month in sales", keep: "19,602 Kč kept", desc: "Commission is always a flat 1.99% of turnover — 398 Kč commission in total, nothing else." },
+        { persona: "Example: a leather-goods maker", monthly: "60,000 Kč / month in sales", keep: "58,806 Kč kept", desc: "Same rate no matter the turnover: 1.99% of 60,000 Kč is 1,194 Kč commission, the rest is yours." },
+        { persona: "Example: a supplements reseller", monthly: "90,000 Kč / month in sales", keep: "88,209 Kč kept", desc: "Even at high turnover you pay the same 1.99% rate — just 1,791 Kč commission in total. Past 30,000 Kč/month we'll also reach out with a custom plan tailored to your volume." },
       ],
     },
     finalCta: {
@@ -2106,7 +2107,7 @@ export const en = {
       sub: "Create your store, add a product, and see your first order come in. If it doesn't sell, you've paid nothing.",
       primaryCta: "Create your free store",
       secondaryCta: "See pricing details",
-      badges: ["5% down to 3% only on sales", "Nothing upfront", "Live in minutes"],
+      badges: ["1.99% only on sales", "Nothing upfront", "Live in minutes"],
     },
     documentation: {
       eyebrow: "Documentation",
@@ -2159,16 +2160,16 @@ export const en = {
     pricingPage: {
       eyebrow: "Pricing",
       title: "Pricing",
-      sub: "No fixed subscription, no hidden costs. Commission from 5% down to 3%, based on how much you sell each month.",
-      summaryCommissionLabel: "of completed sales, by turnover band",
+      sub: "No fixed subscription, no hidden costs. Just a flat 1.99% on every sale.",
+      summaryCommissionLabel: "flat rate on completed sales",
       summaryEmploymentLabel: "without a company (IČO)",
       faqTitle: "Frequently asked questions",
       faqSub: "What sellers ask us most often.",
       faq: [
-        { q: "Is there really no fixed subscription?", a: "Correct — there's no setup fee and no charge for an inactive store with nothing sold. You pay commission only on sales that actually happen, at the rate your monthly turnover band falls into." },
+        { q: "Is there really no fixed subscription?", a: "Correct — there's no setup fee and no charge for an inactive store with nothing sold. You pay commission only on sales that actually happen, at a flat 1.99% rate." },
         { q: "What exactly counts toward the commission?", a: "The commission applies only to completed sales processed through the store's checkout." },
-        { q: "How are the commission bands calculated?", a: "Progressively, like income tax. The first band of monthly turnover is charged at the highest rate, each further (higher) band at a lower rate. A single order can span more than one band depending on exactly where in the month it lands. Earlier orders are never recalculated afterwards." },
-        { q: "What if I sell a lot every month?", a: "Above the top public band, instead of another automatic discount we offer an Enterprise \"own eshop\" arrangement — a direct deal tailored to your store, not another percentage off a price list. See the Enterprise section below for details." },
+        { q: "Is the commission rate always the same?", a: "Yes — you pay the same flat 1.99% on every sale, no matter how much you sell each month. No bands, no stepped discounts." },
+        { q: "What if I sell a lot every month?", a: "Above 30,000 Kč of monthly turnover, instead of the flat rate we offer an Enterprise \"own eshop\" arrangement — a direct deal tailored to your store, not another percentage off a price list. See the Enterprise section below for details." },
         { q: "Are there any other fees?", a: "Standard Stripe payment-processing fees apply to card transactions, same as any platform using Stripe — mamtodoma.cz does not add a separate transaction fee on top." },
         { q: "Can I leave at any time?", a: "Yes — there's no contract term to break, since there was never a subscription to begin with." },
         { q: "How and when do I get paid?", a: "Once a customer pays for an order, a hold period starts (14 days for own-company stores, 60 days without an IČO) — it covers the customer's statutory right of withdrawal. Once it elapses, we send your net proceeds by bank transfer, any time after that, not gated on month end. All payments are received into one central platform Stripe account — there is no separate Stripe account per store." },
@@ -2198,7 +2199,7 @@ export const en = {
       sub: "The reasoning behind the model.",
       paragraphs: [
         "Most e-commerce platforms charge you before you've made a single sale. That's a real barrier for anyone just testing an idea.",
-        "mamtodoma.cz flips that: we built a full store platform and only get paid a commission (from 5% down to 3%, based on turnover) when you do. If your store doesn't sell anything, it costs you nothing to have tried.",
+        "mamtodoma.cz flips that: we built a full store platform and only get paid a commission (a flat 1.99% on every sale) when you do. If your store doesn't sell anything, it costs you nothing to have tried.",
         "We're a new platform, launched in 2026. We'd rather be upfront about being early than invent a track record we don't have yet.",
       ],
     },
@@ -2260,7 +2261,7 @@ export const en = {
       eyebrow: "Legal",
       title: "Terms of Service",
       sub: "Applies to using the mamtodoma.cz platform.",
-      updated: "Effective November 25, 2026 · version 2.1",
+      updated: "Effective November 23, 2026 · version 2.2",
       disclaimer:
         "These terms form an integral part of the agreement between the platform operator and its user and are binding on both parties. We recommend that you save or print them for your records.",
       sections: [
@@ -2268,7 +2269,7 @@ export const en = {
         { heading: "2. Subject and nature of the service", body: "The Operator provides the User with software tools (SaaS) to create and run an online store and manage its catalogue, orders, and payments. The Operator is a provider of information-society services under Act No. 480/2004 Coll. In own-company selling mode (see art. 7) the Operator is not a party to the purchase contracts concluded between the Seller and the Customer and acts only as a provider of the technical solution and an intermediary. The Operator does not guarantee the User any particular sales volume." },
         { heading: "3. User account and store approval", body: "The User must provide true and current data on registration and keep it up to date. Account access is protected by a password that the User must safeguard against misuse; the User is responsible for all activity carried out under their account. A newly created organization becomes visible to Customers only after it is approved by the Operator, who verifies compliance with these Terms and with the law." },
         { heading: "4. Position of the parties and responsibility for content", body: "The Seller is solely responsible for the store's content, the accuracy of descriptions, prices, and availability of goods, for meeting information and other duties toward Customers, and for compliance with the law. A Seller with their own company (IČO) acts toward the Customer in their own name and is the seller with all statutory obligations. As a hosting provider the Operator is not liable for content stored by the User under § 5 of Act No. 480/2004 Coll. and art. 6 of Regulation (EU) 2022/2065 (the Digital Services Act); it has no general monitoring obligation, but will disable access to unlawful content without undue delay upon notice." },
-        { heading: "5. Commission and platform pricing", body: "The software is provided free of charge. For facilitating sales the Operator is entitled to a commission on the price of each product actually sold, charged at a tiered rate based on that store's monthly turnover (current bands and rates are published on the Operator's pricing page). Commission is deducted from each individual order according to the band the store falls into that month. The rate may be adjusted for an individual store by agreement. If the Operator is a VAT payer, VAT is added to the commission at the statutory rate." },
+        { heading: "5. Commission and platform pricing", body: "The software is provided free of charge. For facilitating sales the Operator is entitled to a commission on the price of each product actually sold, at a flat rate of 1.99%, deducted from each individual order. Where a store's monthly turnover exceeds 30,000 Kč, the Operator may offer the Seller an individually negotiated rate and terms (a so-called \"own eshop\" arrangement); any such different rate applies only under a separate agreement between the Operator and the Seller, and the 1.99% rate otherwise continues to apply. If the Operator is a VAT payer, VAT is added to the commission at the statutory rate." },
         { heading: "6. Payments and payouts", body: "Customer payments are processed by the Stripe payment gateway (Stripe Payments Europe, Ltd.) under that provider's separate terms. All payments are received into one central Stripe account of the Operator — no store has its own separate payment account. Seller payouts follow a hold period depending on the selected selling mode: 14 days from payment in own-company mode, 60 days in commissionaire mode under art. 7. Once the hold period elapses, the Operator sends the net proceeds to the Seller by bank transfer — any time after that, not gated on calendar month end." },
         { heading: "7. Selling without your own company (commissionaire mode)", body: "A Seller without an IČO may sell through the Operator as commissionaire under § 2455 et seq. of the Civil Code. The detailed rights and obligations, remuneration, protective period, monthly payout limit, and tax implications are set out in a separate commissionaire agreement the Seller accepts when activating this mode and on the Selling without a company page. In this mode the Operator is the seller toward the Customer." },
         { heading: "8. User obligations and prohibited content", body: "The User must not offer through the platform any goods or services whose sale is contrary to law, counterfeits, goods infringing third-party intellectual property rights, or goods for whose sale the User lacks the required authorization. A Seller with their own company must comply with consumer law toward their Customers, in particular Act No. 634/1992 Coll., on consumer protection, and the information duties for distance contracts under § 1820 et seq. of the Civil Code." },

@@ -1,9 +1,8 @@
 ---
 // Public pricing calculator — Phase 1 (display only). Every number comes from
-// shared/constants/sellerMode.ts, the single source of truth. The slider shows the rate of the
-// band the entered monthly turnover falls into — the commission is charged on the whole turnover
-// at that band's rate, and the top band (90 000 Kč and above) is a negotiated custom proposal
-// rather than an automatic rate.
+// shared/constants/sellerMode.ts, the single source of truth. The slider shows the flat rate
+// charged on turnover up to COMMISSION_ENTERPRISE_THRESHOLD_CZK (30 000 Kč) — above that line,
+// the enterprise card below offers a negotiated custom proposal rather than an automatic rate.
 import { getLang, useT } from "@/lib/i18n";
 import {
   COMMISSION_TIERS,
@@ -18,15 +17,13 @@ const t = useT(Astro);
 const lang = getLang(Astro);
 const locale = lang === "en" ? "en-US" : "cs-CZ";
 
-const entryPct = Math.round(COMMISSION_ENTRY_RATE * 100);
-const floorPct = Math.round(COMMISSION_TIERS[COMMISSION_TIERS.length - 2].rate * 100);
+const entryPct = (Math.round(COMMISSION_ENTRY_RATE * 10000) / 100).toLocaleString(locale);
 const enterpriseThreshold = COMMISSION_TIERS[COMMISSION_TIERS.length - 2].uptoKc as number;
 const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 const fmt = (n: number) => Math.round(n).toLocaleString(locale);
 
 const exampleNote = t.landing.commissionCalculator.exampleNote
-  .replaceAll("{entryRate}", String(entryPct))
-  .replaceAll("{floorRate}", String(floorPct))
+  .replaceAll("{entryRate}", entryPct)
   .replaceAll("{threshold}", fmt(enterpriseThreshold));
 const employmentNote = t.landing.commissionCalculator.employmentNote
   .replaceAll("{limit}", fmt(NO_ICO_MONTHLY_PAYOUT_LIMIT_CZK))
@@ -51,7 +48,7 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
         data-locale={locale}
       >
         <label class="calc-label" for="calc-input">{t.landing.commissionCalculator.sliderLabel}</label>
-        <input id="calc-input" type="range" min="0" max="90000" step="500" value="15000" class="calc-slider" />
+        <input id="calc-input" type="range" min="0" max="30000" step="250" value="15000" class="calc-slider" />
         <div class="calc-price-row">
           <div class="calc-price" id="calc-price-display">15 000 Kč</div>
           <span class="badge badge-active" id="calc-badge"></span>
@@ -144,12 +141,12 @@ const employmentDeductionLabel = t.landing.commissionCalculator.employmentDeduct
     return `${formatNum(n)} Kč`;
   }
   function formatPct(rate: number) {
-    return (Math.round(rate * 1000) / 10).toLocaleString(locale);
+    return (Math.round(rate * 10000) / 100).toLocaleString(locale);
   }
 
-  // Flat rate of the band the whole monthly turnover falls into: 5 / 4 / 3 / 2 %. Turnover at or
-  // above the last finite band (90 000 Kč) resolves to that band's rate; anything above it is a
-  // negotiated custom proposal, handled by the enterprise card rather than this slider.
+  // Flat rate charged on the whole monthly turnover up to the last finite band (30 000 Kč);
+  // anything above it is a negotiated custom proposal, handled by the enterprise card rather
+  // than this slider.
   function bandRateFor(turnover: number) {
     let rate = 0;
     for (const tier of tiers) {

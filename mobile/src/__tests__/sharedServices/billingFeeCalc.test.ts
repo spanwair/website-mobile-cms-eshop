@@ -1,5 +1,9 @@
 import { COMMISSION_TIERS } from "@shared/constants/sellerMode";
-import { computeBillingPeriodTotals, computeTieredCommission, resolveFeeSchedule } from "@shared/utils/billingFeeCalc";
+import {
+  computeBillingPeriodTotals,
+  computeTieredCommission,
+  resolveFeeSchedule,
+} from "@shared/utils/billingFeeCalc";
 
 describe("resolveFeeSchedule", () => {
   it("falls back to the global COMMISSION_TIERS default when no override is set", () => {
@@ -12,14 +16,24 @@ describe("resolveFeeSchedule", () => {
       { uptoKc: 50000, rate: 0.08 },
       { uptoKc: null, rate: 0.04 },
     ];
-    expect(resolveFeeSchedule({ commission_tiers_override: override })).toEqual(override);
+    expect(resolveFeeSchedule({ commission_tiers_override: override })).toEqual(
+      override,
+    );
   });
 
   it("falls back to the default when the override is malformed", () => {
-    expect(resolveFeeSchedule({ commission_tiers_override: "not-an-array" })).toEqual(COMMISSION_TIERS);
-    expect(resolveFeeSchedule({ commission_tiers_override: [] })).toEqual(COMMISSION_TIERS);
+    expect(
+      resolveFeeSchedule({ commission_tiers_override: "not-an-array" }),
+    ).toEqual(COMMISSION_TIERS);
+    expect(resolveFeeSchedule({ commission_tiers_override: [] })).toEqual(
+      COMMISSION_TIERS,
+    );
     // Last entry's uptoKc must be null (open-ended) -- a schedule missing that is invalid.
-    expect(resolveFeeSchedule({ commission_tiers_override: [{ uptoKc: 1000, rate: 0.05 }] })).toEqual(COMMISSION_TIERS);
+    expect(
+      resolveFeeSchedule({
+        commission_tiers_override: [{ uptoKc: 1000, rate: 0.05 }],
+      }),
+    ).toEqual(COMMISSION_TIERS);
     // Non-increasing thresholds are invalid.
     expect(
       resolveFeeSchedule({
@@ -28,7 +42,7 @@ describe("resolveFeeSchedule", () => {
           { uptoKc: 1000, rate: 0.03 },
           { uptoKc: null, rate: 0.02 },
         ],
-      })
+      }),
     ).toEqual(COMMISSION_TIERS);
   });
 });

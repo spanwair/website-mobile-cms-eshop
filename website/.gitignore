@@ -7,3 +7,8 @@ public/docs/
 
 # Local wrangler dev state
 .wrangler/
+
+# Playwright test run artifacts
+test-results/
+tests/results.json
+tests/screenshots/

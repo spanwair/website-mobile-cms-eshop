@@ -18,7 +18,7 @@
 // padding the commission base, the commission has less room to cover Stripe's cut on small
 // orders.
 import { getLang, useT } from "@/lib/i18n";
-import { COMMISSION_ENTRY_RATE, COMMISSION_TIERS } from "@shared/constants/sellerMode";
+import { COMMISSION_ENTRY_RATE } from "@shared/constants/sellerMode";
 import { STRIPE_FEE_PERCENT_EU, STRIPE_FEE_FIXED_CZK } from "@shared/constants/payment";
 
 const t = useT(Astro);
@@ -26,21 +26,19 @@ const ob = t.landing.orderBreakdown;
 const lang = getLang(Astro);
 const locale = lang === "en" ? "en-US" : "cs-CZ";
 
-// A single order, in isolation, has no month-to-date turnover to blend against — it is always
-// charged at the entry rate (the first, highest band) unless this is not the party's first
-// order of the month, in which case the real per-order ledger may land on a lower blended rate.
-// See the interactive calculator above for the month-level picture.
-const commissionPct = Math.round(COMMISSION_ENTRY_RATE * 100);
-const floorPct = Math.round(COMMISSION_TIERS[COMMISSION_TIERS.length - 2].rate * 100);
+// Flat rate — every order is charged the same COMMISSION_ENTRY_RATE, whether it's the party's
+// first order of the month or its hundredth. See the interactive calculator above for how this
+// plays out against a whole month's turnover.
+const commissionPct = (Math.round(COMMISSION_ENTRY_RATE * 10000) / 100).toLocaleString(locale);
 const stripePct = STRIPE_FEE_PERCENT_EU * 100;
 const stripePctLabel = stripePct.toLocaleString(locale);
 
 const rowStripe = ob.rowStripe
   .replace("{pct}", stripePctLabel)
   .replace("{fixed}", String(STRIPE_FEE_FIXED_CZK));
-const rowCommission = ob.rowCommission.replace("{rate}", String(commissionPct));
-const explainerRateTitle = ob.explainerRateTitle.replace("{rate}", String(commissionPct));
-const explainerRateText = ob.explainerRateText.replace("{floorRate}", String(floorPct));
+const rowCommission = ob.rowCommission.replace("{rate}", commissionPct);
+const explainerRateTitle = ob.explainerRateTitle.replace("{rate}", commissionPct);
+const explainerRateText = ob.explainerRateText;
 
 // Server-rendered defaults so the receipt is complete (and correct) before the slider script
 // runs. Must match the input's default value and the pickup delivery option below.
@@ -242,7 +240,7 @@ const defaultBreakEvenNote = ob.breakEvenNote
     const breakEvenNote = document.getElementById("ob-break-even");
     if (breakEvenNote) {
       breakEvenNote.textContent = (card.dataset.breakEvenTemplate ?? "")
-        .replace("{rate}", String(Math.round(rate * 100)))
+        .replace("{rate}", (Math.round(rate * 10000) / 100).toLocaleString(locale))
         .replace("{amount}", formatKc(breakEven));
     }
   }

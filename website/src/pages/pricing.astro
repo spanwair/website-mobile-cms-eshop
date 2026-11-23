@@ -4,12 +4,13 @@ import PageHero from "../components/landing/PageHero.astro";
 import CommissionCalculator from "../components/landing/sections/CommissionCalculator.astro";
 import OrderValueBreakdown from "../components/landing/sections/OrderValueBreakdown.astro";
 import FinalCta from "../components/landing/sections/FinalCta.astro";
-import { useT } from "../lib/i18n";
-import { COMMISSION_TIERS, COMMISSION_ENTRY_RATE, NO_ICO_DEDUCTION_RATE } from "@shared/constants/sellerMode";
+import { getLang, useT } from "../lib/i18n";
+import { COMMISSION_ENTRY_RATE, NO_ICO_DEDUCTION_RATE } from "@shared/constants/sellerMode";
 
 const t = useT(Astro);
-const entryPct = Math.round(COMMISSION_ENTRY_RATE * 100);
-const floorPct = Math.round(COMMISSION_TIERS[COMMISSION_TIERS.length - 2].rate * 100);
+const lang = getLang(Astro);
+const locale = lang === "en" ? "en-US" : "cs-CZ";
+const entryPct = (Math.round(COMMISSION_ENTRY_RATE * 10000) / 100).toLocaleString(locale);
 const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
 ---
 
@@ -17,7 +18,7 @@ const employmentPct = Math.round(NO_ICO_DEDUCTION_RATE * 100);
   <PageHero eyebrow={t.landing.pricingPage.eyebrow} title={t.landing.pricingPage.title} lead={t.landing.pricingPage.sub} image="/img/happy-laptop.jpg" imageAlt="">
     <div class="pricing-summary" data-reveal-group>
       <div class="pricing-summary-item" data-reveal>
-        <span class="pricing-summary-num font-display tnum">{floorPct}–{entryPct} %</span>
+        <span class="pricing-summary-num font-display tnum">{entryPct} %</span>
         <span class="pricing-summary-label">{t.landing.pricingPage.summaryCommissionLabel}</span>
       </div>
       <span class="pricing-summary-divider" aria-hidden="true"></span>

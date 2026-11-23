@@ -1,6 +1,7 @@
 import { formatPrice } from "@shared/utils/format";
 import type { AppLanguage } from "@shared/i18n/getT";
 import { submitAjax } from "./ajaxForm";
+import { updateCartBadge } from "./cartBadge";
 
 // Qty change / remove-item / apply-coupon all submit via fetch instead of a real POST
 // navigation, so adjusting the cart never reloads the page or resets scroll position. Delegated
@@ -20,6 +21,7 @@ export function initCartPage() {
   function setSubtotal(subtotal: number, itemCount: number) {
     if (subtotalEl) subtotalEl.textContent = formatPrice(subtotal, lang, currency);
     if (itemCountEl) itemCountEl.textContent = String(itemCount);
+    updateCartBadge(itemCount);
   }
 
   page.addEventListener("submit", async (e) => {

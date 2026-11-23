@@ -27,7 +27,7 @@ export const PAYOUT_HOLD_DAYS = 60;
 // consumer withdrawal window itself, not an extra buffer for Smalljobs acting as seller of record.
 export const OWN_COMPANY_PAYOUT_HOLD_DAYS = 14;
 
-// --- Tiered own_company commission (public pricing + per-order billing) ---
+// --- own_company commission (public pricing + per-order billing) ---
 // SINGLE SOURCE OF TRUTH for the own_company platform fee and for what the public pricing/
 // calculator pages display. COMMISSION_TIERS is the GLOBAL DEFAULT schedule: every party may
 // override it entirely (parties.commission_tiers_override, same shape), resolved in one place
@@ -36,40 +36,38 @@ export const OWN_COMPANY_PAYOUT_HOLD_DAYS = 14;
 // resolveFeeSchedule(). smalljobs_commission sellers are unaffected — they pay flat
 // NO_ICO_DEDUCTION_RATE per order, not this schedule.
 //
-// The model is MARGINAL/BRACKET, like income tax: a party's first COMMISSION_TIERS[0].uptoKc of
-// turnover in a calendar month is charged at COMMISSION_TIERS[0].rate, the next slice (up to
-// COMMISSION_TIERS[1].uptoKc) at COMMISSION_TIERS[1].rate, and so on — never a whole-month
-// cliff re-rate. Each order is charged a blend across every band its slice of the month's
-// cumulative turnover touches (see computeTieredCommission in shared/utils/billingFeeCalc.ts).
-// The last entry's uptoKc MUST be null ("and above") so every turnover amount resolves to a
-// rate. Above COMMISSION_ENTERPRISE_THRESHOLD_CZK the public ladder stops getting cheaper by
-// itself — that is deliberate: a party trading above that line is meant to be offered a
-// negotiated "own eshop" schedule (parties.commission_tiers_override) through a direct sales
-// conversation, not a further automatic discount. See shared/services/commissionLedgerService.ts
-// for the fee_tier_change in-app notification that flags when a party on the public default
-// schedule first crosses that line.
+// Two-model pricing: everybody pays a flat COMMISSION_TIERS[0].rate (1.99%) on turnover up to
+// COMMISSION_ENTERPRISE_THRESHOLD_CZK (30 000 Kč/month) — there is no declining ladder anymore.
+// Above that line the public default schedule stops getting automatically cheaper; a party
+// trading above it is meant to be offered a negotiated "own eshop" schedule
+// (parties.commission_tiers_override) through a direct sales conversation, not a further
+// automatic discount. The array is still shaped as tiers (and computeTieredCommission in
+// shared/utils/billingFeeCalc.ts still blends marginally across bands) purely so a per-party
+// override can introduce real tiering for a negotiated deal — the public default itself just
+// repeats the same flat rate in both bands. The last entry's uptoKc MUST be null ("and above")
+// so every turnover amount resolves to a rate. See
+// shared/services/commissionLedgerService.ts for the fee_tier_change in-app notification that
+// flags when a party on the public default schedule first crosses that line.
 export interface CommissionTier {
   uptoKc: number | null;
   rate: number;
 }
 
 export const COMMISSION_TIERS: CommissionTier[] = [
-  { uptoKc: 10000, rate: 0.05 },
-  { uptoKc: 30000, rate: 0.04 },
-  { uptoKc: 90000, rate: 0.03 },
-  { uptoKc: null, rate: 0.03 },
+  { uptoKc: 30000, rate: 0.0199 },
+  { uptoKc: null, rate: 0.0199 },
 ];
 
 // Monthly turnover (Kč) above which a party on the public default schedule should be offered a
-// negotiated "own eshop" enterprise schedule instead of relying on the public ladder. Equal to
-// the public ladder's last finite threshold by definition — kept as its own named constant so
+// negotiated "own eshop" enterprise schedule instead of relying on the public default. Equal to
+// the public schedule's last finite threshold by definition — kept as its own named constant so
 // the sales-trigger logic in commissionLedgerService.ts reads intention, not a magic re-lookup
 // of the tier array.
 export const COMMISSION_ENTERPRISE_THRESHOLD_CZK = COMMISSION_TIERS[COMMISSION_TIERS.length - 2].uptoKc as number;
 
-// The rate charged on the first Kč of turnover each month — convenience constant for headline
-// marketing copy ("already from 5%"). Always equal to COMMISSION_TIERS[0].rate; never redefine
-// independently.
+// The flat rate charged on every Kč of turnover up to COMMISSION_ENTERPRISE_THRESHOLD_CZK —
+// convenience constant for headline marketing copy ("just 1.99%"). Always equal to
+// COMMISSION_TIERS[0].rate; never redefine independently.
 export const COMMISSION_ENTRY_RATE = COMMISSION_TIERS[0].rate;
 
 // Total deduction (platform commission + statutory contributions withheld on the creator's

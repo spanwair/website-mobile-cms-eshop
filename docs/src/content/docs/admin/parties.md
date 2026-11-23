@@ -147,11 +147,11 @@ Obě akce režimu prodejce vyžadují MANAGE_AUDIT.
 ### Levý sloupec - Plán provize (pouze vlastník systému)
 
 Pro organizace v režimu vlastní společnosti karta **Plán provize** vám umožňuje přepsat pásmovou provizi platformy pro tuto jednu organizaci.
-Výchozí plán platformy (`COMMISSION_TIERS` v `shared/constants/sellerMode.ts`) je pásmová (marginální) sazba, podobně jako daňová progrese — každé pásmo měsíčního obratu se zpoplatní vlastní sazbou: 5 % z prvních 10 000 Kč, 4 % z dalších 20 000 Kč, 3 % z dalších 60 000 Kč a 3 % ze všeho nad 90 000 Kč.
+Výchozí plán platformy (`COMMISSION_TIERS` v `shared/constants/sellerMode.ts`) je pevná sazba 1,99 % z každé objednávky, bez ohledu na obrat, až do 30 000 Kč měsíčního obratu — nad touto hranicí je stejná výchozí sazba 1,99 % platná dál, pokud organizace nemá vlastní přepsání.
 Karta zobrazuje jeden editovatelný řádek za každé pásmo (sazba v % a práh "do výše" v Kč), předvyplněný výchozí hodnotou platformy, pokud organizace ještě nemá vlastní přepsání; poslední řádek je vždy otevřený ("a výše").
 Tlačítkem **+ Přidat pásmo** vložíte další řádek, tlačítkem u řádku ho odstraníte.
 
-Tímto způsobem se také nastavuje individuálně dohodnutá sazba "vlastní e-shop" pro organizaci, jejíž obrat pravidelně přesahuje nejvyšší veřejné pásmo (90 000 Kč) — nahraďte řádky dohodnutým vlastním plánem (klidně jen jednou otevřenou sazbou), místo aby organizace zůstala na veřejném výchozím plánu. Platforma při prvním překročení této hranice u organizace na výchozím plánu zobrazí interní notifikaci typu `fee_tier_change` jako impuls k zahájení takové dohody.
+Tímto způsobem se také nastavuje individuálně dohodnutá sazba "vlastní e-shop" pro organizaci, jejíž obrat pravidelně přesahuje veřejný práh (30 000 Kč) — nahraďte řádky dohodnutým vlastním plánem (klidně jen jednou otevřenou sazbou), místo aby organizace zůstala na veřejném výchozím plánu. Platforma při prvním překročení této hranice u organizace na výchozím plánu zobrazí interní notifikaci typu `fee_tier_change` jako impuls k zahájení takové dohody.
 
 Sazby se zadávají jako procenta a celý plán se ukládá jako jedno uspořádané pole JSONB v tabulce `parties` (`commission_tiers_override`).
 Tlačítkem **Vrátit výchozí sazbu platformy** přepsání zcela odstraníte a vrátíte se k globálnímu výchozímu plánu.

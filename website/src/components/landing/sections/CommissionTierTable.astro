@@ -18,7 +18,7 @@ const rows = finiteTiers.map((tier, i) => {
   const lowerKc = i === 0 ? 0 : (finiteTiers[i - 1].uptoKc as number);
   return {
     rangeLabel: i === 0 ? `0 – ${fmt(tier.uptoKc as number)} Kč` : `${fmt(lowerKc)} – ${fmt(tier.uptoKc as number)} Kč`,
-    pct: Math.round(tier.rate * 10000) / 100,
+    pct: fmt(Math.round(tier.rate * 10000) / 100),
   };
 });
 const topTier = COMMISSION_TIERS[COMMISSION_TIERS.length - 1];
